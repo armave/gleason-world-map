@@ -234,7 +234,7 @@ function unproject(x,y){
  return {lat,lon};
 }
 function wrapRadians(value){return ((value+3*Math.PI)%(2*Math.PI))-Math.PI;}
-// WGS84 ellipsoidal inverse uses GeographicLib, with a Vincenty fallback.// Vincenty's inverse solution on the WGS84 ellipsoid; spherical fallback handles near-antipodal pairs.
+// Vincenty's WGS84 inverse returns unavailable when its iteration does not converge.
 function vincentyInverse(a,b){
  const phi1=rad(a.lat),phi2=rad(b.lat),L=wrapRadians(rad(b.lon-a.lon));
  const U1=Math.atan((1-WGS84_F)*Math.tan(phi1)),U2=Math.atan((1-WGS84_F)*Math.tan(phi2));
