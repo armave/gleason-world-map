@@ -156,6 +156,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
   </aside>
 </div>
 <div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Ground distances use the WGS84 reference ellipsoid. Measurements are shortest surface geodesics, displayed in metres or kilometres; the connecting line is the projected geodesic path. The scale bar is a local horizontal ground scale near the current view centre and changes with pan, zoom, and radial calibration. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
+<script src="https://geographiclib.sourceforge.io/scripts/geographiclib-geodesic.min.js"></script>
 <script>
 (() => {
 'use strict';
@@ -225,7 +226,7 @@ function haversineInverse(a,b){
  return {distanceMeters:6371008.8*central,initialBearing:bearing};
 }
 // Vincenty's inverse solution on the WGS84 ellipsoid; spherical fallback handles near-antipodal pairs.
-function geodesicInverse(a,b){
+function vincentyInverse(a,b){
  const phi1=rad(a.lat),phi2=rad(b.lat),L=wrapRadians(rad(b.lon-a.lon));
  const U1=Math.atan((1-WGS84_F)*Math.tan(phi1)),U2=Math.atan((1-WGS84_F)*Math.tan(phi2));
  const sinU1=Math.sin(U1),cosU1=Math.cos(U1),sinU2=Math.sin(U2),cosU2=Math.cos(U2);
@@ -242,7 +243,7 @@ function geodesicInverse(a,b){
   if(Math.abs(next-lambda)<1e-12){lambda=next;converged=true;break;}
   lambda=next;
  }
- if(!converged)return haversineInverse(a,b);
+ if(!converged)return {...haversineInverse(a,b),approximate:true};
  const sinLambda=Math.sin(lambda),cosLambda=Math.cos(lambda);
  const sinSigma=Math.sqrt((cosU2*sinLambda)**2+(cosU1*sinU2-sinU1*cosU2*cosLambda)**2);
  const cosSigma=sinU1*sinU2+cosU1*cosU2*cosLambda,sigma=Math.atan2(sinSigma,cosSigma);
@@ -262,8 +263,15 @@ function sphericalDirect(origin,bearing,distanceMeters){
  const lambda2=lambda1+Math.atan2(Math.sin(bearing)*Math.sin(delta)*Math.cos(phi1),Math.cos(delta)-Math.sin(phi1)*Math.sin(phi2));
  return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda2)*180/Math.PI};
 }
-// Vincenty's direct solution, used to draw the measured shortest surface path on the disk.
-function geodesicDirect(origin,bearing,distanceMeters){
+// Prefer GeographicLib's Karney solution for convergence across all point pairs.
+// Vincenty remains a local fallback if the external library cannot be loaded.
+function geodesicInverse(a,b){
+ const engine=window.geodesic?.Geodesic?.WGS84;
+ if(engine){const r=engine.Inverse(a.lat,a.lon,b.lat,b.lon);return {distanceMeters:r.s12,initialBearing:rad(r.azi1),approximate:false};}
+ return vincentyInverse(a,b);
+}
+// Vincenty's direct solution, used as a fallback when GeographicLib is unavailable.
+function vincentyDirect(origin,bearing,distanceMeters){
  if(distanceMeters<=0)return {lat:origin.lat,lon:origin.lon};
  const alpha1=bearing,phi1=rad(origin.lat),lambda1=rad(origin.lon);
  const tanU1=(1-WGS84_F)*Math.tan(phi1),cosU1=1/Math.sqrt(1+tanU1*tanU1),sinU1=tanU1*cosU1;
@@ -288,6 +296,11 @@ function geodesicDirect(origin,bearing,distanceMeters){
  const C=WGS84_F/16*cosSqAlpha*(4+WGS84_F*(4-3*cosSqAlpha));
  const L=lambda-(1-C)*WGS84_F*sinAlpha*(sigma+C*sinSigma*(cos2SigmaM+C*cosSigma*(-1+2*cos2SigmaM*cos2SigmaM)));
  return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda1+L)*180/Math.PI};
+}
+function geodesicDirect(origin,bearing,distanceMeters){
+ const engine=window.geodesic?.Geodesic?.WGS84;
+ if(engine){const r=engine.Direct(origin.lat,origin.lon,bearing*180/Math.PI,distanceMeters);return {lat:r.lat2,lon:r.lon2};}
+ return vincentyDirect(origin,bearing,distanceMeters);
 }
 function geodesicLinePath(a,b){
  const inverse=geodesicInverse(a,b),distance=inverse.distanceMeters;
@@ -396,7 +409,7 @@ function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=formatDistance(result.distanceMeters);$('distanceSub').textContent='Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent='Measurement complete. The displayed value is surface distance; the dashed line is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=(result.approximate?'≈ ':'')+formatDistance(result.distanceMeters);$('distanceSub').textContent=result.approximate?'Approximate fallback · GeographicLib could not be loaded for this near-antipodal pair':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent='Measurement complete. The displayed value is surface distance; the dashed line is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){$('suggestions').classList.remove('open');$('search').value=item.type==='capital'?`${item.obj.city}, ${item.obj.countryName||''}`.replace(/, $/,''):item.obj.name;if(item.type==='capital'){showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,1.55));}else{showCountry(item.obj);const center=item.obj.center;focusGeo(center.lat,center.lon,Math.max(zoom,1.25));}}
