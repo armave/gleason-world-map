@@ -496,7 +496,7 @@ function niceScaleFloor(value){
 }
 function scaleAnchorWorld(){
  let x=-panX/zoom,y=-panY/zoom;
- const rho=Math.hypot(x,y),limit=baseR*.55;
+ const rho=Math.hypot(x,y),limit=baseR*.85;
  if(rho>limit&&rho>0){x*=limit/rho;y*=limit/rho;}
  return {x,y};
 }
