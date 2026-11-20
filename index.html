@@ -323,29 +323,32 @@ function updateDistortion(){
  $('distortionArea').textContent=scaleFactorText(k);
 }
 function centroidOfFeature(f){const p=f.properties||{};if(p.LABEL_X!=null&&p.LABEL_Y!=null&&Number.isFinite(Number(p.LABEL_X))&&Number.isFinite(Number(p.LABEL_Y)))return {lat:Number(p.LABEL_Y),lon:Number(p.LABEL_X)};let sx=0,sy=0,sz=0,n=0;function scan(ring){for(const c of ring){const a=rad(c[1]),b=rad(c[0]);sx+=Math.cos(a)*Math.cos(b);sy+=Math.cos(a)*Math.sin(b);sz+=Math.sin(a);n++;}}const g=f.geometry;if(!g)return {lat:0,lon:0};if(g.type==='Polygon')g.coordinates.forEach((r,i)=>i===0&&scan(r));else if(g.type==='MultiPolygon')g.coordinates.forEach(poly=>poly[0]&&scan(poly[0]));if(!n)return {lat:0,lon:0};return {lat:Math.atan2(sz,Math.hypot(sx,sy))*180/Math.PI,lon:Math.atan2(sy,sx)*180/Math.PI};}
-function makePath(f){
+function makePath(f,preserveAntarcticRim=false){
  const path=new Path2D(),g=f.geometry;if(!g)return path;
  const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
  for(const poly of polys){for(const ring of poly){
   if(!ring||ring.length<3)continue;
   const valid=ring.filter(c=>Array.isArray(c)&&Number.isFinite(+c[0])&&Number.isFinite(+c[1])&&+c[0]>=-180&&+c[0]<=180&&+c[1]>=-90&&+c[1]<=90);
   if(valid.length<3)continue;
-  let lon0=+valid[0][0],lat0=+valid[0][1];let [x0,y0]=project(lon0,lat0);path.moveTo(x0,y0);
+  let lon0=+valid[0][0],lat0=+valid[0][1];
+  const first=project(lon0,lat0);path.moveTo(first[0],first[1]);
   for(let i=1;i<valid.length;i++){
-   const lon1=+valid[i][0],lat1=+valid[i][1];
-   // Unwrap across the antimeridian using the shortest longitudinal step.
-   const dLon=((lon1-lon0+540)%360)-180,dLat=lat1-lat0;
-   // Densify long edges so their projected curves do not become coarse chords.
+   const lon1=+valid[i][0],lat1=+valid[i][1],rawDelta=lon1-lon0;
+   // The South Pole edge from -180° to +180° is a complete turn around this disk's rim.
+   const southPoleSweep=preserveAntarcticRim&&Math.abs(lat0+90)<1e-7&&Math.abs(lat1+90)<1e-7&&Math.abs(rawDelta)>180;
+   const dLon=southPoleSweep?rawDelta:((rawDelta+540)%360)-180,dLat=lat1-lat0;
    const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dLon),Math.abs(dLat))/2));
-   for(let j=1;j<=steps;j++){const t=j/steps;const [x,y]=project(lon0+dLon*t,lat0+dLat*t);path.lineTo(x,y);}
+   for(let j=1;j<=steps;j++){
+    const p=project(lon0+dLon*j/steps,lat0+dLat*j/steps);
+    path.lineTo(p[0],p[1]);
+   }
    lon0=lon1;lat0=lat1;
   }
-  // GeoJSON rings are normally closed; closePath also covers non-repeated endpoints.
   path.closePath();
  }}
  return path;
 }
-function resize(){const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);baseR=Math.min(width,height)*.405;pathRecords=countries.map(c=>({country:c,path:makePath(c.feature)}));antarcticaPath=antarcticaFeature?makePath(antarcticaFeature):null;draw();}
+function resize(){const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);baseR=Math.min(width,height)*.405;pathRecords=countries.map(c=>({country:c,path:makePath(c.feature)}));antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;draw();}
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle='#eee7d6';ctx.fill();ctx.strokeStyle='#91aab4';ctx.lineWidth=1.5/zoom;ctx.stroke();}
 function drawGrid(){ctx.save();
   const latitudes=[60,30,0,-30,-60];ctx.lineWidth=0.65/zoom;ctx.strokeStyle='#9ba9a8';ctx.setLineDash([3/zoom,4/zoom]);for(const lat of latitudes){const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();}ctx.setLineDash([]);
@@ -367,19 +370,28 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
 }
 function drawIceWall(){
  if(!antarcticaPath)return;
- // The projected Antarctica polygon encloses the poleward area.
- // The continent is the complement: disk minus that inner polygon.
- const iceRegion=new Path2D();iceRegion.arc(0,0,baseR,0,Math.PI*2);iceRegion.addPath(antarcticaPath);
- ctx.save();ctx.fillStyle='#dcebf0';ctx.fill(iceRegion,'evenodd');
- ctx.lineJoin='round';ctx.strokeStyle='#628fa1';ctx.lineWidth=4.8/zoom;ctx.stroke(antarcticaPath);
- ctx.strokeStyle='#f9ffff';ctx.lineWidth=1.35/zoom;ctx.stroke(antarcticaPath);
- ctx.save();ctx.clip(iceRegion,'evenodd');ctx.strokeStyle='rgba(111,157,173,.30)';ctx.lineWidth=.7/zoom;
- for(let i=0;i<180;i++){const a=i*Math.PI*2/180;const inner=baseR*(.875+.018*Math.sin(i*1.73)+.009*Math.sin(i*.47));const outer=baseR*(.975+.008*Math.sin(i*2.13));ctx.beginPath();ctx.moveTo(inner*Math.sin(a),-inner*Math.cos(a));ctx.lineTo(outer*Math.sin(a),-outer*Math.cos(a));ctx.stroke();}
- ctx.restore();ctx.fillStyle='#315b6a';ctx.font=`700 ${10/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText('ANTARCTICA · ICE WALL',0,-baseR*.936);
- ctx.save();ctx.translate(baseR*.936,0);ctx.rotate(Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
- ctx.save();ctx.translate(0,baseR*.936);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
- ctx.save();ctx.translate(-baseR*.936,0);ctx.rotate(-Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();ctx.restore();
+ ctx.save();
+ // Natural Earth's south-pole edge is now a continuous full-circle arc on the disk rim.
+ // Fill the Antarctic land polygon itself: it is the annular band outside the coastline.
+ ctx.fillStyle='#c7e0e8';ctx.fill(antarcticaPath,'evenodd');
+ ctx.lineJoin='round';ctx.strokeStyle='#527f91';ctx.lineWidth=4.2/zoom;ctx.stroke(antarcticaPath);
+ ctx.strokeStyle='#f6ffff';ctx.lineWidth=1.1/zoom;ctx.stroke(antarcticaPath);
+ // Subtle radial ice striations, clipped to Antarctica rather than its complement.
+ ctx.save();ctx.clip(antarcticaPath,'evenodd');ctx.strokeStyle='rgba(77,125,145,.24)';ctx.lineWidth=.72/zoom;
+ for(let i=0;i<240;i++){
+  const a=i*Math.PI*2/240;
+  ctx.beginPath();ctx.moveTo(baseR*.78*Math.cos(a),-baseR*.78*Math.sin(a));
+  ctx.lineTo(baseR*1.002*Math.cos(a),-baseR*1.002*Math.sin(a));ctx.stroke();
+ }
+ ctx.restore();
+ // Make the ice-wall boundary a continuous, unbroken disk rim.
+ ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.strokeStyle='#426f82';ctx.lineWidth=2.3/zoom;ctx.stroke();
+ ctx.fillStyle='#285565';ctx.font='700 '+(10/zoom)+'px ui-sans-serif,system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText('ANTARCTICA · ICE WALL',0,-baseR*.94);
+ ctx.save();ctx.translate(baseR*.94,0);ctx.rotate(Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
+ ctx.save();ctx.translate(0,baseR*.94);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
+ ctx.save();ctx.translate(-baseR*.94,0);ctx.rotate(-Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
+ ctx.restore();
 }
 function drawCapitals(){if(!layers.capitals)return;const labelOn=layers.capitalNames&&zoom>1.55;for(const p of capitals){const [x,y]=project(p.lon,p.lat);const active=(selected&&selected.type==='capital'&&selected.capital===p);ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();if(labelOn){ctx.font=`${8.6/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#243a43';ctx.fillText(p.city,x+4/zoom,y-3/zoom);}}}
 function drawMeasure(){if(points.length===2){const path=geodesicLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
