@@ -392,7 +392,7 @@ function updateDistortion(){
  const f=clamp(meridionalDistanceFromNorthKm(lat)*1000/NORTH_POLE_ARC_M,0,1);
  let radialScale,tangentialScale;
  if(f<1e-12){radialScale=radialExponent===1?1:radialExponent>1?0:Infinity;tangentialScale=radialScale;}
- else{radialScale=radialExponent*Math.pow(f,radialExponent-1);tangentialScale=cosPhi<1e-12?(radialExponent===1?1:radialExponent>1?0:Infinity):(NORTH_POLE_ARC_M*Math.pow(f,radialExponent))/(N*cosPhi);}
+ else{radialScale=radialExponent*Math.pow(f,radialExponent-1);tangentialScale=cosPhi<1e-12?(lat>0?(radialExponent===1?1:radialExponent>1?0:Infinity):Infinity):(NORTH_POLE_ARC_M*Math.pow(f,radialExponent))/(N*cosPhi);}
  $('distortionPlace').textContent=`${distortionAnchor.label} · ${lat.toFixed(2)}°`;
  $('distortionRadial').textContent=scaleFactorText(radialScale);
  $('distortionEastWest').textContent=scaleFactorText(tangentialScale);
