@@ -36,7 +36,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Scale-Calibrated Gleason World Disk</h1>
-  <div class="subtitle">North-polar flat disk layout · Search countries and capitals · Measure mapped straight-line distances</div>
+  <div class="subtitle">Flat circular disk · Search countries and capitals · Flat-plane measurement</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -74,7 +74,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
     </section>
     <section class="panel">
-      <h2>Distance measurement</h2>
+      <h2>Flat-plane measurement</h2>
       <div class="mode-row">
         <button id="exploreMode" class="active">Explore</button>
         <button id="measureMode">Measure</button>
@@ -102,18 +102,20 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
     </section>
     <section class="panel">
       <h2>Flat-disk calibration</h2>
-      <div class="formula">ρ = f(φ) · R<br>x = ρ · sin(λ)<br>y = −ρ · cos(λ)<br>φ = latitude<br>λ = longitude</div>
+      <div class="formula">r / R = (90° − φ) / 180°<br>x = r · sin(λ)<br>y = −r · cos(λ)<br>φ = latitude<br>λ = longitude</div>
       <table class="cal-table" style="margin-top:9px">
-        <thead><tr><th>Latitude</th><th>k stretch</th><th>m = 1/k</th></tr></thead>
+        <thead><tr><th>Latitude</th><th>Radius / R</th></tr></thead>
         <tbody>
-          <tr><td>60°N</td><td>1.05</td><td>0.955</td></tr>
-          <tr><td>30°N</td><td>1.21</td><td>0.827</td></tr>
-          <tr><td>0°</td><td>1.57</td><td>0.637</td></tr>
-          <tr><td>30°S</td><td>2.42</td><td>0.414</td></tr>
-          <tr><td>60°S</td><td>5.24</td><td>0.191</td></tr>
+          <tr><td>90°N</td><td>0.000</td></tr>
+          <tr><td>60°N</td><td>0.167</td></tr>
+          <tr><td>30°N</td><td>0.333</td></tr>
+          <tr><td>0°</td><td>0.500</td></tr>
+          <tr><td>30°S</td><td>0.667</td></tr>
+          <tr><td>60°S</td><td>0.833</td></tr>
+          <tr><td>90°S</td><td>1.000</td></tr>
         </tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">This is a flat circular map canvas, not a 3D globe. Its geographic placement remains a mapping convention: the radius-to-latitude function is configurable and should be documented. Straight-line measurements use visible map coordinates, not spherical great-circle calculations.</p>
+      <p class="note" style="margin:9px 0 0">This is a 2D flat-disk visualization. The default radius-to-latitude rule is an explicitly chosen display convention, not evidence of a physical Earth model. The nominal scale and flat-plane distances are consequences of this chosen rule.</p>
     </section>
   </aside>
 </div>
