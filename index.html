@@ -17,7 +17,7 @@ h1{margin:4px 0 3px;font-family:Georgia,serif;font-weight:600;font-size:clamp(24
 .status{font-size:12px;color:var(--muted)} .map-actions{display:flex;gap:7px;flex-wrap:wrap}
 button,.button{border:1px solid #b8ae9b;background:#fffdf7;color:#26343a;border-radius:8px;padding:8px 11px;font:600 12px/1.2 inherit;cursor:pointer;transition:.15s}
 button:hover{background:#f0e8d8;border-color:#8d806c}button.primary{background:#294653;color:#fff;border-color:#294653}button.primary:hover{background:#365c6a}button:disabled{opacity:.45;cursor:not-allowed}
-canvas{display:block;width:100%;height:min(77vh,850px);min-height:510px;touch-action:none;cursor:grab;background:#f0e9d9}canvas.dragging{cursor:grabbing}
+canvas{display:block;width:100%;height:min(77vh,850px);min-height:510px;touch-action:none;cursor:grab;background:#f0e9d9}canvas.dragging{cursor:grabbing}.map-card:fullscreen{width:100vw;height:100vh;max-width:none;border:0;border-radius:0;display:flex;flex-direction:column;background:var(--paper2)}.map-card:fullscreen .map-top{flex:0 0 auto}.map-card:fullscreen canvas{width:100%;height:100%;min-height:0;flex:1}.map-card:fullscreen .map-legend{flex:0 0 auto}.map-card:-webkit-full-screen{width:100vw;height:100vh;border:0;border-radius:0;display:flex;flex-direction:column}.map-card:-webkit-full-screen canvas{flex:1;height:auto;min-height:0}
 .map-legend{padding:8px 14px;border-top:1px solid #d8cfbd;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 aside{display:flex;flex-direction:column;gap:12px;min-width:0}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 5px 18px #3d31200b}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;color:#6c5945}
@@ -36,13 +36,14 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Scale-Calibrated Gleason World Disk</h1>
-  <div class="subtitle">North-Polar Azimuthal Equidistant Projection · Search countries and capitals · Measure great-circle distances</div>
+  <div class="subtitle">North-polar flat disk layout · Search countries and capitals · Measure mapped straight-line distances</div>
 </header>
 <div class="app">
-  <main class="map-card">
+  <main class="map-card" id="mapCard">
     <div class="map-top">
       <div class="status" id="status">Loading geographic data…</div>
       <div class="map-actions">
+        <button id="fullscreenMap" aria-label="Enter full screen map">Full screen</button>
         <button id="resetView">Reset view</button>
         <button id="zoomOut">− Zoom</button>
         <button id="zoomIn">+ Zoom</button>
@@ -80,7 +81,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
       <p class="small" id="measureHelp" style="margin:9px 0 7px">Switch to Measure, then click two places on the disk. You can also assign a selected capital to A or B.</p>
       <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">Great-circle distance · spherical mean radius 6,371 km</div>
+      <div class="measure-sub" id="distanceSub">Straight-line distance on the flat disk</div>
       <div id="endpointRows" style="margin-top:8px">
         <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
         <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
@@ -100,8 +101,8 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
     </section>
     <section class="panel">
-      <h2>Projection calibration</h2>
-      <div class="formula">r = R · θ<br>x = r · sin(λ)<br>y = −r · cos(λ)<br>h = 1<br>k(θ) = θ / sin(θ)<br>ds² = dr² + R² sin²(θ) dλ²</div>
+      <h2>Flat-disk calibration</h2>
+      <div class="formula">ρ = f(φ) · R<br>x = ρ · sin(λ)<br>y = −ρ · cos(λ)<br>φ = latitude<br>λ = longitude</div>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>k stretch</th><th>m = 1/k</th></tr></thead>
         <tbody>
@@ -112,15 +113,18 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
           <tr><td>60°S</td><td>5.24</td><td>0.191</td></tr>
         </tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The radial scale is true. East–west scale distortion grows toward the Antarctic rim. Distances are calculated on the sphere from latitude/longitude—not from flat screen pixels.</p>
+      <p class="note" style="margin:9px 0 0">This is a flat circular map canvas, not a 3D globe. Its geographic placement remains a mapping convention: the radius-to-latitude function is configurable and should be documented. Straight-line measurements use visible map coordinates, not spherical great-circle calculations.</p>
     </section>
   </aside>
 </div>
-<div class="footer">Map geometry: Natural Earth 1:110m Admin 0 country outlines and Antarctica boundary (public-domain geographic data). Antarctica is rendered from its geographic coastline as an irregular polar landmass, not as a perfect circular band. Capital coordinates: country-data / REST Countries-derived reference table. Measurements assume a spherical Earth with R = 6,371 km; they are geographic great-circle distances, not travel routes.</div>
+<div class="footer">Map outlines and coordinates are sourced from Natural Earth and country-data. The canvas is displayed as a two-dimensional flat disk with a configurable radial latitude convention; its distance readout measures straight lines on that disk and does not claim to represent measured physical distances.</div>
 <script>
 (() => {
 'use strict';
 const EARTH_R = 6371;
+// Flat-disk radial convention: edit this function to calibrate latitude-to-radius.
+// The default maps 90°N to the center and 90°S to the outer rim linearly.
+const radialFraction = lat => (90-lat)/180;
 const COUNTRY_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
 const CAPITAL_URL = 'https://raw.githubusercontent.com/iliyaj/country-data/main/data/country-capital.csv';
 const $ = id => document.getElementById(id);
@@ -139,11 +143,11 @@ const lonName = d => d===0?'0° / 360°':`${d}°`;
 function isoFor(f){const p=f.properties||{};const candidates=[p.ISO_A3_EH,p.ISO_A3,p.ADM0_A3,p.SOV_A3];const v=candidates.find(x=>x&&String(x).toUpperCase()!=='-99')||'';return String(v).toUpperCase();}
 function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||p.FORMAL_EN||'Unknown';}
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return colors[Math.abs(h)%colors.length];}
-function project(lon,lat){const theta=(90-lat)*Math.PI/180;const rr=baseR*theta/Math.PI;const l=rad(lon);return [rr*Math.sin(l),-rr*Math.cos(l)];}
-function unproject(x,y){const rho=Math.hypot(x,y);const theta=Math.min(Math.PI,rho/baseR*Math.PI);const lat=90-theta*180/Math.PI;const lon=rho<1e-7?0:Math.atan2(x,-y)*180/Math.PI;return {lat,lon};}
+function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.sin(l),-rho*Math.cos(l)];}
+function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-fraction*180;const lon=rho<1e-7?0:Math.atan2(x,-y)*180/Math.PI;return {lat,lon};}
 function geoVec(p){const a=rad(p.lat),b=rad(p.lon);return [Math.cos(a)*Math.cos(b),Math.cos(a)*Math.sin(b),Math.sin(a)];}
-function greatCircle(a,b){const lat1=rad(a.lat),lat2=rad(b.lat),dLat=lat2-lat1,dLon=Math.atan2(Math.sin(rad(b.lon-a.lon)),Math.cos(rad(b.lon-a.lon)));const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;const root=Math.sqrt(clamp(h,0,1));return 2*EARTH_R*Math.atan2(root,Math.sqrt(Math.max(0,1-root*root)));}
-function slerpPath(a,b){const u=geoVec(a),v=geoVec(b);const dot=clamp(u[0]*v[0]+u[1]*v[1]+u[2]*v[2],-1,1);const omega=Math.acos(dot),so=Math.sin(omega),path=[];for(let i=0;i<=180;i++){const t=i/180;let q;if(Math.abs(so)<1e-8){if(dot>0)q=u;else{let axis=Math.abs(u[0])<.8?[1,0,0]:[0,1,0];let cross=[u[1]*axis[2]-u[2]*axis[1],u[2]*axis[0]-u[0]*axis[2],u[0]*axis[1]-u[1]*axis[0]];const n=Math.hypot(...cross);cross=cross.map(x=>x/n);q=u.map((x,j)=>x*Math.cos(Math.PI*t)+cross[j]*Math.sin(Math.PI*t));}}else{const s1=Math.sin((1-t)*omega)/so,s2=Math.sin(t*omega)/so;q=u.map((x,j)=>x*s1+v[j]*s2);}const lat=Math.atan2(q[2],Math.hypot(q[0],q[1]))*180/Math.PI;const lon=Math.atan2(q[1],q[0])*180/Math.PI;path.push(project(lon,lat));}return path;}
+function flatDistance(a,b){const A=project(a.lon,a.lat),B=project(b.lon,b.lat);return Math.hypot(B[0]-A[0],B[1]-A[1])*(EARTH_R/baseR);}
+function flatLinePath(a,b){return [project(a.lon,a.lat),project(b.lon,b.lat)];}
 function centroidOfFeature(f){let sx=0,sy=0,sz=0,n=0;function scan(ring){for(const c of ring){const a=rad(c[1]),b=rad(c[0]);sx+=Math.cos(a)*Math.cos(b);sy+=Math.cos(a)*Math.sin(b);sz+=Math.sin(a);n++;}}const g=f.geometry;if(!g)return {lat:0,lon:0};if(g.type==='Polygon')g.coordinates.forEach((r,i)=>i===0&&scan(r));else if(g.type==='MultiPolygon')g.coordinates.forEach(poly=>poly[0]&&scan(poly[0]));if(!n)return {lat:0,lon:0};return {lat:Math.atan2(sz,Math.hypot(sx,sy))*180/Math.PI,lon:Math.atan2(sy,sx)*180/Math.PI};}
 function makePath(f){
  const path=new Path2D(),g=f.geometry;if(!g)return path;
@@ -170,7 +174,7 @@ function makePath(f){
 function resize(){const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);baseR=Math.min(width,height)*.405;pathRecords=countries.map(c=>({country:c,path:makePath(c.feature)}));antarcticaPath=antarcticaFeature?makePath(antarcticaFeature):null;draw();}
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle='#eee7d6';ctx.fill();ctx.strokeStyle='#91aab4';ctx.lineWidth=1.5/zoom;ctx.stroke();}
 function drawGrid(){ctx.save();
-  const latitudes=[60,30,0,-30,-60];ctx.lineWidth=0.65/zoom;ctx.strokeStyle='#9ba9a8';ctx.setLineDash([3/zoom,4/zoom]);for(const lat of latitudes){const r=baseR*(90-lat)/180;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();}ctx.setLineDash([]);
+  const latitudes=[60,30,0,-30,-60];ctx.lineWidth=0.65/zoom;ctx.strokeStyle='#9ba9a8';ctx.setLineDash([3/zoom,4/zoom]);for(const lat of latitudes){const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();}ctx.setLineDash([]);
   for(let d=0;d<360;d+=15){const [x,y]=project(d,-90);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.strokeStyle=d%30===0?'#9ba8a5':'#c0c5b7';ctx.lineWidth=(d%30===0?.72:.42)/zoom;ctx.stroke();}
   ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle='#485c60';ctx.fill();ctx.restore();}
 function drawAnnotations(){
@@ -178,7 +182,7 @@ function drawAnnotations(){
   const ringLabels=[['60°N',60],['30°N',30],['EQUATOR',0],['30°S',-30],['60°S',-60]];
   ctx.textAlign='center';ctx.textBaseline='middle';
   const labelAngle=rad(225);
-  for(const [label,lat] of ringLabels){const r=baseR*(90-lat)/180;const x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle);ctx.fillStyle='#405a62';ctx.fillText(label,x,y);}
+  for(const [label,lat] of ringLabels){const r=baseR*radialFraction(lat);const x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle);ctx.fillStyle='#405a62';ctx.fillText(label,x,y);}
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;
   for(let d=0;d<360;d+=15){const a=rad(d),r=baseR*1.035;const x=r*Math.sin(a),y=-r*Math.cos(a);ctx.fillStyle='#405a62';ctx.fillText(lonName(d),x,y);}
   ctx.save();ctx.translate(-baseR*.84,-baseR*.84);ctx.strokeStyle='#586c70';ctx.fillStyle='#586c70';ctx.lineWidth=1.2/zoom;ctx.beginPath();ctx.moveTo(0,-15/zoom);ctx.lineTo(4/zoom,0);ctx.lineTo(0,15/zoom);ctx.lineTo(-4/zoom,0);ctx.closePath();ctx.fill();ctx.font=`bold ${10/zoom}px Georgia`;ctx.textAlign='center';ctx.fillText('N',0,-21/zoom);ctx.restore();ctx.restore();
@@ -204,7 +208,7 @@ function drawIceWall(){
  ctx.save();ctx.translate(-baseR*.936,0);ctx.rotate(-Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();ctx.restore();
 }
 function drawCapitals(){if(!layers.capitals)return;const labelOn=layers.capitalNames&&zoom>1.55;for(const p of capitals){const [x,y]=project(p.lon,p.lat);const active=(selected&&selected.type==='capital'&&selected.capital===p);ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();if(labelOn){ctx.font=`${8.6/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#243a43';ctx.fillText(p.city,x+4/zoom,y-3/zoom);}}}
-function drawMeasure(){if(points.length===2){const path=slerpPath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
+function drawMeasure(){if(points.length===2){const path=flatLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
 function draw(){
  if(!width||!height)return;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle='#f0e9d9';ctx.fillRect(0,0,width,height);
@@ -228,7 +232,7 @@ function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const km=greatCircle(points[0],points[1]);$('distanceValue').textContent=`${km.toLocaleString('en-US',{maximumFractionDigits:1})} km`;$('distanceSub').textContent=`${(km*0.621371).toLocaleString('en-US',{maximumFractionDigits:1})} mi · Spherical great-circle distance · R = ${EARTH_R.toLocaleString()} km`;$('measureHelp').textContent='Measurement complete. Click the map to begin a new A → B measurement, or replace either endpoint from a selected capital.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Great-circle distance · R = 6,371 km';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Click two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const km=flatDistance(points[0],points[1]);$('distanceValue').textContent=`${km.toLocaleString('en-US',{maximumFractionDigits:1})} km`;$('distanceSub').textContent=`${(km*0.621371).toLocaleString('en-US',{maximumFractionDigits:1})} map units · Flat-disk straight-line distance · nominal R = ${EARTH_R.toLocaleString()} km`;$('measureHelp').textContent='Measurement complete. Click the map to begin a new A → B measurement, or replace either endpoint from a selected capital.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk straight-line distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Click two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){$('suggestions').classList.remove('open');$('search').value=item.type==='capital'?`${item.obj.city}, ${item.obj.countryName||''}`.replace(/, $/,''):item.obj.name;if(item.type==='capital'){showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,1.55));}else{showCountry(item.obj);const center=item.obj.center;focusGeo(center.lat,center.lon,Math.max(zoom,1.25));}}
@@ -289,8 +293,8 @@ function restoreSharedState(){
 function niceScaleValue(value){const power=Math.pow(10,Math.floor(Math.log10(value))),fraction=value/power;return (fraction>=7.5?10:fraction>=3.5?5:fraction>=1.5?2:1)*power;}
 function drawScaleBar(){
  if(!baseR||!zoom)return;
- const targetPx=110,raw=targetPx*Math.PI*EARTH_R/(baseR*zoom),km=niceScaleValue(raw),barPx=km*baseR*zoom/(Math.PI*EARTH_R);
- const x=16,y=height-22,label=`${km.toLocaleString('en-US')} km · radial scale`;ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
+ const targetPx=110,raw=targetPx*EARTH_R/(baseR*zoom),km=niceScaleValue(raw),barPx=km*baseR*zoom/EARTH_R;
+ const x=16,y=height-22,label=`${km.toLocaleString('en-US')} map units · nominal scale`;ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
  ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,boxWidth,43);ctx.strokeRect(x-7,y-29,boxWidth,43);
  ctx.strokeStyle='#294653';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+barPx,y);ctx.moveTo(x,y-5);ctx.lineTo(x,y+5);ctx.moveTo(x+barPx,y-5);ctx.lineTo(x+barPx,y+5);ctx.stroke();
  ctx.fillStyle='#294653';ctx.fillText(label,x,y-14);ctx.restore();
@@ -339,6 +343,9 @@ $('exploreMode').addEventListener('click',()=>{mode='explore';setModeUI();update
 $('exportPNG').addEventListener('click',exportPNG);$('shareMap').addEventListener('click',copyShareLink);
 [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica']].forEach(([id,key])=>$(id).addEventListener('change',e=>{layers[key]=e.target.checked;draw();}));
 $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;draw();});$('zoomIn').addEventListener('click',()=>{zoom=clamp(zoom*1.25,.6,6);draw();});$('zoomOut').addEventListener('click',()=>{zoom=clamp(zoom/1.25,.6,6);draw();});
+function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
+async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
+$('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});
 canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;const lx=(sx-width/2-panX)/zoom,ly=(sy-height/2-panY)/zoom;const nz=clamp(zoom*(e.deltaY<0?1.12:.89),.6,6);panX=sx-width/2-lx*nz;panY=sy-height/2-ly*nz;zoom=nz;draw();},{passive:false});
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointerDown={x:e.clientX,y:e.clientY,px:panX,py:panY};didDrag=false;});canvas.addEventListener('pointermove',e=>{if(pointerDown){const dx=e.clientX-pointerDown.x,dy=e.clientY-pointerDown.y;if(Math.hypot(dx,dy)>4)didDrag=true;if(didDrag){panX=pointerDown.px+dx;panY=pointerDown.py+dy;canvas.classList.add('dragging');draw();}return;}const {x,y}=mapCoords(e);const cap=findCapitalAt(x,y,9);const country=cap?null:findCountryAt(x,y);if(country!==hoveredCountry||cap!==hoveredCapital){hoveredCountry=country;hoveredCapital=cap;draw();updateStatus();}});
 canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging');});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging');});
