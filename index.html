@@ -159,7 +159,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <script>
 (() => {
 'use strict';
-const EARTH_R = 6371;
+const MAP_RADIUS = 6371; // nominal radius in map units for scale-bar and flat-distance display
 // Flat-disk radial convention: p=1 is equal radial spacing; other powers are comparison settings.
 let radialExponent = 1;
 const radialFraction = lat => Math.pow(clamp((90-lat)/180,0,1),radialExponent);
@@ -187,8 +187,7 @@ function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return colors[Math.abs(h)%colors.length];}
 function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.cos(l),-rho*Math.sin(l)];}
 function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-180*Math.pow(fraction,1/radialExponent);const lon=rho<1e-7?0:Math.atan2(-y,x)*180/Math.PI;return {lat,lon};}
-function geoVec(p){const a=rad(p.lat),b=rad(p.lon);return [Math.cos(a)*Math.cos(b),Math.cos(a)*Math.sin(b),Math.sin(a)];}
-function flatDistance(a,b){const A=project(a.lon,a.lat),B=project(b.lon,b.lat);return Math.hypot(B[0]-A[0],B[1]-A[1])*(EARTH_R/baseR);}
+function flatDistance(a,b){const A=project(a.lon,a.lat),B=project(b.lon,b.lat);return Math.hypot(B[0]-A[0],B[1]-A[1])*(MAP_RADIUS/baseR);}
 function flatLinePath(a,b){return [project(a.lon,a.lat),project(b.lon,b.lat)];}
 function centroidOfFeature(f){let sx=0,sy=0,sz=0,n=0;function scan(ring){for(const c of ring){const a=rad(c[1]),b=rad(c[0]);sx+=Math.cos(a)*Math.cos(b);sy+=Math.cos(a)*Math.sin(b);sz+=Math.sin(a);n++;}}const g=f.geometry;if(!g)return {lat:0,lon:0};if(g.type==='Polygon')g.coordinates.forEach((r,i)=>i===0&&scan(r));else if(g.type==='MultiPolygon')g.coordinates.forEach(poly=>poly[0]&&scan(poly[0]));if(!n)return {lat:0,lon:0};return {lat:Math.atan2(sz,Math.hypot(sx,sy))*180/Math.PI,lon:Math.atan2(sy,sx)*180/Math.PI};}
 function makePath(f){
@@ -285,7 +284,7 @@ function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const km=flatDistance(points[0],points[1]);$('distanceValue').textContent=`${km.toLocaleString('en-US',{maximumFractionDigits:1})} map units`;$('distanceSub').textContent=`Flat-disk straight-line distance · nominal scale radius R = ${EARTH_R.toLocaleString()} map units`;$('measureHelp').textContent='Measurement complete. Click the map to begin a new A → B measurement, or replace either endpoint from a selected capital.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk straight-line distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Click two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const km=flatDistance(points[0],points[1]);$('distanceValue').textContent=`${km.toLocaleString('en-US',{maximumFractionDigits:1})} map units`;$('distanceSub').textContent=`Flat-disk straight-line distance · nominal scale radius R = ${MAP_RADIUS.toLocaleString()} map units`;$('measureHelp').textContent='Measurement complete. Click the map to begin a new A → B measurement, or replace either endpoint from a selected capital.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk straight-line distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Click two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){$('suggestions').classList.remove('open');$('search').value=item.type==='capital'?`${item.obj.city}, ${item.obj.countryName||''}`.replace(/, $/,''):item.obj.name;if(item.type==='capital'){showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,1.55));}else{showCountry(item.obj);const center=item.obj.center;focusGeo(center.lat,center.lon,Math.max(zoom,1.25));}}
@@ -368,7 +367,7 @@ function loadHistoricalScan(force=false){
 function niceScaleValue(value){const power=Math.pow(10,Math.floor(Math.log10(value))),fraction=value/power;return (fraction>=7.5?10:fraction>=3.5?5:fraction>=1.5?2:1)*power;}
 function drawScaleBar(){
  if(!baseR||!zoom)return;
- const targetPx=110,raw=targetPx*EARTH_R/(baseR*zoom),km=niceScaleValue(raw),barPx=km*baseR*zoom/EARTH_R;
+ const targetPx=110,raw=targetPx*MAP_RADIUS/(baseR*zoom),km=niceScaleValue(raw),barPx=km*baseR*zoom/MAP_RADIUS;
  const x=16,y=height-22,label=`${km.toLocaleString('en-US')} map units · nominal scale`;ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
  ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,boxWidth,43);ctx.strokeRect(x-7,y-29,boxWidth,43);
  ctx.strokeStyle='#294653';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+barPx,y);ctx.moveTo(x,y-5);ctx.lineTo(x,y+5);ctx.moveTo(x+barPx,y-5);ctx.lineTo(x+barPx,y+5);ctx.stroke();
@@ -422,7 +421,7 @@ $('radialPreset').addEventListener('change',e=>{const values={linear:1,compresse
 $('radialExponent').addEventListener('input',e=>{radialExponent=clamp(Number(e.target.value),.5,2);$('radialPreset').value='custom';syncRadialControls();resize();});
 $('historicalEnabled').addEventListener('change',e=>{historical.enabled=e.target.checked;if(historical.enabled)loadHistoricalScan();draw();});
 [['historicalOpacity','opacity'],['historicalCenterX','centerX'],['historicalCenterY','centerY'],['historicalDiameter','diameter'],['historicalScale','scale'],['historicalRotation','rotation']].forEach(([id,key])=>$(id).addEventListener('input',e=>{historical[key]=Number(e.target.value);syncHistoricalControls();draw();}));
-$('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:45,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
+$('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
 $('retryHistorical').addEventListener('click',()=>loadHistoricalScan(true));
 [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica']].forEach(([id,key])=>$(id).addEventListener('change',e=>{layers[key]=e.target.checked;draw();}));
 $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;draw();});$('zoomIn').addEventListener('click',()=>{zoom=clamp(zoom*1.25,.6,6);draw();});$('zoomOut').addEventListener('click',()=>{zoom=clamp(zoom/1.25,.6,6);draw();});
