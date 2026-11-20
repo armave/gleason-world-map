@@ -16,6 +16,10 @@ where `Dₙ` is the WGS84 surface distance southward from 90°N. At the default 
 
 All coastlines, grid rings, clicks, capitals, and measurement endpoints use the same longitude orientation and radial calibration.
 
+Country area and custom polygon area are calculated using GeographicLib's ellipsoidal PolygonArea method. The area tool draws each edge as a shortest WGS84 geodesic, and reports area in m² or km² and perimeter in m or km. The selected-country area is calculated from the country boundary rings; 1:10m Natural Earth geometry is still a cartographic dataset, not a cadastral survey.
+
+The projection diagnostic reports local north–south, east–west, and area scale factors at the selected point. These values quantify the distortion of the displayed disk relative to the WGS84 ellipsoid; they do not change the geodesic distance and area readouts.
+
 Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid** through GeographicLib's Karney inverse/direct algorithms, which converge for near-antipodal point pairs. If the GeographicLib browser script is unavailable, the app falls back to Vincenty for pairs where it converges. For a near-antipodal pair, it shows “Unavailable” rather than presenting a less accurate approximation as a real-world measurement. The dashed connecting line is sampled along that geodesic and projected onto the disk; its displayed length is not measured in drawing pixels. Results are shown in metres below 1 km and kilometres for longer distances.
 
 The scale bar is also grounded in WGS84: it recalculates the real ground distance represented by a horizontal screen segment near the current view centre. Geodesic calculations use [GeographicLib's JavaScript implementation](https://geographiclib.sourceforge.io/JavaScript/doc), loaded from the published version 2.2.0 browser bundle on jsDelivr with a Subresource Integrity hash (MIT/X11 license). It is a **local** scale indicator, not a claim that the whole disk has one uniform scale. Panning, zooming, or changing the radial exponent can change the local scale.
@@ -30,24 +34,30 @@ The optional overlay loads the Boston Public Library's scan of Alexander Gleason
 - Adjust opacity to compare the engraved map with the digital reference layers.
 - Adjust crop centre X/Y, crop diameter, overlay scale, and fine rotation to register the printed disk.
 - Reset alignment or reload the scan.
-- Shared URLs retain the radial exponent and historical overlay settings.
+- Shared URLs retain radial settings, distance endpoints, area vertices, and historical registration control points.
 
-The crop starts from the published scan proportions: the full sheet is approximately 4,773 × 6,794 pixels, and the printed disk is about 3,610 pixels across. The initial 75.6% crop diameter is therefore an informed starting point, not automatic georeferencing. Fine adjustment may still be needed. The historical scan is never geometrically warped: when p ≠ 1, the modern vector map intentionally departs from the 1892 print, allowing the user to compare alternative radial conventions against the original.
+The scan supports control-point registration: pick a geographic location on the vector map, then click the same location in the scan preview. At least three non-collinear points are required; 8–12 or more well-distributed points around the disk are recommended. With control points present, the app warps the scanned image using a piecewise-affine triangulation into the selected WGS84-based disk projection. This is a practical manual registration, not a surveyed historical georeference; accuracy depends on the points selected and the distortions/printing errors in the original plate.
+
+Without control points, the fallback crop starts from the published scan proportions: the full sheet is approximately 4,773 × 6,794 pixels, and the printed disk is about 3,610 pixels across. The initial 75.6% crop diameter is an informed starting point, not automatic georeferencing. With control points, the scan is piecewise-affine warped to the active WGS84-based disk projection; adding more well-distributed points improves how closely the warp follows the projection between anchors. Because p ≠ 1 changes the map geometry, the same scan registration will be recalculated for the chosen exponent.
 
 Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public Library / Digital Commonwealth](https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z). Image identifier: `commonwealth:7h149v867`. The catalogue reports **no known copyright restrictions**. The image is loaded on demand; first use requires access to the archive's IIIF image service.
 
 ## Features
 
-- 2D circular flat-disk layout
+- 2D circular flat-disk layout with WGS84 ellipsoidal geodesy
 - Adjustable equal, compressed, expanded, and custom radial latitude spacing
 - Live latitude-to-radius calibration table
 - Gleason longitude orientation: Greenwich right, 90°E up
 - Search and select countries and capitals
 - WGS84 ellipsoidal surface-distance measurement in metres and kilometres
+- WGS84 polygon area and perimeter measurement in m²/km²
+- WGS84 geodesic area calculation for the selected country from its boundary geometry
+- Local radial, tangential, and areal projection-distortion factors
+- Manual historical-scan georeferencing using user-picked geographic/image control points
 - View-centred local ground scale bar, recalculated for pan, zoom, and radial calibration
 - Geodesic measurement path projected onto the flat disk
 - Full-screen map mode with automatic canvas resizing
-- Nominal scale indicator
+- WGS84 local scale indicator
 - Toggle country outlines, grid, capital markers, capital names, and Antarctica
 - Optional 1892 scan overlay with opacity, crop, scale, and rotation controls
 - Export the map as PNG
@@ -76,15 +86,15 @@ Expected URL: `https://armave.github.io/gleason-world-map/`
 
 ## Geographic data sources
 
-- Country and Antarctica outlines: [Natural Earth 1:110m Admin 0](https://github.com/nvkelso/natural-earth-vector).
+- Country and Antarctica outlines: [Natural Earth 1:10m Admin 0](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/), with automatic 1:110m fallback if the detailed file cannot be fetched. Natural Earth describes 1:10m as its most detailed vector scale for country/region mapping.
 - Capital coordinates: [country-data](https://github.com/iliyaj/country-data), `data/country-capital.csv`.
 - Historical scan: [Boston Public Library / Digital Commonwealth](https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z), item `commonwealth:7h149v867`.
 
 ## Important limitations
 
-- Natural Earth 1:110m geometry is generalized, not a high-resolution coastline survey.
-- The `p = 1` radial setting follows WGS84 meridional ground distance from the North Pole. Other exponents deliberately distort radial spacing for visual comparison.
+- Natural Earth 1:10m geometry is substantially more detailed than 1:110m but remains generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
+- The `p = 1` radial setting follows WGS84 meridional ground distance from the North Pole. Other exponents deliberately distort radial spacing for visual comparison. The distortion panel reports local radial, tangential, and area scale factors so that remaining projection error is explicit.
 - The flat-disk projection does not preserve every direction, distance, or area globally. The on-map scale bar is local; two-point readouts remain WGS84 surface geodesics regardless of projection settings.
-- The historical scan is a printed sheet, not an automatically georeferenced overlay. Crop and alignment controls are manual; use it for visual comparison rather than as a surveyed reference.
-- Nominal map distances describe the selected drawing convention. They do not independently establish physical distances.
+- The historical scan is a printed sheet, not a pre-surveyed or automatically georeferenced overlay. Manual control-point registration improves its fit, but the historical engraving itself may contain cartographic generalization, compilation error, plate distortion, or print deformation. Treat it as a comparison layer, not ground truth.
+- A planar disk cannot preserve all global distances, angles, shapes, and areas simultaneously. WGS84 geodesic measurements remain the authoritative physical-distance/area readings; the disk is a visual projection and its local distortion factors must be considered.
 - Seam-crossing and high-latitude polygon topology still deserves visual review against higher-resolution data.
