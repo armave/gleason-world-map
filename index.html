@@ -330,8 +330,8 @@ async function load(){
   if(!countries.length||!capitals.length)throw new Error('One or more geographic datasets did not contain usable records.');
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   resize();restoreSharedState();draw();
-  const cached=geoData.stale||capData.stale?' · using cached data':'';
-  $('status').textContent=`Ready · ${countries.length} countries/areas · ${capitals.length} capitals${cached}`;updateStatus();
+  const cached=geoData.stale||capData.stale;
+  updateStatus();if(cached)$('status').textContent+=' · using cached data';
  }catch(err){showLoadError(err);}
 }
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
