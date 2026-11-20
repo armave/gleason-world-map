@@ -115,7 +115,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <thead><tr><th>Latitude</th><th>θ (rad)</th><th>r (km)</th><th>k stretch</th><th>m decoder</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The radial scale is exactly 1:1 from the North Pole. The disk rim is πR = 20,015.09 km. The tangential map stretch is k = θ/sin(θ); multiply a flat east–west map distance by m = sin(θ)/θ to recover spherical ground distance. At the South Pole, longitude converges and m tends to zero. This is the specified spherical model, not a WGS84 ellipsoid.</p>
+      <p class="note" style="margin:9px 0 0">The radial scale is exactly 1:1 from the North Pole. The disk rim is πR = 20,015.09 km. The tangential map stretch is k = θ/sin(θ); multiply a flat east–west map distance by m = sin(θ)/θ to recover spherical ground distance. At the South Pole, longitude converges and m tends to zero. This is the specified spherical model, not a the selected sphere.</p>
     </section>
     <section class="panel" id="distortionPanel">
       <h2>Projection distortion at selected location</h2>
@@ -394,23 +394,32 @@ function drawIceWall(){
  ctx.restore();
 }
 function drawCapitals(){if(!layers.capitals)return;const labelOn=layers.capitalNames&&zoom>1.55;for(const p of capitals){const [x,y]=project(p.lon,p.lat);const active=(selected&&selected.type==='capital'&&selected.capital===p);ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();if(labelOn){ctx.font=`${8.6/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#243a43';ctx.fillText(p.city,x+4/zoom,y-3/zoom);}}}
-function drawMeasure(){if(points.length===2){const path=geodesicLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
+function drawMeasure(){if(points.length===2){const path=sphericalLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
 function drawArea(){
  if(!areaPoints.length)return;
  ctx.save();
  if(areaPoints.length>=2){
   ctx.beginPath();
-  areaPoints.forEach((point,i)=>{if(i===0){const q=project(point.lon,point.lat);ctx.moveTo(q[0],q[1]);return;}const line=geodesicLinePath(areaPoints[i-1],point);line.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));});
-  if(areaFinished&&areaPoints.length>=3){const close=geodesicLinePath(areaPoints[areaPoints.length-1],areaPoints[0]);close.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
+  areaPoints.forEach((point,i)=>{if(i===0){const q=project(point.lon,point.lat);ctx.moveTo(q[0],q[1]);return;}const line=sphericalLinePath(areaPoints[i-1],point);line.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));});
+  if(areaFinished&&areaPoints.length>=3){const close=sphericalLinePath(areaPoints[areaPoints.length-1],areaPoints[0]);close.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
   ctx.strokeStyle='#4f7e8f';ctx.lineWidth=2/zoom;ctx.setLineDash([5/zoom,3/zoom]);ctx.stroke();ctx.setLineDash([]);
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x,y);});
  ctx.restore();
 }
 function updateAreaMeasurement(){
- $('areaVertexCount').textContent=`${areaPoints.length} vertices`;
- if(areaFinished&&areaPoints.length>=3){const result=wgs84PolygonMetrics(areaPoints);if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`WGS84 geodesic perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Area and perimeter are calculated on the WGS84 ellipsoid; polygon edges are shortest geodesics between vertices.';}else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='GeographicLib polygon-area engine unavailable';}}
- else{$('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';$('areaHelp').textContent=areaPoints.length?'Add more vertices, then finish the polygon to calculate area and perimeter.':'Choose Area, then click at least three points on the disk. Finish to calculate ellipsoidal area and perimeter.';}
+ $('areaVertexCount').textContent=areaPoints.length+' vertices';
+ if(areaFinished&&areaPoints.length>=3){
+  const result=sphericalPolygonMetrics(areaPoints);
+  if(result){
+   $('areaValue').textContent=formatArea(result.areaM2);
+   $('areaPerimeter').textContent='Great-circle perimeter · '+formatDistance(result.perimeterM);
+   $('areaHelp').textContent='Area is spherical excess on the R = 6,371 km sphere; each edge follows the shorter great-circle arc.';
+  }else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='At least three valid vertices are required';}
+ }else{
+  $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
+  $('areaHelp').textContent=areaPoints.length?'Add more vertices, then finish the polygon to calculate spherical area and perimeter.':'Choose Area, then click at least three points on the disk. Finish to calculate spherical area and perimeter.';
+ }
 }
 function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
 function drawHistoricalOverlay(){
@@ -443,12 +452,31 @@ function draw(){
 function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;return {x:(sx-width/2-panX)/zoom,y:(sy-height/2-panY)/zoom,sx,sy};}
-function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Geodesic distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
-function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=featureGeodesicAreaM2(c.feature);$('selectionArea').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;setDistortionAnchor(c.center,c.name);draw();}
-function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionArea').textContent=c?formatArea(featureGeodesicAreaM2(c.feature)):'—';$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;setDistortionAnchor(p,p.city);draw();}
+function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Great-circle distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
+function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=featureSphericalAreaM2(c.feature);$('selectionArea').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;setDistortionAnchor(c.center,c.name);draw();}
+function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionArea').textContent=c?formatArea(featureSphericalAreaM2(c.feature)):'—';$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;setDistortionAnchor(p,p.city);draw();}
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();setDistortionAnchor(obj,obj.name);updateMeasurement();draw();updateStatus();}
-function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The displayed value is surface distance; the dashed line is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
+function updateMeasurement(){
+ $('setB').disabled=!(selected&&selected.capital&&points.length>0);
+ const box=$('endpointRows');box.innerHTML='';
+ for(let i=0;i<2;i++){
+  const p=points[i],row=document.createElement('div');row.className='point-row';
+  const badge=document.createElement('span');badge.className='point-badge '+(i===0?'a':'b');badge.textContent=i?'B':'A';
+  const name=document.createElement('span');name.textContent=p?p.name:'Not set';
+  const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';
+  row.append(badge,name,coord);box.append(row);
+ }
+ if(points.length===2){
+  const result=sphericalInverse(points[0],points[1]);
+  $('distanceValue').textContent=formatDistance(result.distanceMeters);
+  $('distanceSub').textContent='Shortest spherical great-circle distance · R = 6,371 km';
+  $('measureHelp').textContent='Measurement complete. The readout is spherical surface distance; the dashed line is the corresponding great-circle path projected onto the disk.';
+ }else{
+  $('distanceValue').textContent='—';
+  $('distanceSub').textContent='Spherical surface distance · R = 6,371 km';
+  $('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';
+ }
+}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){$('suggestions').classList.remove('open');$('search').value=item.type==='capital'?`${item.obj.city}, ${item.obj.countryName||''}`.replace(/, $/,''):item.obj.name;if(item.type==='capital'){showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,1.55));}else{showCountry(item.obj);const center=item.obj.center;focusGeo(center.lat,center.lon,Math.max(zoom,1.25));}}
@@ -506,7 +534,7 @@ async function fetchTextCached(url,key){
 function restoreSharedState(){
  const q=new URLSearchParams(window.location.search),z=Number(q.get('z'));
  if(q.has('z')&&Number.isFinite(z))zoom=clamp(z,.6,6);
- const re=Number(q.get('re'));if(q.has('re')&&Number.isFinite(re))radialExponent=clamp(re,.5,2);
+
  const hist=q.get('hist');if(hist){const v=hist.split(',').map(Number);if(v.length===6&&v.every(Number.isFinite)){historical.enabled=v[0]===1;historical.opacity=clamp(v[1],5,90);historical.centerX=clamp(v[2],20,80);historical.centerY=clamp(v[3],15,85);historical.diameter=clamp(v[4],55,90);historical.scale=clamp(v[5],80,120);}}
  const hr=Number(q.get('hr'));if(q.has('hr')&&Number.isFinite(hr))historical.rotation=clamp(hr,-5,5);
  const px=Number(q.get('px')),py=Number(q.get('py'));
@@ -518,14 +546,19 @@ function restoreSharedState(){
  const tie=q.get('gc');if(tie){registrationPoints=tie.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===4&&v.every(Number.isFinite)&&v[0]>=0&&v[0]<=1&&v[1]>=0&&v[1]<=1&&Math.abs(v[2])<=90&&Math.abs(v[3])<=180).map(v=>({u:v[0],v:v[1],lat:v[2],lon:v[3]})).slice(0,30);}
  if(areaPoints.length)mode='area';else if(points.length)mode='measure';
  for(const [id,key] of [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica']])$(id).checked=layers[key];
- syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
+ syncSphericalCalibration();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();updateDistortion();
 }
-function syncRadialControls(){
- $('radialExponent').value=radialExponent.toFixed(2);$('radialExponentValue').textContent=radialExponent.toFixed(2);
- const rows=[90,60,30,0,-30,-60,-90].map(lat=>{const f=radialFraction(lat),groundKm=meridionalDistanceFromNorthKm(lat),diskKm=f*POLE_TO_POLE_KM;const label=lat===0?'0°':`${Math.abs(lat)}°${lat>0?'N':'S'}`;return `<tr><td>${label}</td><td>${formatDistance(groundKm*1000)}</td><td>${formatDistance(diskKm*1000)}</td></tr>`;});
+function syncSphericalCalibration(){
+ const rows=[90,60,30,0,-30,-60,-90].map(lat=>{
+  const theta=thetaFromLatitude(lat),sinTheta=Math.sin(theta),radiusKm=SPHERE_RADIUS_KM*theta;
+  const k=theta<1e-12?1:(Math.abs(sinTheta)<1e-12?Infinity:theta/sinTheta);
+  const m=theta<1e-12?1:Math.max(0,sinTheta/theta);
+  const label=lat===0?'0°':Math.abs(lat)+'°'+(lat>0?'N':'S');
+  const kText=Number.isFinite(k)?k.toFixed(3):'∞';
+  return '<tr><td>'+label+'</td><td>'+theta.toFixed(3)+'</td><td>'+radiusKm.toLocaleString('en-US',{maximumFractionDigits:2})+'</td><td>'+kText+'</td><td>'+m.toFixed(3)+'</td></tr>';
+ });
  $('radialRows').innerHTML=rows.join('');
- if(Math.abs(radialExponent-1)<.001)$('radialPreset').value='linear';else if(Math.abs(radialExponent-1.4)<.001)$('radialPreset').value='compressed';else if(Math.abs(radialExponent-.7)<.001)$('radialPreset').value='expanded';else $('radialPreset').value='custom';
 }
 function syncHistoricalControls(){
  const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
@@ -601,7 +634,7 @@ function scaleAnchorWorld(){
 function groundDistanceForScalePixels(px,anchor){
  const half=px/(2*zoom);
  const a=unproject(anchor.x-half,anchor.y),b=unproject(anchor.x+half,anchor.y);
- return geodesicInverse(a,b).distanceMeters/1000;
+ return sphericalInverse(a,b).distanceMeters/1000;
 }
 function drawScaleBar(){
  if(!baseR||!zoom)return;
@@ -627,7 +660,7 @@ async function copyShareLink(){
  const url=new URL(window.location.href);url.search='';
  url.searchParams.set('z',zoom.toFixed(3));url.searchParams.set('px',(panX/baseR).toFixed(4));url.searchParams.set('py',(panY/baseR).toFixed(4));
  url.searchParams.set('ly',[layers.countries,layers.grid,layers.capitals,layers.capitalNames,layers.antarctica].map(v=>v?'1':'0').join(''));
- url.searchParams.set('flat','1');url.searchParams.set('re',radialExponent.toFixed(2));
+  url.searchParams.set('flat','1');
  url.searchParams.set('hist',[historical.enabled?1:0,historical.opacity,historical.centerX,historical.centerY,historical.diameter,historical.scale].join(','));url.searchParams.set('hr',historical.rotation.toFixed(1));
  if(points[0])url.searchParams.set('a',`${points[0].lat.toFixed(5)},${points[0].lon.toFixed(5)}`);
  if(points[1])url.searchParams.set('b',`${points[1].lat.toFixed(5)},${points[1].lon.toFixed(5)}`);
@@ -678,8 +711,6 @@ $('undoRegistrationPoint').addEventListener('click',()=>{registrationPoints.pop(
 $('clearRegistrationPoints').addEventListener('click',()=>{registrationPoints=[];pendingRegistrationGeo=null;updateRegistrationUI();draw();});
 $('historicalPicker').addEventListener('click',e=>{if(!pendingRegistrationGeo){$('registrationStatus').textContent='First click “Pick map point” and choose a location on the map.';return;}if(!historicalImage)return;const rect=e.currentTarget.getBoundingClientRect(),u=clamp((e.clientX-rect.left)/rect.width,0,1),v=clamp((e.clientY-rect.top)/rect.height,0,1);registrationPoints.push({u,v,lat:pendingRegistrationGeo.lat,lon:pendingRegistrationGeo.lon});pendingRegistrationGeo=null;$('pickRegistrationPoint').textContent='Pick map point';updateRegistrationUI();draw();});
 $('exportPNG').addEventListener('click',exportPNG);$('shareMap').addEventListener('click',copyShareLink);
-$('radialPreset').addEventListener('change',e=>{const values={linear:1,compressed:1.4,expanded:.7};if(e.target.value!=='custom')radialExponent=values[e.target.value];syncRadialControls();updateDistortion();resize();});
-$('radialExponent').addEventListener('input',e=>{radialExponent=clamp(Number(e.target.value),.5,2);$('radialPreset').value='custom';syncRadialControls();updateDistortion();resize();});
 $('historicalEnabled').addEventListener('change',e=>{historical.enabled=e.target.checked;if(historical.enabled)loadHistoricalScan();draw();});
 [['historicalOpacity','opacity'],['historicalCenterX','centerX'],['historicalCenterY','centerY'],['historicalDiameter','diameter'],['historicalScale','scale'],['historicalRotation','rotation']].forEach(([id,key])=>$(id).addEventListener('input',e=>{historical[key]=Number(e.target.value);syncHistoricalControls();draw();}));
 $('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
