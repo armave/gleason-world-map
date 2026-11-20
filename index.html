@@ -284,7 +284,7 @@ function geodesicDirect(origin,bearing,distanceMeters){
  const sinSigma=Math.sin(sigma),cosSigma=Math.cos(sigma),twoSigmaM=2*sigma1+sigma,cos2SigmaM=Math.cos(twoSigmaM);
  const tmp=sinU1*sinSigma-cosU1*cosSigma*Math.cos(alpha1);
  const phi2=Math.atan2(sinU1*cosSigma+cosU1*sinSigma*Math.cos(alpha1),(1-WGS84_F)*Math.sqrt(sinAlpha*sinAlpha+tmp*tmp));
- const lambda=Math.atan2(sinSigma*Math.sin(alpha1),cosU1*cosSigma-cosU1*sinSigma*Math.cos(alpha1));
+ const lambda=Math.atan2(sinSigma*Math.sin(alpha1),cosU1*cosSigma-sinU1*sinSigma*Math.cos(alpha1));
  const C=WGS84_F/16*cosSqAlpha*(4+WGS84_F*(4-3*cosSqAlpha));
  const L=lambda-(1-C)*WGS84_F*sinAlpha*(sigma+C*sinSigma*(cos2SigmaM+C*cosSigma*(-1+2*cos2SigmaM*cos2SigmaM)));
  return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda1+L)*180/Math.PI};
