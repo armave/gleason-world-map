@@ -16,9 +16,9 @@ where `Dₙ` is the WGS84 surface distance southward from 90°N. At the default 
 
 All coastlines, grid rings, clicks, capitals, and measurement endpoints use the same longitude orientation and radial calibration.
 
-Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid** (Vincenty's inverse solution, with a spherical fallback for near-antipodal cases). The dashed connecting line is sampled along that geodesic and projected onto the disk; its displayed length is not measured in drawing pixels. Results are shown in metres below 1 km and kilometres for longer distances.
+Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid** through GeographicLib's Karney inverse/direct algorithms, which converge for near-antipodal point pairs. If the GeographicLib browser script is unavailable, the app falls back to Vincenty; only a near-antipodal fallback is marked with an approximate (≈) prefix. The dashed connecting line is sampled along that geodesic and projected onto the disk; its displayed length is not measured in drawing pixels. Results are shown in metres below 1 km and kilometres for longer distances.
 
-The scale bar is also grounded in WGS84: it recalculates the real ground distance represented by a horizontal screen segment near the current view centre. It is a **local** scale indicator, not a claim that the whole disk has one uniform scale. Panning, zooming, or changing the radial exponent can change the local scale.
+The scale bar is also grounded in WGS84: it recalculates the real ground distance represented by a horizontal screen segment near the current view centre. Geodesic calculations use [GeographicLib's JavaScript implementation](https://geographiclib.sourceforge.io/JavaScript/doc), loaded from its published browser script (MIT/X11 license). It is a **local** scale indicator, not a claim that the whole disk has one uniform scale. Panning, zooming, or changing the radial exponent can change the local scale.
 
 This is a configurable two-dimensional map convention applied to latitude/longitude reference data. It should not be mistaken for independent evidence of a physical model of the Earth.
 
