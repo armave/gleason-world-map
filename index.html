@@ -220,7 +220,7 @@ function draw(){
  ctx.restore();
  drawScaleBar();
 }
-function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){}const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
+function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;return {x:(sx-width/2-panX)/zoom,y:(sy-height/2-panY)/zoom,sx,sy};}
 function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Measure mode · Choose point A';else if(points.length===1)$('status').textContent='Measure mode · Choose point B';else $('status').textContent='Measurement complete · Click to start another';}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
