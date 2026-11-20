@@ -1,4 +1,4 @@
-# Scale-Calibrated Gleason World Disk
+# Scale-Calibrated Gleason World Map
 
 An interactive North-Polar azimuthal-equidistant map with country outlines, capital-city search, map navigation, and great-circle distance measurement.
 
@@ -17,14 +17,14 @@ Open `index.html` in a modern browser. An internet connection is needed to load 
 
 ## Deploy with GitHub Pages
 
-1. Create a **public** GitHub repository named `gleason-world-disk` (or another name you prefer) and initialize it with a README.
+1. Create a **public** GitHub repository named `gleason-world-map` (or another name you prefer) and initialize it with a README.
 2. Upload the contents of this project to the repository root.
 3. In the repository, open **Settings → Pages** and set **Build and deployment → Source** to **GitHub Actions**.
 4. The included workflow deploys the site on each push to `main` or `master`.
 
-The expected URL for a repository named `gleason-world-disk` under the `armave` account is:
+The expected URL for a repository named `gleason-world-map` under the `armave` account is:
 
-`https://armave.github.io/gleason-world-disk/`
+`https://armave.github.io/gleason-world-map/`
 
 ## Geographic data sources
 
