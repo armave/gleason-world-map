@@ -36,7 +36,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Flat circular disk · Gleason longitude orientation · Adjustable latitude spacing · Historical overlay</div>
+  <div class="subtitle">Flat circular disk · WGS84 distances and areas · Local distortion diagnostics · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -141,7 +141,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       <h2>Historical Gleason overlay · 1892</h2>
       <label class="small"><input type="checkbox" id="historicalEnabled"> Show original Boston Public Library scan</label>
       <div class="small" id="historicalStatus" style="margin:7px 0">Scan not loaded. Enable to compare the printed disk with the digital map.</div>
-      <div class="small" style="margin:7px 0 5px">Control-point registration: click “Pick map point”, click its matching location on the map, then click the same point in the scan preview. Use at least 4–8 points spread across the map.</div>
+      <div class="small" style="margin:7px 0 5px">Control-point registration: click “Pick map point”, select a known location on the map, then click the same point in the scan preview. At least 3 non-collinear points are required; use 8–12 points spread around the disk for better coverage. When registered, the crop/scale/rotation sliders below apply only to the unregistered fallback.</div>
       <button id="pickRegistrationPoint" style="width:100%">Pick map point</button>
       <div class="small" id="registrationStatus" style="margin:6px 0">0 control points · manual crop alignment active</div>
       <canvas id="historicalPicker" aria-label="Historical scan control-point picker"></canvas>
@@ -520,7 +520,7 @@ function assignSelection(idx){if(!selected)return;let p;if(selected.type==='capi
 function onMapClick(x,y){
  if(Math.hypot(x,y)>baseR*1.012)return;
  const q=unproject(x,y);
- if(registrationPickActive){registrationPickActive=false;pendingRegistrationGeo={lat:q.lat,lon:q.lon};$('registrationStatus').textContent=`Map point selected: ${fmtCoord(q.lat,q.lon)}. Now click the same feature in the scan preview.`;$('pickRegistrationPoint').textContent='Pick another map point';return;}
+ if(registrationPickActive){const snap=findCapitalAt(x,y,10);const p=snap?{lat:snap.lat,lon:snap.lon}:q;registrationPickActive=false;pendingRegistrationGeo=p;$('registrationStatus').textContent=`Map point selected: ${fmtCoord(p.lat,p.lon)}${snap?' · snapped to '+snap.city:''}. Now click the same feature in the scan preview.`;$('pickRegistrationPoint').textContent='Pick another map point';return;}
  const cap=findCapitalAt(x,y,10);
  if(mode==='measure'){if(points.length>=2)points=[];const p=cap?{lat:cap.lat,lon:cap.lon,name:`${cap.city} (${cap.countryName||''})`}:q;setPoint(points.length===0?0:1,{...p,name:p.name||fmtCoord(p.lat,p.lon)});return;}
  if(mode==='area'){if(areaFinished){areaPoints=[];areaFinished=false;}const p=cap?{lat:cap.lat,lon:cap.lon,name:cap.city}:q;areaPoints.push(p);setDistortionAnchor(p,p.name||fmtCoord(p.lat,p.lon));updateAreaMeasurement();draw();updateStatus();return;}
@@ -606,7 +606,8 @@ function renderHistoricalPicker(){
 function updateRegistrationUI(){
  const count=registrationPoints.length;
  if(pendingRegistrationGeo)$('registrationStatus').textContent=`Map point ready: ${fmtCoord(pendingRegistrationGeo.lat,pendingRegistrationGeo.lon)}. Click its matching location in the scan.`;
- else $('registrationStatus').textContent=count>=3?`${count} control points · piecewise-affine registration active`:`${count} control points · add at least 3 non-collinear points to register the scan`;
+ else if(count>=3){const tri=triangulateControlPoints(registrationPoints.map(p=>({x:p.u,y:p.v})));$('registrationStatus').textContent=tri.length?`${count} control points · registered with ${tri.length} affine triangles`:'Control points are collinear; add points across the scan.';}
+ else $('registrationStatus').textContent=`${count} control points · add at least 3 non-collinear points to register the scan`;
  renderHistoricalPicker();
 }
 function circumcircleContains(p,a,b,c){
