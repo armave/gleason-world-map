@@ -140,8 +140,10 @@ function drawGrid(){ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ct
   ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle='#485c60';ctx.fill();ctx.restore();}
 function drawAnnotations(){
   ctx.save();ctx.setLineDash([]);ctx.textAlign='left';ctx.textBaseline='middle';ctx.font=`${10/Math.max(.85,zoom*.7)}px ui-sans-serif,system-ui`;
-  const ringLabels=[['60°N',60,'k=1.05'],['30°N',30,'k=1.21'],['EQUATOR',0,'k=1.57'],['30°S',-30,'k=2.42'],['60°S',-60,'k=5.24']];
-  for(const [label,lat,k] of ringLabels){const r=baseR*(90-lat)/180;ctx.fillStyle='#405a62';ctx.fillText(`${label}  ${k}`,r+5/zoom,0);}
+  const ringLabels=[['60°N',60],['30°N',30],['EQUATOR',0],['30°S',-30],['60°S',-60]];
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const labelAngle=rad(225);
+  for(const [label,lat] of ringLabels){const r=baseR*(90-lat)/180;const x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle);ctx.fillStyle='#405a62';ctx.fillText(label,x,y);}
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;
   for(let d=0;d<360;d+=15){const a=rad(d),r=baseR*1.035;const x=r*Math.sin(a),y=-r*Math.cos(a);ctx.fillStyle='#405a62';ctx.fillText(lonName(d),x,y);}
   ctx.save();ctx.translate(-baseR*.84,-baseR*.84);ctx.strokeStyle='#586c70';ctx.fillStyle='#586c70';ctx.lineWidth=1.2/zoom;ctx.beginPath();ctx.moveTo(0,-15/zoom);ctx.lineTo(4/zoom,0);ctx.lineTo(0,15/zoom);ctx.lineTo(-4/zoom,0);ctx.closePath();ctx.fill();ctx.font=`bold ${10/zoom}px Georgia`;ctx.textAlign='center';ctx.fillText('N',0,-21/zoom);ctx.restore();ctx.restore();
@@ -152,21 +154,23 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
 }
 function drawIceWall(){
  if(!antarcticaPath)return;
- ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
- ctx.fillStyle='#dcebf0';ctx.fill(antarcticaPath,'evenodd');
+ // The projected Antarctica polygon encloses the poleward area.
+ // The continent is the complement: disk minus that inner polygon.
+ const iceRegion=new Path2D();iceRegion.arc(0,0,baseR,0,Math.PI*2);iceRegion.addPath(antarcticaPath);
+ ctx.save();ctx.fillStyle='#dcebf0';ctx.fill(iceRegion,'evenodd');
  ctx.lineJoin='round';ctx.strokeStyle='#628fa1';ctx.lineWidth=4.8/zoom;ctx.stroke(antarcticaPath);
  ctx.strokeStyle='#f9ffff';ctx.lineWidth=1.35/zoom;ctx.stroke(antarcticaPath);
- ctx.save();ctx.clip(antarcticaPath,'evenodd');ctx.strokeStyle='rgba(111,157,173,.30)';ctx.lineWidth=.7/zoom;
+ ctx.save();ctx.clip(iceRegion,'evenodd');ctx.strokeStyle='rgba(111,157,173,.30)';ctx.lineWidth=.7/zoom;
  for(let i=0;i<180;i++){const a=i*Math.PI*2/180;const inner=baseR*(.875+.018*Math.sin(i*1.73)+.009*Math.sin(i*.47));const outer=baseR*(.975+.008*Math.sin(i*2.13));ctx.beginPath();ctx.moveTo(inner*Math.sin(a),-inner*Math.cos(a));ctx.lineTo(outer*Math.sin(a),-outer*Math.cos(a));ctx.stroke();}
  ctx.restore();ctx.fillStyle='#315b6a';ctx.font=`700 ${10/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
  ctx.fillText('ANTARCTICA · ICE WALL',0,-baseR*.936);
  ctx.save();ctx.translate(baseR*.936,0);ctx.rotate(Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
- ctx.save();ctx.translate(0,baseR*.936);ctx.rotate(Math.PI);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
+ ctx.save();ctx.translate(0,baseR*.936);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();
  ctx.save();ctx.translate(-baseR*.936,0);ctx.rotate(-Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();ctx.restore();
 }
 function drawCapitals(){const labelOn=zoom>1.55;for(const p of capitals){const [x,y]=project(p.lon,p.lat);const active=(selected&&selected.type==='capital'&&selected.capital===p);ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();if(labelOn){ctx.font=`${8.6/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#243a43';ctx.fillText(p.city,x+4/zoom,y-3/zoom);}}}
 function drawMeasure(){if(points.length===2){const path=slerpPath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
-function draw(){if(!width||!height)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle='#f0e9d9';ctx.fillRect(0,0,width,height);ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);drawGrid();drawCountries();drawIceWall();drawAnnotations();drawCapitals();drawMeasure();ctx.restore();}
+function draw(){if(!width||!height)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle='#f0e9d9';ctx.fillRect(0,0,width,height);ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);drawGrid();drawIceWall();drawCountries();drawAnnotations();drawCapitals();drawMeasure();ctx.restore();}
 function findCountryAt(x,y){for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;return {x:(sx-width/2-panX)/zoom,y:(sy-height/2-panY)/zoom,sx,sy};}
