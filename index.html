@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Interactive Scale-Calibrated Gleason World Disk</title>
+<title>Gleason Flat-Disk Map | 1892 Historical Comparison</title>
 <style>
 :root{--paper:#f4eedf;--paper2:#fbf8ef;--ink:#243139;--muted:#647078;--line:#c9c0ad;--blue:#8eafc0;--blue2:#d8e8ec;--ochre:#d8c49a;--sage:#aebda3;--accent:#a75c38;--panel:#fffdf6}
 *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -36,7 +36,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Flat circular disk · Search countries and capitals · Flat-plane measurement</div>
+  <div class="subtitle">Flat circular disk · Gleason longitude orientation · Adjustable latitude spacing · Historical overlay</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -112,12 +112,12 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <label for="radialExponent"><span>Radial exponent</span><strong id="radialExponentValue">1.00</strong></label>
         <input id="radialExponent" type="range" min="0.50" max="2.00" step="0.05" value="1">
       </div>
-      <div class="formula">r / R = ((90° − φ) / 180°)<sup>p</sup><br>x = r · sin(λ)<br>y = −r · cos(λ)</div>
+      <div class="formula">r / R = ((90° − φ) / 180°)<sup>p</sup><br>x = r · cos(λ)<br>y = −r · sin(λ)</div>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Radius / R</th><th>Disk %</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">All coastlines, grid rings, clicks, and flat-plane measurements follow the selected exponent. p = 1 gives equal radial spacing between latitude degrees. This is a configurable display convention, not a physical Earth model.</p>
+      <p class="note" style="margin:9px 0 0">All coastlines, grid rings, clicks, and flat-plane measurements follow the selected exponent. p = 1 gives equal radial spacing between latitude degrees. Greenwich (0°) is at the right; east longitudes run counter-clockwise, matching the printed Gleason sheet. This is a configurable display convention, not proof of a physical Earth model.</p>
     </section>
     <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -155,7 +155,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
     </section>
   </aside>
 </div>
-<div class="footer">Map outlines and coordinates are sourced from Natural Earth and country-data. The canvas is displayed as a two-dimensional flat disk with a configurable radial latitude convention; its distance readout measures straight lines on that disk and does not claim to represent measured physical distances.</div>
+<div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map is a two-dimensional flat disk with a configurable radial latitude convention; its distance readout measures straight lines on that disk and does not claim to represent measured physical distances.</div>
 <script>
 (() => {
 'use strict';
@@ -165,7 +165,8 @@ let radialExponent = 1;
 const radialFraction = lat => Math.pow(clamp((90-lat)/180,0,1),radialExponent);
 const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
 let historicalImage = null, historicalLoading = false, historicalFailed = false;
-const historical = {enabled:false,opacity:45,centerX:50,centerY:45,diameter:75.6,scale:100,rotation:0};
+// The BPL scan is 4,773 × 6,794 px; the printed disk is about 3,610 px wide.
+const historical = {enabled:false,opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0};
 const COUNTRY_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
 const CAPITAL_URL = 'https://raw.githubusercontent.com/iliyaj/country-data/main/data/country-capital.csv';
 const $ = id => document.getElementById(id);
@@ -184,8 +185,8 @@ const lonName = d => d===0?'0° / 360°':`${d}°`;
 function isoFor(f){const p=f.properties||{};const candidates=[p.ISO_A3_EH,p.ISO_A3,p.ADM0_A3,p.SOV_A3];const v=candidates.find(x=>x&&String(x).toUpperCase()!=='-99')||'';return String(v).toUpperCase();}
 function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||p.FORMAL_EN||'Unknown';}
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return colors[Math.abs(h)%colors.length];}
-function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.sin(l),-rho*Math.cos(l)];}
-function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-180*Math.pow(fraction,1/radialExponent);const lon=rho<1e-7?0:Math.atan2(x,-y)*180/Math.PI;return {lat,lon};}
+function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.cos(l),-rho*Math.sin(l)];}
+function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-180*Math.pow(fraction,1/radialExponent);const lon=rho<1e-7?0:Math.atan2(-y,x)*180/Math.PI;return {lat,lon};}
 function geoVec(p){const a=rad(p.lat),b=rad(p.lon);return [Math.cos(a)*Math.cos(b),Math.cos(a)*Math.sin(b),Math.sin(a)];}
 function flatDistance(a,b){const A=project(a.lon,a.lat),B=project(b.lon,b.lat);return Math.hypot(B[0]-A[0],B[1]-A[1])*(EARTH_R/baseR);}
 function flatLinePath(a,b){return [project(a.lon,a.lat),project(b.lon,b.lat)];}
@@ -225,7 +226,7 @@ function drawAnnotations(){
   const labelAngle=rad(225);
   for(const [label,lat] of ringLabels){const r=baseR*radialFraction(lat);const x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle);ctx.fillStyle='#405a62';ctx.fillText(label,x,y);}
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;
-  for(let d=0;d<360;d+=15){const a=rad(d),r=baseR*1.035;const x=r*Math.sin(a),y=-r*Math.cos(a);ctx.fillStyle='#405a62';ctx.fillText(lonName(d),x,y);}
+  for(let d=0;d<360;d+=15){const a=rad(d),r=baseR*1.035;const x=r*Math.cos(a),y=-r*Math.sin(a);ctx.fillStyle='#405a62';ctx.fillText(lonName(d),x,y);}
   ctx.save();ctx.translate(-baseR*.84,-baseR*.84);ctx.strokeStyle='#586c70';ctx.fillStyle='#586c70';ctx.lineWidth=1.2/zoom;ctx.beginPath();ctx.moveTo(0,-15/zoom);ctx.lineTo(4/zoom,0);ctx.lineTo(0,15/zoom);ctx.lineTo(-4/zoom,0);ctx.closePath();ctx.fill();ctx.font=`bold ${10/zoom}px Georgia`;ctx.textAlign='center';ctx.fillText('N',0,-21/zoom);ctx.restore();ctx.restore();
 }
 function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle='#68746f';ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
@@ -409,7 +410,7 @@ async function load(){
   capitals=capRaw.map(p=>{const c=countryByIso.get(p.iso);return {...p,countryName:c?c.name:'',country:c||null};});
   if(!countries.length||!capitals.length)throw new Error('One or more geographic datasets did not contain usable records.');
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
-  resize();restoreSharedState();draw();
+  restoreSharedState();resize();draw();
   const cached=geoData.stale||capData.stale;
   updateStatus();if(cached)$('status').textContent+=' · using cached data';
  }catch(err){showLoadError(err);}
@@ -417,8 +418,8 @@ async function load(){
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
 $('exploreMode').addEventListener('click',()=>{mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{mode='measure';setModeUI();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('exportPNG').addEventListener('click',exportPNG);$('shareMap').addEventListener('click',copyShareLink);
-$('radialPreset').addEventListener('change',e=>{const values={linear:1,compressed:1.4,expanded:.7};if(e.target.value!=='custom')radialExponent=values[e.target.value];syncRadialControls();draw();});
-$('radialExponent').addEventListener('input',e=>{radialExponent=clamp(Number(e.target.value),.5,2);$('radialPreset').value='custom';syncRadialControls();draw();});
+$('radialPreset').addEventListener('change',e=>{const values={linear:1,compressed:1.4,expanded:.7};if(e.target.value!=='custom')radialExponent=values[e.target.value];syncRadialControls();resize();});
+$('radialExponent').addEventListener('input',e=>{radialExponent=clamp(Number(e.target.value),.5,2);$('radialPreset').value='custom';syncRadialControls();resize();});
 $('historicalEnabled').addEventListener('change',e=>{historical.enabled=e.target.checked;if(historical.enabled)loadHistoricalScan();draw();});
 [['historicalOpacity','opacity'],['historicalCenterX','centerX'],['historicalCenterY','centerY'],['historicalDiameter','diameter'],['historicalScale','scale'],['historicalRotation','rotation']].forEach(([id,key])=>$(id).addEventListener('input',e=>{historical[key]=Number(e.target.value);syncHistoricalControls();draw();}));
 $('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:45,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
