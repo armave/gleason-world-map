@@ -110,7 +110,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
     </section>
     <section class="panel">
       <h2>WGS84 radial calibration</h2>
-      <div class="formula">Dₙ(φ) = meridional distance south from 90°N<br>r = Dₙ(φ)<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>WGS84 pole-to-pole radius = 20,003.93 km</div>
+      <div class="formula">Dₙ(φ) = meridional distance south from 90°N<br>r = Dₙ(φ)<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>WGS84 disk radius at 90°S = 20,003.93 km</div>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>WGS84 distance from 90°N</th><th>Disk radius</th></tr></thead>
         <tbody id="radialRows"></tbody>
@@ -234,14 +234,7 @@ function unproject(x,y){
  return {lat,lon};
 }
 function wrapRadians(value){return ((value+3*Math.PI)%(2*Math.PI))-Math.PI;}
-function haversineInverse(a,b){
- const p1=rad(a.lat),p2=rad(b.lat),dPhi=p2-p1,dLambda=wrapRadians(rad(b.lon-a.lon));
- const h=Math.sin(dPhi/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dLambda/2)**2;
- const central=2*Math.atan2(Math.sqrt(clamp(h,0,1)),Math.sqrt(1-clamp(h,0,1)));
- const bearing=Math.atan2(Math.sin(dLambda)*Math.cos(p2),Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dLambda));
- return {distanceMeters:6371008.8*central,initialBearing:bearing};
-}
-// Vincenty's inverse solution on the WGS84 ellipsoid; spherical fallback handles near-antipodal pairs.
+// WGS84 ellipsoidal inverse uses GeographicLib, with a Vincenty fallback.// Vincenty's inverse solution on the WGS84 ellipsoid; spherical fallback handles near-antipodal pairs.
 function vincentyInverse(a,b){
  const phi1=rad(a.lat),phi2=rad(b.lat),L=wrapRadians(rad(b.lon-a.lon));
  const U1=Math.atan((1-WGS84_F)*Math.tan(phi1)),U2=Math.atan((1-WGS84_F)*Math.tan(phi2));
@@ -273,13 +266,7 @@ function vincentyInverse(a,b){
  const initialBearing=Math.atan2(cosU2*sinLambda,cosU1*sinU2-sinU1*cosU2*cosLambda);
  return {distanceMeters,initialBearing};
 }
-function sphericalDirect(origin,bearing,distanceMeters){
- const phi1=rad(origin.lat),lambda1=rad(origin.lon),delta=distanceMeters/6371008.8;
- const phi2=Math.asin(Math.sin(phi1)*Math.cos(delta)+Math.cos(phi1)*Math.sin(delta)*Math.cos(bearing));
- const lambda2=lambda1+Math.atan2(Math.sin(bearing)*Math.sin(delta)*Math.cos(phi1),Math.cos(delta)-Math.sin(phi1)*Math.sin(phi2));
- return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda2)*180/Math.PI};
-}
-// Prefer GeographicLib's Karney solution for convergence across all point pairs.
+// GeographicLib's Karney direct/inverse solution is preferred for robust convergence.// Prefer GeographicLib's Karney solution for convergence across all point pairs.
 // Vincenty remains a local fallback if the external library cannot be loaded.
 function geodesicInverse(a,b){
  const engine=window.geodesic?.Geodesic?.WGS84;
@@ -304,7 +291,7 @@ function vincentyDirect(origin,bearing,distanceMeters){
   if(Math.abs(next-sigma)<1e-12){sigma=next;converged=true;break;}
   sigma=next;
  }
- if(!converged)return sphericalDirect(origin,bearing,distanceMeters);
+ if(!converged)return null;
  const sinSigma=Math.sin(sigma),cosSigma=Math.cos(sigma),twoSigmaM=2*sigma1+sigma,cos2SigmaM=Math.cos(twoSigmaM);
  const tmp=sinU1*sinSigma-cosU1*cosSigma*Math.cos(alpha1);
  const phi2=Math.atan2(sinU1*cosSigma+cosU1*sinSigma*Math.cos(alpha1),(1-WGS84_F)*Math.sqrt(sinAlpha*sinAlpha+tmp*tmp));
@@ -323,7 +310,11 @@ function geodesicLinePath(a,b){
  if(!Number.isFinite(distance))return [];
  if(distance<0.01)return [project(a.lon,a.lat)];
  const segments=Math.max(2,Math.min(240,Math.ceil(distance/250000))),path=[];
- for(let i=0;i<=segments;i++){const p=geodesicDirect(a,inverse.initialBearing,distance*i/segments);path.push(project(p.lon,p.lat));}
+ for(let i=0;i<=segments;i++){
+  const p=geodesicDirect(a,inverse.initialBearing,distance*i/segments);
+  if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return [];
+  path.push(project(p.lon,p.lat));
+ }
  return path;
 }
 function formatDistance(meters){
