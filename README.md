@@ -1,16 +1,16 @@
 # Flat Disk World Map
 
-An interactive two-dimensional circular disk map with a transparent radial latitude convention, country and capital lookup, flat-plane measurement, and full-screen viewing.
+An interactive two-dimensional circular disk map with a radial latitude convention, country and capital lookup, flat-plane measurement, and full-screen viewing.
 
 ## Flat-disk model
 
 The app draws a **2D disk**, not a 3D globe or sphere.
 
-Its default layout places 90°N at the center and 90°S at the outer rim, using this chosen display convention:
+Its default layout places 90°N at the center and 90°S at the outer rim, using the chosen display convention:
 
 `r / R = (90° - latitude) / 180°`
 
-Longitude determines the radial direction. This is a configurable mathematical layout applied to the latitude/longitude attributes in the source data. It should not be mistaken for independent evidence that the Earth physically has this shape.
+Longitude determines the radial direction. This is a configurable mathematical layout applied to latitude/longitude data. It should not be mistaken for independent evidence that Earth physically has this shape.
 
 The measurement tool draws and measures straight lines in the flat map plane. Its "map km" values use a nominal radius of 6,371 units to provide a consistent display scale. They are **not** geodesic measurements or independently surveyed physical distances.
 
