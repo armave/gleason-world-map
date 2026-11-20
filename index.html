@@ -9,7 +9,7 @@
 *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 header{padding:22px 28px 15px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fbf8ef,#f4eedf)}
 .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#8b6848;font-weight:800}
-h1{margin:4px 0 3px;font-family:Georgia,serif;font-weight:600;font-size:clamp(24px,3vw,36px);letter-spacing:.015em}
+h1{margin:4px 0 3px;font-family:Georgia,serif;font-weight:600;font-size:clamp(24px,3vw,36px);letter-spacing:.015em}.range-control{display:grid;gap:4px;margin:9px 0}.range-control label{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}.range-control input{width:100%;accent-color:#294653}.control-select{width:100%;padding:8px;border:1px solid #bfb5a2;border-radius:8px;background:#fffef9;color:var(--ink);font:inherit;font-size:12px}.history-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.history-actions button{flex:1}
 .subtitle{color:var(--muted);font-size:14px}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding:16px;max-width:1800px;margin:auto}
 .map-card{background:var(--paper2);border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:0 6px 22px #3d31200e;min-width:0}
@@ -35,7 +35,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <body>
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
-  <h1>Scale-Calibrated Gleason World Disk</h1>
+  <h1>Gleason Flat-Disk Map</h1>
   <div class="subtitle">Flat circular disk · Search countries and capitals · Flat-plane measurement</div>
 </header>
 <div class="app">
@@ -101,21 +101,57 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
     </section>
     <section class="panel">
-      <h2>Flat-disk calibration</h2>
-      <div class="formula">r / R = (90° − φ) / 180°<br>x = r · sin(λ)<br>y = −r · cos(λ)<br>φ = latitude<br>λ = longitude</div>
+      <h2>Latitude-to-radius calibration</h2>
+      <select id="radialPreset" class="control-select" aria-label="Radial calibration preset">
+        <option value="linear">Equal radial spacing · Gleason layout</option>
+        <option value="compressed">Compress inner latitude bands</option>
+        <option value="expanded">Expand inner latitude bands</option>
+        <option value="custom">Custom power curve</option>
+      </select>
+      <div class="range-control">
+        <label for="radialExponent"><span>Radial exponent</span><strong id="radialExponentValue">1.00</strong></label>
+        <input id="radialExponent" type="range" min="0.50" max="2.00" step="0.05" value="1">
+      </div>
+      <div class="formula">r / R = ((90° − φ) / 180°)<sup>p</sup><br>x = r · sin(λ)<br>y = −r · cos(λ)</div>
       <table class="cal-table" style="margin-top:9px">
-        <thead><tr><th>Latitude</th><th>Radius / R</th></tr></thead>
-        <tbody>
-          <tr><td>90°N</td><td>0.000</td></tr>
-          <tr><td>60°N</td><td>0.167</td></tr>
-          <tr><td>30°N</td><td>0.333</td></tr>
-          <tr><td>0°</td><td>0.500</td></tr>
-          <tr><td>30°S</td><td>0.667</td></tr>
-          <tr><td>60°S</td><td>0.833</td></tr>
-          <tr><td>90°S</td><td>1.000</td></tr>
-        </tbody>
+        <thead><tr><th>Latitude</th><th>Radius / R</th><th>Disk %</th></tr></thead>
+        <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">This is a 2D flat-disk visualization. The default radius-to-latitude rule is an explicitly chosen display convention, not evidence of a physical Earth model. The nominal scale and flat-plane distances are consequences of this chosen rule.</p>
+      <p class="note" style="margin:9px 0 0">All coastlines, grid rings, clicks, and flat-plane measurements follow the selected exponent. p = 1 gives equal radial spacing between latitude degrees. This is a configurable display convention, not a physical Earth model.</p>
+    </section>
+    <section class="panel">
+      <h2>Historical Gleason overlay · 1892</h2>
+      <label class="small"><input type="checkbox" id="historicalEnabled"> Show original Boston Public Library scan</label>
+      <div class="small" id="historicalStatus" style="margin:7px 0">Scan not loaded. Enable to compare the printed disk with the digital map.</div>
+      <div class="range-control">
+        <label for="historicalOpacity"><span>Overlay opacity</span><strong id="historicalOpacityValue">45%</strong></label>
+        <input id="historicalOpacity" type="range" min="5" max="90" step="1" value="45">
+      </div>
+      <div class="range-control">
+        <label for="historicalCenterX"><span>Scan crop centre · X</span><strong id="historicalCenterXValue">50%</strong></label>
+        <input id="historicalCenterX" type="range" min="20" max="80" step="0.5" value="50">
+      </div>
+      <div class="range-control">
+        <label for="historicalCenterY"><span>Scan crop centre · Y</span><strong id="historicalCenterYValue">45%</strong></label>
+        <input id="historicalCenterY" type="range" min="15" max="85" step="0.5" value="45">
+      </div>
+      <div class="range-control">
+        <label for="historicalDiameter"><span>Crop diameter</span><strong id="historicalDiameterValue">75.6%</strong></label>
+        <input id="historicalDiameter" type="range" min="55" max="90" step="0.2" value="75.6">
+      </div>
+      <div class="range-control">
+        <label for="historicalScale"><span>Overlay scale</span><strong id="historicalScaleValue">100%</strong></label>
+        <input id="historicalScale" type="range" min="80" max="120" step="0.5" value="100">
+      </div>
+      <div class="range-control">
+        <label for="historicalRotation"><span>Rotation</span><strong id="historicalRotationValue">0.0°</strong></label>
+        <input id="historicalRotation" type="range" min="-5" max="5" step="0.1" value="0">
+      </div>
+      <div class="history-actions">
+        <button id="resetHistorical">Reset alignment</button>
+        <button id="retryHistorical">Reload scan</button>
+      </div>
+      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections.</p>
     </section>
   </aside>
 </div>
@@ -124,9 +160,12 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 (() => {
 'use strict';
 const EARTH_R = 6371;
-// Flat-disk radial convention: edit this function to calibrate latitude-to-radius.
-// The default maps 90°N to the center and 90°S to the outer rim linearly.
-const radialFraction = lat => (90-lat)/180;
+// Flat-disk radial convention: p=1 is equal radial spacing; other powers are comparison settings.
+let radialExponent = 1;
+const radialFraction = lat => Math.pow(clamp((90-lat)/180,0,1),radialExponent);
+const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
+let historicalImage = null, historicalLoading = false, historicalFailed = false;
+const historical = {enabled:false,opacity:45,centerX:50,centerY:45,diameter:75.6,scale:100,rotation:0};
 const COUNTRY_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
 const CAPITAL_URL = 'https://raw.githubusercontent.com/iliyaj/country-data/main/data/country-capital.csv';
 const $ = id => document.getElementById(id);
@@ -146,7 +185,7 @@ function isoFor(f){const p=f.properties||{};const candidates=[p.ISO_A3_EH,p.ISO_
 function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||p.FORMAL_EN||'Unknown';}
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return colors[Math.abs(h)%colors.length];}
 function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.sin(l),-rho*Math.cos(l)];}
-function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-fraction*180;const lon=rho<1e-7?0:Math.atan2(x,-y)*180/Math.PI;return {lat,lon};}
+function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-180*Math.pow(fraction,1/radialExponent);const lon=rho<1e-7?0:Math.atan2(x,-y)*180/Math.PI;return {lat,lon};}
 function geoVec(p){const a=rad(p.lat),b=rad(p.lon);return [Math.cos(a)*Math.cos(b),Math.cos(a)*Math.sin(b),Math.sin(a)];}
 function flatDistance(a,b){const A=project(a.lon,a.lat),B=project(b.lon,b.lat);return Math.hypot(B[0]-A[0],B[1]-A[1])*(EARTH_R/baseR);}
 function flatLinePath(a,b){return [project(a.lon,a.lat),project(b.lon,b.lat)];}
@@ -211,6 +250,16 @@ function drawIceWall(){
 }
 function drawCapitals(){if(!layers.capitals)return;const labelOn=layers.capitalNames&&zoom>1.55;for(const p of capitals){const [x,y]=project(p.lon,p.lat);const active=(selected&&selected.type==='capital'&&selected.capital===p);ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();if(labelOn){ctx.font=`${8.6/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#243a43';ctx.fillText(p.city,x+4/zoom,y-3/zoom);}}}
 function drawMeasure(){if(points.length===2){const path=flatLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
+function drawHistoricalOverlay(){
+ if(!historical.enabled||!historicalImage||!historicalImage.complete||!historicalImage.naturalWidth)return;
+ const iw=historicalImage.naturalWidth,ih=historicalImage.naturalHeight,minSide=Math.min(iw,ih);
+ const cropSize=Math.min(minSide,minSide*historical.diameter/100);
+ const sx=clamp(iw*historical.centerX/100-cropSize/2,0,iw-cropSize);
+ const sy=clamp(ih*historical.centerY/100-cropSize/2,0,ih-cropSize);
+ const destRadius=baseR*historical.scale/100;
+ ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();ctx.rotate(rad(historical.rotation));ctx.globalAlpha=historical.opacity/100;
+ ctx.drawImage(historicalImage,sx,sy,cropSize,cropSize,-destRadius,-destRadius,destRadius*2,destRadius*2);ctx.restore();
+}
 function draw(){
  if(!width||!height)return;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle='#f0e9d9';ctx.fillRect(0,0,width,height);
@@ -220,6 +269,7 @@ function draw(){
  if(layers.grid)drawGrid();
  if(layers.antarctica)drawIceWall();
  if(layers.countries)drawCountries();
+ drawHistoricalOverlay();
  drawCapitals();drawMeasure();
  ctx.restore();
  if(layers.grid)drawAnnotations();
@@ -283,6 +333,9 @@ async function fetchTextCached(url,key){
 function restoreSharedState(){
  const q=new URLSearchParams(window.location.search),z=Number(q.get('z'));
  if(q.has('z')&&Number.isFinite(z))zoom=clamp(z,.6,6);
+ const re=Number(q.get('re'));if(q.has('re')&&Number.isFinite(re))radialExponent=clamp(re,.5,2);
+ const hist=q.get('hist');if(hist){const v=hist.split(',').map(Number);if(v.length===6&&v.every(Number.isFinite)){historical.enabled=v[0]===1;historical.opacity=clamp(v[1],5,90);historical.centerX=clamp(v[2],20,80);historical.centerY=clamp(v[3],15,85);historical.diameter=clamp(v[4],55,90);historical.scale=clamp(v[5],80,120);}}
+ const hr=Number(q.get('hr'));if(q.has('hr')&&Number.isFinite(hr))historical.rotation=clamp(hr,-5,5);
  const px=Number(q.get('px')),py=Number(q.get('py'));
  if(q.has('px')&&q.has('py')&&Number.isFinite(px)&&Number.isFinite(py)){panX=clamp(px,-4,4)*baseR;panY=clamp(py,-4,4)*baseR;}
  const bits=q.get('ly');if(bits&&bits.length>=5){layers.countries=bits[0]==='1';layers.grid=bits[1]==='1';layers.capitals=bits[2]==='1';layers.capitalNames=bits[3]==='1';layers.antarctica=bits[4]==='1';}
@@ -290,7 +343,26 @@ function restoreSharedState(){
  const a=readPoint('a','Shared point A'),b=readPoint('b','Shared point B');points=a?(b?[a,b]:[a]):[];
  if(points.length)mode='measure';
  for(const [id,key] of [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica']])$(id).checked=layers[key];
+ syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();
+}
+function syncRadialControls(){
+ $('radialExponent').value=radialExponent.toFixed(2);$('radialExponentValue').textContent=radialExponent.toFixed(2);
+ const rows=[90,60,30,0,-30,-60,-90].map(lat=>{const f=radialFraction(lat);const label=lat===0?'0°':`${Math.abs(lat)}°${lat>0?'N':'S'}`;return `<tr><td>${label}</td><td>${f.toFixed(3)}</td><td>${(f*100).toFixed(1)}%</td></tr>`;});
+ $('radialRows').innerHTML=rows.join('');
+ if(Math.abs(radialExponent-1)<.001)$('radialPreset').value='linear';else if(Math.abs(radialExponent-1.4)<.001)$('radialPreset').value='compressed';else if(Math.abs(radialExponent-.7)<.001)$('radialPreset').value='expanded';else $('radialPreset').value='custom';
+}
+function syncHistoricalControls(){
+ const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
+ for(const [id,key,unit] of specs){$(id).value=historical[key];$(id+'Value').textContent=unit==='°'?Number(historical[key]).toFixed(1)+unit:Math.round(historical[key]*10)/10+unit;}
+}
+function loadHistoricalScan(force=false){
+ if(historicalLoading||(!force&&historicalImage&&!historicalFailed))return;
+ historicalLoading=true;historicalFailed=false;$('historicalStatus').textContent='Loading the Boston Public Library scan…';
+ const img=new Image();img.crossOrigin='anonymous';
+ img.onload=()=>{historicalImage=img;historicalLoading=false;historicalFailed=false;$('historicalStatus').textContent=`Scan loaded: ${img.naturalWidth.toLocaleString()} × ${img.naturalHeight.toLocaleString()} px. Adjust crop centre and diameter to align its printed rim.`;draw();};
+ img.onerror=()=>{historicalLoading=false;historicalFailed=true;$('historicalStatus').textContent='The archive image could not be loaded in this browser. Open the source record to view the scan; retry later if the archive is unavailable.';draw();};
+ img.src=HISTORICAL_SCAN_URL+(force?'?reload='+Date.now():'');
 }
 function niceScaleValue(value){const power=Math.pow(10,Math.floor(Math.log10(value))),fraction=value/power;return (fraction>=7.5?10:fraction>=3.5?5:fraction>=1.5?2:1)*power;}
 function drawScaleBar(){
@@ -309,7 +381,8 @@ async function copyShareLink(){
  const url=new URL(window.location.href);url.search='';
  url.searchParams.set('z',zoom.toFixed(3));url.searchParams.set('px',(panX/baseR).toFixed(4));url.searchParams.set('py',(panY/baseR).toFixed(4));
  url.searchParams.set('ly',[layers.countries,layers.grid,layers.capitals,layers.capitalNames,layers.antarctica].map(v=>v?'1':'0').join(''));
- url.searchParams.set('flat','1');
+ url.searchParams.set('flat','1');url.searchParams.set('re',radialExponent.toFixed(2));
+ url.searchParams.set('hist',[historical.enabled?1:0,historical.opacity,historical.centerX,historical.centerY,historical.diameter,historical.scale].join(','));url.searchParams.set('hr',historical.rotation.toFixed(1));
  if(points[0])url.searchParams.set('a',`${points[0].lat.toFixed(5)},${points[0].lon.toFixed(5)}`);
  if(points[1])url.searchParams.set('b',`${points[1].lat.toFixed(5)},${points[1].lon.toFixed(5)}`);
  try{await navigator.clipboard.writeText(url.toString());$('status').textContent='Share link copied to clipboard.';}
@@ -344,6 +417,12 @@ async function load(){
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
 $('exploreMode').addEventListener('click',()=>{mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{mode='measure';setModeUI();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('exportPNG').addEventListener('click',exportPNG);$('shareMap').addEventListener('click',copyShareLink);
+$('radialPreset').addEventListener('change',e=>{const values={linear:1,compressed:1.4,expanded:.7};if(e.target.value!=='custom')radialExponent=values[e.target.value];syncRadialControls();draw();});
+$('radialExponent').addEventListener('input',e=>{radialExponent=clamp(Number(e.target.value),.5,2);$('radialPreset').value='custom';syncRadialControls();draw();});
+$('historicalEnabled').addEventListener('change',e=>{historical.enabled=e.target.checked;if(historical.enabled)loadHistoricalScan();draw();});
+[['historicalOpacity','opacity'],['historicalCenterX','centerX'],['historicalCenterY','centerY'],['historicalDiameter','diameter'],['historicalScale','scale'],['historicalRotation','rotation']].forEach(([id,key])=>$(id).addEventListener('input',e=>{historical[key]=Number(e.target.value);syncHistoricalControls();draw();}));
+$('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:45,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
+$('retryHistorical').addEventListener('click',()=>loadHistoricalScan(true));
 [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica']].forEach(([id,key])=>$(id).addEventListener('change',e=>{layers[key]=e.target.checked;draw();}));
 $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;draw();});$('zoomIn').addEventListener('click',()=>{zoom=clamp(zoom*1.25,.6,6);draw();});$('zoomOut').addEventListener('click',()=>{zoom=clamp(zoom/1.25,.6,6);draw();});
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
