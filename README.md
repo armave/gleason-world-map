@@ -1,55 +1,60 @@
-# Scale-Calibrated Gleason World Map
+# Flat Disk World Map
 
-An interactive North-Polar azimuthal-equidistant map with searchable countries and capitals, geographic distance measurement, and an Antarctica coastline layer.
+An interactive two-dimensional circular world map, with a configurable radial latitude convention, Natural Earth reference outlines, searchable capitals, flat-canvas measurements, and a fullscreen view.
+
+## Mapping model
+
+The app renders a **2D flat disk**. It does not draw a globe, a sphere, perspective, or a 3D object.
+
+The default radial convention places 90°N at the center and 90°S at the rim:
+
+`r / R = (90° - latitude) / 180°`
+
+This is a configurable cartographic convention applied to longitude/latitude data. The base geographic outlines and capital coordinates are still sourced from Natural Earth and country-data; changing the display model does not independently prove a physical model of Earth.
+
+Distances shown by the measurement tool are straight-line distances between plotted points on the flat disk using the app's nominal radial scale. They are **not** great-circle distances and should not be interpreted as independently surveyed physical distances.
 
 ## Features
 
-- Natural Earth country outlines with country selection and capital markers
-- Searchable countries and capital cities
-- Two-point great-circle measurement with a numerically stable haversine calculation
-- North-Polar azimuthal-equidistant projection, latitude rings, and 15-degree meridians
-- Dynamic scale bar showing **radial** distance scale
-- Independent visibility controls for countries, grid, capitals, capital names, and the Antarctica / ice-wall layer
-- PNG export and shareable URLs that preserve zoom, pan, layer visibility, and measurement points
-- Geographic polygon paths densified before projection, with shortest-longitude handling at the antimeridian and even-odd polygon filling for holes
-- Dataset fetch retries, browser storage cache, and cached-data fallback when the network is unavailable after a successful load
+- 2D circular disk layout; no globe visualization
+- Country selection and searchable capital-city locations
+- Flat-canvas straight-line measurement between two selected coordinates
+- Full-screen map mode, with automatic canvas resize on entry and exit
+- Dynamic scale indicator labelled as a nominal map scale
+- Independent layer toggles for country outlines, grid, capital markers, capital names, and Antarctica
+- PNG export and shareable URLs preserving view, layer visibility, and measurement endpoints
+- Dataset retry, browser cache fallback, and a retry action on load failure
+- Projected polygon edge densification, longitude seam unwrapping, and even-odd polygon fills
 
 ## Run locally
 
-Serve the repository root with a local static web server, then open the displayed local URL. For example:
+Serve the repository root with a static web server:
 
 ```bash
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000` in a modern browser. The first load requires internet access to retrieve the geographic datasets. Successful responses are cached in browser storage where available; cached copies can be used on a later load if the data sources are temporarily unavailable.
+Open `http://localhost:8000` in a modern browser. First load requires an internet connection for the source datasets; successful responses are cached in browser storage when available.
 
 ## Deploy with GitHub Pages
 
-1. Open the repository **Settings → Pages**.
-2. Under **Build and deployment**, set **Source** to **Deploy from a branch**.
-3. Select branch **main** and folder **/(root)**, then save.
-4. GitHub Pages will publish the root `index.html`.
+1. Open **Settings → Pages**.
+2. Set **Build and deployment → Source** to **Deploy from a branch**.
+3. Select branch **main** and folder **/(root)**.
+4. Save.
 
-For this repository, the expected site URL is:
+Expected site URL:
 
 `https://armave.github.io/gleason-world-map/`
 
-## Geographic data sources
+## Data sources
 
-- Country boundaries: [Natural Earth](https://www.naturalearthdata.com/) 1:110m administrative boundaries, distributed through [natural-earth-vector](https://github.com/nvkelso/natural-earth-vector).
-- Antarctica boundary: the Antarctica feature from the same Natural Earth dataset.
+- Country and Antarctica boundary features: [Natural Earth 1:110m Admin 0](https://github.com/nvkelso/natural-earth-vector).
 - Capital coordinates: [country-data](https://github.com/iliyaj/country-data), `data/country-capital.csv`.
 
-The app fetches these datasets at runtime from their public GitHub raw-file URLs and caches the text locally in the browser when storage is available.
+## Known limitations
 
-## Projection and measurement notes
-
-The map uses the North-Polar azimuthal-equidistant projection:
-
-- Radial distance from the North Pole is represented at true scale.
-- East-west scale distortion increases with angular distance from the North Pole.
-- The scale bar therefore describes radial scale; it is not a universal local scale bar in every direction.
-- Pairwise measurements are calculated from latitude and longitude on a sphere with mean radius **6,371 km**. They are not calculated from screen pixels and are not an ellipsoidal WGS84 geodesic.
-
-Polygon rings are drawn using even-odd filling so interior holes are retained. The map densifies long geographic edges and unwraps longitude steps across the ±180° seam before projection. As with any generalized 1:110m dataset, small islands and detailed coastlines are simplified.
+- Natural Earth 1:110m geometry is generalized; it is not a detailed coastline survey.
+- This radial convention is a display choice. Other flat maps can use different latitude-to-radius rules.
+- Polygon edge densification reduces coarse projected chords, but does not fully resolve every topology edge case. Seam-crossing polygons should be visually checked at high latitudes and around the dateline.
+- Nominal scale values describe the selected map convention, not an independently measured Earth scale.
