@@ -68,7 +68,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <label><input type="checkbox" id="layerCountries" checked> Country outlines</label>
         <label><input type="checkbox" id="layerGrid" checked> Grid & coordinates</label>
         <label><input type="checkbox" id="layerCapitals" checked> Capital markers</label>
-        <label><input type="checkbox" id="layerCapitalNames" checked> Capital names</label>
+        <label><input type="checkbox" id="layerCapitalNames" checked> Capital names (zoomed)</label>
         <label><input type="checkbox" id="layerAntarctica" checked> Antarctica / ice wall</label>
       </div>
     </section>
@@ -136,7 +136,7 @@ const rad = d => d*Math.PI/180;
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const fmtCoord = (lat,lon) => `${Math.abs(lat).toFixed(2)}°${lat>=0?'N':'S'}, ${Math.abs(lon).toFixed(2)}°${lon>=0?'E':'W'}`;
 const lonName = d => d===0?'0° / 360°':`${d}°`;
-function isoFor(f){const p=f.properties||{};let v=p.ISO_A3_EH||p.ISO_A3||p.ADM0_A3||p.SOV_A3||'';return String(v).toUpperCase();}
+function isoFor(f){const p=f.properties||{};const candidates=[p.ISO_A3_EH,p.ISO_A3,p.ADM0_A3,p.SOV_A3];const v=candidates.find(x=>x&&String(x).toUpperCase()!=='-99')||'';return String(v).toUpperCase();}
 function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||p.FORMAL_EN||'Unknown';}
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return colors[Math.abs(h)%colors.length];}
 function project(lon,lat){const theta=(90-lat)*Math.PI/180;const rr=baseR*theta/Math.PI;const l=rad(lon);return [rr*Math.sin(l),-rr*Math.cos(l)];}
@@ -248,7 +248,7 @@ function parseCSV(text){
  if(rows.length<2)return [];
  const headers=rows.shift().map(h=>norm(h).replace(/ /g,''));
  const pick=names=>names.map(n=>headers.indexOf(n)).find(i=>i>=0);
- const ix={iso:pick(['iso','isoa3','countrycode','countryiso']),city:pick(['city','capital','capitalcity']),lat:pick(['lat','latitude']),lon:pick(['lon','lng','longitude'])};
+ const ix={iso:pick(['iso','isoa3','alpha3code','countrycode','countryiso']),city:pick(['city','capital','capitalcity']),lat:pick(['lat','latitude']),lon:pick(['lon','lng','longitude'])};
  if(Object.values(ix).some(i=>i===undefined))throw new Error('Capital CSV is missing required columns (ISO, city, latitude, longitude).');
  const out=[];
  for(const r of rows){const iso=String(r[ix.iso]||'').trim().toUpperCase(),city=String(r[ix.city]||'').trim(),lat=Number(r[ix.lat]),lon=Number(r[ix.lon]);
@@ -260,7 +260,7 @@ function parseCSV(text){
 async function fetchTextCached(url,key){
  const cacheKey='gleason-map:'+key+':v1';let lastError=null;
  for(let attempt=0;attempt<2;attempt++){
-  try{const response=await fetch(url,{cache:'no-cache'});if(!response.ok)throw new Error(`HTTP ${response.status} while loading ${key}`);
+  try{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);let response;try{response=await fetch(url,{cache:'no-cache',signal:controller.signal});}finally{clearTimeout(timeout);}if(!response.ok)throw new Error(`HTTP ${response.status} while loading ${key}`);
    const text=await response.text();if(!text||text.length<20)throw new Error(`The ${key} dataset was empty.`);
    try{localStorage.setItem(cacheKey,text);}catch(storageError){console.warn('Dataset cache unavailable:',storageError);}
    return {text,stale:false};
@@ -285,10 +285,10 @@ function niceScaleValue(value){const power=Math.pow(10,Math.floor(Math.log10(val
 function drawScaleBar(){
  if(!baseR||!zoom)return;
  const targetPx=110,raw=targetPx*Math.PI*EARTH_R/(baseR*zoom),km=niceScaleValue(raw),barPx=km*baseR*zoom/(Math.PI*EARTH_R);
- const x=16,y=height-22;ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
- ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,Math.max(86,barPx+14),43);ctx.strokeRect(x-7,y-29,Math.max(86,barPx+14),43);
+ const x=16,y=height-22,label=`${km.toLocaleString('en-US')} km · radial scale`;ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
+ ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,boxWidth,43);ctx.strokeRect(x-7,y-29,boxWidth,43);
  ctx.strokeStyle='#294653';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+barPx,y);ctx.moveTo(x,y-5);ctx.lineTo(x,y+5);ctx.moveTo(x+barPx,y-5);ctx.lineTo(x+barPx,y+5);ctx.stroke();
- ctx.fillStyle='#294653';ctx.fillText(`${km.toLocaleString('en-US')} km · radial scale`,x,y-14);ctx.restore();
+ ctx.fillStyle='#294653';ctx.fillText(label,x,y-14);ctx.restore();
 }
 function exportPNG(){
  draw();if(!canvas.toBlob){$('status').textContent='PNG export is not supported in this browser.';return;}
