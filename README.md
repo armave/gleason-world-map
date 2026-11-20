@@ -1,20 +1,24 @@
 # Flat Disk World Map
 
-An interactive two-dimensional circular disk map with configurable radial latitude spacing, searchable geographic reference data, straight-line disk measurement, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive two-dimensional circular disk map with WGS84 ellipsoidal ground-distance measurement, configurable radial latitude spacing, searchable geographic reference data, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 ## Flat-disk layout
 
 The app draws a **2D disk**, not a 3D globe or sphere.
 
-Its default layout places 90°N at the centre and 90°S at the outer rim, using the equal-radial-spacing convention:
+Its radial reference is the WGS84 meridional surface distance from the North Pole. The pole-to-pole meridional distance is approximately **20,003.9 km**. The radial equation is:
 
-`r / R = ((90° - latitude) / 180°)^p`
+`r / R = (Dₙ(latitude) / 20,003.9 km)^p`
 
-The default is `p = 1`, which places latitude bands at equal radial intervals. The radial exponent can be adjusted from 0.50 to 2.00 using the presets or custom slider. The live table shows the radius assigned to each latitude for the selected setting.
+where `Dₙ` is the WGS84 surface distance southward from 90°N. At the default `p = 1`, the disk radius is therefore equal to real meridional ground distance from the North Pole. The exponent can be adjusted from 0.50 to 2.00 for visual comparison; values other than `p = 1` intentionally change radial spacing and should not be treated as a true-to-distance radial scale. The live table shows both meridional ground distance and the resulting disk radius in kilometres.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. All coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same convention.
 
-All coastlines, grid rings, clicks, and flat-plane measurements follow the selected radial exponent. Measurements are straight-line distances in the displayed disk plane, expressed as nominal map units using the 6,371-unit reference radius. They are **not** great-circle or independently surveyed physical distances.
+All coastlines, grid rings, clicks, capitals, and measurement endpoints use the same longitude orientation and radial calibration.
+
+Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid** through GeographicLib's Karney inverse/direct algorithms, which converge for near-antipodal point pairs. If the GeographicLib browser script is unavailable, the app falls back to Vincenty for pairs where it converges. For a near-antipodal pair, it shows “Unavailable” rather than presenting a less accurate approximation as a real-world measurement. The dashed connecting line is sampled along that geodesic and projected onto the disk; its displayed length is not measured in drawing pixels. Results are shown in metres below 1 km and kilometres for longer distances.
+
+The scale bar is also grounded in WGS84: it recalculates the real ground distance represented by a horizontal screen segment near the current view centre. Geodesic calculations use [GeographicLib's JavaScript implementation](https://geographiclib.sourceforge.io/JavaScript/doc), loaded from the published version 2.2.0 browser bundle on jsDelivr with a Subresource Integrity hash (MIT/X11 license). It is a **local** scale indicator, not a claim that the whole disk has one uniform scale. Panning, zooming, or changing the radial exponent can change the local scale.
 
 This is a configurable two-dimensional map convention applied to latitude/longitude reference data. It should not be mistaken for independent evidence of a physical model of the Earth.
 
@@ -39,7 +43,9 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Live latitude-to-radius calibration table
 - Gleason longitude orientation: Greenwich right, 90°E up
 - Search and select countries and capitals
-- Flat-plane straight-line measurement
+- WGS84 ellipsoidal surface-distance measurement in metres and kilometres
+- View-centred local ground scale bar, recalculated for pan, zoom, and radial calibration
+- Geodesic measurement path projected onto the flat disk
 - Full-screen map mode with automatic canvas resizing
 - Nominal scale indicator
 - Toggle country outlines, grid, capital markers, capital names, and Antarctica
@@ -77,7 +83,8 @@ Expected URL: `https://armave.github.io/gleason-world-map/`
 ## Important limitations
 
 - Natural Earth 1:110m geometry is generalized, not a high-resolution coastline survey.
-- Radial exponent settings are alternate drawing conventions; `p = 1` is the equal-radial-spacing default used for the historical comparison.
+- The `p = 1` radial setting follows WGS84 meridional ground distance from the North Pole. Other exponents deliberately distort radial spacing for visual comparison.
+- The flat-disk projection does not preserve every direction, distance, or area globally. The on-map scale bar is local; two-point readouts remain WGS84 surface geodesics regardless of projection settings.
 - The historical scan is a printed sheet, not an automatically georeferenced overlay. Crop and alignment controls are manual; use it for visual comparison rather than as a surveyed reference.
 - Nominal map distances describe the selected drawing convention. They do not independently establish physical distances.
 - Seam-crossing and high-latitude polygon topology still deserves visual review against higher-resolution data.
