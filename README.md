@@ -10,7 +10,7 @@ Its radial reference is the WGS84 meridional surface distance from the North Pol
 
 `r / R = (Dₙ(latitude) / 20,003.9 km)^p`
 
-where `Dₙ` is the WGS84 surface distance southward from 90°N. At the default `p = 1`, the disk radius is therefore equal to real meridional ground distance from the North Pole. The exponent can be adjusted from 0.50 to 2.00 for visual comparison; values other than `p = 1` intentionally change radial spacing and should not be treated as a true-to-distance radial scale. The live table shows both meridional ground distance and the resulting disk radius in kilometres.
+where `Dₙ` is the WGS84 surface distance southward from 90°N. At the default `p = 1`, the disk radius is therefore equal to real meridional ground distance from the North Pole. The exponent can be adjusted from 0.50 to 2.00 for visual comparison; values other than `p = 1` intentionally change radial spacing and should not be treated as a true-to-distance radial scale. The live table shows actual meridional ground distance and the resulting **projected radius (km-equivalent)**. Only at `p = 1` is that projected radius equal to the ground distance.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. All coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same convention.
 
