@@ -36,7 +36,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Flat circular disk · WGS84 distances and areas · Local distortion diagnostics · Historical scan registration</div>
+  <div class="subtitle">Polar azimuthal equidistant disk · Spherical ground measurements · Exact local distortion diagnostics · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -52,7 +52,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
     </div>
     <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
-    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Hover countries/capitals for names</span><span>Natural Earth outlines · WGS84 local ground scale · Antarctica coastline</span></div>
+    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Hover countries/capitals for names</span><span>Natural Earth outlines · Spherical local ground scale · Antarctic ice-wall rim</span></div>
   </main>
   <aside>
     <section class="panel">
@@ -80,16 +80,16 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations on the map. The readout is the shortest surface distance over the WGS84 reference ellipsoid, not a straight line in the flat drawing.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations on the map. The readout is the shortest great-circle surface distance on a sphere with R = 6,371 km, not a straight line in the flat drawing.</p>
       <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">Shortest WGS84 ellipsoidal surface distance</div>
+      <div class="measure-sub" id="distanceSub">Shortest spherical great-circle surface distance · R = 6,371 km</div>
       <div id="endpointRows" style="margin-top:8px">
         <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
         <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
       </div>
       <div class="endpoint-actions"><button id="clearMeasure">Clear points</button></div>
       <div class="divider"></div>
-      <div class="small" id="areaHelp">Choose Area, then click three or more points to draw a region. Finish to calculate ellipsoidal area and perimeter.</div>
+      <div class="small" id="areaHelp">Choose Area, then click three or more points to draw a region. Finish to calculate spherical area and great-circle perimeter.</div>
       <div class="measure-value" id="areaValue">—</div>
       <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
       <div class="small" id="areaVertexCount">0 vertices</div>
@@ -103,39 +103,30 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <div class="info-box"><span>Capital</span><strong id="selectionCapital">—</strong></div>
         <div class="info-box"><span>Coordinates</span><strong id="selectionCoords">—</strong></div>
       </div>
-      <div class="info-box" style="margin-top:8px"><span>WGS84 area from boundary geometry</span><strong id="selectionArea">—</strong></div>
+      <div class="info-box" style="margin-top:8px"><span>Spherical area · R = 6,371 km</span><strong id="selectionArea">—</strong></div>
       <div class="endpoint-actions" id="selectionButtons" style="display:none">
         <button id="setA">Set as A</button><button id="setB">Set as B</button>
       </div>
     </section>
     <section class="panel">
-      <h2>Latitude-to-radius calibration</h2>
-      <select id="radialPreset" class="control-select" aria-label="Radial calibration preset">
-        <option value="linear">Equal radial spacing · Gleason layout</option>
-        <option value="compressed">Compress inner latitude bands</option>
-        <option value="expanded">Expand inner latitude bands</option>
-        <option value="custom">Custom power curve</option>
-      </select>
-      <div class="range-control">
-        <label for="radialExponent"><span>Radial exponent</span><strong id="radialExponentValue">1.00</strong></label>
-        <input id="radialExponent" type="range" min="0.50" max="2.00" step="0.05" value="1">
-      </div>
-      <div class="formula">r / R = (Dₙ(φ) / 20,003.9 km)<sup>p</sup><br>x = r · cos(λ)<br>y = −r · sin(λ)</div>
+      <h2>Polar azimuthal equidistant calibration</h2>
+      <div class="formula">θ = π/2 − φ<br>r = Rθ, R = 6,371 km<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>k(θ) = θ / sin(θ) · m(θ) = sin(θ) / θ</div>
       <table class="cal-table" style="margin-top:9px">
-        <thead><tr><th>Latitude</th><th>Surface distance from 90°N</th><th>Projected radius (km equiv.)</th></tr></thead>
+        <thead><tr><th>Latitude</th><th>θ (rad)</th><th>r (km)</th><th>k stretch</th><th>m decoder</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">At p = 1, disk radius from 90°N equals the actual WGS84 meridional surface distance (about 20,003.9 km pole-to-pole). Other exponents deliberately alter the displayed radial spacing; they do not alter the WGS84 distance readout. East longitudes run counter-clockwise, matching the printed Gleason sheet. The map remains a 2D projection: scale varies by location, so the scale bar reports local ground distance near the current view centre.</p>
+      <p class="note" style="margin:9px 0 0">The radial scale is exactly 1:1 from the North Pole. The disk rim is πR = 20,015.09 km. The tangential map stretch is k = θ/sin(θ); multiply a flat east–west map distance by m = sin(θ)/θ to recover spherical ground distance. At the South Pole, longitude converges and m tends to zero. This is the specified spherical model, not a WGS84 ellipsoid.</p>
     </section>
     <section class="panel" id="distortionPanel">
       <h2>Projection distortion at selected location</h2>
       <div class="small" id="distortionPlace">Equator / Greenwich · 0.00°</div>
       <div class="distortion-grid">
         <div class="info-box"><span>North–south scale</span><strong id="distortionRadial">1.000×</strong></div>
-        <div class="info-box"><span>East–west scale</span><strong id="distortionEastWest">1.568×</strong></div>
-        <div class="info-box"><span>Area scale</span><strong id="distortionArea">1.568×</strong></div>
+        <div class="info-box"><span>East–west map stretch k</span><strong id="distortionEastWest">1.571×</strong></div>
+        <div class="info-box"><span>East–west decoder m</span><strong id="distortionDecoder">0.637×</strong></div>
+        <div class="info-box"><span>Map-area stretch</span><strong id="distortionArea">1.571×</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">Values compare local disk scale with WGS84 ground scale. 1.000× means true scale; 1.200× means a 20% stretch. Area scale is the local product of the two perpendicular scale factors. Click a place on the map to inspect its distortion.</p>
+      <p class="note" style="margin:8px 0 0">Radial scale is 1.000 everywhere. k = θ/sin(θ) is the east–west stretch in the flat disk; m = sin(θ)/θ converts flat east–west distances back to spherical ground distances. The map-area stretch is k. Click a place on the map to inspect its values.</p>
     </section>
     <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -174,12 +165,11 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <button id="resetHistorical">Reset alignment</button>
         <button id="retryHistorical">Reload scan</button>
       </div>
-      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. The scan stays unwarped at p ≠ 1, so differences show how each alternative radial layout departs from the 1892 print.</p>
+      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. Registered scan control points target the same spherical polar-disk projection used by the live map.</p>
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Ground distances use the WGS84 reference ellipsoid. Measurements are shortest surface geodesics, displayed in metres or kilometres; the connecting line is the projected geodesic path. The scale bar is a local horizontal ground scale near the current view centre and changes with pan, zoom, and radial calibration. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
-<script src="https://cdn.jsdelivr.net/npm/geographiclib-geodesic@2.2.0/geographiclib-geodesic.min.js" integrity="sha256-BuNRKQSzRldfR18U0LJ+oJedvNKw7d6/Xx7u/SNDlbU=" crossorigin="anonymous"></script>
+<div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Ground distances and areas use the specified sphere (R = 6,371 km), not the WGS84 ellipsoid. Two-point measurements are shortest great-circle distances; polygon areas use spherical excess and perimeters use great-circle edges. The local scale bar is recomputed around the current view centre. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The disk is a projection and does not preserve all distances, directions, or areas globally.</div>
 <script>
 (() => {
 'use strict';
