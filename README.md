@@ -28,7 +28,7 @@ The optional overlay loads the Boston Public Library's scan of Alexander Gleason
 - Reset alignment or reload the scan.
 - Shared URLs retain the radial exponent and historical overlay settings.
 
-The crop starts from the published scan proportions: the full sheet is approximately 4,773 × 6,794 pixels, and the printed disk is about 3,610 pixels across. The initial 75.6% crop diameter is therefore an informed starting point, not automatic georeferencing. Fine adjustment may still be needed.
+The crop starts from the published scan proportions: the full sheet is approximately 4,773 × 6,794 pixels, and the printed disk is about 3,610 pixels across. The initial 75.6% crop diameter is therefore an informed starting point, not automatic georeferencing. Fine adjustment may still be needed. The historical scan is never geometrically warped: when p ≠ 1, the modern vector map intentionally departs from the 1892 print, allowing the user to compare alternative radial conventions against the original.
 
 Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public Library / Digital Commonwealth](https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z). Image identifier: `commonwealth:7h149v867`. The catalogue reports **no known copyright restrictions**. The image is loaded on demand; first use requires access to the archive's IIIF image service.
 
