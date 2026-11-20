@@ -52,7 +52,7 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
     </div>
     <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
-    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Hover countries/capitals for names</span><span>Natural Earth country outlines · Antarctica coastline styled as the outer ice wall</span></div>
+    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Hover countries/capitals for names</span><span>Natural Earth outlines · WGS84 local ground scale · Antarctica coastline</span></div>
   </main>
   <aside>
     <section class="panel">
@@ -74,14 +74,14 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
       </div>
     </section>
     <section class="panel">
-      <h2>Flat-plane measurement</h2>
+      <h2>Real-world measurement</h2>
       <div class="mode-row">
         <button id="exploreMode" class="active">Explore</button>
         <button id="measureMode">Measure</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Switch to Measure, then click two places on the disk. You can also assign a selected capital to A or B.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations on the map. The readout is the shortest surface distance over the WGS84 reference ellipsoid, not a straight line in the flat drawing.</p>
       <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">Straight-line distance on the flat disk</div>
+      <div class="measure-sub" id="distanceSub">Shortest WGS84 ellipsoidal surface distance</div>
       <div id="endpointRows" style="margin-top:8px">
         <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
         <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
@@ -112,12 +112,12 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
         <label for="radialExponent"><span>Radial exponent</span><strong id="radialExponentValue">1.00</strong></label>
         <input id="radialExponent" type="range" min="0.50" max="2.00" step="0.05" value="1">
       </div>
-      <div class="formula">r / R = ((90° − φ) / 180°)<sup>p</sup><br>x = r · cos(λ)<br>y = −r · sin(λ)</div>
+      <div class="formula">r / R = (Dₙ(φ) / 20,003.9 km)<sup>p</sup><br>x = r · cos(λ)<br>y = −r · sin(λ)</div>
       <table class="cal-table" style="margin-top:9px">
-        <thead><tr><th>Latitude</th><th>Radius / R</th><th>Disk %</th></tr></thead>
+        <thead><tr><th>Latitude</th><th>Surface distance from 90°N</th><th>Disk radius</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">All coastlines, grid rings, clicks, and flat-plane measurements follow the selected exponent. p = 1 gives equal radial spacing between latitude degrees. Greenwich (0°) is at the right; east longitudes run counter-clockwise, matching the printed Gleason sheet. This is a configurable display convention, not proof of a physical Earth model.</p>
+      <p class="note" style="margin:9px 0 0">At p = 1, disk radius from 90°N equals the actual WGS84 meridional surface distance (about 20,003.9 km pole-to-pole). Other exponents deliberately alter the displayed radial spacing; they do not alter the WGS84 distance readout. East longitudes run counter-clockwise, matching the printed Gleason sheet. The map remains a 2D projection: scale varies by location, so the scale bar reports local ground distance near the current view centre.</p>
     </section>
     <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -155,14 +155,37 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map is a two-dimensional flat disk with a configurable radial latitude convention; its distance readout measures straight lines on that disk and does not claim to represent measured physical distances.</div>
+<div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Ground distances use the WGS84 reference ellipsoid. Measurements are shortest surface geodesics, displayed in metres or kilometres; the connecting line is the projected geodesic path. The scale bar is a local horizontal ground scale near the current view centre and changes with pan, zoom, and radial calibration. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
 <script>
 (() => {
 'use strict';
-const MAP_RADIUS = 6371; // nominal radius in map units for scale-bar and flat-distance display
-// Flat-disk radial convention: p=1 is equal radial spacing; other powers are comparison settings.
+// WGS84 reference ellipsoid. Internal ground distances are measured in metres.
+const WGS84_A = 6378137;
+const WGS84_F = 1 / 298.257223563;
+const WGS84_B = WGS84_A * (1 - WGS84_F);
+const WGS84_E2 = WGS84_F * (2 - WGS84_F);
+function meridionalArc(phi) {
+ const e2=WGS84_E2,e4=e2*e2,e6=e4*e2;
+ const a0=1-e2/4-3*e4/64-5*e6/256;
+ const a2=3*e2/8+3*e4/32+45*e6/1024;
+ const a4=15*e4/256+45*e6/1024;
+ const a6=35*e6/3072;
+ return WGS84_A*(a0*phi-a2*Math.sin(2*phi)+a4*Math.sin(4*phi)-a6*Math.sin(6*phi));
+}
+const NORTH_POLE_ARC_M = meridionalArc(Math.PI/2);
+const POLE_TO_POLE_KM = 2*NORTH_POLE_ARC_M/1000;
+function meridionalDistanceFromNorthKm(lat) {
+ return (NORTH_POLE_ARC_M-meridionalArc(rad(lat)))/1000;
+}
+function latitudeFromMeridionalDistanceKm(distanceKm) {
+ const target=NORTH_POLE_ARC_M-clamp(distanceKm,0,POLE_TO_POLE_KM)*1000;
+ let low=-Math.PI/2,high=Math.PI/2;
+ for(let i=0;i<48;i++){const mid=(low+high)/2;if(meridionalArc(mid)>target)high=mid;else low=mid;}
+ return (low+high)*90/Math.PI;
+}
+// p=1 makes radial distance equal WGS84 meridional ground distance from 90°N.
 let radialExponent = 1;
-const radialFraction = lat => Math.pow(clamp((90-lat)/180,0,1),radialExponent);
+const radialFraction = lat => Math.pow(clamp(meridionalDistanceFromNorthKm(lat)/POLE_TO_POLE_KM,0,1),radialExponent);
 const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
 let historicalImage = null, historicalLoading = false, historicalFailed = false;
 // The BPL scan is 4,773 × 6,794 px; the printed disk is about 3,610 px wide.
@@ -186,9 +209,98 @@ function isoFor(f){const p=f.properties||{};const candidates=[p.ISO_A3_EH,p.ISO_
 function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||p.FORMAL_EN||'Unknown';}
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return colors[Math.abs(h)%colors.length];}
 function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.cos(l),-rho*Math.sin(l)];}
-function unproject(x,y){const rho=Math.hypot(x,y);const fraction=clamp(rho/baseR,0,1);const lat=90-180*Math.pow(fraction,1/radialExponent);const lon=rho<1e-7?0:Math.atan2(-y,x)*180/Math.PI;return {lat,lon};}
-function flatDistance(a,b){const A=project(a.lon,a.lat),B=project(b.lon,b.lat);return Math.hypot(B[0]-A[0],B[1]-A[1])*(MAP_RADIUS/baseR);}
-function flatLinePath(a,b){return [project(a.lon,a.lat),project(b.lon,b.lat)];}
+function unproject(x,y){
+ const rho=Math.hypot(x,y),fraction=clamp(rho/baseR,0,1);
+ const baseFraction=Math.pow(fraction,1/radialExponent);
+ const lat=latitudeFromMeridionalDistanceKm(baseFraction*POLE_TO_POLE_KM);
+ const lon=rho<1e-7?0:Math.atan2(-y,x)*180/Math.PI;
+ return {lat,lon};
+}
+function wrapRadians(value){return ((value+3*Math.PI)%(2*Math.PI))-Math.PI;}
+function haversineInverse(a,b){
+ const p1=rad(a.lat),p2=rad(b.lat),dPhi=p2-p1,dLambda=wrapRadians(rad(b.lon-a.lon));
+ const h=Math.sin(dPhi/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dLambda/2)**2;
+ const central=2*Math.atan2(Math.sqrt(clamp(h,0,1)),Math.sqrt(1-clamp(h,0,1)));
+ const bearing=Math.atan2(Math.sin(dLambda)*Math.cos(p2),Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dLambda));
+ return {distanceMeters:6371008.8*central,initialBearing:bearing};
+}
+// Vincenty's inverse solution on the WGS84 ellipsoid; spherical fallback handles near-antipodal pairs.
+function geodesicInverse(a,b){
+ const phi1=rad(a.lat),phi2=rad(b.lat),L=wrapRadians(rad(b.lon-a.lon));
+ const U1=Math.atan((1-WGS84_F)*Math.tan(phi1)),U2=Math.atan((1-WGS84_F)*Math.tan(phi2));
+ const sinU1=Math.sin(U1),cosU1=Math.cos(U1),sinU2=Math.sin(U2),cosU2=Math.cos(U2);
+ let lambda=L,converged=false;
+ for(let i=0;i<100;i++){
+  const sinLambda=Math.sin(lambda),cosLambda=Math.cos(lambda);
+  const sinSigma=Math.sqrt((cosU2*sinLambda)**2+(cosU1*sinU2-sinU1*cosU2*cosLambda)**2);
+  if(sinSigma===0)return {distanceMeters:0,initialBearing:0};
+  const cosSigma=sinU1*sinU2+cosU1*cosU2*cosLambda,sigma=Math.atan2(sinSigma,cosSigma);
+  const sinAlpha=cosU1*cosU2*sinLambda/sinSigma,cosSqAlpha=1-sinAlpha*sinAlpha;
+  const cos2SigmaM=cosSqAlpha>1e-15?cosSigma-2*sinU1*sinU2/cosSqAlpha:0;
+  const C=WGS84_F/16*cosSqAlpha*(4+WGS84_F*(4-3*cosSqAlpha));
+  const next=L+(1-C)*WGS84_F*sinAlpha*(sigma+C*sinSigma*(cos2SigmaM+C*cosSigma*(-1+2*cos2SigmaM*cos2SigmaM)));
+  if(Math.abs(next-lambda)<1e-12){lambda=next;converged=true;break;}
+  lambda=next;
+ }
+ if(!converged)return haversineInverse(a,b);
+ const sinLambda=Math.sin(lambda),cosLambda=Math.cos(lambda);
+ const sinSigma=Math.sqrt((cosU2*sinLambda)**2+(cosU1*sinU2-sinU1*cosU2*cosLambda)**2);
+ const cosSigma=sinU1*sinU2+cosU1*cosU2*cosLambda,sigma=Math.atan2(sinSigma,cosSigma);
+ const sinAlpha=cosU1*cosU2*sinLambda/sinSigma,cosSqAlpha=1-sinAlpha*sinAlpha;
+ const cos2SigmaM=cosSqAlpha>1e-15?cosSigma-2*sinU1*sinU2/cosSqAlpha:0;
+ const uSq=cosSqAlpha*(WGS84_A*WGS84_A-WGS84_B*WGS84_B)/(WGS84_B*WGS84_B);
+ const A=1+uSq/16384*(4096+uSq*(-768+uSq*(320-175*uSq)));
+ const B=uSq/1024*(256+uSq*(-128+uSq*(74-47*uSq)));
+ const deltaSigma=B*sinSigma*(cos2SigmaM+B/4*(cosSigma*(-1+2*cos2SigmaM*cos2SigmaM)-B/6*cos2SigmaM*(-3+4*sinSigma*sinSigma)*(-3+4*cos2SigmaM*cos2SigmaM)));
+ const distanceMeters=WGS84_B*A*(sigma-deltaSigma);
+ const initialBearing=Math.atan2(cosU2*sinLambda,cosU1*sinU2-sinU1*cosU2*cosLambda);
+ return {distanceMeters,initialBearing};
+}
+function sphericalDirect(origin,bearing,distanceMeters){
+ const phi1=rad(origin.lat),lambda1=rad(origin.lon),delta=distanceMeters/6371008.8;
+ const phi2=Math.asin(Math.sin(phi1)*Math.cos(delta)+Math.cos(phi1)*Math.sin(delta)*Math.cos(bearing));
+ const lambda2=lambda1+Math.atan2(Math.sin(bearing)*Math.sin(delta)*Math.cos(phi1),Math.cos(delta)-Math.sin(phi1)*Math.sin(phi2));
+ return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda2)*180/Math.PI};
+}
+// Vincenty's direct solution, used to draw the measured shortest surface path on the disk.
+function geodesicDirect(origin,bearing,distanceMeters){
+ if(distanceMeters<=0)return {lat:origin.lat,lon:origin.lon};
+ const alpha1=bearing,phi1=rad(origin.lat),lambda1=rad(origin.lon);
+ const tanU1=(1-WGS84_F)*Math.tan(phi1),cosU1=1/Math.sqrt(1+tanU1*tanU1),sinU1=tanU1*cosU1;
+ const sigma1=Math.atan2(tanU1,Math.cos(alpha1)),sinAlpha=cosU1*Math.sin(alpha1),cosSqAlpha=1-sinAlpha*sinAlpha;
+ const uSq=cosSqAlpha*(WGS84_A*WGS84_A-WGS84_B*WGS84_B)/(WGS84_B*WGS84_B);
+ const A=1+uSq/16384*(4096+uSq*(-768+uSq*(320-175*uSq)));
+ const B=uSq/1024*(256+uSq*(-128+uSq*(74-47*uSq)));
+ let sigma=distanceMeters/(WGS84_B*A),converged=false;
+ for(let i=0;i<100;i++){
+  const twoSigmaM=2*sigma1+sigma,sinSigma=Math.sin(sigma),cosSigma=Math.cos(sigma);
+  const cos2SigmaM=Math.cos(twoSigmaM);
+  const deltaSigma=B*sinSigma*(cos2SigmaM+B/4*(cosSigma*(-1+2*cos2SigmaM*cos2SigmaM)-B/6*cos2SigmaM*(-3+4*sinSigma*sinSigma)*(-3+4*cos2SigmaM*cos2SigmaM)));
+  const next=distanceMeters/(WGS84_B*A)+deltaSigma;
+  if(Math.abs(next-sigma)<1e-12){sigma=next;converged=true;break;}
+  sigma=next;
+ }
+ if(!converged)return sphericalDirect(origin,bearing,distanceMeters);
+ const sinSigma=Math.sin(sigma),cosSigma=Math.cos(sigma),twoSigmaM=2*sigma1+sigma,cos2SigmaM=Math.cos(twoSigmaM);
+ const tmp=sinU1*sinSigma-cosU1*cosSigma*Math.cos(alpha1);
+ const phi2=Math.atan2(sinU1*cosSigma+cosU1*sinSigma*Math.cos(alpha1),(1-WGS84_F)*Math.sqrt(sinAlpha*sinAlpha+tmp*tmp));
+ const lambda=Math.atan2(sinSigma*Math.sin(alpha1),cosU1*cosSigma-cosU1*sinSigma*Math.cos(alpha1));
+ const C=WGS84_F/16*cosSqAlpha*(4+WGS84_F*(4-3*cosSqAlpha));
+ const L=lambda-(1-C)*WGS84_F*sinAlpha*(sigma+C*sinSigma*(cos2SigmaM+C*cosSigma*(-1+2*cos2SigmaM*cos2SigmaM)));
+ return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda1+L)*180/Math.PI};
+}
+function geodesicLinePath(a,b){
+ const inverse=geodesicInverse(a,b),distance=inverse.distanceMeters;
+ if(distance<0.01)return [project(a.lon,a.lat)];
+ const segments=Math.max(2,Math.min(240,Math.ceil(distance/250000))),path=[];
+ for(let i=0;i<=segments;i++){const p=geodesicDirect(a,inverse.initialBearing,distance*i/segments);path.push(project(p.lon,p.lat));}
+ return path;
+}
+function formatDistance(meters){
+ if(!Number.isFinite(meters)||meters<0)return '—';
+ if(meters<1000)return `${meters.toLocaleString('en-US',{maximumFractionDigits:meters<100?1:0})} m`;
+ return `${(meters/1000).toLocaleString('en-US',{maximumFractionDigits:1})} km`;
+}
 function centroidOfFeature(f){let sx=0,sy=0,sz=0,n=0;function scan(ring){for(const c of ring){const a=rad(c[1]),b=rad(c[0]);sx+=Math.cos(a)*Math.cos(b);sy+=Math.cos(a)*Math.sin(b);sz+=Math.sin(a);n++;}}const g=f.geometry;if(!g)return {lat:0,lon:0};if(g.type==='Polygon')g.coordinates.forEach((r,i)=>i===0&&scan(r));else if(g.type==='MultiPolygon')g.coordinates.forEach(poly=>poly[0]&&scan(poly[0]));if(!n)return {lat:0,lon:0};return {lat:Math.atan2(sz,Math.hypot(sx,sy))*180/Math.PI,lon:Math.atan2(sy,sx)*180/Math.PI};}
 function makePath(f){
  const path=new Path2D(),g=f.geometry;if(!g)return path;
@@ -249,7 +361,7 @@ function drawIceWall(){
  ctx.save();ctx.translate(-baseR*.936,0);ctx.rotate(-Math.PI/2);ctx.fillText('ANTARCTICA · ICE WALL',0,0);ctx.restore();ctx.restore();
 }
 function drawCapitals(){if(!layers.capitals)return;const labelOn=layers.capitalNames&&zoom>1.55;for(const p of capitals){const [x,y]=project(p.lon,p.lat);const active=(selected&&selected.type==='capital'&&selected.capital===p);ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();if(labelOn){ctx.font=`${8.6/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#243a43';ctx.fillText(p.city,x+4/zoom,y-3/zoom);}}}
-function drawMeasure(){if(points.length===2){const path=flatLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
+function drawMeasure(){if(points.length===2){const path=geodesicLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
 function drawHistoricalOverlay(){
  if(!historical.enabled||!historicalImage||!historicalImage.complete||!historicalImage.naturalWidth)return;
  const iw=historicalImage.naturalWidth,ih=historicalImage.naturalHeight,minSide=Math.min(iw,ih);
@@ -284,7 +396,7 @@ function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const km=flatDistance(points[0],points[1]);$('distanceValue').textContent=`${km.toLocaleString('en-US',{maximumFractionDigits:1})} map units`;$('distanceSub').textContent=`Flat-disk straight-line distance · nominal scale radius R = ${MAP_RADIUS.toLocaleString()} map units`;$('measureHelp').textContent='Measurement complete. Click the map to begin a new A → B measurement, or replace either endpoint from a selected capital.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk straight-line distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Click two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=formatDistance(result.distanceMeters);$('distanceSub').textContent='Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent='Measurement complete. The displayed value is surface distance; the dashed line is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){$('suggestions').classList.remove('open');$('search').value=item.type==='capital'?`${item.obj.city}, ${item.obj.countryName||''}`.replace(/, $/,''):item.obj.name;if(item.type==='capital'){showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,1.55));}else{showCountry(item.obj);const center=item.obj.center;focusGeo(center.lat,center.lon,Math.max(zoom,1.25));}}
@@ -348,7 +460,7 @@ function restoreSharedState(){
 }
 function syncRadialControls(){
  $('radialExponent').value=radialExponent.toFixed(2);$('radialExponentValue').textContent=radialExponent.toFixed(2);
- const rows=[90,60,30,0,-30,-60,-90].map(lat=>{const f=radialFraction(lat);const label=lat===0?'0°':`${Math.abs(lat)}°${lat>0?'N':'S'}`;return `<tr><td>${label}</td><td>${f.toFixed(3)}</td><td>${(f*100).toFixed(1)}%</td></tr>`;});
+ const rows=[90,60,30,0,-30,-60,-90].map(lat=>{const f=radialFraction(lat),groundKm=meridionalDistanceFromNorthKm(lat),diskKm=f*POLE_TO_POLE_KM;const label=lat===0?'0°':`${Math.abs(lat)}°${lat>0?'N':'S'}`;return `<tr><td>${label}</td><td>${formatDistance(groundKm*1000)}</td><td>${formatDistance(diskKm*1000)}</td></tr>`;});
  $('radialRows').innerHTML=rows.join('');
  if(Math.abs(radialExponent-1)<.001)$('radialPreset').value='linear';else if(Math.abs(radialExponent-1.4)<.001)$('radialPreset').value='compressed';else if(Math.abs(radialExponent-.7)<.001)$('radialPreset').value='expanded';else $('radialPreset').value='custom';
 }
@@ -364,11 +476,34 @@ function loadHistoricalScan(force=false){
  img.onerror=()=>{historicalLoading=false;historicalFailed=true;$('historicalStatus').textContent='The archive image could not be loaded in this browser. Open the source record to view the scan; retry later if the archive is unavailable.';draw();};
  img.src=HISTORICAL_SCAN_URL+(force?'?reload='+Date.now():'');
 }
-function niceScaleValue(value){const power=Math.pow(10,Math.floor(Math.log10(value))),fraction=value/power;return (fraction>=7.5?10:fraction>=3.5?5:fraction>=1.5?2:1)*power;}
+function niceScaleFloor(value){
+ if(!Number.isFinite(value)||value<=0)return 0;
+ const power=Math.pow(10,Math.floor(Math.log10(value))),fraction=value/power;
+ return (fraction>=5?5:fraction>=2?2:1)*power;
+}
+function scaleAnchorWorld(){
+ let x=-panX/zoom,y=-panY/zoom;
+ const rho=Math.hypot(x,y),limit=baseR*.55;
+ if(rho>limit&&rho>0){x*=limit/rho;y*=limit/rho;}
+ return {x,y};
+}
+function groundDistanceForScalePixels(px,anchor){
+ const half=px/(2*zoom);
+ const a=unproject(anchor.x-half,anchor.y),b=unproject(anchor.x+half,anchor.y);
+ return geodesicInverse(a,b).distanceMeters/1000;
+}
 function drawScaleBar(){
  if(!baseR||!zoom)return;
- const targetPx=110,raw=targetPx*MAP_RADIUS/(baseR*zoom),km=niceScaleValue(raw),barPx=km*baseR*zoom/MAP_RADIUS;
- const x=16,y=height-22,label=`${km.toLocaleString('en-US')} map units · nominal scale`;ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
+ const anchor=scaleAnchorWorld(),anchorRadius=Math.hypot(anchor.x,anchor.y);
+ const maxPx=Math.min(190,width*.34,Math.max(0,(baseR*.96-anchorRadius)*1.8*zoom));
+ if(maxPx<24)return;
+ const maxKm=groundDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*.82);
+ if(!targetKm)return;
+ let low=0,high=maxPx;
+ for(let i=0;i<36;i++){const mid=(low+high)/2;if(groundDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;}
+ const barPx=(low+high)/2,x=16,y=height-22,label=`${formatDistance(targetKm*1000)} · local`;
+ ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
+ const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
  ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,boxWidth,43);ctx.strokeRect(x-7,y-29,boxWidth,43);
  ctx.strokeStyle='#294653';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+barPx,y);ctx.moveTo(x,y-5);ctx.lineTo(x,y+5);ctx.moveTo(x+barPx,y-5);ctx.lineTo(x+barPx,y+5);ctx.stroke();
  ctx.fillStyle='#294653';ctx.fillText(label,x,y-14);ctx.restore();
