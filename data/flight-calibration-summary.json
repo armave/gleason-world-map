@@ -15,9 +15,9 @@
       "maxLeaveOneOutRouteErrorPercent": 45
     }
   },
-  "generatedAt": "2026-11-21T10:33:37.437Z",
+  "generatedAt": "2026-11-21T10:38:15.774Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-21T10:33:37.159Z",
+  "sourceRetrievedAt": "2026-11-21T10:38:15.602Z",
   "method": {
     "target": "Median telemetry-span flown-mileage estimate per airport pair",
     "targetSource": "ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate",
