@@ -2,12 +2,12 @@
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive Gleason-style north-polar circular map with straight projected-line distance and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp, an ADS-B-derived estimate of typical flown mileage, raw flat-disk chord and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 
 ## Map layout and calibration
 
-The app draws a two-dimensional circular disk. The North Pole is at the centre, meridians radiate outward from it, and parallels form concentric circles. This is the app's flat coordinate construction; the running measurement code does not call an external projection or globe-geometry library.
+The app renders a custom Gleason-style north-polar radial disk: the North Pole sits at the centre, meridians radiate outward, and parallels are concentric circles. Latitude is mapped to radius with the regularized-power warp below. This is **not the standard azimuthal-equidistant formula**, whose radial coordinate is linear in colatitude. The app makes no claim that this warped disk preserves ground distance or surface area. The disk is an explicit mathematical drawing plane; no external projection or globe-geometry library is used.
 
 The disk's nominal radial scale **R is fitted from observed ADS-B flight mileage**, not from a published shortest-distance table or a geometric globe model. The fitted model also recalibrates latitude-ring spacing with a smooth, monotonic radial warp. For latitude phi and longitude lambda:
 
@@ -25,15 +25,15 @@ The current fitted warp uses exponent 0.9 and epsilon 0.005. It has a finite pos
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays the ADS-B flight-mileage estimate as the primary A–B value and the raw Euclidean flat-disk chord as a secondary reference. The empirical estimate applies a fitted radial scale and a quality-weighted local nearest-route correction using mean warped radial fraction and the radial/tangential shares of the unit-disk chord. It estimates typical flown mileage for sampled airport pairs, not a shortest path or the track of a particular flight. Polar/out-of-range support and nearest reference routes are available in the expanded measurement details. The active distance engine contains no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only.
+The warped Gleason-style disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays the ADS-B flight-mileage estimate as the primary A–B value and the raw Euclidean flat-disk chord as a secondary reference. The empirical estimate applies a fitted radial scale and a quality-weighted local nearest-route correction using mean warped radial fraction and the radial/tangential shares of the unit-disk chord. It estimates typical flown mileage for sampled airport pairs, not a shortest path or the track of a particular flight. Polar/out-of-range support and nearest reference routes are available in the expanded measurement details. The active distance engine contains no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only.
 
-## Flat-map direct-line distance and planar area measurements
+## Flat-disk mileage estimates and planar area measurements
 
 The A–B tool draws one straight projected segment and reports both the raw Euclidean chord in the disk plane and a separate ADS-B flight-mileage estimate. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
 
 **Direct A–B distance**
 
-The engine projects A and B into the calibrated disk plane and exposes the Euclidean chord as the **raw flat-disk reading**. The dashed connector is one straight segment, and its map label reports the **ADS-B flight-mileage estimate**. The raw Euclidean chord remains a secondary reference reading. The panel separately shows the same **ADS-B flight-mileage estimate** as its primary value, which predicts mileage per unit chord from the two nearest training routes in standardized flat-disk feature space (mean warped radial fraction, radial share of the unit chord, and tangential share of the unit chord). It uses inverse-distance weights and a geometric mean of the neighbours' observed mileage ratios. The panel also shows the correction factor and adjustment versus the raw chord; calibration diagnostics remain internal and are not displayed as a warning box. The runtime engine does not calculate a globe-distance or geodesic length. Moving an endpoint across 60°S does not trigger a metric switch.
+The engine projects A and B into the warped disk plane and calculates the Euclidean chord, which is the **raw flat-disk reading**—a length in the map plane, not a geographic ground distance. The dashed connector remains one straight projected segment. Its map label and the primary panel value show the **ADS-B flight-mileage estimate**: the raw chord multiplied by a fitted radial scale and a local correction inferred from the two nearest training routes in standardized flat-disk feature space (mean warped radial fraction, radial share of the unit chord, and tangential share of the unit chord). The model uses inverse-distance weights and a geometric mean of the neighbours' observed mileage ratios. The raw Euclidean chord is displayed separately as a secondary reference. The estimate represents typical flown mileage in the sampled airport-pair domain; it is **not** a shortest-path distance, a geodesic, or the track of a particular flight. The panel also shows the correction factor and adjustment versus the raw chord. The runtime engine does not calculate a globe-distance or geodesic length. Moving an endpoint across 60°S does not trigger a metric switch.
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
@@ -178,11 +178,23 @@ tests/
 package.json                test and data-vendor commands
 ```
 
-Run tests with Node.js 20 or newer:
+Run the Node.js unit and regression tests with Node.js 20 or newer:
 
 ```bash
 npm test
 ```
+
+### Browser end-to-end tests
+
+The Playwright suite launches the static site locally and exercises the real UI in Chromium. Install the project development dependencies and the browser once, then run:
+
+```bash
+npm install
+npx playwright install chromium
+npm run test:e2e
+```
+
+The browser suite covers initial map loading, zoom and rotation, geographic search, A–B measurement, planar polygon area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
 
 ## Run locally
 
@@ -215,7 +227,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 ## Important limitations
 
-- The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp, plus a local nearest-route correction. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well it generalizes to new route pairs.
+- The map is a custom radial disk with a nonlinear latitude warp, not the standard azimuthal-equidistant formula. It is a mathematical map construction, not a claim about Earth's physical shape. The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp, plus a local nearest-route correction. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well it generalizes to new route pairs.
 - The raw A–B result is a Euclidean chord in the displayed disk plane. The second result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight and is not a shortest-path distance. The running measurement engine uses no globe-distance formula or geodesic library; performance outside the sampled airport-pair domain is not guaranteed.
 - The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
 - Latest ADS-B collection (21 November 2026, 12:17 UTC): 61 candidate airport pairs, 253 flight records, 32 qualifying training routes and 2 qualifying holdouts. The eight southern/polar candidate pairs returned no matching flight records, so no polar calibration is promoted.
