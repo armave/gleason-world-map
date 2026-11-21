@@ -1,0 +1,49 @@
+name: Vendor Antarctic Digital Database surfaces
+on:
+  push:
+    branches: ['**']
+    paths:
+      - scripts/vendor-antarctic-add.mjs
+      - src/map/antarctic-surfaces.js
+      - package.json
+      - .github/workflows/vendor-antarctic-add.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: antarctic-add-v7-13-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download and validate BAS Antarctic Digital Database v7.13
+        run: npm run vendor:antarctica
+      - name: Commit bundled Antarctic surface geometry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/antarctic-add-v7.13.geojson.gz data/antarctic-add-metadata.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Vendor SCAR Antarctic Digital Database v7.13 surfaces"
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase --autostash "origin/${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+      - name: Upload bundled Antarctic surface dataset
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: antarctic-add-v7.13
+          path: |
+            data/antarctic-add-v7.13.geojson.gz
+            data/antarctic-add-metadata.json
+          if-no-files-found: warn
+          retention-days: 30
