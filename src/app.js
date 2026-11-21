@@ -1,7 +1,7 @@
 import {rad,clamp,radialFraction,meridionalDistanceFromNorthKm,wrapLongitude,project as projectWgs84,unproject as unprojectWgs84,geodesicInverse,geodesicDirect,geodesicLinePath as createGeodesicLinePath,wgs84PolygonMetrics,featureGeodesicAreaM2} from './core/wgs84.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
-import {HISTORICAL_SCAN_URL,COUNTRY_URLS,MAP_QUALITY_OPTIONS,CAPITAL_URL,parseCSV,fetchTextCached} from './data/datasets.js';
+import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
 import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
@@ -238,25 +238,24 @@ async function load(){
  const generation=++loadGeneration;
  document.querySelector('.load-error')?.remove();
  try{mapQuality=readMapQuality();$('mapQuality').value=mapQuality;$('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and capital coordinates…';
-  const [geoData,capData]=await Promise.all([
-   (async()=>{try{return await fetchTextCached(COUNTRY_URLS[mapQuality],'countries-'+mapQuality);}catch(highResError){if(mapQuality==='low')throw highResError;console.warn('Requested boundary quality unavailable; falling back to low:',highResError);const fallback=await fetchTextCached(COUNTRY_URLS.low,'countries-low');return {...fallback,fallback:true};}})(),
-   fetchTextCached(CAPITAL_URL,'capitals')
+  const [geoData,capRaw]=await Promise.all([
+   (async()=>{try{return {data:await loadCountryDataset(mapQuality),fallback:false};}catch(boundaryError){if(mapQuality==='low')throw boundaryError;console.warn('Requested bundled boundary quality unavailable; falling back to low:',boundaryError);return {data:await loadCountryDataset('low'),fallback:true};}})(),
+   loadCapitalDataset()
   ]);
   if(generation!==loadGeneration)return;
-  const geo=JSON.parse(geoData.text);features=geo.features||[];
-  if(!features.length)throw new Error('The country boundary dataset contains no features.');
+  features=geoData.data.features||[];
+  if(!features.length)throw new Error('The bundled country boundary dataset contains no features.');
   antarcticaFeature=features.find(f=>isoFor(f)==='ATA'||norm(nameFor(f))==='antarctica')||null;
-  const capRaw=parseCSV(capData.text),usable=features.filter(f=>isoFor(f)!=='ATA'&&norm(nameFor(f))!=='antarctica');
+  const usable=features.filter(f=>isoFor(f)!=='ATA'&&norm(nameFor(f))!=='antarctica');
   countries=usable.map(f=>({feature:f,iso:isoFor(f),name:nameFor(f),center:centroidOfFeature(f)})).filter(c=>c.iso&&c.name);
   countryByIso.clear();capitalByIso.clear();countries.forEach(c=>countryByIso.set(c.iso,c));
   capitals=capRaw.map(p=>{const c=countryByIso.get(p.iso);return {...p,countryName:c?c.name:'',country:c||null};});
-  if(!countries.length||!capitals.length)throw new Error('One or more geographic datasets did not contain usable records.');
+  if(!countries.length||!capitals.length)throw new Error('One or more bundled geographic datasets did not contain usable records.');
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   restoreSharedState();resize();draw();
-  const cached=geoData.stale||capData.stale;
-  boundaryScaleLabel=geoData.fallback?'Natural Earth 1:110m fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
-  updateStatus();$('status').textContent+=' · '+boundaryScaleLabel;
-  if(cached)$('status').textContent+=' · using cached data';
+  boundaryScaleLabel=geoData.fallback?'Natural Earth '+MAP_QUALITY_OPTIONS.low.scale+' fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
+  updateStatus();$('status').textContent+=' · bundled locally';
+  if(geoData.fallback)$('status').textContent+=' · lower quality substituted';
   updateDistortion();updateAreaMeasurement();updateRegistrationUI();
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }
