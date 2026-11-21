@@ -60,7 +60,7 @@ test('mobile Find and Measure dock is collapsed behind an accessible control', (
 test('mobile fullscreen keeps the map viewport tall and toolbars compact', () => {
   assert.match(styles, /\.map-card:fullscreen \.map-orientation\{display:flex;flex-wrap:nowrap/);
   assert.match(styles, /\.map-card:fullscreen \.map-actions button\{min-height:34px/);
-  assert.match(styles, /\.map-card:fullscreen \.map-viewport\{flex:1;min-height:0\}/);
+  assert.match(styles, /\.map-card:fullscreen \.map-viewport,\.map-card:-webkit-full-screen \.map-viewport\{flex:1;min-height:0\}/);
 });
 
 test('the reset control explicitly fits the complete disk', () => {
