@@ -6,7 +6,7 @@ import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDa
 import {createFeaturePath} from './map/feature-paths.js';
 import {createAntarcticSurfacePaths} from './map/antarctic-surfaces.js';
 import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
-import {drawIceWall as renderIceWall} from './map/ice-wall.js';
+import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coastlines.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
@@ -24,13 +24,14 @@ let historicalImage = null, historicalLoading = false, historicalFailed = false;
 const historical = {enabled:false,opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0};
 const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
-let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
+let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
 let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
-let pointerDown = null, didDrag = false, searchResults = [];
+let pointerDown = null, didDrag = false, searchResults = [], scheduledDrawFrame = null, hoverFrame = null, pendingHoverPoint = null;
+let frameScaleBarReadingKm = Infinity;
 let boundaryScaleLabel='Natural Earth 1:50m';
 const QUALITY_STORAGE_KEY='gleason-map:quality:v1',STYLE_STORAGE_KEY='gleason-map:style:v1';
 const VISUAL_STYLES=Object.freeze({
@@ -49,6 +50,10 @@ const hashColor=key=>hashColorForPalette(key,colors);
 function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}}
 function rotationRadians(){return rad(rotationDegrees);}
 function normalizeRotation(value){return normalizeRotationDegrees(value);}
+function scheduleDraw(){
+ if(scheduledDrawFrame!==null)return;
+ scheduledDrawFrame=requestAnimationFrame(()=>{scheduledDrawFrame=null;draw();});
+}
 function syncRotationReadout(){const output=$('mapRotationValue');if(output)output.textContent=Math.round(rotationDegrees)+'°';}
 function syncRotationControls(sliderValue=rotationDegrees){const input=$('mapRotation');if(input)input.value=String(Math.round(sliderValue));syncRotationReadout();}
 function cancelRotationAnimation(){if(rotationAnimationFrame!==null){cancelAnimationFrame(rotationAnimationFrame);rotationAnimationFrame=null;}}
@@ -114,6 +119,7 @@ function resize(){
  const nextBaseR=Math.min(width,height)*.405;
  if(!Number.isFinite(geometryBaseR)||Math.abs(nextBaseR-geometryBaseR)>1e-6){
   baseR=nextBaseR;
+  iceWallTexturePaths=createIceWallTexturePaths(baseR);
   pathRecords=countries.map(country=>({country,path:makePath(country.feature)}));
   antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;
   antarcticSurfacePaths=antarcticAddData?createAntarcticSurfacePaths(antarcticAddData,project):null;
@@ -133,7 +139,7 @@ function drawCompassRose(){
  ctx.beginPath();ctx.arc(0,0,r*1.72,0,Math.PI*2);ctx.fillStyle='rgba(255,253,246,.92)';ctx.fill();
  ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1;ctx.stroke();
  ctx.rotate(angle);ctx.beginPath();
- for(let i=0;i<16;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.32,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+ for(let i=0;i<12;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.32,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
  ctx.closePath();ctx.fillStyle='rgba(255,253,246,.78)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1.15;ctx.stroke();
  ctx.beginPath();ctx.moveTo(0,-r*.9);ctx.lineTo(0,r*.9);ctx.moveTo(-r*.9,0);ctx.lineTo(r*.9,0);ctx.stroke();
  ctx.fillStyle=visualPalette.labels;ctx.font='700 8px Georgia,serif';ctx.textAlign='center';ctx.textBaseline='middle';
@@ -152,9 +158,9 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
  if(hoveredCountry){const rec=pathRecords.find(x=>x.country===hoveredCountry);if(rec){ctx.fillStyle='#d18b57';ctx.globalAlpha=.30;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle='#8c482b';ctx.lineWidth=2/zoom;ctx.stroke(rec.path);}}
  if(selected&&selected.type==='country'){const rec=pathRecords.find(x=>x.country===selected.country);if(rec){ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(rec.path);}}
 }
-function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;const localScale=scaleBarReadingKm();if(mapQuality==='high'&&localScale<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
+function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;if(mapQuality==='high'&&frameScaleBarReadingKm<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
 function drawIceWall(){
- renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),antarcticSurfacePaths);
+ renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),antarcticSurfacePaths,iceWallTexturePaths);
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
@@ -185,7 +191,7 @@ function drawRestrictedParallel(){
 }
 function drawCapitals(){
  if(!layers.capitals)return;
- const labelOn=layers.capitalNames&&(shouldShowCapitalLabels(scaleBarReadingKm())||(selected&&selected.type==='capital')),candidates=[];
+ const labelOn=layers.capitalNames&&(shouldShowCapitalLabels(frameScaleBarReadingKm)||(selected&&selected.type==='capital')),candidates=[];
  for(const p of capitals){
   const [x,y]=project(p.lon,p.lat),active=selected&&selected.type==='capital'&&selected.capital===p;
   ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);
@@ -208,7 +214,7 @@ function drawCapitals(){
  }
 }
 function drawCountryLabels(){
- const showCountryLabels=shouldShowCountryLabels(scaleBarReadingKm());
+ const showCountryLabels=shouldShowCountryLabels(frameScaleBarReadingKm);
  const selectedCountry=selected&&selected.type==='country'?selected.country:null;
  if(!layers.countryNames||(!showCountryLabels&&!selectedCountry)||!countries.length)return;
  const screenFontSize=Math.min(13,9.5+Math.max(0,zoom-1)*.65);
@@ -404,6 +410,8 @@ function drawHistoricalOverlay(){
 }
 function draw(){
  if(!width||!height)return;
+ const scaleLayout=calculateScaleBarLayout();
+ frameScaleBarReadingKm=scaleLayout?.targetKm??Infinity;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle=visualPalette.canvas;ctx.fillRect(0,0,width,height);
  labelCollisionBoxes=[];reserveScreenUiCollisionBoxes();ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
  // Draw geographic geometry first; labels are placed afterward against a shared collision map.
@@ -418,7 +426,7 @@ function draw(){
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  drawCapitals();drawCountryLabels();
  if(layers.oceanLabels){
-  const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,scaleBarReadingKm(),{
+  const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,frameScaleBarReadingKm,{
    width,height,panX,panY,rotation:rotationRadians(),palette:visualPalette,reservedBoxes:labelCollisionBoxes,selectNonOverlappingLabels,
    isLand:(x,y)=>landMaskPath?ctx.isPointInPath(landMaskPath,x,y,'evenodd'):pathRecords.some(rec=>ctx.isPointInPath(rec.path,x,y,'evenodd'))
   });
@@ -428,12 +436,12 @@ function draw(){
  ctx.restore();
  ctx.restore();
  drawCompassRose();
- drawScaleBar();updateViewReadout();
+ drawScaleBar(scaleLayout);updateViewReadout(frameScaleBarReadingKm);
 }
-function updateViewReadout(){
+function updateViewReadout(localScale=frameScaleBarReadingKm){
  const readout=$('zoomReadout');if(!readout)return;
  readout.textContent=`${Math.round(zoom*100)}%`;
- const localScale=scaleBarReadingKm(),scaleText=Number.isFinite(localScale)?formatDistance(localScale*1000):'unavailable';
+ const scaleText=Number.isFinite(localScale)?formatDistance(localScale*1000):'unavailable';
  const cap=layers.capitalNames?(shouldShowCapitalLabels(localScale)?'capital names visible':`capital names at ${CAPITAL_LABEL_MAX_SCALE_KM.toLocaleString()} km`):'capital names off';
  const countryNames=!layers.countryNames?'country names off':shouldShowCountryLabels(localScale)?'country names visible':localScale>COUNTRY_LABEL_MAX_SCALE_KM?`country names at ${COUNTRY_LABEL_MAX_SCALE_KM.toLocaleString()} km`:`country names hidden below ${COUNTRY_LABEL_MIN_SCALE_KM} km`;
  readout.title=`Zoom ${Math.round(zoom*100)}% · orientation ${Math.round(rotationDegrees)}° · local flat-disk scale ${scaleText} · zoom-in limit ${MAX_SCALE_BAR_READING_KM} km · ${cap} · ${countryNames}`;
@@ -446,6 +454,14 @@ function findCountryAt(x,y){
 }
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;const point=screenToWorld(sx,sy);return {x:point.x,y:point.y,sx,sy};}
+function updateHoverAt(clientX,clientY){
+ if(pointerDown)return;
+ const rect=canvas.getBoundingClientRect(),point=screenToWorld(clientX-rect.left,clientY-rect.top);
+ const cap=findCapitalAt(point.x,point.y,9),country=cap?null:findCountryAt(point.x,point.y);
+ if(country!==hoveredCountry||cap!==hoveredCapital){
+  hoveredCountry=country;hoveredCapital=cap;scheduleDraw();updateStatus();
+ }
+}
 function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Direct-line distance complete';}else if(mode==='area'){$('status').textContent='Area mode · '+areaPoints.length+' vertices · '+(areaFinished?'polygon finished':'add boundary points');}else{$('status').textContent=hoveredCountry?'Country: '+hoveredCountry.name:hoveredCapital?'Capital: '+hoveredCapital.city:'Explore mode · '+(countries.length+(antarcticaCountry?1:0))+' countries/areas · '+capitals.length+' capital points';}}
 function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'});$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;draw();}
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';const area=c?flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'}):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
@@ -740,18 +756,26 @@ function setZoomAtViewCenter(nextZoom){
  zoom=clampZoom(nextZoom,center);
  const offset=rotatePoint(center.x,center.y,rotationRadians());panX=-offset.x*zoom;panY=-offset.y*zoom;draw();
 }
-function drawScaleBar(){
- if(!baseR||!zoom)return;
- const anchor=scaleAnchorWorld();
- const maxPx=scaleBarReferencePixels(anchor,zoom);
- if(maxPx<24)return;
- const maxKm=flatDiskDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*.82);
- if(!targetKm)return;
+function calculateScaleBarLayout(){
+ if(!baseR||!zoom)return null;
+ const anchor=scaleAnchorWorld(),maxPx=scaleBarReferencePixels(anchor,zoom);
+ if(maxPx<24)return null;
+ const maxKm=flatDiskDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*SCALE_BAR_HEADROOM);
+ if(!targetKm)return null;
  let low=0,high=maxPx;
- for(let i=0;i<36;i++){const mid=(low+high)/2;if(flatDiskDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;}
+ // Twelve iterations resolve the bar to a small fraction of one screen pixel.
+ for(let i=0;i<16;i++){
+  const mid=(low+high)/2;
+  if(flatDiskDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;
+ }
  const barPx=(low+high)/2,x=16,y=height-22,label=formatDistance(targetKm*1000);
+ ctx.save();ctx.font='11px ui-sans-serif,system-ui';const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);ctx.restore();
+ return {targetKm,barPx,x,y,label,boxWidth};
+}
+function drawScaleBar(layout){
+ if(!layout)return;
+ const {barPx,x,y,label,boxWidth}=layout;
  ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
- const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
  ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,boxWidth,43);ctx.strokeRect(x-7,y-29,boxWidth,43);
  ctx.strokeStyle='#294653';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+barPx,y);ctx.moveTo(x,y-5);ctx.lineTo(x,y+5);ctx.moveTo(x+barPx,y-5);ctx.lineTo(x+barPx,y+5);ctx.stroke();
  ctx.fillStyle='#294653';ctx.fillText(label,x,y-14);ctx.restore();
@@ -804,6 +828,10 @@ async function copyShareLink(){
  try{await navigator.clipboard.writeText(url.toString());$('status').textContent='Share link copied to clipboard.';}
  catch(err){const field=document.createElement('textarea');field.value=url.toString();field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();const copied=document.execCommand('copy');field.remove();$('status').textContent=copied?'Share link copied to clipboard.':'Copy the URL from your browser address bar.';}
 }
+function runWhenIdle(callback){
+ if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(callback,{timeout:1200});
+ else window.setTimeout(callback,0);
+}
 function setMapLoading(active,message='Loading local geographic data…'){
  const overlay=$('mapLoading'),spinner=$('mapLoadingSpinner'),title=$('mapLoadingTitle'),copy=$('mapLoadingMessage'),retry=$('retryMapLoading');
  if(!overlay)return;
@@ -823,41 +851,64 @@ function showLoadError(err){
 }
 async function load(){
  const generation=++loadGeneration;
- setMapLoading(true,'Loading country boundaries, coastlines, Antarctic surface classes and search data…');
+ setMapLoading(true,'Loading country boundaries and capital locations…');
  try{
   mapQuality=readMapQuality();$('mapQuality').value=mapQuality;
-  $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and geographic labels…';
-  const [geoData,capRaw,countyRaw,coastlineRaw,antarcticAddRaw]=await Promise.all([
+  $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries…';
+  const [geoData,capRaw]=await Promise.all([
    (async()=>{try{return {data:await loadCountryDataset(mapQuality),fallback:false};}
     catch(boundaryError){if(mapQuality==='low')throw boundaryError;console.warn('Requested bundled boundary quality unavailable; falling back to low:',boundaryError);return {data:await loadCountryDataset('low'),fallback:true};}})(),
-   loadCapitalDataset(),
-   loadCountyDataset().catch(error=>{console.warn('County search data unavailable:',error);return []; }),
-   loadCoastlineDataset().catch(error=>{console.warn('Coastline data unavailable; country outlines remain available:',error);return null;}),
-   loadAntarcticAddDataset().catch(error=>{console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error);return null;})
+   loadCapitalDataset()
   ]);
   if(generation!==loadGeneration)return;
   features=geoData.data.features||[];
-  antarcticAddData=antarcticAddRaw;
+  // Optional detail is populated after the base map is visible and interactive.
+  counties=[];coastlineData=null;coastlinePath=null;antarcticAddData=null;antarcticSurfacePaths=null;
   if(!features.length)throw new Error('The bundled country boundary dataset contains no features.');
   antarcticaFeature=features.find(f=>isoFor(f)==='ATA'||norm(nameFor(f))==='antarctica')||null;
   const usable=features.filter(f=>isoFor(f)!=='ATA'&&norm(nameFor(f))!=='antarctica');
   countries=usable.map(f=>({feature:f,iso:isoFor(f),name:nameFor(f),center:centroidOfFeature(f)})).filter(c=>c.iso&&c.name);
   antarcticaCountry=antarcticaFeature?{feature:antarcticaFeature,iso:'ATA',name:nameFor(antarcticaFeature)||'Antarctica',center:centroidOfFeature(antarcticaFeature)}:null;
   capitals=capRaw.map(p=>{const c=countries.find(country=>country.iso===p.iso);return {...p,countryName:c?c.name:'',country:c||null};});
-  counties=countyRaw;coastlineData=coastlineRaw;
   searchIndex=buildSearchIndex({countries,capitals,counties,stateNames:US_STATE_NAMES,antarctica:antarcticaCountry});
   geometryBaseR=NaN;
   if(!countries.length||!capitals.length)throw new Error('One or more bundled geographic datasets did not contain usable records.');
   countryByIso.clear();capitalByIso.clear();countries.forEach(c=>countryByIso.set(c.iso,c));
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
-  restoreSharedState();resize();draw();
   boundaryScaleLabel=geoData.fallback?'Natural Earth '+MAP_QUALITY_OPTIONS.low.scale+' fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
-  updateStatus();$('status').textContent+=' · bundled local data';
-  if(geoData.fallback)$('status').textContent+=' · lower quality substituted';
-  updateAreaMeasurement();updateRegistrationUI();
+  restoreSharedState();resize();draw();
+  updateStatus();$('status').textContent+=' · base map ready';
   setMapLoading(false);
+
+  // County search, coastlines and BAS ice-surface geometry no longer delay first interaction.
+  loadCountyDataset().then(countyRaw=>{
+   if(generation!==loadGeneration)return;
+   counties=countyRaw;searchIndex=buildSearchIndex({countries,capitals,counties,stateNames:US_STATE_NAMES,antarctica:antarcticaCountry});
+   if($('search').value.trim())drawSearchResults($('search').value);
+  }).catch(error=>console.warn('County search data unavailable:',error));
+
+  loadCoastlineDataset().then(raw=>{
+   if(generation!==loadGeneration)return;
+   coastlineData=raw;
+   runWhenIdle(()=>{
+    if(generation!==loadGeneration)return;
+    try{coastlinePath=createCoastlinePath(coastlineData,project);draw();}
+    catch(error){console.warn('Coastline geometry could not be prepared:',error);}
+   });
+  }).catch(error=>console.warn('Coastline data unavailable; country outlines remain available:',error));
+
+  loadAntarcticAddDataset().then(raw=>{
+   if(generation!==loadGeneration)return;
+   antarcticAddData=raw;
+   runWhenIdle(()=>{
+    if(generation!==loadGeneration)return;
+    try{antarcticSurfacePaths=createAntarcticSurfacePaths(antarcticAddData,project);draw();}
+    catch(error){console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error);}
+   });
+  }).catch(error=>console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error));
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }
+
 $('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
 $('mapStyle').addEventListener('change',e=>{applyVisualStyle(e.target.value);draw();});$('mapRotation').addEventListener('input',e=>animateRotation(Number(e.target.value)));$('rotateLeft').addEventListener('click',()=>animateRotation(rotationAnimationTarget-15));$('rotateRight').addEventListener('click',()=>animateRotation(rotationAnimationTarget+15));$('resetRotation').addEventListener('click',()=>animateRotation(0));
 const mobileToolsToggle=$('mobileToolsToggle');
@@ -899,9 +950,27 @@ $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;animateRotatio
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
 async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
 $('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});
-canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=screenToWorld(sx,sy),lx=p.x,ly=p.y;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const offset=unrotatePoint(width/2-sx,height/2-sy,rotationRadians()),anchor={x:lx+offset.x/nz,y:ly+offset.y/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}const rpoint=rotatePoint(lx,ly,rotationRadians());panX=sx-width/2-rpoint.x*nz;panY=sy-height/2-rpoint.y*nz;zoom=nz;draw();},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=screenToWorld(sx,sy),lx=p.x,ly=p.y;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const offset=unrotatePoint(width/2-sx,height/2-sy,rotationRadians()),anchor={x:lx+offset.x/nz,y:ly+offset.y/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}const rpoint=rotatePoint(lx,ly,rotationRadians());panX=sx-width/2-rpoint.x*nz;panY=sy-height/2-rpoint.y*nz;zoom=nz;scheduleDraw();},{passive:false});
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointerDown={x:e.clientX,y:e.clientY,px:panX,py:panY,rotation:rotationDegrees,rotate:e.shiftKey};didDrag=false;});
-canvas.addEventListener('pointermove',e=>{if(pointerDown){const dx=e.clientX-pointerDown.x,dy=e.clientY-pointerDown.y;if(Math.hypot(dx,dy)>4)didDrag=true;if(didDrag){if(pointerDown.rotate){setRotation(pointerDown.rotation+dx*.5,false);canvas.classList.add('rotating');draw();}else{panX=pointerDown.px+dx;panY=pointerDown.py+dy;canvas.classList.add('dragging');draw();}}return;}const {x,y}=mapCoords(e);const cap=findCapitalAt(x,y,9);const country=cap?null:findCountryAt(x,y);if(country!==hoveredCountry||cap!==hoveredCapital){hoveredCountry=country;hoveredCapital=cap;draw();updateStatus();}});
+canvas.addEventListener('pointermove',e=>{
+ if(pointerDown){
+  const dx=e.clientX-pointerDown.x,dy=e.clientY-pointerDown.y;
+  if(Math.hypot(dx,dy)>4)didDrag=true;
+  if(didDrag){
+   if(pointerDown.rotate){setRotation(pointerDown.rotation+dx*.5,false);canvas.classList.add('rotating');}
+   else{panX=pointerDown.px+dx;panY=pointerDown.py+dy;canvas.classList.add('dragging');}
+   scheduleDraw();
+  }
+  return;
+ }
+ pendingHoverPoint={clientX:e.clientX,clientY:e.clientY};
+ if(hoverFrame!==null)return;
+ hoverFrame=requestAnimationFrame(()=>{
+  hoverFrame=null;
+  const latest=pendingHoverPoint;pendingHoverPoint=null;
+  if(latest&&!pointerDown)updateHoverAt(latest.clientX,latest.clientY);
+ });
+});
 canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging','rotating');});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging','rotating');});
 $('retryMapLoading').addEventListener('click',load);
 window.addEventListener('resize',resize);

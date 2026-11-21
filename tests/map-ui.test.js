@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createIceWallTexturePaths,ICE_RIDGE_COUNT,ICE_CREVASSE_COUNT} from '../src/map/ice-wall.js';
 import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -175,7 +176,7 @@ test('direct A/B coordinate entry and calibration route support are available',(
  assert.match(html,/id="calibrationRoutes"/);
  assert.match(app,/function applyCoordinateEndpoint\(index\)/);
  assert.match(app,/calibration\?\.neighbourRouteIds/);
- assert.match(app,/loadAntarcticAddDataset\(\)\.catch\(error=>\{/);
+ assert.match(app,/loadAntarcticAddDataset\(\)\.then/);
  assert.match(app,/Natural Earth outline remains active/);
 });
 
@@ -293,4 +294,60 @@ test('scale-bar calculations use the same direct projected metric as A–B measu
 
 test('searching for Antarctica returns to a whole-disk view so the full ice-wall band remains visible',()=>{
  assert.match(app,/if\(item\.obj\.iso==='ATA'\)\{\s*\/\/ Keep the complete circumferential ice-wall band in view[\s\S]*?focusGeo\(90,0,MIN_ZOOM\)/);
+});
+
+
+test('pointer, hover and wheel interactions coalesce expensive work to animation frames',()=>{
+ assert.match(app,/function scheduleDraw\(\)/);
+ assert.match(app,/function updateHoverAt\(clientX,clientY\)/);
+ assert.match(app,/pendingHoverPoint=\{clientX:e\.clientX,clientY:e\.clientY\}/);
+ assert.match(app,/zoom=nz;scheduleDraw\(\)/);
+ const pointer=app.match(/canvas\.addEventListener\('pointermove',[\s\S]*?\n\}\);/);
+ assert.ok(pointer);
+ assert.match(pointer[0],/requestAnimationFrame/);
+ assert.match(pointer[0],/scheduleDraw\(\)/);
+ assert.doesNotMatch(pointer[0],/draw\(\)/);
+});
+
+test('scale-bar measurement is calculated once per frame and uses a pixel-accurate search',()=>{
+ assert.match(app,/const scaleLayout=calculateScaleBarLayout\(\)/);
+ assert.match(app,/frameScaleBarReadingKm=scaleLayout\?\.targetKm\?\?Infinity/);
+ assert.match(app,/shouldShowCapitalLabels\(frameScaleBarReadingKm\)/);
+ assert.match(app,/shouldShowCountryLabels\(frameScaleBarReadingKm\)/);
+ assert.match(app,/drawOceanLabels\(ctx,project,baseR,zoom,frameScaleBarReadingKm/);
+ assert.match(app,/for\(let i=0;i<12;i\+\+\)/);
+ assert.doesNotMatch(app,/for\(let i=0;i<36;i\+\+\)\{const mid=\(low\+high\)\/2;if\(flatDiskDistanceForScalePixels/);
+});
+
+test('base map becomes interactive before optional county, coastline and Antarctic detail loads',()=>{
+ const loader=app.slice(app.indexOf('async function load()'),app.indexOf("$('mapQuality').addEventListener"));
+ assert.match(loader,/const \[geoData,capRaw\]=await Promise\.all/);
+ assert.match(loader,/setMapLoading\(false\)/);
+ assert.match(loader,/loadCountyDataset\(\)\.then/);
+ assert.match(loader,/loadCoastlineDataset\(\)\.then/);
+ assert.match(loader,/loadAntarcticAddDataset\(\)\.then/);
+ assert.match(loader,/runWhenIdle\(\(\)=>/);
+});
+
+test('Antarctic ice-wall detail is grouped into reusable paths and built on resize',()=>{
+ assert.match(app,/createIceWallTexturePaths\(baseR\)/);
+ assert.match(app,/antarcticSurfacePaths,iceWallTexturePaths\)/);
+ assert.match(iceWall,/export function createIceWallTexturePaths/);
+ assert.match(iceWall,/texturePaths\.accentRidges/);
+});
+
+
+test('Antarctic texture builder combines ridges and crevasses into three reusable paths',()=>{
+ class MockPath {
+  constructor(){this.commands=[];}
+  moveTo(x,y){this.commands.push(['M',x,y]);}
+  lineTo(x,y){this.commands.push(['L',x,y]);}
+ }
+ const paths=createIceWallTexturePaths(300,MockPath);
+ assert.ok(paths);
+ assert.equal(Object.keys(paths).length,3);
+ const moveCount=path=>path.commands.filter(command=>command[0]==='M').length;
+ assert.equal(moveCount(paths.ridges),ICE_RIDGE_COUNT-Math.ceil(ICE_RIDGE_COUNT/4));
+ assert.equal(moveCount(paths.accentRidges),Math.ceil(ICE_RIDGE_COUNT/4));
+ assert.equal(moveCount(paths.crevasses),ICE_CREVASSE_COUNT);
 });
