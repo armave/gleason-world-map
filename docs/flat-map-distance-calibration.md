@@ -7,6 +7,9 @@ The distance tool shows two values for the same pair of endpoints:
 1. **Raw flat-disk chord** — Euclidean length of the straight segment between the two projected positions.
 2. **Flight-empirical estimate** — the raw disk chord multiplied by a radial scale and a small endpoint-feature correction fitted against sampled flown mileage.
 
+The map connector is a single straight segment in the projected disk, and its on-map label always shows the raw Euclidean chord. The empirical estimate is a separate panel reading and never changes the segment label.
+
+
 The new calibration target is **observed aircraft mileage**, estimated from ADS-B ground-speed and timestamp telemetry. It is not a shortest path, a great-circle distance, an airline schedule estimate, or a guaranteed prediction of the track an aircraft will fly. The distinction matters: real flights may route around weather, restricted airspace, traffic flows or operational constraints.
 
 No globe-distance equation, sphere radius, ellipsoidal formula, geodesic library, or coordinate-derived trajectory length is used to create the calibration targets or at app runtime. Latitude/longitude is retained as the location encoding needed to position airports on the flat radial disk and to derive the disk's own endpoint features. Airport boundary geometry is used only by the ADS-B source API to find candidate flights for a route pair; it is not used to calculate distance.
