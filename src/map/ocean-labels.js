@@ -1,5 +1,5 @@
 const OCEAN_LABELS=Object.freeze([
- {name:'ARCTIC OCEAN',lat:64,lon:-35,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
+ {name:'ARCTIC OCEAN',lat:78,lon:-145,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100,curve:false},
  {name:'NORTH PACIFIC OCEAN',lat:35,lon:-155,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
  {name:'SOUTH PACIFIC OCEAN',lat:-37,lon:-135,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
  {name:'NORTH ATLANTIC OCEAN',lat:31,lon:-40,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
@@ -71,21 +71,22 @@ function makeCurvedCandidate(ctx,label,anchor,project,baseR,zoom,viewport,isLand
  const advances=[...text].map(char=>ctx.measureText(char).width+letterGap);
  const totalWidth=advances.reduce((sum,v)=>sum+v,0)-letterGap;
  const center=project(anchor.lon,anchor.lat),radius=Math.hypot(center[0],center[1]);
- if(!Number.isFinite(radius)||radius<baseR*.04||totalWidth/radius>1.35)return null;
+ const curved=label.curve!==false;
+ if(!Number.isFinite(radius)||radius<baseR*.01||(curved&&totalWidth/radius>1.35))return null;
  const theta=anchor.lon*DEG;
  const direction=(-Math.sin(theta))<-.001?-1:1;
  const glyphs=[];let cursor=-totalWidth/2;
  for(let i=0;i<text.length;i++){
   const char=text[i],width=advances[i]-letterGap;
   const offset=cursor+width/2,angle=theta+direction*offset/radius;
-  const pos=project(angle/DEG,anchor.lat);
+  const pos=curved?project(angle/DEG,anchor.lat):[center[0]+offset,center[1]];
   if(!pos||!pos.slice(0,2).every(Number.isFinite)||Math.hypot(pos[0],pos[1])>baseR*.985)return null;
   if(isLand&&isLand(pos[0],pos[1]))return null;
-  const rotation=Math.atan2(-direction*Math.cos(angle),-direction*Math.sin(angle));
+  const rotation=curved?Math.atan2(-direction*Math.cos(angle),-direction*Math.sin(angle)):0;
   glyphs.push({char,x:pos[0],y:pos[1],rotation});
   cursor+=advances[i];
  }
- const tangent=Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta));
+ const tangent=curved?Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta)):0;
  const boxWidth=Math.abs(totalWidth*zoom*Math.cos(tangent))+Math.abs(fontSize*1.45*Math.sin(tangent))+8;
  const boxHeight=Math.abs(totalWidth*zoom*Math.sin(tangent))+Math.abs(fontSize*1.45*Math.cos(tangent))+6;
  const screenX=viewport.width/2+viewport.panX+center[0]*zoom;
