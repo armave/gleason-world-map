@@ -66,7 +66,10 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - WGS84 ellipsoidal area for selected country boundaries
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
 - Continuous Antarctic land band / ice-wall rim with pole-aware GeoJSON closure
-- Search and select countries and capitals
+- Search and select countries, capitals, and U.S. county-equivalents
+- Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
+- U.S. county-equivalent labels from 2026 Census internal points (from 270% zoom), collision-filtered for legibility
+- County search, selection, and shareable layer visibility
 - View-centred local WGS84 ground scale bar
 - Geodesic measurement path projected onto the disk
 - Manual historical-scan registration using geographic/image control points
@@ -85,6 +88,7 @@ Static GitHub Pages deployment uses browser-native ES modules; no bundler is req
 index.html                  page shell and app entry point
 styles.css                  responsive styling
 data/
+  us-counties.json          U.S. Census 2024 county-equivalent label points
   countries/
     low.geojson.gz          Natural Earth 1:110m boundaries
     medium.geojson.gz       Natural Earth 1:50m boundaries
@@ -101,6 +105,7 @@ src/
     datasets.js             local asset loading, decompression, and validation
     geojson.js              country identifiers, names, colours, centroids
   map/
+    labels.js               zoom thresholds and collision-aware label placement
     feature-paths.js        projected GeoJSON paths and Antarctic rim handling
     ice-wall.js             Antarctic land band and continuous rim
     registration.js         scan control-point triangulation and affine image warp
@@ -108,6 +113,7 @@ src/
     calibration.js          radial table and distortion panel
 scripts/
   vendor-geodata.mjs        reproducible pinned-source data import
+  vendor-county-labels.mjs  reproducible Census county-label data import
 tests/
   wgs84.test.js             WGS84 geometry regressions
   registration.test.js      registration transform regressions
@@ -158,3 +164,18 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
 - Seam-crossing and high-latitude polygon topology should still be reviewed against the source geometry.
+
+
+## Zoom-adaptive place labels
+
+Capital markers remain available at every zoom level. Their names appear from 125% zoom, with screen-space collision filtering so nearby capitals do not overwrite one another. The selected capital label receives priority.
+
+The optional “U.S. county names” layer uses the U.S. Census Bureau's 2024 National Counties Gazetteer internal points. It covers U.S. counties and county-equivalents in the 50 states, the District of Columbia, and Puerto Rico, including Alaska boroughs/census areas and Puerto Rico municipios. The 2026 Census national file does not include the separately published Island Areas (American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands). Names appear from 270% zoom, after which labels are collision-filtered against capital labels and one another. This is a label-point layer, not county boundary geometry; the app does not imply that county polygons are available worldwide.
+
+The compact data file is generated from the Census Bureau's public-domain 2026 Gazetteer. Download and extract `2026_Gaz_counties_national.zip` from [the Census Gazetteer archive](https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_counties_national.zip), then run:
+
+```bash
+node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.txt
+```
+
+Older share links containing the original five-layer visibility code remain compatible; county names default to on unless the new sixth layer bit is present.
