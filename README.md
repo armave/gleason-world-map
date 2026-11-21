@@ -210,7 +210,8 @@ Capital coordinates are stored locally in `data/capitals.json` and were generate
 To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
-- A–B distance: raw flat-disk chord plus a separate ADS-B flight-telemetry calibration estimate. The calibration data are generated from ground-speed/time observations, not coordinate-derived distances.
+- Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
+- A–B distance: primary ADS-B flight-mileage estimate plus secondary raw flat-disk chord. Calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
 
 ## Important limitations
 
