@@ -258,7 +258,7 @@ async function load(){
   updateStatus();$('status').textContent+=' · '+boundaryScaleLabel;
   if(cached)$('status').textContent+=' · using cached data';
   updateDistortion();updateAreaMeasurement();updateRegistrationUI();
- }catch(err){showLoadError(err);}
+ }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }
 $('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
