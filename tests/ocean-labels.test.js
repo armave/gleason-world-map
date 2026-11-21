@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {oceanLabelsForScale,drawOceanLabels} from '../src/map/ocean-labels.js';
 
 const project=(lon,lat)=>{
- const radius=(90-lat)/180*100,angle=lon*Math.PI/180;
+ const radius=(90-lat)/180*400,angle=lon*Math.PI/180;
  return [radius*Math.cos(angle),-radius*Math.sin(angle)];
 };
 function mockContext(){
@@ -23,11 +23,11 @@ test('ocean labels lead at global scales and detailed seas phase in regionally',
 });
 test('curved ocean labels render in water and avoid occupied label boxes',()=>{
  const ctx=mockContext();
- const boxes=drawOceanLabels(ctx,project,100,1,8000,{width:500,height:500,isLand:()=>false});
+ const boxes=drawOceanLabels(ctx,project,400,1,8000,{width:900,height:900,isLand:()=>false});
  assert.ok(boxes.length>0);
  assert.ok(ctx.calls.fill>0);
- const blocked=drawOceanLabels(mockContext(),project,100,1,8000,{width:500,height:500,isLand:()=>true});
+ const blocked=drawOceanLabels(mockContext(),project,400,1,8000,{width:900,height:900,isLand:()=>true});
  assert.deepEqual(blocked,[]);
- const crowded=drawOceanLabels(mockContext(),project,100,1,8000,{width:500,height:500,reservedBoxes:[{left:-1000,top:-1000,right:1000,bottom:1000}]});
+ const crowded=drawOceanLabels(mockContext(),project,400,1,8000,{width:900,height:900,reservedBoxes:[{left:-1000,top:-1000,right:1000,bottom:1000}]});
  assert.deepEqual(crowded,[]);
 });
