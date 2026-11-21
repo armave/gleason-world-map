@@ -147,7 +147,7 @@ function drawRestrictedParallel(){
   ctx.strokeStyle='rgba(142,53,46,.72)';ctx.lineWidth=1/zoom;ctx.stroke();
  }
  // Opposing callouts identify the 60°S crossing label.
- const label='60°S · FORBIDDEN TO CROSS';
+ const label='60°S · FORBIDDEN LINE';
  ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
  for(const degree of [45,225]){
   const angle=rad(degree),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
@@ -256,6 +256,7 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
     labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
  const isArea=kind==='area';
+ if(kind==='restricted'){ctx.translate(labelX,labelY);ctx.rotate(rotationRadians());labelX=0;labelY=0;}
  ctx.fillStyle='rgba(255,250,238,.96)';
  ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
  ctx.lineWidth=1;

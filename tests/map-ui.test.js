@@ -203,12 +203,13 @@ test('compact measurement dock is embedded in the map viewport',()=>{
  assert.match(app,/\$\('areaDetails'\)\.hidden=mode!=='area'/);
 });
 
-test('60°S callouts use forbidden-to-cross wording on both sides',()=>{
- assert.match(html,/60°S · forbidden to cross/);
+test('60°S callouts use forbidden-line wording and rotate with the map',()=>{
+ assert.match(html,/60°S · forbidden line/);
  assert.match(app,/function drawRestrictedParallel\(\)/);
  assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
  assert.match(app,/for\(const degree of \[45,225\]\)/);
- assert.match(app,/60°S · FORBIDDEN TO CROSS/);
+ assert.match(app,/60°S · FORBIDDEN LINE/);
+ assert.match(app,/ctx\.rotate\(rotationRadians\(\)\);labelX=0;labelY=0/);
  assert.doesNotMatch(app,/segmentCrossesRestrictedParallel/);
  assert.doesNotMatch(app,/polylineCrossesRestrictedParallel/);
  assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
