@@ -9,7 +9,7 @@ An interactive Gleason-style north-polar circular map with straight projected-li
 
 The app draws a two-dimensional circular disk. Its geographic layout follows the north-polar azimuthal-equidistant arrangement used by Gleason's 1892 sheet: the North Pole is at the centre, the meridians radiate outward, and parallels form circles.
 
-The disk uses a fixed planar radial coordinate scale with **R = 2,778.193571 km**. At this base scale, the straight projected chord between the bundled capital coordinates for Canberra (-35.27°, 149.13°) and Santiago (-33.45°, -70.67°) is 11,340 km. The active A–B readout then applies the separate empirical endpoint correction described below, so its final reading is not simply the raw chord. This R value defines the base flat-disk coordinate system; it is not a globe radius or geodesic parameter. For latitude phi in radians and longitude lambda in radians:
+The disk's radial scale **R is fitted from observed ADS-B flight mileage**, not from a published shortest-distance table or a geometric globe model. The fit uses airport-pair medians derived from measured ground speed and elapsed time. Airport latitude/longitude values are used only to place those endpoints in the disk coordinate system and to form flat-disk features; no coordinate-derived route length enters the calibration target. For latitude phi in radians and longitude lambda in radians:
 
 theta = pi/2 - phi
 r = R * theta
@@ -20,7 +20,7 @@ The outer disk radius is **pi * R = 8,727.952513 km**. These values define the X
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays two readings from those same projected endpoints: (1) the raw Euclidean flat-disk chord and (2) that chord multiplied by the bounded empirical correction fitted to city-distance references using mean endpoint colatitude, colatitude separation, and wrapped longitude separation. The correction multiplier and fit-range / southern-rim warnings are shown alongside the readings. The active measurement engine does not calculate globe or geodesic distances. The 60°S Restricted Line is a visual reference only and does not change either reading.
+The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays both the raw Euclidean flat-disk chord and a separate flight-empirical estimate. The second reading uses a radial scale and a compact endpoint correction fitted to ADS-B ground-speed telemetry integrated over timestamps. It is an estimate of typical flown mileage for sampled airport pairs, not a shortest path or a prediction of the route a particular aircraft will fly. The app shows the multiplier and calibration-domain warnings alongside both readings. The active distance engine contains no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only.
 
 ## Flat-map direct-line distance and planar area measurements
 
@@ -34,43 +34,21 @@ The 60°S parallel is drawn as a red dashed Restricted Line with two opposing ca
 
 The distance tool always uses the straight projected A–B segment, including when either endpoint lies in the Antarctic band. There is no latitude-triggered metric change.
 
-**Published straight-line benchmark comparisons**
+**ADS-B flight-telemetry calibration**
 
-The empirical correction is fitted on the 15 city pairs below. Five airport pairs were held out from fitting and used as route checks. All 20 reference values come from Travelmath's straight-line “flying distance” estimates; Travelmath describes these as “as the crow flies” great-circle distances, using Vincenty on the WGS84 ellipsoid. They are not recorded airline tracks. The five airport pairs are held out by route, but use the same reference provider and methodology as the city-pair fit. The visible connector remains straight; only the numeric length receives the correction. For the detailed data, coordinates, formula, coefficient values, and limitations, see [Flat-map distance calibration: data and methodology](docs/flat-map-distance-calibration.md).
+The replacement calibration target is measured flown mileage from historical ADS-B telemetry. For each accepted flight, the collector reads the ground-speed series `path_gs`, whose samples are timestamped in Unix seconds and expressed in knots. Within each contiguous series, each speed observation is held to the next timestamp and integrated:
 
-**Fitted city-pair benchmarks (15 routes)**
+```text
+observed nautical miles = sum(ground_speed_knots * interval_seconds / 3600)
+observed kilometres = observed nautical miles * 1.852
+estimated telemetry-span kilometres = observed kilometres / time_coverage
+```
 
-| Pair | Reference | Calibrated map reading | Error |
-|---|---:|---:|---:|
-| Helsinki–Wellington | 17,068 km | 16,890 km | −1.0% |
-| Suva–New Delhi | 12,028 km | 12,123 km | +0.8% |
-| Mexico City–Lisbon | 8,686 km | 8,609 km | −0.9% |
-| Ankara–Washington, D.C. | 8,746 km | 8,469 km | −3.2% |
-| Santiago–Paris | 11,627 km | 11,789 km | +1.4% |
-| Brasília–London | 8,772 km | 8,916 km | +1.6% |
-| Buenos Aires–Canberra | 11,759 km | 11,746 km | −0.1% |
-| Tokyo–Madrid | 10,789 km | 10,858 km | +0.6% |
-| Santiago–Canberra | 11,345 km | 11,497 km | +1.3% |
-| Paris–Rome | 1,109 km | 1,110 km | +0.1% |
-| Tokyo–Seoul | 1,160 km | 1,205 km | +3.9% |
-| Yerevan–Moscow | 1,804 km | 1,792 km | −0.7% |
-| Nairobi–Cairo | 3,518 km | 3,304 km | −6.1% |
-| London–Reykjavik | 1,894 km | 1,920 km | +1.4% |
-| Mexico City–Washington, D.C. | 3,030 km | 3,067 km | +1.2% |
+No distance is calculated from the aircraft's latitude/longitude trace, no API-provided path-length field is used, and no sphere, ellipsoid, great-circle or geodesic method is part of the target. Time gaps are not bridged with invented speeds: the observed mean ground speed is expanded over the first-to-last telemetry span and the measured coverage and largest gap are retained with every flight. Airport coordinates are used only as endpoint locations on the flat disk and to select flights at the source API.
 
-**Independent airport-pair holdouts (5 routes not used to fit the correction)**
+Flights are grouped by airport pair. Each route's median flight mileage is one calibration observation; entire airport pairs are reserved for holdout validation so no flights from a holdout route enter fitting. The generated dataset, raw flight observations, source attribution, filters, telemetry coverage and per-route statistics are stored in `data/flight-calibration.json`. The fitted parameters and train/holdout/leave-one-route-out diagnostics are generated by `npm run fit:flight-calibration` and stored in `src/core/flight-calibration-parameters.js` and `data/flight-calibration-summary.json` only when the independent validation gate passes.
 
-| Pair | Reference | Calibrated map reading | Error |
-|---|---:|---:|---:|
-| SCL–SYD | 11,363 km | 11,380 km | +0.1% |
-| LHR–SIN | 10,886 km | 11,171 km | +2.6% |
-| ORD–HKG | 12,543 km | 12,971 km | +3.4% |
-| HEL–NRT | 7,848 km | 8,496 km | +8.3% |
-| JFK–SIN | 15,347 km | 15,843 km | +3.2% |
-
-The 15 fitted city pairs have 1.6% mean absolute in-sample error. The five held-out airport pairs have 3.5% mean absolute error and 8.3% maximum absolute error. Leave-one-out validation on the 15 city pairs has 4.8% mean absolute error but a 24.5% worst case, showing that the correction remains data-limited and should not be treated as universally accurate.
-
-Distance references: [Helsinki–Wellington](https://www.travelmath.com/distance/from/Helsinki,+Finland/to/Wellington,+New+Zealand), [Suva–New Delhi](https://www.travelmath.com/distance/from/Suva,+Fiji/to/New+Delhi,+India), [Mexico City–Lisbon](https://www.travelmath.com/distance/from/Mexico+City,+Mexico/to/Lisbon,+Portugal), [Ankara–Washington](https://www.travelmath.com/distance/from/Ankara,+Turkey/to/Washington,+DC), [Santiago–Paris](https://www.travelmath.com/distance/from/Santiago,+Chile/to/Paris,+France), [Brasília–London](https://www.travelmath.com/distance/from/Brasilia,+Brazil/to/London,+United+Kingdom), [Buenos Aires–Canberra](https://www.travelmath.com/distance/from/Buenos+Aires,+Argentina/to/Canberra,+Australia), [Tokyo–Madrid](https://www.travelmath.com/distance/from/Tokyo,+Japan/to/Madrid,+Spain), [Santiago–Canberra](https://www.travelmath.com/flying-time/from/Santiago,+Chile/to/Canberra,+Australia), [Paris–Rome](https://www.travelmath.com/distance/from/Paris,+France/to/Rome,+Italy), [Tokyo–Seoul](https://www.travelmath.com/distance/from/Tokyo,+Japan/to/Seoul,+South+Korea), [Yerevan–Moscow](https://www.travelmath.com/distance/from/Yerevan,+Armenia/to/Moscow,+Russia), [Nairobi–Cairo](https://www.travelmath.com/distance/from/Nairobi,+Kenya/to/Cairo,+Egypt), [London–Reykjavik](https://www.travelmath.com/distance/from/London,+United+Kingdom/to/Reykjavik,+Iceland), and [Mexico City–Washington](https://www.travelmath.com/distance/from/Mexico+City,+Mexico/to/Washington,+DC). Airport-pair holdouts: [SCL–SYD](https://www.travelmath.com/distance/from/SCL/to/SYD), [LHR–SIN](https://www.travelmath.com/distance/from/LHR/to/SIN), [ORD–HKG](https://www.travelmath.com/distance/from/ORD/to/HKG), [HEL–NRT](https://www.travelmath.com/distance/from/HEL/to/NRT), and [JFK–SIN](https://www.travelmath.com/distance/from/JFK/to/SIN).
+The live estimate is explicitly a **flight-empirical mileage estimate**. Airline tracks can be longer than a straight point-to-point segment because of operational routing, weather, wind and airspace constraints, and the ADS-B archive can have gaps. Its validation errors and telemetry coverage must therefore be read alongside the number; this does not establish a universal shortest distance between the two locations.
 
 **Polygon area and perimeter**
 
@@ -91,20 +69,6 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
 The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same endpoint-based empirical correction as A–B. Because map scale varies by position and direction in the base projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the reference data and limitations.
-
-## Separate WGS84 geodesic utility validation
-
-The repository retains a standalone WGS84 geodesic utility in `src/core/geodesic.js`, with separate tests against published shortest airport-to-airport great-circle references and recorded aircraft-track ranges. This utility is not used by the map's A–B measurement tool. The examples span a southern Pacific route whose shortest path reaches about 61.8°S through to a New York–Singapore shortest path that approaches about 87.5°N. The utility column reports WGS84 inverse-geodesic distances from airport coordinates; published shortest-distance figures are rounded cross-checks, while recorded flight tracks are expected to be longer.
-
-| Route | Published shortest-distance reference | Recorded aircraft-track range | Utility (WGS84) |
-|---|---:|---:|---:|
-| Santiago–Sydney (SCL–SYD) | 11,341 km | 11,489–11,953 km | 11,363 km |
-| London–Singapore (LHR–SIN) | 10,882 km | 11,261–11,853 km | 10,886 km |
-| Chicago–Hong Kong (ORD–HKG) | 12,522 km | 12,836–12,933 km | 12,543 km |
-| Helsinki–Tokyo (HEL–NRT) | 7,828 km | 10,992–12,088 km | 7,849 km |
-| New York–Singapore (JFK–SIN) | 15,339 km | 16,821–17,057 km | 15,347 km |
-
-Published shortest-distance and recorded-track references: [SCL–SYD](https://www.flightpaths.com/SCL-SYD), [LHR–SIN](https://www.flightpaths.com/LHR-SIN), [ORD–HKG](https://www.flightpaths.com/ORD-HKG), [HEL–NRT](https://www.flightpaths.com/HEL-NRT), and [JFK–SIN](https://www.flightpaths.com/JFK-SIN). Track ranges are observed flown paths, not direct-distance calibration targets. Flight paths can be longer because of airspace restrictions, weather, winds, and operational routing; aircraft may avoid polar regions even when the shortest direct path approaches them.
 
 ## Antarctica / Ice Wall
 
@@ -236,14 +200,14 @@ Capital coordinates are stored locally in `data/capitals.json` and were generate
 To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
-- A–B distance: a straight projected flat-disk chord multiplied by a bounded empirical calibration factor in `src/core/measurement-engine.js`; the separate WGS84 utility in `src/core/geodesic.js` is not used by the map's distance tool.
+- A–B distance: raw flat-disk chord plus a separate ADS-B flight-telemetry calibration estimate. The calibration data are generated from ground-speed/time observations, not coordinate-derived distances.
 
 ## Important limitations
 
-- The radial disk geometry still uses one uniform base scale. The A–B interface shows both the raw disk chord and a bounded empirical estimate fitted to a finite set of route references; leave-one-out testing shows that untested route errors can still be substantial.
-- The raw A–B result is a Euclidean chord in the displayed disk plane. The second result is an empirical estimate, not a surveyed route, actual flight track, or guaranteed geographic distance. The running A–B engine uses no globe equations or geodesic libraries; results outside the calibration sample can differ substantially from external references.
+- The radial disk uses one empirical base scale fitted from sampled airport-pair flight mileage, plus an endpoint residual correction. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well it generalizes to new route pairs.
+- The raw A–B result is a Euclidean chord in the displayed disk plane. The second result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight and is not a shortest-path distance. The running measurement engine uses no globe-distance formula or geodesic library; performance outside the sampled airport-pair domain is not guaranteed.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
-- A legacy standalone geodesic utility remains in the repository for its own isolated tests; it is not imported or called by the application measurement path.
+- Country, coastline, airport and capital coordinates remain as location data for rendering and endpoint selection. They are not used to calculate the calibration's distance targets.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
