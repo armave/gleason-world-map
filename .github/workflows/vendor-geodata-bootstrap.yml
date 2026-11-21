@@ -1,0 +1,30 @@
+name: Vendor local geographic datasets
+on:
+  push:
+    branches: [feat/bundle-local-geodata]
+permissions:
+  contents: write
+jobs:
+  vendor-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download, compact, validate and compress geographic datasets
+        run: node scripts/vendor-geodata.mjs
+      - name: Commit bundled data into this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "Bundled data already up to date."
+          else
+            git commit -m "Vendor local country boundaries and capital data"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
