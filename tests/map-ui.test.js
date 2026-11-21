@@ -16,6 +16,7 @@ test('map viewport starts with an accessible loading veil and retry control', ()
 test('map layers expose country names and no U.S. county boundary overlay', () => {
   assert.match(html, /id="layerCountryNames" checked/);
   assert.match(html, /Country names \(16,000–500 km\)/);
+  assert.doesNotMatch(html, /layerCountyNames|countyLayerStatus|U\.S\. county boundaries/);
   assert.match(app, /function drawCountryLabels\(\)/);
   assert.match(app, /drawCapitals\(\);drawCountryLabels\(\);/);
   assert.doesNotMatch(app, /drawCountyBoundaries|drawCountyLabels|loadCountyBoundaryDataset/);
