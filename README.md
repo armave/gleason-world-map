@@ -2,7 +2,7 @@
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive Gleason-style north-polar circular map with WGS84 ellipsoidal ground-distance and area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive Gleason-style north-polar circular map with projected-plane distance and area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 
 ## Map layout and calibration
@@ -19,15 +19,19 @@ The pole-to-pole meridional distance is approximately **20,003.93 km**. There is
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-This is a flat map projection, not a claim that the physical Earth is a flat plane. The Boston Public Library's Leventhal Map & Education Center describes Gleason's sheet as a polar azimuthal projection. An azimuthal-equidistant map preserves distances from its centre; it does not make every off-centre straight-line measurement correct, nor does it preserve area everywhere. The app therefore separates projected layout from WGS84 surface measurements and reports local scale distortion rather than treating the disk as uniformly scaled.
+This is a flat map projection, not a claim that the physical Earth is a flat plane. The Boston Public Library's Leventhal Map & Education Center describes Gleason's sheet as a polar azimuthal projection. An azimuthal-equidistant map preserves distances from its centre; it does not make every off-centre straight-line measurement correct, nor does it preserve area everywhere. The app measures distances and areas directly in the projected disk coordinates, while reporting local scale distortion separately rather than treating the disk as uniformly scaled.
 
-## WGS84 distances and areas
+## Flat-disk distance and area measurements
 
-Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The distance tool draws a straight visual connector between the two projected disk locations. The numeric result remains the shortest WGS84 surface geodesic, calculated independently of that straight connector. The area tool still draws its successive polygon edges as sampled WGS84 geodesics. Results are shown in metres below 1 km and kilometres for longer distances.
+Distance and area tools operate on the two-dimensional projected disk. A selected geographic position is converted to the same projected X/Y coordinates used to draw the map; measurements then use ordinary Euclidean geometry in that plane. The distance tool measures the straight chord between projected endpoints. The area tool uses the shoelace formula for planar polygon area and sums straight projected edges for perimeter. Self-intersecting user polygons are rejected rather than assigned a misleading area.
 
-The custom area tool calculates ellipsoidal polygon area and perimeter using GeographicLib's WGS84 PolygonArea implementation. Each edge is treated as the shorter WGS84 geodesic between successive vertices. Selected-country areas are calculated from Natural Earth boundary rings with ellipsoidal polygon area, subtracting holes and summing polygon parts. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
+Selected-country areas are calculated by projecting Natural Earth boundary rings into the disk, subtracting interior holes, and summing separate polygon components. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
 
-The scale bar recalculates the WGS84 ground distance represented by a horizontal screen segment near the current view centre. It is a **local** scale indicator, not a claim that the entire disk has one uniform scale. Panning or zooming changes the local screen scale.
+The measurement engine does not call GeographicLib, WGS84 geodesic inverse/direct calculations, or ellipsoidal polygon-area routines. Its unit conversion uses the map's explicit disk-radius calibration, `DEFAULT_DISK_RADIUS_KM = 20,003.931458625447`; this is a scale constant for converting projected coordinates into kilometres, not a geodesic calculation. The engine normalizes by the current canvas radius, so resizing the map does not change a result. Change the constant in `src/core/flat-disk.js` to recalibrate the same disk geometry to another chosen flat-disk scale.
+
+Geographic positions are still placed on the disk by the map's WGS84-calibrated radial projection. The projection and its distortion diagnostics therefore remain WGS84-referenced, but once a location has been projected, the measurement formulas use only planar X/Y coordinates. These results describe geometry on this displayed disk, not shortest ground paths or ellipsoidal surface areas.
+
+The scale bar remains a separate local WGS84 ground-scale indicator near the current view centre. It is not the conversion factor used by the flat-disk measurement tools; panning or zooming changes the local screen scale.
 
 ## Local projection distortion
 
@@ -37,7 +41,7 @@ k_EW = r / (N(phi) × abs(cos(phi)))
 
 The distance decoder is its reciprocal, 1/k_EW, and the local map-area stretch is also k_EW, because the radial scale is 1. At the South Pole, longitude converges and the east–west ground radius tends to zero; the local tangential stretch tends to infinity.
 
-The distortion panel reports radial scale, east–west map stretch, the east–west distance decoder, and map-area stretch. These diagnostics describe the local projection scale and do not replace the ellipsoidal geodesic and polygon-area tools.
+The distortion panel reports radial scale, east–west map stretch, the east–west distance decoder, and map-area stretch. These diagnostics describe the WGS84-calibrated projection separately from the planar flat-disk measurement outputs.
 
 ## Antarctica / Ice Wall
 
@@ -164,12 +168,12 @@ Capital coordinates are stored locally in `data/capitals.json` and were generate
 To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
-- Ellipsoidal geodesic calculations: GeographicLib JavaScript.
+- Flat-disk distance and polygon measurements: the in-repository projected-plane engine in `src/core/flat-disk.js`.
 
 ## Important limitations
 
-- A flat map cannot preserve all global distances, angles, shapes, and areas simultaneously. This is inherent to map projection; consult the distortion panel and use the WGS84 surface measurement tools for ground distances and areas.
-- True radial scale applies to distances from the North Pole along meridians. A straight segment between arbitrary off-centre points is not generally their surface distance; use the WGS84 geodesic measurement.
+- A flat map cannot preserve all global distances, angles, shapes, and areas simultaneously. This is inherent to map projection; consult the distortion panel and interpret measurement outputs as planar geometry on this specific projected disk, not as ellipsoidal ground measurements.
+- The map's radial coordinate is WGS84-calibrated, but off-centre straight-line distances and planar polygon areas are measurements of the projected disk, not shortest ellipsoidal surface paths or survey-grade ground areas.
 - The map projection is a cartographic representation and does not establish that the physical Earth is flat. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
