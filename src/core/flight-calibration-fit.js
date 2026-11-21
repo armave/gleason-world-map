@@ -175,7 +175,19 @@ function makeTrainingExamples(routes, radialWarp) {
 }
 
 function radialScale(examples) {
-  return median(examples.map(example => example.mileagePerUnitChord));
+  const ordered = examples.map(example => ({
+    ratio: example.mileagePerUnitChord,
+    weight: Number.isFinite(example.qualityWeight)
+      ? Math.max(0.1, example.qualityWeight)
+      : 1
+  })).sort((a, b) => a.ratio - b.ratio);
+  const totalWeight = ordered.reduce((sum, item) => sum + item.weight, 0);
+  let cumulativeWeight = 0;
+  for (const item of ordered) {
+    cumulativeWeight += item.weight;
+    if (cumulativeWeight >= totalWeight / 2) return item.ratio;
+  }
+  return median(ordered.map(item => item.ratio));
 }
 
 function modelFromExamples(examples, sourceDatasetVersion, radialWarp) {
