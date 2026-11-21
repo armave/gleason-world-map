@@ -487,30 +487,30 @@ function updateMeasurement(){
   const correction=measurement.correctionPercent;
   $('distanceSub').textContent=Number.isFinite(factor)
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
-   :'Empirical correction unavailable';
+   :'Flight-mileage model unavailable';
 
   const messages=[];
   if(measurement.calibration?.outsideTrainingRange){
-   messages.push('Outside fitted feature range: mean colatitude, endpoint separation, or wrapped longitude span exceeds the calibration sample. Mean colatitude and endpoint separation are clamped; longitude span still enters the model unchanged.');
+   messages.push('Outside the sampled route-feature range. The local nearest-route estimate is extrapolating beyond the endpoint patterns represented in the ADS-B training routes.');
   }
   if(measurement.calibration?.nearSouthRim){
    messages.push('Southern-rim sensitivity: an endpoint is at or below 85°S. Longitude has a strong effect on position near the disk edge; interpret both readings as flat-disk model outputs.');
   }
   if(measurement.calibration?.factorWasClamped){
-   messages.push('Correction bound applied: the unbounded empirical factor fell outside 0.90–2.50.');
+   messages.push('Correction bound applied: the unbounded local route factor fell outside 0.50–2.50.');
   }
   if(messages.length===0){
-   messages.push('Calibration features are within the fitted mean-colatitude, endpoint-span, and wrapped-longitude ranges. This empirical estimate is not guaranteed outside the reference sample.');
+   messages.push('Endpoint features are within the sampled route range. This is an estimate of typical flown mileage from historical ADS-B flights, not a shortest-path distance or a prediction of a specific airline's track.');
   }
   diagnostics.textContent=messages.join(' ');
   diagnostics.classList.toggle('is-warning',measurement.warnings.length>0);
   diagnostics.hidden=false;
-  $('measureHelp').textContent='The connector is one straight segment in the Gleason disk. Raw chord is the Euclidean distance in the map plane; the second reading multiplies that same chord by the empirical endpoint correction. No globe formula or geodesic library is used.';
+  $('measureHelp').textContent='The connector remains one straight segment in the Gleason disk. The first value is its raw Euclidean chord; the second estimates typical flown mileage from ADS-B ground-speed and timestamp samples. It is not a shortest-path distance.';
  }else{
   $('rawDistanceValue').textContent='—';
   $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='Raw chord × empirical factor';
+  $('distanceSub').textContent='Raw chord × local flight-mileage factor';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
