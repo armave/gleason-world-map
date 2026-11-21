@@ -10,7 +10,7 @@ Country boundaries, capital coordinates, and the 2026 county label Gazetteer are
 npm run vendor:county-boundaries
 ```
 
-This downloads the public-domain Census TIGERweb ACS2026 Counties layer, validates and compresses it to `data/us-counties-boundaries.geojson.gz`. Commit that generated file with the app to serve county boundaries locally; the map prefers the local bundle and uses Census TIGERweb only as a fallback when the bundle is absent. The map’s core country and capital layers already load from local files.
+This downloads the public-domain Census TIGERweb ACS2026 Counties layer, validates and compresses it to `data/us-counties-boundaries.geojson.gz`. The `fix/vendor-county-boundary-data` GitHub Actions workflow generates and commits that asset automatically. The browser now reads county polygons only from this local bundle; country boundaries, capitals, county search records, and county polygons are all served from repository assets without Census data requests at runtime.
 
 ## Map layout and calibration
 
