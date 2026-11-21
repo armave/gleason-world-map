@@ -75,6 +75,19 @@ const ROUTES = [
   { from: 'SCEL', to: 'SAEZ', split: 'train' },
   { from: 'SCEL', to: 'SBGR', split: 'train' },
 
+  // Southern South America and Antarctic logistics routes improve extrapolation
+  // coverage; candidate pairs with sparse operations are retained as diagnostics.
+  { from: 'SCEL', to: 'SCCI', split: 'train' },
+  { from: 'SAWH', to: 'SAEZ', split: 'train' },
+  { from: 'SAWH', to: 'SCCI', split: 'train' },
+  { from: 'SCEL', to: 'SAWH', split: 'train' },
+  { from: 'SCCI', to: 'SCGZ', split: 'train' },
+  { from: 'SCCI', to: 'SCRM', split: 'train' },
+
+  // Independent high-southern-latitude / Antarctic holdouts.
+  { from: 'NZCH', to: 'NZWD', split: 'holdout' },
+  { from: 'SCCI', to: 'SAWB', split: 'holdout' },
+
   // Entire route pairs are held out from fitting.
   { from: 'OMDB', to: 'WSSS', split: 'holdout' },
   { from: 'OTHH', to: 'RJAA', split: 'holdout' },
@@ -89,8 +102,8 @@ function option(name, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
-const MAX_PAGES_PER_ROUTE = option('max-pages-per-route', 16);
-const SAMPLES_PER_ROUTE = option('samples-per-route', 5);
+const MAX_PAGES_PER_ROUTE = option('max-pages-per-route', 24);
+const SAMPLES_PER_ROUTE = option('samples-per-route', 8);
 const MAX_DETAILS_PER_ROUTE = SAMPLES_PER_ROUTE * 8;
 const ROUTE_PAGE_LIMIT = 1000;
 
@@ -413,6 +426,7 @@ async function collect() {
         maxSpeedKnots: FLIGHT_TELEMETRY_FILTERS.maxSpeedKnots,
         minFlightMinutes: FLIGHT_TELEMETRY_FILTERS.minFlightMinutes,
         minTelemetryCoverage: FLIGHT_TELEMETRY_FILTERS.minCoverage,
+        maxSpeedSampleIntervalSeconds: FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds,
         minSpeedIntervals: FLIGHT_TELEMETRY_FILTERS.minSpeedIntervals
       },
       explicitlyNotUsed: [
