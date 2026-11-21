@@ -140,7 +140,7 @@ export function drawOceanLabels(ctx,project,baseR,zoom,localScaleKm,options={}){
   ctx.fillStyle=candidate.ocean?(palette.oceanLabel||'#355f70'):(palette.seaLabel||'#4c6b76');
   for(const glyph of candidate.glyphs){
    if(!glyph.char.trim())continue;
-   ctx.save();ctx.translate(glyph.x,glyph.y);ctx.rotate(glyph.rotation-viewport.rotation);
+   ctx.save();ctx.translate(glyph.x,glyph.y);ctx.rotate(glyph.rotation);
    ctx.strokeText(glyph.char,0,0);ctx.fillText(glyph.char,0,0);ctx.restore();
   }
   accepted.push(candidate);occupied.push(candidate.box);
