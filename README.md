@@ -32,7 +32,7 @@ The engine always calculates the shortest inverse geodesic on the WGS84 referenc
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
-The WGS84 calculation uses ellipsoid parameters. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; ordinary northern-side routes use the ellipsoidal result.
+The WGS84 calculation uses ellipsoid parameters at all latitudes. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; other routes use the ellipsoidal result.
 
 **Polygon area and perimeter**
 
@@ -52,7 +52,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 / flat-disk metric selection; if its sample extends into the Antarctic band it uses planar calibration rather than globe math. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 surface-distance calculation as A–B at every latitude. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
 
 ## Flight-route calibration and validation
 
@@ -205,7 +205,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 - The radial disk calibration controls map placement; it is not a globally uniform conversion from projected X/Y coordinates to ground distance.
 - A–B distance is a shortest WGS84 surface geodesic, not an actual flight, road, rail, or other travelled route. Real aircraft tracks can be materially longer and may avoid polar regions.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
-- The WGS84 inverse uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge. The app does not call the WGS84 engine for A–B measurements in the ice-wall band.
+- The WGS84 inverse uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
