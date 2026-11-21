@@ -1,10 +1,10 @@
 export function drawIceWall(ctx,antarcticaPath,baseR,zoom){
  if(!antarcticaPath)return;
  ctx.save();
- ctx.fillStyle='#c7e0e8';ctx.fill(antarcticaPath,'evenodd');
+ ctx.fillStyle='#ffffff';ctx.fill(antarcticaPath,'evenodd');
  ctx.lineJoin='round';ctx.strokeStyle='#527f91';ctx.lineWidth=4.2/zoom;ctx.stroke(antarcticaPath);
  ctx.strokeStyle='#f6ffff';ctx.lineWidth=1.1/zoom;ctx.stroke(antarcticaPath);
- ctx.save();ctx.clip(antarcticaPath,'evenodd');ctx.strokeStyle='rgba(77,125,145,.24)';ctx.lineWidth=.72/zoom;
+ ctx.save();ctx.clip(antarcticaPath,'evenodd');ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=.72/zoom;
  for(let i=0;i<240;i++){
   const a=i*Math.PI*2/240;
   ctx.beginPath();ctx.moveTo(baseR*.78*Math.cos(a),-baseR*.78*Math.sin(a));
