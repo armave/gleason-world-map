@@ -104,3 +104,9 @@ test('Antarctic ice wall has layered edges, strata, crevasses and repeated rim l
  assert.match(iceWall,/ICE_WALL_LABEL_COUNT=8/);
  assert.match(iceWall,/ctx\.clip\(antarcticaPath,'evenodd'\)/);
 });
+
+test('water label land detection uses one prebuilt land mask including Antarctica',()=>{
+ assert.match(app,/landMaskPath=new Path2D\(\)/);
+ assert.match(app,/landMaskPath\.addPath\(antarcticaPath\)/);
+ assert.match(app,/ctx\.isPointInPath\(landMaskPath,x,y,'evenodd'\)/);
+});
