@@ -14,7 +14,8 @@ export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
   minSpeedKnots: 40,
   maxSpeedKnots: 750,
   minFlightMinutes: 35,
-  minCoverage: 0.30,
+  minCoverage: 0.35,
+  maxSpeedSampleIntervalSeconds: 900,
   minSpeedIntervals: 8
 });
 
@@ -86,13 +87,22 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       const intervalEnd = Math.min(telemetryEnd, nextTimestamp);
       const deltaSeconds = intervalEnd - intervalStart;
       if (!(deltaSeconds > 0)) continue;
+      if (deltaSeconds > FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds) {
+        // A single speed sample must not be treated as representative across
+        // a long blind interval. Leave it uncovered and report the gap.
+        maxGapSeconds = Math.max(maxGapSeconds, deltaSeconds);
+        continue;
+      }
+
+      if (!Number.isFinite(speedKnots) ||
+          speedKnots < MIN_AIRBORNE_SPEED_KT ||
+          speedKnots > MAX_AIRBORNE_SPEED_KT) {
+        maxGapSeconds = Math.max(maxGapSeconds, deltaSeconds);
+        continue;
+      }
 
       sequenceStart = Math.min(sequenceStart, intervalStart);
       sequenceEnd = Math.max(sequenceEnd, intervalEnd);
-      if (!Number.isFinite(speedKnots) ||
-          speedKnots < MIN_AIRBORNE_SPEED_KT ||
-          speedKnots > MAX_AIRBORNE_SPEED_KT) continue;
-
       observedNauticalMiles += speedKnots * (deltaSeconds / 3600);
       coveredSeconds += deltaSeconds;
       intervalCount++;
