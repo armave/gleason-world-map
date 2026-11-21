@@ -1,0 +1,834 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "qualityGate": {
+    "trainingMapePercent": 7.585055253739266,
+    "holdoutMapePercent": 4.099270097124336,
+    "holdoutMaxErrorPercent": 8.957612838471785,
+    "leaveOneOutMapePercent": 7.585055253739266,
+    "leaveOneOutMaxRouteErrorPercent": 29.27654137985377,
+    "limits": {
+      "maxTrainingMapePercent": 10,
+      "maxHoldoutMapePercent": 12,
+      "maxHoldoutRouteErrorPercent": 20,
+      "maxLeaveOneOutMapePercent": 15,
+      "maxLeaveOneOutRouteErrorPercent": 45
+    }
+  },
+  "generatedAt": "2026-11-21T11:16:31.691Z",
+  "sourceDataset": "data/flight-calibration.json",
+  "sourceRetrievedAt": "2026-11-21T11:16:31.504Z",
+  "method": {
+    "target": "Median telemetry-span flown-mileage estimate per airport pair",
+    "targetSource": "ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate",
+    "formula": "observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; estimated_span_km = observed_km / time_coverage",
+    "inputGeometry": "Circular flat disk with regularized-power latitude warp q(t); local inverse-distance-weighted mileage-per-warped-chord ratios over mean warped radial fraction and normalized radial/tangential chord shares",
+    "radialWarp": {
+      "kind": "regularized-power",
+      "exponent": 0.9,
+      "epsilon": 0.005
+    },
+    "radialCoordinateFormula": "t = theta / pi; q = ((t + epsilon)^exponent - epsilon^exponent) / ((1 + epsilon)^exponent - epsilon^exponent); r = pi * R * q",
+    "features": [
+      "meanRadialFraction",
+      "radialShareOfChord",
+      "tangentialShareOfChord"
+    ],
+    "trainingUnit": "one independent airport pair, target is median of >=3 observed flights",
+    "splitUnit": "entire airport pairs held out; no flight from a holdout route is fitted"
+  },
+  "model": {
+    "schemaVersion": 4,
+    "sourceDatasetVersion": 2,
+    "radialWarp": {
+      "kind": "regularized-power",
+      "exponent": 0.9,
+      "epsilon": 0.005
+    },
+    "target": "median observed ADS-B flight-track mileage from ground-speed × time integration",
+    "radialScaleKm": 5385.144981733761,
+    "featureNames": [
+      "meanRadialFraction",
+      "radialShareOfChord",
+      "tangentialShareOfChord"
+    ],
+    "featureMeans": [
+      0.42958622419107584,
+      0.369759301017099,
+      0.8610964712458562
+    ],
+    "featureScales": [
+      0.17315699475882926,
+      0.28334773579963984,
+      0.20372772795203478
+    ],
+    "featureRanges": [
+      [
+        0.24499797587461458,
+        0.7260841750835506
+      ],
+      [
+        0.004875494241298341,
+        0.9706596936616381
+      ],
+      [
+        0.2404573956040756,
+        0.9999881147073215
+      ]
+    ],
+    "factorBounds": [
+      0.5,
+      2.5
+    ],
+    "neighborCount": 2,
+    "inverseDistancePower": 1,
+    "trainingRouteCount": 33,
+    "trainingExamples": [
+      {
+        "routeId": "EGLL--KJFK",
+        "features": [
+          0.2786941783604105,
+          0.18581098923260456,
+          0.9825855058367192
+        ],
+        "mileagePerUnitChord": 5096.900634637561,
+        "medianTrackKm": 5388.912100520121,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EGLL--WSSS",
+        "features": [
+          0.3872701140734993,
+          0.439933494500822,
+          0.8980303560661494
+        ],
+        "mileagePerUnitChord": 5716.372889068365,
+        "medianTrackKm": 11417.051980470182,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "KORD--VHHH",
+        "features": [
+          0.3575698858897459,
+          0.1572735818914472,
+          0.9875550721043533
+        ],
+        "mileagePerUnitChord": 5807.993955035284,
+        "medianTrackKm": 12818.465167887594,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EGLL--OMDB",
+        "features": [
+          0.32196509225019243,
+          0.4531603514731633,
+          0.8914290189648972
+        ],
+        "mileagePerUnitChord": 5345.0871197497445,
+        "medianTrackKm": 5524.081645162508,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EHAM--KLAX",
+        "features": [
+          0.29524171835667234,
+          0.2019035193568107,
+          0.9794054159904028
+        ],
+        "mileagePerUnitChord": 5402.436688541412,
+        "medianTrackKm": 8855.50065924495,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EGLL--KDFW",
+        "features": [
+          0.300611801736772,
+          0.2341078681698525,
+          0.972210628444766
+        ],
+        "mileagePerUnitChord": 5377.602105180181,
+        "medianTrackKm": 7676.066989984072,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EGLL--EHAM",
+        "features": [
+          0.24499797587461458,
+          0.21254546740188646,
+          0.9771511778056217
+        ],
+        "mileagePerUnitChord": 5891.183346292839,
+        "medianTrackKm": 423.0494225223254,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EGLL--LFPG",
+        "features": [
+          0.25461510321571323,
+          0.7323752575142866,
+          0.6809012279184716
+        ],
+        "mileagePerUnitChord": 7193.454425292042,
+        "medianTrackKm": 443.59669374027925,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EDDF--EGLL",
+        "features": [
+          0.25162354669008746,
+          0.20747757056647098,
+          0.9782397751634488
+        ],
+        "mileagePerUnitChord": 5717.27051565493,
+        "medianTrackKm": 726.5623538894399,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EGLL--LTFM",
+        "features": [
+          0.27688128736668677,
+          0.39054661542218844,
+          0.9205831527799502
+        ],
+        "mileagePerUnitChord": 5524.93683299491,
+        "medianTrackKm": 2618.0652011651887,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "KJFK--KLAX",
+        "features": [
+          0.3289379208424683,
+          0.15046171817261605,
+          0.9886158360882878
+        ],
+        "mileagePerUnitChord": 5349.039364071303,
+        "medianTrackKm": 4238.877869107114,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "KJFK--KMIA",
+        "features": [
+          0.3517251126725902,
+          0.9033101464997976,
+          0.4289880875158589
+        ],
+        "mileagePerUnitChord": 6723.070179856339,
+        "medianTrackKm": 1953.0431754087242,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "KJFK--KORD",
+        "features": [
+          0.30614349870216484,
+          0.10088279295304275,
+          0.9948983174606304
+        ],
+        "mileagePerUnitChord": 5555.93425519853,
+        "medianTrackKm": 1321.0564322334458,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EDDF--KJFK",
+        "features": [
+          0.282890564420401,
+          0.14450444394494635,
+          0.9895041514213881
+        ],
+        "mileagePerUnitChord": 5244.958030051309,
+        "medianTrackKm": 6173.608317063589,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EHAM--LFPG",
+        "features": [
+          0.25218591846023086,
+          0.8919925815634571,
+          0.45205003532325877
+        ],
+        "mileagePerUnitChord": 6265.372683312004,
+        "medianTrackKm": 424.43471851665856,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "EDDF--EHAM",
+        "features": [
+          0.2491943619346051,
+          0.626190271616774,
+          0.7796702788567169
+        ],
+        "mileagePerUnitChord": 7269.228879483581,
+        "medianTrackKm": 483.26483608774225,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "HECA--LTFM",
+        "features": [
+          0.33787841780090594,
+          0.9706596936616381,
+          0.2404573956040756
+        ],
+        "mileagePerUnitChord": 6786.7297887012355,
+        "medianTrackKm": 1385.7231660489715,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "LTFM--OLBA",
+        "features": [
+          0.3274674226984232,
+          0.7401385565663231,
+          0.6724543977727561
+        ],
+        "mileagePerUnitChord": 6379.843849478698,
+        "medianTrackKm": 1144.504929161942,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "OMDB--VABB",
+        "features": [
+          0.41353939121549343,
+          0.2615527241716629,
+          0.9651891899925019
+        ],
+        "mileagePerUnitChord": 4283.570511063324,
+        "medianTrackKm": 1753.0872722922177,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "OMDB--OOMS",
+        "features": [
+          0.401104708463741,
+          0.41059411116633954,
+          0.9118182252376422
+        ],
+        "mileagePerUnitChord": 5544.560374514163,
+        "medianTrackKm": 390.4371347585377,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "OBBI--OMDB",
+        "features": [
+          0.39367443291527804,
+          0.1715148872389039,
+          0.9851815281740854
+        ],
+        "mileagePerUnitChord": 6002.983847349564,
+        "medianTrackKm": 622.0357841710157,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "OMDB--OTHH",
+        "features": [
+          0.3964398439884179,
+          0.004875494241298341,
+          0.9999881147073215
+        ],
+        "mileagePerUnitChord": 5135.013633771017,
+        "medianTrackKm": 418.1014089931347,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "OOMS--OTHH",
+        "features": [
+          0.40104152858187103,
+          0.19618515956483112,
+          0.9805668682790181
+        ],
+        "mileagePerUnitChord": 5195.319732825602,
+        "medianTrackKm": 776.1846103785482,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "VTBS--WSSS",
+        "features": [
+          0.4936565298968757,
+          0.9231087836338938,
+          0.38453891035622473
+        ],
+        "mileagePerUnitChord": 6389.642558559838,
+        "medianTrackKm": 1455.0721998940382,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YMML--YSSY",
+        "features": [
+          0.7234758726240162,
+          0.23523292168925883,
+          0.9719390271789352
+        ],
+        "mileagePerUnitChord": 3084.7480632789366,
+        "medianTrackKm": 797.4944888931217,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YBBN--YMML",
+        "features": [
+          0.7063565687502122,
+          0.4650973417266261,
+          0.8852595453983121
+        ],
+        "mileagePerUnitChord": 4084.0797248496574,
+        "medianTrackKm": 1478.549910350456,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YBBN--YPPH",
+        "features": [
+          0.6914576536282527,
+          0.0539362568893431,
+          0.9985443806825848
+        ],
+        "mileagePerUnitChord": 2483.4848620704333,
+        "medianTrackKm": 3442.5619607746066,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YMML--YPAD",
+        "features": [
+          0.7260841750835506,
+          0.1743179936341312,
+          0.9846894114873843
+        ],
+        "mileagePerUnitChord": 2679.9149805660586,
+        "medianTrackKm": 682.991167841442,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YPAD--YSSY",
+        "features": [
+          0.7164052701401888,
+          0.03304306873871577,
+          0.9994539287072357
+        ],
+        "mileagePerUnitChord": 2506.458172975716,
+        "medianTrackKm": 1243.1338923411472,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YPAD--YPPH",
+        "features": [
+          0.7111852599615911,
+          0.05617152283627871,
+          0.9984211336015748
+        ],
+        "mileagePerUnitChord": 2242.034073861242,
+        "medianTrackKm": 1963.242923372012,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YPDN--YSSY",
+        "features": [
+          0.6572186642826243,
+          0.4403048722068211,
+          0.897848327676192
+        ],
+        "mileagePerUnitChord": 3528.707747464068,
+        "medianTrackKm": 2848.996976602242,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YBBN--YPDN",
+        "features": [
+          0.6400993604088203,
+          0.3048962523627111,
+          0.9523855707092448
+        ],
+        "mileagePerUnitChord": 3292.0209490693956,
+        "medianTrackKm": 2676.9264687442783,
+        "sampleCount": 5
+      },
+      {
+        "routeId": "YBCG--YSSY",
+        "features": [
+          0.6987122170183844,
+          0.7279506229553253,
+          0.6856295578072419
+        ],
+        "mileagePerUnitChord": 5385.144981733761,
+        "medianTrackKm": 701.1541073892322,
+        "sampleCount": 5
+      }
+    ],
+    "holdoutRouteCount": 4
+  },
+  "metrics": {
+    "training": {
+      "routeCount": 33,
+      "meanAbsolutePercent": 7.585055253739266,
+      "rmsPercent": 10.332330630448878,
+      "maxAbsolutePercent": 29.27654137985377,
+      "routeErrors": [
+        {
+          "routeId": "EGLL--KJFK",
+          "referenceMedianTrackKm": 5388.912100520121,
+          "errorPercent": 4.666154725928484
+        },
+        {
+          "routeId": "EGLL--WSSS",
+          "referenceMedianTrackKm": 11417.051980470182,
+          "errorPercent": -3.9904617632804062
+        },
+        {
+          "routeId": "KORD--VHHH",
+          "referenceMedianTrackKm": 12818.465167887594,
+          "errorPercent": -3.1343148041027447
+        },
+        {
+          "routeId": "EGLL--OMDB",
+          "referenceMedianTrackKm": 5524.081645162508,
+          "errorPercent": 5.111606800581225
+        },
+        {
+          "routeId": "EHAM--KLAX",
+          "referenceMedianTrackKm": 8855.50065924495,
+          "errorPercent": -3.2074470163761526
+        },
+        {
+          "routeId": "EGLL--KDFW",
+          "referenceMedianTrackKm": 7676.066989984072,
+          "errorPercent": -1.621894381158695
+        },
+        {
+          "routeId": "EGLL--EHAM",
+          "referenceMedianTrackKm": 423.0494225223254,
+          "errorPercent": -4.757180204478995
+        },
+        {
+          "routeId": "EGLL--LFPG",
+          "referenceMedianTrackKm": 443.59669374027925,
+          "errorPercent": -6.458590007026743
+        },
+        {
+          "routeId": "EDDF--EGLL",
+          "referenceMedianTrackKm": 726.5623538894399,
+          "errorPercent": 0.16686329176753834
+        },
+        {
+          "routeId": "EGLL--LTFM",
+          "referenceMedianTrackKm": 2618.0652011651887,
+          "errorPercent": -3.0354628242196258
+        },
+        {
+          "routeId": "KJFK--KLAX",
+          "referenceMedianTrackKm": 4238.877869107114,
+          "errorPercent": 6.5286614768235385
+        },
+        {
+          "routeId": "KJFK--KMIA",
+          "referenceMedianTrackKm": 1953.0431754087242,
+          "errorPercent": -6.058609815533167
+        },
+        {
+          "routeId": "KJFK--KORD",
+          "referenceMedianTrackKm": 1321.0564322334458,
+          "errorPercent": -4.69848761241094
+        },
+        {
+          "routeId": "EDDF--KJFK",
+          "referenceMedianTrackKm": 6173.608317063589,
+          "errorPercent": 0.794519320924425
+        },
+        {
+          "routeId": "EHAM--LFPG",
+          "referenceMedianTrackKm": 424.43471851665856,
+          "errorPercent": 7.632300327743091
+        },
+        {
+          "routeId": "EDDF--EHAM",
+          "referenceMedianTrackKm": 483.26483608774225,
+          "errorPercent": -6.050035567842727
+        },
+        {
+          "routeId": "HECA--LTFM",
+          "referenceMedianTrackKm": 1385.7231660489715,
+          "errorPercent": -3.3059392045094116
+        },
+        {
+          "routeId": "LTFM--OLBA",
+          "referenceMedianTrackKm": 1144.504929161942,
+          "errorPercent": 13.159612983903823
+        },
+        {
+          "routeId": "OMDB--VABB",
+          "referenceMedianTrackKm": 1753.0872722922177,
+          "errorPercent": 28.846666689673327
+        },
+        {
+          "routeId": "OMDB--OOMS",
+          "referenceMedianTrackKm": 390.4371347585377,
+          "errorPercent": 1.5145239983861636
+        },
+        {
+          "routeId": "OBBI--OMDB",
+          "referenceMedianTrackKm": 622.0357841710157,
+          "errorPercent": -10.333742351574227
+        },
+        {
+          "routeId": "OMDB--OTHH",
+          "referenceMedianTrackKm": 418.1014089931347,
+          "errorPercent": 14.97426954877874
+        },
+        {
+          "routeId": "OOMS--OTHH",
+          "referenceMedianTrackKm": 776.1846103785482,
+          "errorPercent": 5.056552068460207
+        },
+        {
+          "routeId": "VTBS--WSSS",
+          "referenceMedianTrackKm": 1455.0721998940382,
+          "errorPercent": 5.632047400355189
+        },
+        {
+          "routeId": "YMML--YSSY",
+          "referenceMedianTrackKm": 797.4944888931217,
+          "errorPercent": -7.911139849723947
+        },
+        {
+          "routeId": "YBBN--YMML",
+          "referenceMedianTrackKm": 1478.549910350456,
+          "errorPercent": -15.325860546887293
+        },
+        {
+          "routeId": "YBBN--YPPH",
+          "referenceMedianTrackKm": 3442.5619607746066,
+          "errorPercent": 8.593189302569115
+        },
+        {
+          "routeId": "YMML--YPAD",
+          "referenceMedianTrackKm": 682.991167841442,
+          "errorPercent": 3.2055281032393745
+        },
+        {
+          "routeId": "YPAD--YSSY",
+          "referenceMedianTrackKm": 1243.1338923411472,
+          "errorPercent": 7.597862459718874
+        },
+        {
+          "routeId": "YPAD--YPPH",
+          "referenceMedianTrackKm": 1963.242923372012,
+          "errorPercent": 20.28788719183854
+        },
+        {
+          "routeId": "YPDN--YSSY",
+          "referenceMedianTrackKm": 2848.996976602242,
+          "errorPercent": 7.143102380880384
+        },
+        {
+          "routeId": "YBBN--YPDN",
+          "referenceMedianTrackKm": 2676.9264687442783,
+          "errorPercent": 0.22976797284488537
+        },
+        {
+          "routeId": "YBCG--YSSY",
+          "referenceMedianTrackKm": 701.1541073892322,
+          "errorPercent": -29.27654137985377
+        }
+      ]
+    },
+    "holdout": {
+      "routeCount": 4,
+      "meanAbsolutePercent": 4.099270097124336,
+      "rmsPercent": 5.278291418211659,
+      "maxAbsolutePercent": 8.957612838471785,
+      "routeErrors": [
+        {
+          "routeId": "YBBN--YSSY",
+          "referenceMedianTrackKm": 814.925394574103,
+          "errorPercent": -8.957612838471785
+        },
+        {
+          "routeId": "OMDB--WSSS",
+          "referenceMedianTrackKm": 5699.2843254262025,
+          "errorPercent": 5.345681349456921
+        },
+        {
+          "routeId": "OTHH--RJAA",
+          "referenceMedianTrackKm": 8965.419707357165,
+          "errorPercent": 1.512904903533685
+        },
+        {
+          "routeId": "LTFM--OJAI",
+          "referenceMedianTrackKm": 1424.4753475218993,
+          "errorPercent": 0.580881297034952
+        }
+      ]
+    },
+    "leaveOneOut": {
+      "routeCount": 33,
+      "meanAbsolutePercent": 7.585055253739266,
+      "rmsPercent": 10.332330630448878,
+      "maxAbsolutePercent": 29.27654137985377,
+      "routeErrors": [
+        {
+          "routeId": "EGLL--KJFK",
+          "referenceMedianTrackKm": 5388.912100520121,
+          "errorPercent": 4.666154725928484
+        },
+        {
+          "routeId": "EGLL--WSSS",
+          "referenceMedianTrackKm": 11417.051980470182,
+          "errorPercent": -3.9904617632804062
+        },
+        {
+          "routeId": "KORD--VHHH",
+          "referenceMedianTrackKm": 12818.465167887594,
+          "errorPercent": -3.1343148041027447
+        },
+        {
+          "routeId": "EGLL--OMDB",
+          "referenceMedianTrackKm": 5524.081645162508,
+          "errorPercent": 5.111606800581225
+        },
+        {
+          "routeId": "EHAM--KLAX",
+          "referenceMedianTrackKm": 8855.50065924495,
+          "errorPercent": -3.2074470163761526
+        },
+        {
+          "routeId": "EGLL--KDFW",
+          "referenceMedianTrackKm": 7676.066989984072,
+          "errorPercent": -1.621894381158695
+        },
+        {
+          "routeId": "EGLL--EHAM",
+          "referenceMedianTrackKm": 423.0494225223254,
+          "errorPercent": -4.757180204478995
+        },
+        {
+          "routeId": "EGLL--LFPG",
+          "referenceMedianTrackKm": 443.59669374027925,
+          "errorPercent": -6.458590007026743
+        },
+        {
+          "routeId": "EDDF--EGLL",
+          "referenceMedianTrackKm": 726.5623538894399,
+          "errorPercent": 0.16686329176753834
+        },
+        {
+          "routeId": "EGLL--LTFM",
+          "referenceMedianTrackKm": 2618.0652011651887,
+          "errorPercent": -3.0354628242196258
+        },
+        {
+          "routeId": "KJFK--KLAX",
+          "referenceMedianTrackKm": 4238.877869107114,
+          "errorPercent": 6.5286614768235385
+        },
+        {
+          "routeId": "KJFK--KMIA",
+          "referenceMedianTrackKm": 1953.0431754087242,
+          "errorPercent": -6.058609815533167
+        },
+        {
+          "routeId": "KJFK--KORD",
+          "referenceMedianTrackKm": 1321.0564322334458,
+          "errorPercent": -4.69848761241094
+        },
+        {
+          "routeId": "EDDF--KJFK",
+          "referenceMedianTrackKm": 6173.608317063589,
+          "errorPercent": 0.794519320924425
+        },
+        {
+          "routeId": "EHAM--LFPG",
+          "referenceMedianTrackKm": 424.43471851665856,
+          "errorPercent": 7.632300327743091
+        },
+        {
+          "routeId": "EDDF--EHAM",
+          "referenceMedianTrackKm": 483.26483608774225,
+          "errorPercent": -6.050035567842727
+        },
+        {
+          "routeId": "HECA--LTFM",
+          "referenceMedianTrackKm": 1385.7231660489715,
+          "errorPercent": -3.3059392045094116
+        },
+        {
+          "routeId": "LTFM--OLBA",
+          "referenceMedianTrackKm": 1144.504929161942,
+          "errorPercent": 13.159612983903823
+        },
+        {
+          "routeId": "OMDB--VABB",
+          "referenceMedianTrackKm": 1753.0872722922177,
+          "errorPercent": 28.846666689673327
+        },
+        {
+          "routeId": "OMDB--OOMS",
+          "referenceMedianTrackKm": 390.4371347585377,
+          "errorPercent": 1.5145239983861636
+        },
+        {
+          "routeId": "OBBI--OMDB",
+          "referenceMedianTrackKm": 622.0357841710157,
+          "errorPercent": -10.333742351574227
+        },
+        {
+          "routeId": "OMDB--OTHH",
+          "referenceMedianTrackKm": 418.1014089931347,
+          "errorPercent": 14.97426954877874
+        },
+        {
+          "routeId": "OOMS--OTHH",
+          "referenceMedianTrackKm": 776.1846103785482,
+          "errorPercent": 5.056552068460207
+        },
+        {
+          "routeId": "VTBS--WSSS",
+          "referenceMedianTrackKm": 1455.0721998940382,
+          "errorPercent": 5.632047400355189
+        },
+        {
+          "routeId": "YMML--YSSY",
+          "referenceMedianTrackKm": 797.4944888931217,
+          "errorPercent": -7.911139849723947
+        },
+        {
+          "routeId": "YBBN--YMML",
+          "referenceMedianTrackKm": 1478.549910350456,
+          "errorPercent": -15.325860546887293
+        },
+        {
+          "routeId": "YBBN--YPPH",
+          "referenceMedianTrackKm": 3442.5619607746066,
+          "errorPercent": 8.593189302569115
+        },
+        {
+          "routeId": "YMML--YPAD",
+          "referenceMedianTrackKm": 682.991167841442,
+          "errorPercent": 3.2055281032393745
+        },
+        {
+          "routeId": "YPAD--YSSY",
+          "referenceMedianTrackKm": 1243.1338923411472,
+          "errorPercent": 7.597862459718874
+        },
+        {
+          "routeId": "YPAD--YPPH",
+          "referenceMedianTrackKm": 1963.242923372012,
+          "errorPercent": 20.28788719183854
+        },
+        {
+          "routeId": "YPDN--YSSY",
+          "referenceMedianTrackKm": 2848.996976602242,
+          "errorPercent": 7.143102380880384
+        },
+        {
+          "routeId": "YBBN--YPDN",
+          "referenceMedianTrackKm": 2676.9264687442783,
+          "errorPercent": 0.22976797284488537
+        },
+        {
+          "routeId": "YBCG--YSSY",
+          "referenceMedianTrackKm": 701.1541073892322,
+          "errorPercent": -29.27654137985377
+        }
+      ]
+    }
+  },
+  "routeCoverage": {
+    "trainingRoutes": 33,
+    "holdoutRoutes": 4,
+    "totalRoutes": 37
+  }
+}

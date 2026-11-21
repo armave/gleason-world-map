@@ -1,18 +1,13 @@
 /**
  * Flat-disk geometry engine for the Gleason-style north-polar map.
- *
- * Coordinates are placed on one mathematical plane:
- *   theta = pi/2 - latitude
- *   r = R * theta
- *   x = r cos(longitude), y = -r sin(longitude)
- *
- * R is a uniform flat-map scale calibrated so the straight projected segment
- * from Canberra (-35.27, 149.13) to Santiago (-33.45, -70.67) measures
- * 11,340 km, matching the city-to-city reference distance. This is a user-selected map-plane reference, not a globe radius
- * or geodesic parameter. The same linear scale applies to every disk length;
- * area values consequently scale by its square.
+ * Latitude is mapped to a smooth radial fraction q(t), then r = pi * R * q.
+ * The monotonic warp preserves the North Pole and circular Antarctic rim.
+ * R is fitted from observed ADS-B ground-speed × elapsed-time mileage.
  */
-export const DISK_RADIAL_SCALE_KM = 2778.193571010486;
+import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
+import { radialFractionFromUnitColatitude, unitColatitudeFromRadialFraction } from './radial-warp.js';
+
+export const DISK_RADIAL_SCALE_KM = FLIGHT_CALIBRATION.radialScaleKm;
 export const DISK_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
 
@@ -33,18 +28,22 @@ export function colatitudeRadians(latitudeDegrees) {
   return Math.PI / 2 - rad(latitudeDegrees);
 }
 
-export function radialDistanceFromNorthKm(latitudeDegrees) {
+export function radialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
-  return Number.isFinite(theta) ? DISK_RADIAL_SCALE_KM * theta : NaN;
+  if (!Number.isFinite(theta)) return NaN;
+  return radialFractionFromUnitColatitude(theta / Math.PI, FLIGHT_CALIBRATION.radialWarp);
 }
 
-export function radialFraction(latitudeDegrees) {
-  return colatitudeRadians(latitudeDegrees) / Math.PI;
+export function radialDistanceFromNorthKm(latitudeDegrees) {
+  const fraction = radialFraction(latitudeDegrees);
+  return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
 export function latitudeFromRadialDistanceKm(radiusKm) {
-  const theta = clamp(radiusKm / DISK_RADIAL_SCALE_KM, 0, Math.PI);
-  return (Math.PI / 2 - theta) * RAD;
+  if (!Number.isFinite(radiusKm)) return NaN;
+  const fraction = clamp(radiusKm / DISK_RADIUS_KM, 0, 1);
+  const t = unitColatitudeFromRadialFraction(fraction, FLIGHT_CALIBRATION.radialWarp);
+  return (Math.PI / 2 - t * Math.PI) * RAD;
 }
 
 function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees) {
@@ -71,7 +70,9 @@ export function unproject(x, y, baseRadius) {
     return { lat: NaN, lon: NaN };
   }
   const rho = Math.hypot(x, y);
-  const theta = clamp(rho / baseRadius, 0, 1) * Math.PI;
+  const q = clamp(rho / baseRadius, 0, 1);
+  const t = unitColatitudeFromRadialFraction(q, FLIGHT_CALIBRATION.radialWarp);
+  const theta = t * Math.PI;
   const lat = (Math.PI / 2 - theta) * RAD;
   const lon = rho < 1e-9 ? 0 : wrapLongitude(Math.atan2(-y, x) * RAD);
   return { lat, lon };

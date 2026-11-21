@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import {
   DISK_RADIAL_SCALE_KM, DISK_RADIUS_KM,
   colatitudeRadians, radialDistanceFromNorthKm, radialFraction,
@@ -9,36 +10,41 @@ import {
   flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
   DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
+import { radialWarpDerivative } from '../src/core/radial-warp.js';
 
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
 const point = (lat, lon) => ({lat, lon});
 
-test('radial scale and full disk radius use the Canberra–Santiago flat-map calibration', () => {
-  close(DISK_RADIAL_SCALE_KM, 2778.193571010486, 1e-12);
+test('radial scale and disk radius use the fitted ADS-B flight-mileage parameters', () => {
+  close(DISK_RADIAL_SCALE_KM, FLIGHT_CALIBRATION.radialScaleKm, 1e-12);
   close(DISK_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM, 1e-10);
-  close(DISK_RADIUS_KM, 8727.952512936938, 1e-9);
+  assert.equal(FLIGHT_CALIBRATION.target,
+    'median observed ADS-B flight-track mileage from ground-speed × time integration');
+  assert.equal(FLIGHT_CALIBRATION.trainingRouteCount, 33);
+  assert.equal(FLIGHT_CALIBRATION.holdoutRouteCount, 4);
+  assert.ok(FLIGHT_CALIBRATION.trainingExamples.length >= 10);
 });
 
-test('Canberra–Santiago straight projected distance is calibrated to 11,340 km', () => {
-  const canberra = point(-35.27, 149.13);
-  const santiago = point(-33.45, -70.67);
-  close(flatDiskDistanceMeters(canberra, santiago) / 1000, 11340, 1e-7);
-});
+test('smooth radial warp preserves the pole and rim while recalibrating latitude-ring spacing', () => {
+  assert.equal(FLIGHT_CALIBRATION.radialWarp.kind, 'regularized-power');
+  assert.ok(FLIGHT_CALIBRATION.radialWarp.exponent > 0);
+  assert.ok(FLIGHT_CALIBRATION.radialWarp.epsilon > 0);
+  close(radialDistanceFromNorthKm(90), 0, 1e-12);
+  close(radialDistanceFromNorthKm(-90), DISK_RADIUS_KM, 1e-8);
+  assert.notEqual(radialFraction(0), colatitudeRadians(0) / Math.PI);
 
-test('radial calibration is r = R times colatitude', () => {
-  for (const [lat, radius] of [
-    [90, 0], [60, DISK_RADIAL_SCALE_KM * Math.PI / 6],
-    [30, DISK_RADIAL_SCALE_KM * Math.PI / 3],
-    [0, DISK_RADIAL_SCALE_KM * Math.PI / 2],
-    [-30, DISK_RADIAL_SCALE_KM * 2 * Math.PI / 3],
-    [-60, DISK_RADIAL_SCALE_KM * 5 * Math.PI / 6],
-    [-90, DISK_RADIUS_KM]
-  ]) close(radialDistanceFromNorthKm(lat), radius, 1e-9);
-  for (const lat of [90, 60, 30, 0, -30, -60, -90]) {
-    close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-10);
-    close(radialFraction(lat), colatitudeRadians(lat) / Math.PI, 1e-15);
+  let previous = -Infinity;
+  for (let lat = 90; lat >= -90; lat -= 1) {
+    const fraction = radialFraction(lat);
+    assert.ok(fraction > previous);
+    previous = fraction;
+    close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-9);
   }
+  assert.ok(radialWarpDerivative(0, FLIGHT_CALIBRATION.radialWarp) > 0);
+  assert.ok(Number.isFinite(radialWarpDerivative(0, FLIGHT_CALIBRATION.radialWarp)));
+  assert.ok(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp) > 0);
+  assert.ok(Number.isFinite(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp)));
 });
 
 test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {
@@ -78,7 +84,7 @@ test('direct connector contains only the two projected endpoints', () => {
 });
 
 test('radial separation and same-latitude straight chord formulas are planar', () => {
-  close(northSouthDistanceKm(90, 0), Math.PI * DISK_RADIAL_SCALE_KM / 2, 1e-10);
+  close(northSouthDistanceKm(90, 0), radialDistanceFromNorthKm(0), 1e-10);
   const r = radialDistanceFromNorthKm(0);
   close(eastWestDistanceKm(0, Math.PI / 180),
     2 * r * Math.sin(Math.PI / 360), 1e-10);
@@ -186,8 +192,9 @@ test('Antarctica area preserves the full southern rim sweep shown by the map', (
   const withRim = flatDiskFeatureAreaM2(feature, projector, 400, {preserveAntarcticRim:true});
   const mapRadius = 400;
   const scale = DISK_RADIUS_METERS / mapRadius;
+  const southernBoundaryFraction = radialFraction(-60);
   const expectedAnnulusArea = Math.PI * (
-    mapRadius ** 2 - (mapRadius * 5 / 6) ** 2
+    mapRadius ** 2 - (mapRadius * southernBoundaryFraction) ** 2
   ) * scale ** 2;
   close(withRim, expectedAnnulusArea, expectedAnnulusArea * 0.001);
   assert.ok(Math.abs(withRim - withoutRim) > expectedAnnulusArea * 0.05);
