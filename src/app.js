@@ -644,7 +644,7 @@ function scaleBarReferencePixels(anchor=scaleAnchorWorld(),scaleZoom=zoom){
  const available=Math.max(0,(baseR*.96-radius)*1.8*scaleZoom);
  return Math.min(SCALE_BAR_MAX_WIDTH_PX,width*.34,available);
 }
-function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
+function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0||!Number.isFinite(baseR)||baseR<=0)return Infinity;
  // Calibrate the horizontal screen direction at the current view anchor using the same flat-disk metric as A–B.
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
@@ -657,13 +657,13 @@ function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
  const safeAnchor=constrainScaleAnchor(anchor),pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);
  if(pixels<24)return Infinity;
- return niceScaleFloor(groundDistanceForScalePixels(pixels,safeAnchor,scaleZoom)*SCALE_BAR_HEADROOM);
+ return niceScaleFloor(flatDiskDistanceForScalePixels(pixels,safeAnchor,scaleZoom)*SCALE_BAR_HEADROOM);
 }
 function zoomForScaleBarDistance(targetRawKm,anchor){
  const safeAnchor=constrainScaleAnchor(anchor);
  const distanceAt=scaleZoom=>{
   const pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);
-  return pixels<24?Infinity:groundDistanceForScalePixels(pixels,safeAnchor,scaleZoom);
+  return pixels<24?Infinity:flatDiskDistanceForScalePixels(pixels,safeAnchor,scaleZoom);
  };
  let low=MIN_ZOOM,high=MAX_ZOOM_SEARCH;
  if(distanceAt(low)<=targetRawKm)return MIN_ZOOM;
@@ -691,10 +691,10 @@ function drawScaleBar(){
  const anchor=scaleAnchorWorld();
  const maxPx=scaleBarReferencePixels(anchor,zoom);
  if(maxPx<24)return;
- const maxKm=groundDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*.82);
+ const maxKm=flatDiskDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*.82);
  if(!targetKm)return;
  let low=0,high=maxPx;
- for(let i=0;i<36;i++){const mid=(low+high)/2;if(groundDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;}
+ for(let i=0;i<36;i++){const mid=(low+high)/2;if(flatDiskDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;}
  const barPx=(low+high)/2,x=16,y=height-22,label=formatDistance(targetKm*1000);
  ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
  const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
