@@ -107,15 +107,22 @@ export function geodesicDirect(origin,bearing,distanceMeters){
  if(engine){const r=engine.Direct(origin.lat,origin.lon,bearing*180/Math.PI,distanceMeters);return {lat:r.lat2,lon:r.lon2};}
  return vincentyDirect(origin,bearing,distanceMeters);
 }
-export function geodesicLinePath(a,b){
+export function geodesicLinePath(a,b,projector=(lon,lat)=>project(lon,lat,1)){
+ if(typeof projector!=='function')return [];
+ const projectPoint=(lon,lat)=>{
+  const point=projector(lon,lat);
+  return Array.isArray(point)&&point.length>=2&&Number.isFinite(point[0])&&Number.isFinite(point[1])?point:null;
+ };
  const inverse=geodesicInverse(a,b),distance=inverse.distanceMeters;
- if(!Number.isFinite(distance))return [];
- if(distance<0.01)return [project(a.lon,a.lat)];
+ if(!Number.isFinite(distance)||!Number.isFinite(inverse.initialBearing))return [];
+ if(distance<0.01){const point=projectPoint(a.lon,a.lat);return point?[point]:[];}
  const segments=Math.max(2,Math.min(240,Math.ceil(distance/250000))),path=[];
  for(let i=0;i<=segments;i++){
   const p=geodesicDirect(a,inverse.initialBearing,distance*i/segments);
   if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return [];
-  path.push(project(p.lon,p.lat));
+  const point=projectPoint(p.lon,p.lat);
+  if(!point)return [];
+  path.push(point);
  }
  return path;
 }
