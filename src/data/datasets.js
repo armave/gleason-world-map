@@ -36,7 +36,8 @@ export async function fetchTextCached(url,key){
   try{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),key==='countries-10m'?60000:15000);let response;try{response=await fetch(url,{cache:'no-cache',signal:controller.signal});}finally{clearTimeout(timeout);}if(!response.ok)throw new Error(`HTTP ${response.status} while loading ${key}`);
    const text=await response.text();if(!text||text.length<20)throw new Error(`The ${key} dataset was empty.`);
    validateDatasetText(text,key);
-   try{localStorage.setItem(cacheKey,text);}catch(storageError){console.warn('Dataset cache unavailable:',storageError);}
+   // Large boundary files can exceed browser storage quotas; keep them in memory only.
+   if(text.length<=1_500_000){try{localStorage.setItem(cacheKey,text);}catch(storageError){console.info('Dataset loaded without persistent cache:',storageError);}}
    return {text,stale:false};
   }catch(err){lastError=err;if(attempt===0)await new Promise(resolve=>setTimeout(resolve,450));}
  }
