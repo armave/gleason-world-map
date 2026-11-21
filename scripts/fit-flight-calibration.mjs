@@ -15,6 +15,11 @@ const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_LEAVE_ONE_OUT_MAPE = 15;
 const MAX_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
+const MIN_TRAINING_ROUTES = 30;
+const MIN_HOLDOUT_ROUTES = 4;
+const MIN_SOUTHERN_TRAINING_ROUTES = 4;
+const MIN_POLAR_TRAINING_ROUTES = 1;
+const MIN_SOUTHERN_HOLDOUT_ROUTES = 1;
 
 function asJavaScript(model) {
   return [
@@ -50,7 +55,18 @@ async function main() {
     holdoutMaxErrorPercent: fitted.metrics.holdout.maxAbsolutePercent,
     leaveOneOutMapePercent: fitted.metrics.leaveOneOut?.meanAbsolutePercent ?? null,
     leaveOneOutMaxRouteErrorPercent: fitted.metrics.leaveOneOut?.maxAbsolutePercent ?? null,
+    trainingRouteCount: fitted.metrics.spatialCoverage.trainingRouteCount,
+    holdoutRouteCount: fitted.metrics.spatialCoverage.holdoutRouteCount,
+    trainingRoutesSouthOf45S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf45S,
+    trainingRoutesSouthOf60S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf60S,
+    holdoutRoutesSouthOf45S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf45S,
+    holdoutRoutesSouthOf60S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf60S,
     limits: {
+      minimumTrainingRoutes: MIN_TRAINING_ROUTES,
+      minimumHoldoutRoutes: MIN_HOLDOUT_ROUTES,
+      minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
+      minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
+      minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
       maxTrainingMapePercent: MAX_TRAINING_MAPE,
       maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
@@ -64,7 +80,12 @@ async function main() {
     qualityGate.holdoutMaxErrorPercent <= MAX_HOLDOUT_ROUTE_ERROR &&
     Number.isFinite(qualityGate.leaveOneOutMapePercent) &&
     qualityGate.leaveOneOutMapePercent <= MAX_LEAVE_ONE_OUT_MAPE &&
-    qualityGate.leaveOneOutMaxRouteErrorPercent <= MAX_LEAVE_ONE_OUT_ROUTE_ERROR;
+    qualityGate.leaveOneOutMaxRouteErrorPercent <= MAX_LEAVE_ONE_OUT_ROUTE_ERROR &&
+    qualityGate.trainingRouteCount >= MIN_TRAINING_ROUTES &&
+    qualityGate.holdoutRouteCount >= MIN_HOLDOUT_ROUTES &&
+    qualityGate.trainingRoutesSouthOf45S >= MIN_SOUTHERN_TRAINING_ROUTES &&
+    qualityGate.trainingRoutesSouthOf60S >= MIN_POLAR_TRAINING_ROUTES &&
+    qualityGate.holdoutRoutesSouthOf45S >= MIN_SOUTHERN_HOLDOUT_ROUTES;
 
   const summary = {
     schemaVersion: 1,
@@ -87,8 +108,11 @@ async function main() {
     model: fitted.model,
     metrics: fitted.metrics,
     routeCoverage: {
-      trainingRoutes: fitted.model.trainingRouteCount,
-      holdoutRoutes: fitted.model.holdoutRouteCount,
+      ...fitted.metrics.spatialCoverage,
+      candidateRoutes: (dataset.routes || []).length,
+      totalObservedFlights: (dataset.routes || []).reduce(
+        (sum, route) => sum + (route.sampleCount || 0), 0
+      ),
       totalRoutes: (dataset.routes || []).filter(route => route.sampleCount >= 3).length
     }
   };
