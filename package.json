@@ -8,7 +8,6 @@
   "scripts": {
     "test": "node --test",
     "vendor:data": "node scripts/vendor-geodata.mjs",
-    "vendor:counties": "node scripts/vendor-county-labels.mjs",
-    "vendor:county-boundaries": "node scripts/vendor-county-boundaries.mjs"
+    "vendor:counties": "node scripts/vendor-county-labels.mjs"
   }
 }
