@@ -258,9 +258,14 @@ function ringPlanarMetrics(points, validateSimple = false) {
     twiceArea += ax * by - bx * ay;
     perimeter += Math.hypot(b[0] - a[0], b[1] - a[1]);
   }
-  const localScale = Math.max(1, ...points.flatMap(point => [
-    Math.abs(point[0] - originX), Math.abs(point[1] - originY)
-  ]));
+  let localScale = 1;
+  for (const point of points) {
+    localScale = Math.max(
+      localScale,
+      Math.abs(point[0] - originX),
+      Math.abs(point[1] - originY)
+    );
+  }
   const areaTolerance = Number.EPSILON * 64 * localScale * localScale * points.length;
   if (Math.abs(twiceArea) <= areaTolerance) return null;
   return { areaM2: Math.abs(twiceArea) / 2, perimeterM: perimeter };
