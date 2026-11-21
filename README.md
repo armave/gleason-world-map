@@ -118,7 +118,9 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - View-centred scale bar calibrated with the same local ADS-B route-neighbour correction as A–B
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
-- Full-screen map mode with automatic canvas resizing
+- Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
+- Collision-aware capital markers in dense regions; every capital remains searchable and selectable
+- Compact mobile Find/Measure dock that collapses over the map until opened
 - Toggle country outlines, physical coastlines and islands, grid, capital markers and names, country names, ocean/sea labels, and Antarctica
 - Optional 1892 scan overlay with opacity, crop, scale, and rotation controls
 - Export the map as PNG
