@@ -1,7 +1,7 @@
 // Shared geometry and drawing metrics for distance and area point connectors.
 const CONNECTOR_STYLES = Object.freeze({
  distance: Object.freeze({
-  color:'#b45c39',halo:'rgba(255,250,238,.96)',lineWidth:2.6,haloExtra:2.1,dash:Object.freeze([8,5])
+  color:'#b45c39',halo:'rgba(255,250,238,.96)',lineWidth:2.8,haloExtra:2.1,dash:Object.freeze([])
  }),
  area: Object.freeze({
   color:'#3f7285',halo:'rgba(255,250,238,.96)',lineWidth:2.4,haloExtra:2.1,dash:Object.freeze([7,4])
@@ -21,8 +21,25 @@ export function measurementStrokeStyle(tool,zoom=1){
  };
 }
 
-// Returns one geodesic path per pair of successive points. A finished area
-// adds its final-to-first segment; an unfinished area remains an open chain.
+// A distance line on the flat disk is the straight segment between projected endpoints.
+// The measured WGS84 surface distance is calculated separately by the app.
+export function createProjectedMeasurementSegments(points,projectPoint,closed=false){
+ if(!Array.isArray(points)||points.length<2||typeof projectPoint!=='function')return [];
+ const segmentCount=closed&&points.length>=3?points.length:points.length-1;
+ const segments=[];
+ for(let i=0;i<segmentCount;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  const start=projectPoint(a.lon,a.lat),end=projectPoint(b.lon,b.lat);
+  if(Array.isArray(start)&&Array.isArray(end)&&start.length>=2&&end.length>=2&&
+   start.slice(0,2).every(Number.isFinite)&&end.slice(0,2).every(Number.isFinite)){
+   segments.push([start.slice(0,2),end.slice(0,2)]);
+  }
+ }
+ return segments;
+}
+
+// Returns one geodesic path per pair of successive points for area boundaries.
+// A finished area adds its final-to-first segment; an unfinished area remains an open chain.
 export function createMeasurementSegments(points,createGeodesicPath,closed=false){
  if(!Array.isArray(points)||points.length<2||typeof createGeodesicPath!=='function')return [];
  const segmentCount=closed&&points.length>=3?points.length:points.length-1;
