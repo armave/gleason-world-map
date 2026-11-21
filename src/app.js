@@ -175,6 +175,7 @@ function drawCapitals(){
   ctx.textAlign='left';ctx.textBaseline='middle';
   for(const item of visible){ctx.save();ctx.translate(item.labelX,item.labelY);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.font=`600 ${item.labelFontSize/zoom}px ui-sans-serif,system-ui`;ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,0,0);ctx.fillStyle='#243a43';ctx.fillText(item.text,0,0);ctx.restore();}
  }
+}
 function drawCountryLabels(){
  const showCountryLabels=shouldShowCountryLabels(scaleBarReadingKm());
  const selectedCountry=selected&&selected.type==='country'?selected.country:null;
