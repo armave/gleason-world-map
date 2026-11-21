@@ -86,7 +86,7 @@ await writeFile(resolve(DATA_DIR,'coastlines-50m.json'),coastlineBytes);
 manifest.coastlines={sourceFile:COASTLINE_FILE,scale:'1:50m',lines:coastlineLines.length,points:coastlinePoints,bytes:coastlineBytes.length,sha256:createHash('sha256').update(coastlineBytes).digest('hex')};
 console.log(`coastlines: ${coastlineLines.length} lines, ${coastlinePoints.toLocaleString()} points`);
 
-const capitals=parseCSV(await fetchText(CAPITAL_BASE+'data/country-capital.csv','capital coordinates'));const capitals=parseCSV(await fetchText(CAPITAL_BASE+'data/country-capital.csv','capital coordinates'));
+const capitals=parseCSV(await fetchText(CAPITAL_BASE+'data/country-capital.csv','capital coordinates'));
 const yerevan=capitals.some(p=>p.iso==='ARM'&&p.city.toLowerCase()==='yerevan');
 if(capitals.length<150||!yerevan) throw new Error(`Capital validation failed: rows=${capitals.length}, Yerevan=${yerevan}`);
 await writeFile(resolve(DATA_DIR,'capitals.json'),JSON.stringify(capitals));
