@@ -47,7 +47,7 @@
         <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
-          <span class="map-measure-restriction">60°S · metric transition</span>
+          <span class="map-measure-restriction">Restricted Line</span>
           <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails" hidden>Details</button>
         </div>
         <div class="mode-row map-measure-modes" role="group" aria-label="Map mode">
@@ -102,14 +102,11 @@
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
     <section class="panel">
-      <h2>Visual style</h2>
+      <h2>Map layers</h2>
       <div class="range-control"><label for="mapStyle"><span>Map appearance</span><span>Saved on this device</span></label>
         <select id="mapStyle" class="control-select" aria-describedby="mapStyleHelp"><option value="vintage">1892 Vintage</option><option value="atlas" selected>Classic Atlas</option><option value="clean">Clean Explorer</option></select>
         <div class="small" id="mapStyleHelp">Changes the map palette and interface theme without changing projection or measurement calculations.</div>
       </div>
-    </section>
-    <section class="panel">
-      <h2>Map layers</h2>
       <div class="layer-list">
         <label><input type="checkbox" id="layerCountries" checked> Country outlines</label>
         <label><input type="checkbox" id="layerGrid" checked> Grid & coordinates</label>
