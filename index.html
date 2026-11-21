@@ -48,6 +48,15 @@
         <label><input type="checkbox" id="layerCapitalNames" checked> Capital names (zoomed)</label>
         <label><input type="checkbox" id="layerAntarctica" checked> Antarctica / ice wall</label>
       </div>
+      <div class="range-control">
+        <label for="mapQuality"><span>Map quality</span><span>Saved on this device</span></label>
+        <select id="mapQuality" class="control-select" aria-describedby="mapQualityHelp">
+          <option value="low">Low · fastest (1:110m)</option>
+          <option value="medium" selected>Medium · balanced (1:50m)</option>
+          <option value="high">High · detailed (1:10m)</option>
+        </select>
+        <div class="small" id="mapQualityHelp">Higher quality uses more data and may take longer to load.</div>
+      </div>
     </section>
     <section class="panel">
       <h2>Real-world measurement</h2>
