@@ -81,23 +81,6 @@ test('ocean labels are curved, scale-aware, water-aware and collision-filtered',
  assert.match(app,/labelCollisionBoxes\.push\(\.\.\.visible\.map/);
 });
 
-test('coastline and island shoreline layer is independent and shareable',()=>{
- assert.match(html,/id="layerCoastlines" checked/);
- assert.match(app,/layers\.coastlines/);
- assert.match(app,/drawCoastlinesLayer\(\)/);
- assert.match(app,/layers\.coastlines\].map\(v=>v\?'1':'0'\)/);
- assert.match(coastlines,/createCoastlinePath/);
- assert.match(coastlines,/dateline/i);
-});
-test('ocean labels are curved, scale-aware, water-aware and collision-filtered',()=>{
- assert.match(oceanLabels,/NORTH SEA/);
- assert.match(oceanLabels,/MOZAMBIQUE CHANNEL/);
- assert.match(oceanLabels,/WEDDELL SEA/);
- assert.match(oceanLabels,/selectNonOverlappingLabels/);
- assert.match(oceanLabels,/isLand/);
- assert.match(oceanLabels,/glyph\.rotation/);
- assert.match(app,/labelCollisionBoxes\.push\(\.\.\.visible\.map/);
-});
 test('Antarctic ice wall has layered edges, strata, crevasses and repeated rim labels',()=>{
  assert.match(iceWall,/fillStyle='#ffffff'/);
  assert.match(iceWall,/ICE_RIDGE_COUNT=180/);
