@@ -20,6 +20,7 @@ const MIN_HOLDOUT_ROUTES = 4;
 const MIN_SOUTHERN_TRAINING_ROUTES = 4;
 const MIN_POLAR_TRAINING_ROUTES = 1;
 const MIN_SOUTHERN_HOLDOUT_ROUTES = 1;
+const MIN_POLAR_HOLDOUT_ROUTES = 1;
 
 function asJavaScript(model) {
   return [
@@ -67,6 +68,7 @@ async function main() {
       minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
       minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
       minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
+      minimumPolarHoldoutRoutes: MIN_POLAR_HOLDOUT_ROUTES,
       maxTrainingMapePercent: MAX_TRAINING_MAPE,
       maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
@@ -85,7 +87,8 @@ async function main() {
     qualityGate.holdoutRouteCount >= MIN_HOLDOUT_ROUTES &&
     qualityGate.trainingRoutesSouthOf45S >= MIN_SOUTHERN_TRAINING_ROUTES &&
     qualityGate.trainingRoutesSouthOf60S >= MIN_POLAR_TRAINING_ROUTES &&
-    qualityGate.holdoutRoutesSouthOf45S >= MIN_SOUTHERN_HOLDOUT_ROUTES;
+    qualityGate.holdoutRoutesSouthOf45S >= MIN_SOUTHERN_HOLDOUT_ROUTES &&
+    qualityGate.holdoutRoutesSouthOf60S >= MIN_POLAR_HOLDOUT_ROUTES;
 
   const summary = {
     schemaVersion: 1,
