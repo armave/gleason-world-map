@@ -1,3 +1,5 @@
+import {screenReadingDirection,uprightTextAngle} from './view-transform.js';
+
 export const ICE_RIDGE_COUNT=180;
 export const ICE_CREVASSE_COUNT=42;
 export const ICE_WALL_LABEL_COUNT=8;
@@ -41,10 +43,10 @@ function drawRimLabels(ctx,baseR,zoom,mapRotation=0){
  for(let i=0;i<ICE_WALL_LABEL_COUNT;i++){
   const theta=(i+.15)*Math.PI*2/ICE_WALL_LABEL_COUNT;
   const [x,y]=pointOnDisk(baseR*.944,theta);
-  let tangent=Math.atan2(-Math.cos(theta),-Math.sin(theta));
-  if(tangent>Math.PI/2)tangent-=Math.PI;
-  if(tangent< -Math.PI/2)tangent+=Math.PI;
-  ctx.save();ctx.translate(x,y);ctx.rotate(tangent-mapRotation);
+  const direction=screenReadingDirection(theta,mapRotation);
+  const localTangent=Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta));
+  const screenTangent=uprightTextAngle(localTangent+mapRotation);
+  ctx.save();ctx.translate(x,y);ctx.rotate(screenTangent-mapRotation);
   ctx.strokeText(text,0,0);ctx.fillText(text,0,0);ctx.restore();
  }
 }
