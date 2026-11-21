@@ -493,6 +493,10 @@ function updateMeasurement(){
   if(measurement.calibration?.outsideTrainingRange){
    messages.push('Outside the sampled route-feature range. The local nearest-route estimate is extrapolating beyond the endpoint patterns represented in the ADS-B training routes.');
   }
+  if(measurement.calibration?.weakNeighbourSupport){
+   const support=measurement.calibration.nearestFeatureDistance;
+   messages.push('Weak local route support: the nearest sampled airport pair is '+support.toFixed(2)+' standardized feature units away. Treat this mileage estimate cautiously.');
+  }
   if(measurement.calibration?.nearSouthRim){
    messages.push('Southern-rim sensitivity: an endpoint is at or below 85°S. Longitude has a strong effect on position near the disk edge; interpret both readings as flat-disk model outputs.');
   }
@@ -500,7 +504,7 @@ function updateMeasurement(){
    messages.push('Correction bound applied: the unbounded local route factor fell outside 0.50–2.50.');
   }
   if(messages.length===0){
-   messages.push('Endpoint features are within the sampled route range. This is an estimate of typical flown mileage from historical ADS-B flights, not a shortest-path distance or a prediction of a specific airline's track.');
+   messages.push('Endpoint features are within the sampled route range and supported by nearby airport-pair examples. This is an estimate of typical flown mileage from historical ADS-B flights, not a shortest-path distance or a prediction of a specific airline\'s track.');
   }
   diagnostics.textContent=messages.join(' ');
   diagnostics.classList.toggle('is-warning',measurement.warnings.length>0);
