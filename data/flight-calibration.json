@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-21T12:28:23.360Z",
+    "retrievedAt": "2026-11-21T14:24:30.206Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-21"
@@ -2946,8 +2946,8 @@
       "medianMaxGapMinutes": 21.035250000158946,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 175,
-        "missing-ground-speed-or-duration": 6,
         "too-few-speed-intervals": 3,
+        "missing-ground-speed-or-duration": 6,
         "low-telemetry-coverage": 9
       },
       "pagesScanned": 1,
@@ -5901,8 +5901,8 @@
       "medianMaxGapMinutes": 12.664250000317892,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 37,
-        "too-few-speed-intervals": 4,
         "low-telemetry-coverage": 2,
+        "too-few-speed-intervals": 4,
         "flight-too-short": 2
       },
       "pagesScanned": 1,
@@ -6492,8 +6492,8 @@
       "medianMaxGapMinutes": 0.08100000222524008,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 222,
-        "too-few-speed-intervals": 8,
         "flight-too-short": 46,
+        "too-few-speed-intervals": 8,
         "missing-ground-speed-or-duration": 6,
         "low-telemetry-coverage": 1
       },
@@ -6924,8 +6924,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 10,
-        "low-telemetry-coverage": 54,
-        "too-few-speed-intervals": 10
+        "too-few-speed-intervals": 10,
+        "low-telemetry-coverage": 54
       },
       "pagesScanned": 1,
       "candidatesSeen": 64,

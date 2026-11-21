@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "accepted": false,
   "status": "insufficient-route-coverage",
-  "generatedAt": "2026-11-21T12:28:23.665Z",
+  "generatedAt": "2026-11-21T14:24:30.443Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-21T12:28:23.360Z",
+  "sourceRetrievedAt": "2026-11-21T14:24:30.206Z",
   "rejectionReason": "Insufficient empirical route coverage: need at least 10 training and 4 holdout routes with 3 usable flights each; got 32 training and 2.",
   "qualityGate": {
     "trainingRouteCount": 32,
