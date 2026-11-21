@@ -96,19 +96,23 @@ function makeCurvedCandidate(ctx,label,anchor,project,baseR,zoom,viewport,isLand
    :(direction>0?0:Math.PI);
   const screenTangent=uprightTextAngle(localTangent+viewport.rotation);
   const rotation=screenTangent-viewport.rotation;
-  glyphs.push({char,x:pos[0],y:pos[1],rotation});
+  glyphs.push({char,x:pos[0],y:pos[1],rotation,width:advances[i]});
   cursor+=advances[i];
  }
- const localTangent=curved
-  ?Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta))
-  :(direction>0?0:Math.PI);
- const screenTangent=uprightTextAngle(localTangent+viewport.rotation);
- const boxWidth=Math.abs(totalWidth*zoom*Math.cos(screenTangent))+Math.abs(fontSize*1.45*Math.sin(screenTangent))+8;
- const boxHeight=Math.abs(totalWidth*zoom*Math.sin(screenTangent))+Math.abs(fontSize*1.45*Math.cos(screenTangent))+6;
  const cosine=Math.cos(viewport.rotation),sine=Math.sin(viewport.rotation);
- const screenX=viewport.width/2+viewport.panX+(center[0]*cosine-center[1]*sine)*zoom;
- const screenY=viewport.height/2+viewport.panY+(center[0]*sine+center[1]*cosine)*zoom;
- const box={left:screenX-boxWidth/2,top:screenY-boxHeight/2,right:screenX+boxWidth/2,bottom:screenY+boxHeight/2};
+ const box={left:Infinity,top:Infinity,right:-Infinity,bottom:-Infinity};
+ for(const glyph of glyphs){
+  const screenX=viewport.width/2+viewport.panX+(glyph.x*cosine-glyph.y*sine)*zoom;
+  const screenY=viewport.height/2+viewport.panY+(glyph.x*sine+glyph.y*cosine)*zoom;
+  const screenAngle=glyph.rotation+viewport.rotation;
+  const halfWidth=glyph.width*zoom/2,halfHeight=fontSize*1.5/2;
+  const extentX=Math.abs(halfWidth*Math.cos(screenAngle))+Math.abs(halfHeight*Math.sin(screenAngle))+2;
+  const extentY=Math.abs(halfWidth*Math.sin(screenAngle))+Math.abs(halfHeight*Math.cos(screenAngle))+2;
+  box.left=Math.min(box.left,screenX-extentX);
+  box.right=Math.max(box.right,screenX+extentX);
+  box.top=Math.min(box.top,screenY-extentY);
+  box.bottom=Math.max(box.bottom,screenY+extentY);
+ }
  if(box.right<0||box.left>viewport.width||box.bottom<0||box.top>viewport.height)return null;
  return {label,glyphs,box,fontSize,ocean};
 }
