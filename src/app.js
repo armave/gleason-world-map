@@ -475,11 +475,11 @@ function updateMeasurement(){
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent='Straight line on the flat-disk map';
-  $('measureHelp').textContent='The value is the Euclidean length of the straight A–B segment in the calibrated flat-disk map plane, not a WGS84 surface route.';
+  $('distanceSub').textContent='Empirically calibrated straight-line distance';
+  $('measureHelp').textContent='The A–B connector is one straight line. Its displayed length uses a bounded empirical flat-map correction fitted to city-distance references; the running measurement engine does not use globe or geodesic calculations.';
  }else{
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='Straight line on the flat-disk map';
+  $('distanceSub').textContent='Empirically calibrated straight-line distance';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -651,7 +651,7 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
  const measurement=measureDirectDistance(first,second);
- // measureDirectDistance uses the straight projected chord, matching A–B measurements.
+ // measureDirectDistance applies the empirical flat-map factor to the same straight projected chord.
  return Number.isFinite(measurement.distanceMeters)?measurement.distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
