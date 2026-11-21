@@ -52,7 +52,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 surface-distance calculation as A–B at every latitude. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 surface-distance calculation as A–B at every latitude. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
 
 ## Flight-route calibration and validation
 
