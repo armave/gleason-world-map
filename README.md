@@ -9,14 +9,14 @@ An interactive Gleason-style north-polar circular map with straight projected-li
 
 The app draws a two-dimensional circular disk. Its geographic layout follows the north-polar azimuthal-equidistant arrangement used by Gleason's 1892 sheet: the North Pole is at the centre, the meridians radiate outward, and parallels form circles.
 
-The disk uses a fixed planar radial calibration with **R = 6,371 km** as its chosen radial scale constant. For latitude phi in radians and longitude lambda in radians:
+The disk uses a fixed planar radial calibration with **R = 2,768.393946 km** as its uniform flat-map scale constant. This value is calibrated so that the straight projected segment from Canberra (-35.27°, 149.13°) to Santiago (-33.45°, -70.67°) measures **11,300 km**. It is a user-selected map-plane reference, not a globe radius or geodesic parameter. For latitude phi in radians and longitude lambda in radians:
 
 theta = pi/2 - phi
 r = R * theta
 x = r cos(lambda)
 y = -r sin(lambda)
 
-The outer disk radius is **pi * R = 20,015.09 km**. These values define the X/Y coordinate scale on the flat disk; the south-pole rim corresponds to theta = pi.
+The outer disk radius is **pi * R = 8,697.166084 km**. These values define the X/Y coordinate scale on the flat disk; the south-pole rim corresponds to theta = pi. The same linear scale applies to every direct-line and perimeter measurement, and area values scale by its square. The Canberra–Santiago pair is the sole calibration anchor; this one-point fit does not independently validate distances for other routes.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
@@ -52,7 +52,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same straight projected map-plane metric as A–B. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same straight projected map-plane metric as A–B. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results.
 
 ## Separate WGS84 geodesic utility validation
 
@@ -91,7 +91,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 ## Features
 
 - Gleason-style 2D north-polar circular disk layout
-- Fixed flat-disk radial calibration r = R * theta with R = 6,371 km and disk radius pi * R
+- Fixed flat-disk radial calibration r = R * theta with R = 2,768.393946 km and disk radius pi * R, anchored to a straight Canberra–Santiago distance of 11,300 km
 - Separate Natural Earth physical coastlines and island shorelines, with dateline-safe projection
 - Curved ocean and sea labels that fade by scale and avoid land and other labels
 - Curved ocean and Antarctic rim labels keep their reading direction left-to-right at every map rotation, with glyph-level collision bounds
@@ -202,7 +202,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 ## Important limitations
 
-- The radial disk calibration controls map placement; it is not a globally uniform conversion from projected X/Y coordinates to ground distance.
+- The radial disk calibration is one uniform flat-map scale fitted to the Canberra–Santiago 11,300 km reference. It is not independently validated for other routes and is not a conversion to globe-based ground distance.
 - A–B distance is a planar map measurement, not an ellipsoidal Earth-surface distance or an actual flight, road, rail, or other travelled route. Projection scale varies across the disk, so interpret it as the length of the straight line in this map's calibrated coordinate plane.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
 - The separate WGS84 utility uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge; this fallback does not affect the active direct-line map measurement.
