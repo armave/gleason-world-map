@@ -108,7 +108,7 @@ export function validateCountyBoundaryDataset(data) {
     const name = String(p.BASENAME || p.NAME || '').trim();
     const lat = Number(p.INTPTLAT), lon = Number(p.INTPTLON);
     const geometry = feature?.geometry;
-    if (!/^\\d{5}$/.test(geoid) || !/^\\d{2}$/.test(state) || !name ||
+    if (!/^\d{5}$/.test(geoid) || !/^\d{2}$/.test(state) || !name ||
         !Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 ||
         lon < -180 || lon > 180 || !geometry ||
         !['Polygon', 'MultiPolygon'].includes(geometry.type) ||
