@@ -83,7 +83,7 @@ export async function loadCoastlineDataset(){
  return validateCoastlineDataset(data);
 }
 
-export async function loadCapitalDataset()export async function loadCapitalDataset() {
+export async function loadCapitalDataset() {
   const response = await fetch(CAPITAL_DATA_FILE);
   if (!response.ok) throw new Error(`Unable to load the bundled capital coordinates (HTTP ${response.status}).`);
   let data;
