@@ -19,7 +19,7 @@ let features = [], countries = [], capitals = [], pathRecords = [], antarcticaFe
 let baseR = 300, width = 800, height = 650, dpr = 1;
 let zoom = 1, panX = 0, panY = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [];
-let boundaryScaleLabel='Natural Earth 1:10m';
+let boundaryScaleLabel='Natural Earth 1:50m';
 let distortionAnchor = {lat:0,lon:0,label:'Equator / Greenwich'};
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,grid:true,capitals:true,capitalNames:true,antarctica:true};
@@ -235,7 +235,7 @@ async function load(){
  document.querySelector('.load-error')?.remove();
  try{$('status').textContent='Loading country boundaries and capital coordinates…';
   const [geoData,capData]=await Promise.all([
-   (async()=>{try{return await fetchTextCached(COUNTRY_URL,'countries-10m');}catch(highResError){console.warn('Natural Earth 1:10m unavailable; falling back to 1:110m:',highResError);const fallback=await fetchTextCached(COUNTRY_FALLBACK_URL,'countries-110m');return {...fallback,fallback:true};}})(),
+   (async()=>{try{return await fetchTextCached(COUNTRY_URL,'countries-50m');}catch(highResError){console.warn('Natural Earth 1:50m unavailable; falling back to 1:110m:',highResError);const fallback=await fetchTextCached(COUNTRY_FALLBACK_URL,'countries-110m');return {...fallback,fallback:true};}})(),
    fetchTextCached(CAPITAL_URL,'capitals')
   ]);
   const geo=JSON.parse(geoData.text);features=geo.features||[];
@@ -249,7 +249,7 @@ async function load(){
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   restoreSharedState();resize();draw();
   const cached=geoData.stale||capData.stale;
-  boundaryScaleLabel=geoData.fallback?'Natural Earth 1:110m fallback':'Natural Earth 1:10m';
+  boundaryScaleLabel=geoData.fallback?'Natural Earth 1:110m fallback':'Natural Earth 1:50m';
   updateStatus();$('status').textContent+=' · '+boundaryScaleLabel;
   if(cached)$('status').textContent+=' · using cached data';
   updateDistortion();updateAreaMeasurement();updateRegistrationUI();
@@ -278,5 +278,6 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundin
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointerDown={x:e.clientX,y:e.clientY,px:panX,py:panY};didDrag=false;});canvas.addEventListener('pointermove',e=>{if(pointerDown){const dx=e.clientX-pointerDown.x,dy=e.clientY-pointerDown.y;if(Math.hypot(dx,dy)>4)didDrag=true;if(didDrag){panX=pointerDown.px+dx;panY=pointerDown.py+dy;canvas.classList.add('dragging');draw();}return;}const {x,y}=mapCoords(e);const cap=findCapitalAt(x,y,9);const country=cap?null:findCountryAt(x,y);if(country!==hoveredCountry||cap!==hoveredCapital){hoveredCountry=country;hoveredCapital=cap;draw();updateStatus();}});
 canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging');});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging');});
 window.addEventListener('resize',resize);
+resize();draw();
 load();
 })();
