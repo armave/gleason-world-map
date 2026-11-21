@@ -376,3 +376,12 @@ test('resize rebuilds deferred detail paths with a stable projection snapshot',(
  assert.match(app,/createCoastlinePathAsync\(source,buildProject\)/);
  assert.match(app,/createAntarcticSurfacePathsAsync\(source,buildProject\)/);
 });
+
+
+test('static country fills are cached while country outlines remain zoom-crisp',()=>{
+ assert.match(app,/function buildCountryLayerCache\(\)/);
+ assert.match(app,/ctx\.drawImage\(countryLayerCanvas,-baseR,-baseR,baseR\*2,baseR\*2\)/);
+ assert.match(app,/ctx\.lineWidth=\.62\/zoom;ctx\.stroke\(countryOutlinesPath\)/);
+ assert.match(app,/countryLayerStyle===visualStyle/);
+ assert.match(app,/buildCountryLayerCache\(\);/);
+});
