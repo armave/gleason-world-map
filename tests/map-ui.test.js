@@ -160,7 +160,7 @@ test('distance connector is drawn as a straight projected segment rather than a 
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/const label=measurement\.restricted\?'RESTRICTED · 60°S'/);
+ assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
  assert.match(app,/formatMeasurementKilometres\(measurement\.distanceMeters\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
@@ -170,24 +170,46 @@ test('distance and area drawings render km labels on their measurement geometry'
  assert.match(app,/ctx\.setTransform\(dpr,0,0,dpr,0,0\)/);
 });
 
+test('Find is moved into the map frame directly above Measure',()=>{
+ assert.match(html,/class="map-tools-stack" id="mapToolsStack"/);
+ assert.match(html,/class="map-find-tools" id="findTools"/);
+ assert.ok(html.indexOf('id="findTools"')<html.indexOf('id="measurementTools"'));
+ assert.doesNotMatch(html.slice(html.indexOf('<aside id="toolsPanel">'),html.indexOf('</aside>')),/id="search"/);
+ assert.match(app,/const canvasRect=canvas\.getBoundingClientRect\(\),dockRect=\$\('mapToolsStack'\)\.getBoundingClientRect\(\)/);
+});
+test('measurement buttons have prepended icons and Area mode stays compact',()=>{
+ assert.match(html,/tool-icon[^>]*>⌖<\/span> Explore/);
+ assert.match(html,/tool-icon[^>]*>↔<\/span> Distance/);
+ assert.match(html,/tool-icon[^>]*>⬡<\/span> Area/);
+ assert.match(html,/class="area-actions"/);
+ assert.match(app,/button-label/);
+ assert.match(styles,/data-active-mode="explore"\] \.map-measure-readings/);
+ assert.match(styles,/data-active-mode="area"\] \.map-measure-reading:first-child/);
+});
 test('compact measurement dock is embedded in the map viewport',()=>{
  const viewport=html.indexOf('class="map-viewport"');
+ const find=html.indexOf('class="map-find-tools" id="findTools"');
  const dock=html.indexOf('class="map-measure-tools" id="measurementTools"');
  const loading=html.indexOf('id="mapLoading"');
- assert.ok(viewport>=0&&dock>viewport&&loading>dock);
+ assert.ok(viewport>=0&&find>viewport&&dock>find&&loading>dock);
+ assert.match(html,/class="map-tools-stack" id="mapToolsStack"/);
  assert.match(html,/id="toggleMeasurementDetails"/);
  assert.match(html,/id="exploreMode"/);
  assert.match(html,/id="measureMode"/);
  assert.match(html,/id="areaMode"/);
  assert.match(styles,/\.map-measure-tools\s*\{/);
+ assert.match(html,/id="areaDetails" hidden/);
+ assert.match(app,/\$\('distanceDetails'\)\.hidden=mode!=='measure'/);
+ assert.match(app,/\$\('areaDetails'\)\.hidden=mode!=='area'/);
 });
 
-test('60°S is marked as a restricted crossing and blocks distance and polygon edges',()=>{
- assert.match(html,/60°S · restricted/);
+test('60°S is a metric-transition circle with two opposing callouts, not a measurement barrier',()=>{
+ assert.match(html,/60°S · metric change/);
  assert.match(app,/function drawRestrictedParallel\(\)/);
  assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
- assert.match(app,/segmentCrossesRestrictedParallel\(points\[0\],obj\)/);
- assert.match(app,/polylineCrossesRestrictedParallel\(areaPoints,true\)/);
- assert.match(app,/measureDirectDistance\(first,second\)/);
- assert.doesNotMatch(app,/geodesicDistanceMeters\(points\[0\],points\[1\]\)/);
+ assert.match(app,/for\(const degree of \[45,225\]\)/);
+ assert.match(app,/60°S · METRIC CHANGE/);
+ assert.doesNotMatch(app,/segmentCrossesRestrictedParallel/);
+ assert.doesNotMatch(app,/polylineCrossesRestrictedParallel/);
+ assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
 });
