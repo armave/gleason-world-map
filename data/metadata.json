@@ -5,7 +5,7 @@
     "naturalEarth": {
       "repository": "https://github.com/nvkelso/natural-earth-vector",
       "commit": "ca96624a56bd078437bca8184e78163e5039ad19",
-      "dataset": "Admin 0 country boundaries at 1:10m, 1:50m and 1:110m",
+      "dataset": "Admin 0 country boundaries at 1:10m, 1:50m and 1:110m plus 1:50m physical coastlines",
       "license": "Public domain"
     },
     "capitals": {
@@ -56,5 +56,12 @@
     "file": "us-counties.json",
     "records": 3222,
     "sourceYear": 2026
+  },
+  "coastlines": {
+    "sourceFile": "ne_50m_coastline.geojson",
+    "scale": "1:50m",
+    "lines": 1429,
+    "points": 60416,
+    "bytes": 1138163
   }
 }

@@ -23,7 +23,7 @@ This is a flat map projection, not a claim that the physical Earth is a flat pla
 
 ## WGS84 distances and areas
 
-Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The dashed line is sampled along the geodesic and projected onto the disk; its displayed length is not measured in screen pixels. Results are shown in metres below 1 km and kilometres for longer distances.
+Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The distance tool draws a straight visual connector between the two projected disk locations. The numeric result remains the shortest WGS84 surface geodesic, calculated independently of that straight connector. The area tool still draws its successive polygon edges as sampled WGS84 geodesics. Results are shown in metres below 1 km and kilometres for longer distances.
 
 The custom area tool calculates ellipsoidal polygon area and perimeter using GeographicLib's WGS84 PolygonArea implementation. Each edge is treated as the shorter WGS84 geodesic between successive vertices. Selected-country areas are calculated from Natural Earth boundary rings with ellipsoidal polygon area, subtracting holes and summing polygon parts. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
 
@@ -41,7 +41,7 @@ The distortion panel reports radial scale, east–west map stretch, the east–w
 
 ## Antarctica / Ice Wall
 
-The Antarctica feature is drawn as a land band between its mapped coastline and the circular disk rim. Natural Earth's Antarctic polygon closes its southern edge with a longitude sweep from 180° to −180° at 90°S. In this disk convention, that coordinate edge represents the complete circumference of the projected rim. The Antarctic path builder preserves the full 360° sweep instead of normalizing it to a zero-length antimeridian crossing. The actual Antarctic land polygon is filled, its ice texture is clipped to that polygon, and the outer rim receives a continuous outline.
+The Antarctica feature is drawn as a white ice band between its mapped coastline and the circular disk rim. Natural Earth's Antarctic polygon closes its southern edge with a longitude sweep from 180° to −180° at 90°S. In this disk convention, that coordinate edge represents the complete circumference of the projected rim. The Antarctic path builder preserves the full 360° sweep instead of normalizing it to a zero-length antimeridian crossing. The Antarctic land polygon is filled white, its texture is clipped to that polygon, and the outer rim receives a continuous blue-white double edge. Concentric ice strata, gently irregular radial ridges, short crevasse marks, and repeated tangential rim lettering distinguish the ice wall from ordinary country boundaries.
 
 The Antarctic layer can be toggled independently. Its shape follows the selected Natural Earth boundary scale and its cartographic generalization; it is not a survey of the ice-shelf edge or a measurement of sea-ice extent.
 
@@ -63,13 +63,15 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 
 - Gleason-style 2D north-polar circular disk layout
 - Fixed WGS84 meridional radial calibration from the North Pole
+- Separate Natural Earth physical coastlines and island shorelines, with dateline-safe projection
+- Curved ocean and sea labels that fade by scale and avoid land and other labels
+- White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
 - WGS84 ellipsoidal surface-distance measurements in metres and kilometres
-- Distance A–B routes and successive area vertices are joined by high-contrast dashed geodesic connectors; finished area outlines close back to the first point
+- Distance A–B is shown as a straight projected disk connector while its numeric value remains the WGS84 shortest surface distance; area boundaries retain dashed WGS84 geodesic edges
 - WGS84 ellipsoidal custom polygon area and perimeter
 - WGS84 ellipsoidal area for selected country boundaries
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
-- Continuous Antarctic land band / ice-wall rim with pole-aware GeoJSON closure
 - Search and select countries, capitals, and U.S. county-equivalents
 - U.S. county boundary geometry is loaded from the U.S. Census Bureau's 2026 TIGERweb Counties layer (January 1, 2026 vintage); labels use each polygon's Census internal point and are hidden when their label box would cross the county boundary
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
@@ -77,10 +79,10 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - County labels are placed only when their full label box fits inside their own county polygon; county labels use warm serif styling, while capital labels use blue sans-serif text and point markers
 - County search, selection, and shareable layer visibility
 - View-centred local WGS84 ground scale bar
-- Geodesic measurement path projected onto the disk
+- Straight projected A–B visual connector and separately calculated WGS84 surface distance
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
-- Toggle country outlines, grid, capital markers, capital names, and Antarctica
+- Toggle country outlines, physical coastlines and islands, grid, capital markers and names, country names, ocean/sea labels, and Antarctica
 - Optional 1892 scan overlay with opacity, crop, scale, and rotation controls
 - Export the map as PNG
 - Share URLs preserving zoom, pan, layers, overlay settings, endpoints, area vertices, and historical registration points
@@ -112,6 +114,8 @@ src/
     geojson.js              country identifiers, names, colours, centroids
   map/
     labels.js               zoom thresholds, collision-aware labels, and polygon containment checks
+    ocean-labels.js         curved ocean/sea labels, scale bands, water-aware anchors and collision checks
+    coastlines.js           dateline-safe projected Natural Earth coastline paths
     feature-paths.js        projected GeoJSON paths and Antarctic rim handling
     ice-wall.js             Antarctic land band and continuous rim
     registration.js         scan control-point triangulation and affine image warp
@@ -153,7 +157,7 @@ Expected URL: https://armave.github.io/gleason-world-map/
 
 ## Geographic data sources
 
-Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and stored locally under `data/countries/`. The browser loads only the selected quality. The datasets are vendored from the pinned Natural Earth source commit listed in `data/metadata.json`; Natural Earth identifies its vector data as public domain.
+Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and stored locally under `data/countries/`. The browser loads only the selected quality. Physical coastlines and island shorelines are bundled separately as Natural Earth 1:50m line geometry in `data/coastlines-50m.json`, allowing the app to emphasize coastlines without styling every political border as a shoreline. The datasets are vendored from the pinned Natural Earth source commit listed in `data/metadata.json`; Natural Earth identifies its vector data as public domain.
 
 Capital coordinates are stored locally in `data/capitals.json` and were generated from the pinned `country-capital.csv` source in `iliyaj/country-data`. The source identifies REST Countries v3.1 as the underlying data source; its MIT license is included in `data/capital-data-LICENSE.txt`.
 

@@ -11,6 +11,7 @@ const CAPITAL_COMMIT = '2a34180a6573aaff977589b8b3644266c0a8c24f';
 const NE_BASE = `https://raw.githubusercontent.com/nvkelso/natural-earth-vector/${NE_COMMIT}/geojson/`;
 const CAPITAL_BASE = `https://raw.githubusercontent.com/iliyaj/country-data/${CAPITAL_COMMIT}/`;
 const DATASETS = { low:'ne_110m_admin_0_countries.geojson', medium:'ne_50m_admin_0_countries.geojson', high:'ne_10m_admin_0_countries.geojson' };
+const COASTLINE_FILE = 'ne_50m_coastline.geojson';
 const KEEP = ['ISO_A3_EH','ISO_A3','ADM0_A3','SOV_A3','ADMIN','NAME_EN','NAME','FORMAL_EN','LABEL_X','LABEL_Y'];
 
 async function fetchText(url,label) {
@@ -57,7 +58,7 @@ function compactFeature(feature) {
 }
 await mkdir(resolve(DATA_DIR,'countries'),{recursive:true});
 const manifest={schemaVersion:1,generatedBy:'scripts/vendor-geodata.mjs',sources:{
- naturalEarth:{repository:'https://github.com/nvkelso/natural-earth-vector',commit:NE_COMMIT,dataset:'Admin 0 country boundaries at 1:10m, 1:50m and 1:110m',license:'Public domain'},
+ naturalEarth:{repository:'https://github.com/nvkelso/natural-earth-vector',commit:NE_COMMIT,dataset:'Admin 0 country boundaries at 1:10m, 1:50m and 1:110m plus 1:50m physical coastlines',license:'Public domain'},
  capitals:{repository:'https://github.com/iliyaj/country-data',commit:CAPITAL_COMMIT,file:'data/country-capital.csv',upstreamLicense:'MIT',underlyingDataSource:'REST Countries v3.1'}
 },boundaryDatasets:{}};
 for(const [quality,filename] of Object.entries(DATASETS)) {
@@ -72,6 +73,19 @@ for(const [quality,filename] of Object.entries(DATASETS)) {
  manifest.boundaryDatasets[quality]={sourceFile:filename,features:features.length,uncompressedBytes:json.length,compressedBytes:compressed.length,sha256:createHash('sha256').update(compressed).digest('hex')};
  console.log(`${quality}: ${features.length} features, ${json.length.toLocaleString()} B → ${compressed.length.toLocaleString()} B`);
 }
+const coastlineSource=JSON.parse(await fetchText(NE_BASE+COASTLINE_FILE,COASTLINE_FILE));
+if(coastlineSource.type!=='FeatureCollection'||!Array.isArray(coastlineSource.features))throw new Error(`${COASTLINE_FILE}: invalid GeoJSON`);
+const coastlineLines=coastlineSource.features.flatMap(feature=>{
+ const geometry=feature?.geometry;
+ return geometry?.type==='LineString'?[geometry.coordinates]:geometry?.type==='MultiLineString'?geometry.coordinates:[];
+}).filter(line=>Array.isArray(line)&&line.length>=2).map(line=>line.map(([lon,lat])=>[Number(Number(lon).toFixed(4)),Number(Number(lat).toFixed(4))]));
+const coastlinePoints=coastlineLines.reduce((sum,line)=>sum+line.length,0);
+if(coastlineLines.length<1000||coastlinePoints<50000)throw new Error(`${COASTLINE_FILE}: coastline validation failed (${coastlineLines.length} lines, ${coastlinePoints} points)`);
+const coastlineBytes=Buffer.from(JSON.stringify({type:'MultiLineString',coordinates:coastlineLines}));
+await writeFile(resolve(DATA_DIR,'coastlines-50m.json'),coastlineBytes);
+manifest.coastlines={sourceFile:COASTLINE_FILE,scale:'1:50m',lines:coastlineLines.length,points:coastlinePoints,bytes:coastlineBytes.length,sha256:createHash('sha256').update(coastlineBytes).digest('hex')};
+console.log(`coastlines: ${coastlineLines.length} lines, ${coastlinePoints.toLocaleString()} points`);
+
 const capitals=parseCSV(await fetchText(CAPITAL_BASE+'data/country-capital.csv','capital coordinates'));
 const yerevan=capitals.some(p=>p.iso==='ARM'&&p.city.toLowerCase()==='yerevan');
 if(capitals.length<150||!yerevan) throw new Error(`Capital validation failed: rows=${capitals.length}, Yerevan=${yerevan}`);
