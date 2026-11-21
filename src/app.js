@@ -1,4 +1,4 @@
-import {rad,clamp,radialFraction,wrapLongitude,project as projectSphere,unproject as unprojectSphere,greatCircleDistanceMeters,greatCircleLinePath,sphericalPolygonMetrics,sphericalFeatureAreaM2} from './core/gleason-sphere.js';
+import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskDistanceMeters,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2,DISK_RADIUS_KM} from './core/flat-disk.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -7,7 +7,7 @@ import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coastlines.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
-import {renderRadialCalibration,renderDistortionPanel} from './ui/calibration.js';
+import {renderRadialCalibration} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
 import {createProjectedMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
 import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint} from './map/view-transform.js';
@@ -37,7 +37,6 @@ function readMapQuality(){try{const value=localStorage.getItem(QUALITY_STORAGE_K
 function readVisualStyle(){try{const value=localStorage.getItem(STYLE_STORAGE_KEY);return Object.hasOwn(VISUAL_STYLES,value)?value:'vintage';}catch{return 'vintage';}}
 let mapQuality=readMapQuality(),visualStyle=readVisualStyle(),visualPalette=VISUAL_STYLES[visualStyle],loadGeneration=0;
 document.documentElement.dataset.mapStyle=visualStyle;
-let distortionAnchor = {lat:0,lon:0,label:'Equator / Greenwich'};
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
 let colors=visualPalette.countryColors;
@@ -49,14 +48,8 @@ function syncRotationControls(){const input=$('mapRotation'),output=$('mapRotati
 function setRotation(value,redraw=true){if(!Number.isFinite(value))return;rotationDegrees=normalizeRotation(value);syncRotationControls();if(redraw)draw();}
 function worldToScreen(x,y){return worldToScreenPoint(x,y,zoom,panX,panY,width,height,rotationRadians());}
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
-const project=(lon,lat)=>projectSphere(lon,lat,baseR);
-const unproject=(x,y)=>unprojectSphere(x,y,baseR);
-function setDistortionAnchor(point,label){
- if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
- distortionAnchor={lat:clamp(point.lat,-90,90),lon:wrapLongitude(point.lon),label:label||fmtCoord(point.lat,point.lon)};
- updateDistortion();
-}
-function updateDistortion(){renderDistortionPanel({place:$('distortionPlace'),radial:$('distortionRadial'),eastWest:$('distortionEastWest'),decoder:$('distortionDecoder'),area:$('distortionArea')},distortionAnchor);}
+const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
+const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
 const makePath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,project,preserveAntarcticRim);
 function resize(){const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);baseR=Math.min(width,height)*.405;pathRecords=countries.map(c=>({country:c,path:makePath(c.feature)}));antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;landMaskPath=new Path2D();for(const rec of pathRecords)landMaskPath.addPath(rec.path);if(antarcticaPath)landMaskPath.addPath(antarcticaPath);coastlinePath=coastlineData?createCoastlinePath(coastlineData,project):null;draw();}
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
@@ -153,10 +146,9 @@ function strokeMeasurementConnector(tool){
 }
 function drawMeasure(){
  if(points.length===2){
-  const path=greatCircleLinePath(points[0],points[1],project);
-  const segments=path.length>1?[path]:[];
-  if(segments.length){
-   ctx.beginPath();segments[0].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
+  const path=flatDiskLinePath(points[0],points[1],project);
+  if(path.length===2){
+   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
   }
  }
@@ -180,12 +172,12 @@ function drawArea(){
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=`${areaPoints.length} vertices`;
  if(areaFinished&&areaPoints.length>=3){
-  const result=sphericalPolygonMetrics(areaPoints,project,baseR);
-  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`Spherical surface perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Surface area integrates the exact radial correction sin(θ)/θ over the projected polygon; perimeter integrates the local spherical distance metric along its straight disk edges.';}
+  const result=flatDiskPolygonMetrics(areaPoints,project,baseR);
+  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`Straight-edge perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Planar area uses the shoelace formula on the disk coordinates; perimeter is the sum of the same straight edges.';}
   else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='Invalid polygon · check for crossing edges';$('areaHelp').textContent='This polygon could not be measured. Check that its edges do not cross and that it has at least three valid vertices.';}
  }else{
   $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
-  $('areaHelp').textContent=areaPoints.length?'Add more vertices; straight disk segments join each successive point. Finish the polygon to integrate spherical surface area and corrected perimeter.':'Choose Area, then click at least three points on the disk. Finish closes the outline and integrates spherical surface area using the sin(θ)/θ correction.';
+  $('areaHelp').textContent=areaPoints.length?'Add more vertices; straight disk segments join each successive point. Finish the polygon to calculate planar area and straight-edge perimeter.':'Choose Area, then click at least three points on the disk. Finish closes the outline and calculates Euclidean area and perimeter in the flat-disk coordinate system.';
  }
 }
 function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
@@ -231,14 +223,14 @@ function updateViewReadout(){
  const localScale=scaleBarReadingKm(),scaleText=Number.isFinite(localScale)?formatDistance(localScale*1000):'unavailable';
  const cap=layers.capitalNames?(shouldShowCapitalLabels(localScale)?'capital names visible':`capital names at ${CAPITAL_LABEL_MAX_SCALE_KM.toLocaleString()} km`):'capital names off';
  const countryNames=!layers.countryNames?'country names off':shouldShowCountryLabels(localScale)?'country names visible':localScale>COUNTRY_LABEL_MAX_SCALE_KM?`country names at ${COUNTRY_LABEL_MAX_SCALE_KM.toLocaleString()} km`:`country names hidden below ${COUNTRY_LABEL_MIN_SCALE_KM} km`;
- readout.title=`Zoom ${Math.round(zoom*100)}% · orientation ${Math.round(rotationDegrees)}° · local scale ${scaleText} · zoom-in limit ${MAX_SCALE_BAR_READING_KM} km · ${cap} · ${countryNames}`;
+ readout.title=`Zoom ${Math.round(zoom*100)}% · orientation ${Math.round(rotationDegrees)}° · flat-disk scale ${scaleText} · zoom-in limit ${MAX_SCALE_BAR_READING_KM} km · ${cap} · ${countryNames}`;
 }
 function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;const point=screenToWorld(sx,sy);return {x:point.x,y:point.y,sx,sy};}
-function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Great-circle distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
-function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=sphericalFeatureAreaM2(c.feature,project,baseR);$('selectionFactTitle').textContent='Spherical surface area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;setDistortionAnchor(c.center,c.name);draw();}
-function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Spherical surface area from projected boundary';const area=c?sphericalFeatureAreaM2(c.feature,project,baseR):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;setDistortionAnchor(p,p.city);draw();}
+function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Direct-line distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
+function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'});$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;draw();}
+function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';const area=c?flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'}):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 const US_STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam',MP:'Northern Mariana Islands',VI:'U.S. Virgin Islands'};
 function showCounty(county){
  selected={type:'county',county};$('selectionName').textContent=county.name;
@@ -246,11 +238,13 @@ function showCounty(county){
  $('selectionMetaTitle').textContent='State';$('selectionCapital').textContent=US_STATE_NAMES[county.stateCode]||county.stateCode;
  $('selectionCoords').textContent=fmtCoord(county.lat,county.lon);
  $('selectionFactTitle').textContent='Census GEOID';$('selectionFactValue').textContent=county.geoid;
- $('selectionButtons').style.display='none';setDistortionAnchor({lat:county.lat,lon:county.lon},county.name);draw();
+ $('selectionButtons').style.display='none';draw();
 }
-function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();setDistortionAnchor(obj,obj.name);updateMeasurement();draw();updateStatus();}
-function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const distanceMeters=greatCircleDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='Shortest great-circle distance · spherical R = 6,371 km';$('measureHelp').textContent='Measurement complete. The numeric result is the shortest spherical great-circle arc; the map draws that great-circle route on the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Great-circle surface distance · R = 6,371 km';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
+function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
+function updateMeasurement(){
+ $('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
+ if(points.length===2){const distanceMeters=flatDiskDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='Direct A–B line on the calibrated flat disk';$('measureHelp').textContent='Measurement complete. The numeric result is the Euclidean length of the same direct line drawn between A and B on the disk, not a travelled route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk straight-line distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
+}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});const offset=panForWorldCenterPoint(x,y,zoom,rotationRadians());panX=offset.panX;panY=offset.panY;draw();}
 function selectResult(item){
@@ -274,9 +268,9 @@ function onMapClick(x,y){
  if(registrationPickActive){const snap=findCapitalAt(x,y,10);const p=snap?{lat:snap.lat,lon:snap.lon}:q;registrationPickActive=false;pendingRegistrationGeo=p;$('registrationStatus').textContent=`Map point selected: ${fmtCoord(p.lat,p.lon)}${snap?' · snapped to '+snap.city:''}. Now click the same feature in the scan preview.`;$('pickRegistrationPoint').textContent='Pick another map point';return;}
  const cap=findCapitalAt(x,y,10);
  if(mode==='measure'){if(points.length>=2)points=[];const p=cap?{lat:cap.lat,lon:cap.lon,name:`${cap.city} (${cap.countryName||''})`}:q;setPoint(points.length===0?0:1,{...p,name:p.name||fmtCoord(p.lat,p.lon)});return;}
- if(mode==='area'){if(areaFinished){areaPoints=[];areaFinished=false;}const p=cap?{lat:cap.lat,lon:cap.lon,name:cap.city}:q;areaPoints.push(p);setDistortionAnchor(p,p.name||fmtCoord(p.lat,p.lon));updateAreaMeasurement();draw();updateStatus();return;}
+ if(mode==='area'){if(areaFinished){areaPoints=[];areaFinished=false;}const p=cap?{lat:cap.lat,lon:cap.lon,name:cap.city}:q;areaPoints.push(p);updateAreaMeasurement();draw();updateStatus();return;}
  if(cap){showCapital(cap);return;}const c=findCountryAt(x,y);if(c){showCountry(c);return;}
- $('selectionName').textContent='Map location';$('selectionKind').textContent='Clicked geographic position';$('selectionMetaTitle').textContent='Location';$('selectionCapital').textContent='—';$('selectionCoords').textContent=fmtCoord(q.lat,q.lon);$('selectionFactTitle').textContent='Details';$('selectionFactValue').textContent='—';$('selectionButtons').style.display='none';selected={type:'coordinate',position:q};setDistortionAnchor(q,'Map location');
+ $('selectionName').textContent='Map location';$('selectionKind').textContent='Clicked geographic position';$('selectionMetaTitle').textContent='Location';$('selectionCapital').textContent='—';$('selectionCoords').textContent=fmtCoord(q.lat,q.lon);$('selectionFactTitle').textContent='Details';$('selectionFactValue').textContent='—';$('selectionButtons').style.display='none';selected={type:'coordinate',position:q};
 }
 function drawSearchResults(q){const box=$('suggestions');box.innerHTML='';if(!q){box.classList.remove('open');return;}const n=norm(q);const results=[];for(const c of countries){if(norm(c.name).includes(n)){results.push({type:'country',obj:c,rank:norm(c.name)===n?0:1});}}for(const p of capitals){if(norm(p.city).includes(n)||norm(p.countryName).includes(n)){results.push({type:'capital',obj:p,rank:norm(p.city)===n?0:1});}}for(const county of counties){if(norm(county.name).includes(n)||norm(county.stateCode).includes(n)||norm(US_STATE_NAMES[county.stateCode]||'').includes(n)){results.push({type:'county',obj:county,rank:norm(county.name)===n?0:1});}}const typePriority={capital:0,country:1,county:2};results.sort((a,b)=>a.rank-b.rank||typePriority[a.type]-typePriority[b.type]||(a.obj.stateCode||'').localeCompare(b.obj.stateCode||'')||(a.obj.city||a.obj.name).localeCompare(b.obj.city||b.obj.name));const top=results.slice(0,10);if(!top.length){const d=document.createElement('div');d.className='suggestion';d.textContent='No matching country, capital or U.S. county';box.append(d);}else{top.forEach(item=>{const el=document.createElement('div');el.className='suggestion';const left=document.createElement('b');const right=document.createElement('small');if(item.type==='capital'){left.textContent=item.obj.city;right.textContent=`CAPITAL · ${item.obj.countryName}`;}else if(item.type==='county'){left.textContent=item.obj.name;right.textContent=`COUNTY · ${item.obj.stateCode}`;}else{left.textContent=item.obj.name;right.textContent='COUNTRY';}el.append(left,right);el.addEventListener('click',()=>selectResult(item));box.append(el);});}box.classList.add('open');}
 function restoreSharedState(){
@@ -300,7 +294,7 @@ function restoreSharedState(){
  for(const [id,key] of [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames'],['layerOceanLabels','oceanLabels'],['layerCoastlines','coastlines']])$(id).checked=layers[key];
  $('mapStyle').value=visualStyle;syncRotationControls();
  syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
- setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();updateDistortion();
+ setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();
 }
 function syncRadialControls(){renderRadialCalibration($('radialRows'));}
 function syncHistoricalControls(){
@@ -349,11 +343,9 @@ function scaleBarReferencePixels(anchor=scaleAnchorWorld(),scaleZoom=zoom){
  return Math.min(SCALE_BAR_MAX_WIDTH_PX,width*.34,available);
 }
 function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
- if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0)return Infinity;
- const half=px/(2*scaleZoom);
- const direction=unrotatePoint(1,0,rotationRadians()),a=unproject(anchor.x-half*direction.x,anchor.y-half*direction.y),b=unproject(anchor.x+half*direction.x,anchor.y+half*direction.y);
- const distance=greatCircleDistanceMeters(a,b);
- return Number.isFinite(distance)?distance/1000:Infinity;
+ if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0||!Number.isFinite(baseR)||baseR<=0)return Infinity;
+ // Distance is uniform in the flat projected plane, independent of map rotation or position.
+ return (px/scaleZoom)*(DISK_RADIUS_KM/baseR);
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
  const safeAnchor=constrainScaleAnchor(anchor),pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);
@@ -396,7 +388,7 @@ function drawScaleBar(){
  if(!targetKm)return;
  let low=0,high=maxPx;
  for(let i=0;i<36;i++){const mid=(low+high)/2;if(groundDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;}
- const barPx=(low+high)/2,x=16,y=height-22,label=`${formatDistance(targetKm*1000)} · local`;
+ const barPx=(low+high)/2,x=16,y=height-22,label=formatDistance(targetKm*1000);
  ctx.save();ctx.font='11px ui-sans-serif,system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
  const boxWidth=Math.max(86,barPx+14,ctx.measureText(label).width+14);
  ctx.fillStyle='rgba(251,248,239,.92)';ctx.strokeStyle='#c9c0ad';ctx.lineWidth=1;ctx.fillRect(x-7,y-29,boxWidth,43);ctx.strokeRect(x-7,y-29,boxWidth,43);
@@ -465,7 +457,7 @@ async function load(){
   boundaryScaleLabel=geoData.fallback?'Natural Earth '+MAP_QUALITY_OPTIONS.low.scale+' fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
   updateStatus();$('status').textContent+=' · bundled local data';
   if(geoData.fallback)$('status').textContent+=' · lower quality substituted';
-  updateDistortion();updateAreaMeasurement();updateRegistrationUI();
+  updateAreaMeasurement();updateRegistrationUI();
   setMapLoading(false);
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }

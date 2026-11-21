@@ -1,4 +1,4 @@
-import { rad } from '../core/gleason-sphere.js';
+import { rad } from '../core/flat-disk.js';
 export function isoFor(f){const p=f.properties||{};const candidates=[p.ISO_A3_EH,p.ISO_A3,p.ADM0_A3,p.SOV_A3];const v=candidates.find(x=>x&&String(x).toUpperCase()!=='-99')||'';return String(v).toUpperCase();}
 export function nameFor(f){const p=f.properties||{};return p.ADMIN||p.NAME_EN||p.NAME||p.FORMAL_EN||'Unknown';}
 export function hashColor(s,palette){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return palette[Math.abs(h)%palette.length];}

@@ -12,7 +12,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style flat circular disk · Spherical distance & area calibration · Local distortion diagnostics · Historical scan registration</div>
+  <div class="subtitle">Gleason-style flat circular disk · Direct-line distance & planar area · Flat-disk calibration · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -87,22 +87,22 @@
       </div>
     </section>
     <section class="panel">
-      <h2>Spherical surface measurement</h2>
+      <h2>Flat-disk measurement</h2>
       <div class="mode-row">
         <button id="exploreMode" class="active">Explore</button>
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations on the disk. The distance is the shortest great-circle arc on a sphere with radius R = 6,371 km.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. Distance is the direct Euclidean line between their plotted positions on the flat disk.</p>
       <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">Great-circle surface distance · R = 6,371 km</div>
+      <div class="measure-sub" id="distanceSub">Flat-disk straight-line distance</div>
       <div id="endpointRows" style="margin-top:8px">
         <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
         <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
       </div>
       <div class="endpoint-actions"><button id="clearMeasure">Clear points</button></div>
       <div class="divider"></div>
-      <div class="small" id="areaHelp">Choose Area, then click three or more points. Finish to integrate spherical surface area using the local factor sin(θ)/θ; the boundary follows the straight segments drawn on the disk.</div>
+      <div class="small" id="areaHelp">Choose Area, then click three or more points. Finish to calculate shoelace area and the perimeter of the straight edges drawn on the disk.</div>
       <div class="measure-value" id="areaValue">—</div>
       <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
       <div class="small" id="areaVertexCount">0 vertices</div>
@@ -116,32 +116,31 @@
         <div class="info-box"><span id="selectionMetaTitle">Capital</span><strong id="selectionCapital">—</strong></div>
         <div class="info-box"><span>Coordinates</span><strong id="selectionCoords">—</strong></div>
       </div>
-      <div class="info-box" style="margin-top:8px"><span id="selectionFactTitle">Spherical surface area from projected boundary</span><strong id="selectionFactValue">—</strong></div>
+      <div class="info-box" style="margin-top:8px"><span id="selectionFactTitle">Flat-disk planar area from projected boundary</span><strong id="selectionFactValue">—</strong></div>
       <div class="endpoint-actions" id="selectionButtons" style="display:none">
         <button id="setA">Set as A</button><button id="setB">Set as B</button>
       </div>
     </section>
     <section class="panel">
-      <h2>Spherical radial calibration</h2>
-      <div class="formula">R = 6,371 km<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Full disk radius = πR = 20,015.09 km</div>
+      <h2>Flat-disk radial calibration</h2>
+      <div class="formula">R = 6,371 km (radial scale)<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR = 20,015.09 km</div>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">Radial distances from the North Pole are r = Rθ and are true along every meridian in the spherical model. East–West map stretch is k(θ) = θ/sin(θ); multiply a local map distance by m(θ) = sin(θ)/θ to decode it. The same m(θ) is the Jacobian for surface area. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
-    </section>
-    <section class="panel" id="distortionPanel">
-      <h2>Projection distortion at selected location</h2>
-      <div class="small" id="distortionPlace">Equator / Greenwich · 0.00°</div>
-      <div class="distortion-grid">
-        <div class="info-box"><span>North–south scale</span><strong id="distortionRadial">1.000×</strong></div>
-        <div class="info-box"><span>East–west map stretch</span><strong id="distortionEastWest">1.568×</strong></div>
-        <div class="info-box"><span>East–west distance decoder</span><strong id="distortionDecoder">0.637×</strong></div>
-        <div class="info-box"><span>Map-area stretch</span><strong id="distortionArea">1.568×</strong></div>
-      </div>
-      <p class="note" style="margin:8px 0 0">Radial scale is 1.000×. East–West map stretch is k(θ) = θ/sin(θ), and the distance/area decoder is m(θ) = sin(θ)/θ. The map-area stretch is k(θ), because radial scale is 1.000×. At the South Pole rim, k tends to infinity and m tends to zero.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates are measured in kilometres using r = Rθ. Every straight-line measurement uses the same Euclidean plane scale; no latitude-dependent correction is applied. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
     </section>
     <section class="panel">
+      <h2>Flat-disk geometry</h2>
+      <div class="info-grid">
+        <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
+        <div class="info-box"><span>Distance</span><strong>Euclidean</strong></div>
+        <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
+        <div class="info-box"><span>A–B line</span><strong>Direct segment</strong></div>
+      </div>
+      <p class="note" style="margin:8px 0 0">The map is treated as one flat mathematical disk. Distances, areas and perimeters are calculated directly from projected X/Y coordinates with no globe-based or latitude-dependent correction.</p>
+    </section>
+<section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
       <label class="small"><input type="checkbox" id="historicalEnabled"> Show original Boston Public Library scan</label>
       <div class="small" id="historicalStatus" style="margin:7px 0">Scan not loaded. Enable to compare the printed disk with the digital map.</div>
@@ -178,11 +177,11 @@
         <button id="resetHistorical">Reset alignment</button>
         <button id="retryHistorical">Reload scan</button>
       </div>
-      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. Registered scan control points target the R = 6,371 km spherical disk projection.</p>
+      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. Registered scan control points target the R = 6,371 km flat-disk coordinate calibration.</p>
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The disk uses a spherical azimuthal-equidistant calibration with R = 6,371 km and outer radius πR = 20,015.09 km. Two-point distances use the spherical great-circle formula. Polygon surface areas integrate the Jacobian sin(θ)/θ over the projected region, and perimeter integrates the corresponding local spherical distance metric along the drawn disk edges. The scale bar and distortion diagnostics use the same spherical model. This is a flat map projection with a spherical measurement model, not a claim that the physical Earth is a flat plane. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. Distances are direct Euclidean line lengths on the disk, areas use planar shoelace geometry, and perimeters sum straight edges. The scale bar uses the same uniform planar kilometre calibration. These are measurements of the selected flat-disk model, not curved-surface geodesics. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
