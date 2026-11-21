@@ -362,9 +362,13 @@ async function collect() {
       } : null,
       sampleCount: result.observations.length,
       medianTrackKm: percentile(distances, 0.5),
+      medianObservedTrackKm: percentile(result.observations.map(item => item.observedTrackKm), 0.5),
       p10TrackKm: percentile(distances, 0.1),
       p90TrackKm: percentile(distances, 0.9),
-      medianDurationMinutes: percentile(result.observations.map(item => item.durationMinutes), 0.5),
+      medianDurationMinutes: percentile(result.observations.map(item => item.flightDurationMinutes), 0.5),
+      medianTelemetrySpanMinutes: percentile(result.observations.map(item => item.telemetrySpanMinutes), 0.5),
+      medianTelemetryCoverage: percentile(result.observations.map(item => item.coverage), 0.5),
+      medianMaxGapMinutes: percentile(result.observations.map(item => item.maxGapMinutes), 0.5),
       telemetryDiagnostics: result.counters,
       pagesScanned: result.pagesScanned,
       candidatesSeen: result.candidatesSeen,
@@ -388,8 +392,8 @@ async function collect() {
       availableRange: dataRange
     },
     measurement: {
-      target: 'Observed flown-path length estimated by integrating measured ADS-B ground speed over elapsed time',
-      method: 'Integrate step-interpolated path_gs values within each contiguous time-series sequence; do not bridge missing-data gaps.',
+      target: 'Estimated flown-path length from recorded ADS-B ground speed and the active telemetry time span',
+      method: 'Integrate step-interpolated path_gs values within each contiguous time-series sequence. Do not bridge missing-data gaps; estimate the full telemetry-span mileage by dividing the observed integral by the measured time-coverage fraction. Store observed integral, coverage, and largest gap for every flight.',
       formula: 'track_km = sum(speed_knots * delta_seconds / 3600) * 1.852',
       units: 'ground speed in knots; elapsed time in seconds; nautical miles converted to kilometres using 1.852',
       filters: {
@@ -405,7 +409,7 @@ async function collect() {
         'great-circle, spherical, ellipsoidal, or geodesic calculations',
         'scheduled flight times or estimated cruise-speed averages'
       ],
-      airportBoundaryUse: 'Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. No airport or trajectory coordinates enter the track-distance integration.'
+      airportBoundaryUse: 'Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. Airport coordinates are retained only as map endpoints. No airport or trajectory coordinates enter the track-distance integration.'
     },
     collection: {
       endDate,
