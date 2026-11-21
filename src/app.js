@@ -256,7 +256,13 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
     labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
  const isArea=kind==='area';
- if(kind==='restricted'){ctx.translate(labelX,labelY);ctx.rotate(rotationRadians());labelX=0;labelY=0;}
+ if(kind==='restricted'){
+  // Keep the callout attached to its map coordinate, but constrain its text
+  // to the readable half-plane so rotation never leaves it vertical/upside-down.
+  const angle=rotationRadians();
+  let readableAngle=((angle+Math.PI/2)%Math.PI+Math.PI)%Math.PI-Math.PI/2;
+  ctx.translate(labelX,labelY);ctx.rotate(readableAngle);labelX=0;labelY=0;
+ }
  ctx.fillStyle='rgba(255,250,238,.96)';
  ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
  ctx.lineWidth=1;
