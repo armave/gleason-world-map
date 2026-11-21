@@ -82,7 +82,7 @@ The optional overlay loads the Boston Public Library scan of Alexander Gleason's
 - Adjust opacity, crop centre X/Y, crop diameter, overlay scale, and fine rotation for fallback alignment.
 - For control-point registration, pick a geographic location on the vector map and then the same point in the scan preview.
 - At least three non-collinear points are required; 8–12 or more well-distributed points around the disk are recommended.
-- With control points present, the image is warped using piecewise-affine triangles into the same R = 6,371 km flat-disk coordinate projection.
+- With control points present, the image is warped using piecewise-affine triangles into the same R = 2,768.393946 km flat-disk coordinate projection.
 
 The historical scan is a printed sheet, not a surveyed or automatically georeferenced overlay. Manual registration improves the fit but cannot remove cartographic generalization, compilation error, plate distortion, or print deformation. Treat it as a historical comparison layer, not ground truth.
 
