@@ -7,7 +7,7 @@ import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration,renderDistortionPanel} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
-import {createMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
+import {createMeasurementSegments,createProjectedMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
 
 (() => {
 'use strict';
@@ -135,7 +135,7 @@ function strokeMeasurementConnector(tool){
 }
 function drawMeasure(){
  if(points.length===2){
-  const segments=createMeasurementSegments(points,geodesicLinePath);
+  const segments=createProjectedMeasurementSegments(points,project);
   if(segments.length){
    ctx.beginPath();segments[0].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
    strokeMeasurementConnector('distance');
@@ -216,7 +216,7 @@ function showCounty(county){
 }
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();setDistortionAnchor(obj,obj.name);updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The displayed value is surface distance; the dashed A–B connector is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The solid A–B connector is the direct line across the flat disk; the numeric distance remains the WGS84 shortest surface distance.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){
