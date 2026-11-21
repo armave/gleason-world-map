@@ -126,3 +126,13 @@ test('distance connector is drawn as a straight projected segment rather than a 
  assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
  assert.match(html,/Direct dashed line/);
 });
+
+
+test('distance and area drawings render km labels on their measurement geometry',()=>{
+ assert.match(app,/function drawMeasurementLabelAtMap\(/);
+ assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?formatMeasurementKilometres\(distanceMeters\),'distance'\)/);
+ assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
+ assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
+ assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatArea\(metrics\.areaM2\),'area'\)/);
+ assert.match(app,/ctx\.setTransform\(dpr,0,0,dpr,0,0\)/);
+});
