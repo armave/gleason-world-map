@@ -1,5 +1,5 @@
 const OCEAN_LABELS=Object.freeze([
- {name:'ARCTIC OCEAN',lat:76,lon:0,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
+ {name:'ARCTIC OCEAN',lat:64,lon:-35,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
  {name:'NORTH PACIFIC OCEAN',lat:35,lon:-155,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
  {name:'SOUTH PACIFIC OCEAN',lat:-37,lon:-135,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
  {name:'NORTH ATLANTIC OCEAN',lat:31,lon:-40,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
@@ -71,7 +71,7 @@ function makeCurvedCandidate(ctx,label,anchor,project,baseR,zoom,viewport,isLand
  const advances=[...text].map(char=>ctx.measureText(char).width+letterGap);
  const totalWidth=advances.reduce((sum,v)=>sum+v,0)-letterGap;
  const center=project(anchor.lon,anchor.lat),radius=Math.hypot(center[0],center[1]);
- if(!Number.isFinite(radius)||radius<baseR*.04)return null;
+ if(!Number.isFinite(radius)||radius<baseR*.04||totalWidth/radius>1.35)return null;
  const theta=anchor.lon*DEG;
  const direction=(-Math.sin(theta))<-.001?-1:1;
  const glyphs=[];let cursor=-totalWidth/2;
