@@ -48,16 +48,14 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
 }
 
 /**
- * North of 60°S, use the shortest WGS84 inverse geodesic.
- * Within the 60°S-to-rim ice-wall band, use only flat-disk chord distance.
- * A straight projected connector crossing the 60°S circle is prohibited.
+ * Use the shortest WGS84 inverse geodesic when both endpoints are north of 60°S.
+ * If either endpoint is in the Antarctic / ice-wall band, use flat-disk chord
+ * distance for the complete segment. The 60°S parallel is a metric transition,
+ * not a barrier: direct segments may cross it.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return { distanceMeters: null, metric: 'unavailable', restricted: false };
-  }
-  if (segmentCrossesRestrictedParallel(first, second)) {
-    return { distanceMeters: null, metric: 'restricted', restricted: true };
   }
   const iceWallInvolved = first.lat <= RESTRICTED_PARALLEL_LATITUDE ||
     second.lat <= RESTRICTED_PARALLEL_LATITUDE;

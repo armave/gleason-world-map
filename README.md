@@ -20,7 +20,7 @@ The outer disk radius is **pi * R = 20,015.09 km**. These values define the X/Y 
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not used as a universal ground-distance conversion. The measurement engine uses WGS84 only for direct segments that remain north of the restricted 60°S parallel. Segments measured wholly within the 60°S-to-rim ice-wall band use flat-disk Euclidean chord distance instead of globe/ellipsoid math. Any projected A–B connector that crosses the 60°S circle is rejected. These are explicit map-tool measurement rules, not a claim that the parallel is a real-world legal border.
+The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not used as a universal ground-distance conversion. The measurement engine uses WGS84 when both A–B endpoints are north of 60°S. If either endpoint is in the 60°S-to-rim ice-wall band, the complete segment uses flat-disk Euclidean chord distance instead of globe/ellipsoid math. The 60°S parallel is a visible metric-transition reference, not a measurement barrier: direct segments may cross it.
 
 ## Direct geographic distance and planar area measurements
 
@@ -28,15 +28,15 @@ The distance and area tools deliberately use different metrics because the disk 
 
 **Direct A–B distance**
 
-For two points north of 60°S whose straight projected connector remains on the northern side of the boundary, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). The readout and dashed-line label use that WGS84 result. For endpoints in the Antarctic / ice-wall band, provided the projected connector remains within that band, the readout instead uses the Euclidean chord between the projected disk coordinates. No WGS84 or spherical globe calculation is used for those ice-wall measurements.
+For two endpoints north of 60°S, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). If either endpoint is south of 60°S, the readout instead uses the Euclidean chord between the projected disk coordinates. This hybrid rule allows a direct A–B segment to cross the 60°S metric-transition circle; the displayed straight connector remains a projected map segment.
 
-The 60°S parallel is drawn as a red dashed restricted-crossing circle. A direct measurement segment is rejected if its straight projected connector crosses the circle; it must remain on one side or terminate at the boundary. The same rule is applied to user-drawn polygon edges, including the closing edge. This is an application measurement constraint, not an assertion that the 60th parallel is a legal or physical barrier.
+The 60°S parallel is drawn as a red dashed metric-transition circle with two opposing callouts. Direct distance segments and user-drawn polygon edges, including the closing edge, may cross it. The callouts identify the change in distance metric; they do not indicate a crossing prohibition.
 
 The WGS84 calculation uses ellipsoid parameters. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; ordinary northern-side routes use the ellipsoidal result.
 
 **Polygon area and perimeter**
 
-User-drawn polygon area uses the ordinary shoelace formula in projected disk coordinates. A polygon is accepted only when none of its straight boundary edges, including the closing edge, crosses the restricted 60°S parallel:
+User-drawn polygon area uses the ordinary shoelace formula in projected disk coordinates. Polygon edges and the closing edge may cross 60°S; the polygon is rejected only when it is invalid, such as a self-intersection:
 
 A = 1/2 * abs(sum(x_i * y_(i+1) - x_(i+1) * y_i))
 
@@ -52,7 +52,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 / flat-disk metric selection; when its sample crosses the restricted 60°S circle it uses planar calibration rather than globe math. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 / flat-disk metric selection; if its sample extends into the Antarctic band it uses planar calibration rather than globe math. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
 
 ## Flight-route calibration and validation
 
@@ -101,7 +101,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
 - Hybrid A–B distance: WGS84 north of 60°S, flat-disk planar chord in the ice-wall zone
-- Direct A–B segments that cross the restricted 60°S parallel are rejected; permitted segments receive a metric-appropriate km label
+- Direct A–B segments may cross 60°S; the selected metric depends on whether either endpoint is in the Antarctic band
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
 - A locally WGS84-calibrated scale bar at the current view centre
@@ -112,7 +112,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - County labels are placed only when their full label box fits inside their own county polygon; county labels use warm serif styling, while capital labels use blue sans-serif text and point markers
 - County search, selection, and shareable layer visibility
 - View-centred scale bar calibrated to local WGS84 ground distance
-- Compact in-frame distance and area tools with a hybrid WGS84 / flat-disk distance engine and 60°S restricted-crossing enforcement
+- Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
 - Toggle country outlines, physical coastlines and islands, grid, capital markers and names, country names, ocean/sea labels, and Antarctica
@@ -142,7 +142,7 @@ src/
   core/
     flat-disk.js            map projection, planar area and perimeter
     geodesic.js              WGS84 inverse/direct distances and projected geodesic paths
-    measurement-engine.js    restricted-parallel checks and WGS84/flat-disk metric selection
+    measurement-engine.js    60°S metric transition and WGS84/flat-disk metric selection
     format.js                coordinates, units, and search formatting
   data/
     datasets.js             local asset loading, decompression, and validation
@@ -162,7 +162,7 @@ scripts/
 tests/
   flat-disk.test.js        projection, planar area and perimeter regressions
   geodesic.test.js         flight-route benchmarks, WGS84 distance and path regressions
-  measurement-engine.test.js restricted 60°S and ice-wall metric regressions
+  measurement-engine.test.js WGS84/flat-disk metric selection and 60°S crossing regressions
   registration.test.js      registration transform regressions
   datasets.test.js          bundled-data integrity and quality tests
 .github/workflows/test.yml automated Node tests
