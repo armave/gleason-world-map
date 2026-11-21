@@ -8,6 +8,7 @@ import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
 import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {createCompassRoseLayout} from './map/compass.js';
+import {centeredCanvasTransform} from './map/canvas-transform.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePathAsync,drawCoastlines as renderCoastlines} from './map/coastlines.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
@@ -31,7 +32,7 @@ const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
-let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,countryOutlinesPath=null;
+let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,countryLayerDpr=NaN,countryOutlinesPath=null;
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
@@ -183,6 +184,7 @@ function resize(){
    }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
   }
  }else baseR=nextBaseR;
+ if(countryLayerDpr!==dpr)buildCountryLayerCache();
  draw();
 }
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
@@ -233,21 +235,21 @@ function drawAnnotations(){
  ctx.restore();
 }
 function buildCountryLayerCache(){
- countryLayerCanvas=null;countryLayerBaseR=NaN;countryLayerStyle=null;
+ countryLayerCanvas=null;countryLayerBaseR=NaN;countryLayerStyle=null;countryLayerDpr=NaN;
  if(!pathRecords.length||!Number.isFinite(baseR)||baseR<=0)return;
  const pixelRatio=dpr||1,size=Math.max(1,Math.ceil(baseR*2*pixelRatio));
  const layer=document.createElement('canvas');layer.width=size;layer.height=size;
  const layerCtx=layer.getContext('2d');
  if(!layerCtx)return;
- layerCtx.setTransform(pixelRatio,0,0,pixelRatio,baseR,baseR);
+ layerCtx.setTransform(...centeredCanvasTransform(pixelRatio,baseR));
  for(const rec of pathRecords){
   layerCtx.fillStyle=hashColorForPalette(rec.country.iso,visualPalette.countryColors);
   layerCtx.globalAlpha=.93;layerCtx.fill(rec.path,'evenodd');layerCtx.globalAlpha=1;
  }
- countryLayerCanvas=layer;countryLayerBaseR=baseR;countryLayerStyle=visualStyle;
+ countryLayerCanvas=layer;countryLayerBaseR=baseR;countryLayerStyle=visualStyle;countryLayerDpr=pixelRatio;
 }
 function drawCountries(){
- if(countryLayerCanvas&&countryLayerBaseR===baseR&&countryLayerStyle===visualStyle){
+ if(countryLayerCanvas&&countryLayerBaseR===baseR&&countryLayerStyle===visualStyle&&countryLayerDpr===dpr){
   ctx.drawImage(countryLayerCanvas,-baseR,-baseR,baseR*2,baseR*2);
   if(countryOutlinesPath){ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(countryOutlinesPath);}
  }else{
