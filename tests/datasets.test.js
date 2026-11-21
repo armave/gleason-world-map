@@ -4,4 +4,4 @@ test('CSV parser accepts alternate header fields',()=>{assert.deepEqual(parseCSV
 
 test('initial country boundaries use the lighter 1:50m dataset with 1:110m fallback',()=>{assert.match(COUNTRY_URL,/ne_50m_admin_0_countries\.geojson$/);assert.match(COUNTRY_FALLBACK_URL,/ne_110m_admin_0_countries\.geojson$/);});
 
-test('map quality options map to the expected Natural Earth scales',()=>{assert.match(COUNTRY_URLS.low,/ne_110m_admin_0_countries\\.geojson$/);assert.match(COUNTRY_URLS.medium,/ne_50m_admin_0_countries\\.geojson$/);assert.match(COUNTRY_URLS.high,/ne_10m_admin_0_countries\\.geojson$/);assert.equal(MAP_QUALITY_OPTIONS.high.scale,'1:10m');});
+test('map quality options map to the expected Natural Earth scales',()=>{assert.ok(COUNTRY_URLS.low.endsWith('ne_110m_admin_0_countries.geojson'));assert.ok(COUNTRY_URLS.medium.endsWith('ne_50m_admin_0_countries.geojson'));assert.ok(COUNTRY_URLS.high.endsWith('ne_10m_admin_0_countries.geojson'));assert.equal(MAP_QUALITY_OPTIONS.high.scale,'1:10m');});
