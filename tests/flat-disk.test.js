@@ -119,6 +119,14 @@ test('non-adjacent polygon edges that touch are rejected as self-intersections',
   );
 });
 
+test('degenerate collinear polygons do not report a zero-area measurement', () => {
+  const collinear = [point(0, 0), point(0, 2), point(0, 4)];
+  assert.equal(
+    flatDiskPolygonMetrics(collinear, (lon, lat) => [lon, lat], DISK_RADIUS_KM),
+    null
+  );
+});
+
 test('GeoJSON Polygon subtracts holes and MultiPolygon sums components', () => {
   const identity = (lon, lat) => [lon, lat];
   const feature = {geometry:{type:'Polygon',coordinates:[
@@ -193,6 +201,11 @@ test('canvas normalization keeps planar measurements stable across resize', () =
 test('invalid coordinates and invalid calibration fail safely', () => {
   assert.equal(flatDiskDistanceMeters(point(0, 0), point(NaN, 1)), null);
   assert.equal(flatDiskDistanceMeters(point(91, 0), point(0, 0)), null);
+  assert.equal(northSouthDistanceKm(91, 0), null);
+  assert.equal(eastWestDistanceKm(91, Math.PI / 3), null);
+  assert.ok(Number.isNaN(colatitudeRadians(91)));
+  assert.deepEqual(flatDiskLinePath(point(91, 0), point(0, 0),
+    (lon, lat) => [lon, lat]), []);
   assert.equal(flatDiskPolygonMetrics(
     [point(0, 0), point(91, 1), point(1, 1)], (lon, lat) => [lon, lat], DISK_RADIUS_KM
   ), null);
