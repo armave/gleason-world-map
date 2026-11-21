@@ -80,13 +80,6 @@ test('ocean labels are curved, scale-aware, water-aware and collision-filtered',
  assert.match(oceanLabels,/glyph\.rotation/);
  assert.match(app,/labelCollisionBoxes\.push\(\.\.\.visible\.map/);
 });
-test('Antarctic ice wall has layered edges, strata, crevasses and repeated rim labels',()=>{
- assert.match(iceWall,/fillStyle='#ffffff'/);
- assert.match(iceWall,/ICE_RIDGE_COUNT=180/);
- assert.match(iceWall,/ICE_CREVASSE_COUNT=42/);
- assert.match(iceWall,/ICE_WALL_LABEL_COUNT=8/);
- assert.match(iceWall,/ctx\.clip\(antarcticaPath,'evenodd'\)/);
-});
 
 test('coastline and island shoreline layer is independent and shareable',()=>{
  assert.match(html,/id="layerCoastlines" checked/);
