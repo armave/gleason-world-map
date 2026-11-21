@@ -32,7 +32,7 @@ For two projected positions (x1, y1) and (x2, y2), the measurement is the straig
 
 d = sqrt((x2 - x1)^2 + (y2 - y1)^2)
 
-The A–B connector is exactly that two-endpoint segment. The displayed numeric distance uses the same projected positions and the same disk-radius calibration, so the route and measurement agree.
+The A–B connector is exactly that two-endpoint segment. The displayed numeric distance uses the same projected positions and the same disk-radius calibration, so the drawn line and readout agree. This is a map-plane point-to-point distance, not the length of a flight, road journey, or other travelled route.
 
 At one latitude circle, the direct line between two positions is a chord, not an arc:
 
@@ -46,7 +46,7 @@ A = 1/2 * abs(sum(x_i * y_(i+1) - x_(i+1) * y_i))
 
 Perimeter is the sum of Euclidean lengths of the same straight edges. The engine rejects self-intersecting user polygons instead of returning a misleading area.
 
-Selected-country areas are calculated by projecting Natural Earth boundary rings into the disk, subtracting interior holes, and summing separate Polygon/MultiPolygon components. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
+Selected-country areas are calculated from the same densified projected boundary rings used to draw their outlines, subtracting interior holes and summing separate Polygon/MultiPolygon components. Antarctica's full 360° outer-rim edge is retained in its area calculation. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
 
 **Planar sector area**
 
@@ -89,7 +89,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Direct Euclidean distance measurements in metres and kilometres
 - Distance A–B is one straight segment between the projected endpoints
 - Planar polygon area by shoelace formula and perimeter by straight-edge lengths
-- Planar area for selected country boundaries, subtracting holes and summing multipart features
+- Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
 - One uniform planar kilometre scale across all X/Y measurements
 - Search and select countries, capitals, and U.S. county-equivalents
 - U.S. county boundary geometry is loaded from the U.S. Census Bureau's 2026 TIGERweb Counties layer (January 1, 2026 vintage); labels use each polygon's Census internal point and are hidden when their label box would cross the county boundary
@@ -188,6 +188,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 ## Important limitations
 
 - Measurements describe the chosen mathematical flat-disk coordinate plane and its R = 6,371 km radial calibration. They are not spherical great-circle distances, ellipsoidal geodesics, or survey-grade ground measurements.
+- The distance tool measures only the direct straight segment between A and B on the disk. It does not calculate aircraft, road, rail, or other travelled route lengths.
 - A flat map cannot preserve every possible relationship to geographic coordinates simultaneously. The app deliberately reports direct plane geometry rather than applying globe-based corrections.
 - The flat-disk measurement mode describes the map's plane geometry; it is not evidence or a claim about the physical shape of the Earth. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
