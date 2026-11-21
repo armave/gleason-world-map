@@ -36,7 +36,7 @@
     </div>
     <div class="map-viewport" id="mapViewport" aria-busy="true">
       <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
-      <section class="map-measure-tools" id="measurementTools" aria-label="Distance and area measurement tools">
+      <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
           <span class="map-measure-restriction">60°S · restricted</span>
@@ -65,14 +65,14 @@
             <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
             <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
           </div>
-          <div class="endpoint-actions"><button id="clearMeasure" type="button">Clear distance</button></div>
+          <div class="endpoint-actions"><button id="clearMeasure" type="button" disabled>Clear distance</button></div>
           <div class="divider"></div>
           <p class="small" id="areaHelp">Choose Area and click at least three points. Polygon edges may not cross the restricted 60°S parallel.</p>
           <div class="small" id="areaVertexCount">0 vertices</div>
           <div class="endpoint-actions">
-            <button id="finishArea" type="button">Finish polygon</button>
-            <button id="undoArea" type="button">Undo vertex</button>
-            <button id="clearArea" type="button">Clear area</button>
+            <button id="finishArea" type="button" disabled>Finish polygon</button>
+            <button id="undoArea" type="button" disabled>Undo vertex</button>
+            <button id="clearArea" type="button" disabled>Clear area</button>
           </div>
         </div>
       </section>

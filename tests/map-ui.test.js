@@ -93,6 +93,32 @@ test('Antarctic ice wall has layered edges, strata, crevasses and repeated rim l
  assert.match(iceWall,/ctx\.clip\(antarcticaPath,'evenodd'\)/);
 });
 
+test('ocean and Antarctic rim labels keep left-to-right reading direction through map rotation',()=>{
+ assert.match(oceanLabels,/screenReadingDirection\(theta,viewport\.rotation\)/);
+ assert.match(oceanLabels,/uprightTextAngle\(localTangent\+viewport\.rotation\)/);
+ assert.match(oceanLabels,/screenTangent-viewport\.rotation/);
+ assert.match(iceWall,/screenReadingDirection\(theta,mapRotation\)/);
+ assert.match(iceWall,/uprightTextAngle\(localTangent\+mapRotation\)/);
+});
+test('coordinate annotations reserve collision space and the compass remains screen-anchored',()=>{
+ assert.match(app,/function reserveScreenUiCollisionBoxes\(\)/);
+ assert.match(app,/right:62,bottom:62/);
+ assert.match(app,/dockRect\.left-canvasRect\.left/);
+ assert.match(app,/function drawUprightMapText[\s\S]*?labelCollisionBoxes\.push\(box\)/);
+ assert.match(app,/if\(layers\.grid\)drawAnnotations\(\);[\s\S]*?drawCapitals\(\);drawCountryLabels\(\)/);
+ assert.match(app,/const cx=31,cy=31,r=14,angle=rotationRadians\(\)/);
+});
+test('measurement mode buttons expose a strong pressed state and actions reflect availability',()=>{
+ assert.match(html,/id="exploreMode" class="active"[^>]*aria-pressed="true"/);
+ assert.match(html,/id="measureMode"[^>]*aria-pressed="false"/);
+ assert.match(app,/button\.setAttribute\('aria-pressed',String\(active\)\)/);
+ assert.match(app,/measurementTools'\)\.dataset\.activeMode=mode/);
+ assert.match(styles,/\.map-measure-tools \.map-measure-modes button\[aria-pressed="true"\]/);
+ assert.match(styles,/button\[aria-pressed="false"\]:hover/);
+ assert.match(app,/function syncMeasurementActionButtons\(\)/);
+ assert.match(app,/\$\('finishArea'\)\.disabled=areaPoints\.length<3\|\|areaFinished/);
+ assert.match(app,/\$\('undoArea'\)\.disabled=areaPoints\.length===0/);
+});
 test('water label land detection uses one prebuilt land mask including Antarctica',()=>{
  assert.match(app,/landMaskPath=new Path2D\(\)/);
  assert.match(app,/landMaskPath\.addPath\(antarcticaPath\)/);

@@ -94,9 +94,12 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Fixed flat-disk radial calibration r = R * theta with R = 6,371 km and disk radius pi * R
 - Separate Natural Earth physical coastlines and island shorelines, with dateline-safe projection
 - Curved ocean and sea labels that fade by scale and avoid land and other labels
+- Curved ocean and Antarctic rim labels keep their reading direction left-to-right at every map rotation, with glyph-level collision bounds
+- Screen-anchored compass and UI-aware label placement prevent the map's labels from overlapping coordinate annotations and measurement controls
 - White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
+- Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
 - Hybrid A–B distance: WGS84 north of 60°S, flat-disk planar chord in the ice-wall zone
 - Direct A–B segments that cross the restricted 60°S parallel are rejected; permitted segments receive a metric-appropriate km label
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
