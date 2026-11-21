@@ -1,4 +1,5 @@
-// Natural Earth coastlines contain line strings that may cross ±180°; unwrap each edge to its short dateline-safe continuation.\nexport function projectCoastlineLines(data,project,maxStepDegrees=1.5){
+// Natural Earth coastlines contain line strings that may cross ±180°; unwrap each edge to its short dateline-safe continuation.
+export function projectCoastlineLines(data,project,maxStepDegrees=1.5){
  if(!Array.isArray(data?.coordinates)||typeof project!=='function')return [];
  const step=Number.isFinite(maxStepDegrees)&&maxStepDegrees>0?maxStepDegrees:1.5;
  const output=[];
