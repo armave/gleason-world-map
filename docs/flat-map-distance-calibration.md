@@ -123,6 +123,8 @@ The radial/tangential split distinguishes movement across concentric rings from 
 
 **Important southern-limit note:** the currently approved production snapshot has no training or holdout airport pair with an endpoint south of 60°S; its southernmost accepted endpoint is about 37.7°S. Therefore estimates near the Antarctic rim are still bounded extrapolations, not polar-validated predictions. The new southern/Antarctic airport pairs are collection candidates only. The model will keep the existing approved coefficients until actual ADS-B observations produce sufficient independent southern training and polar holdout coverage and the error gate passes.
 
+The latest collection attempt (retrieved 21 November 2026 at 12:17 UTC) contains 61 candidate airport pairs and 253 accepted flight records. After the 35% coverage and 5-hour maximum-gap filters, 32 training routes and 2 holdout routes remain—below the minimum 4 holdouts needed even to score a candidate. The eight added southern/polar candidates were each scanned for 24 pages but produced zero exact-route flight candidates. None of the accepted routes reaches 45°S. The generated fit summary now records this as a rejected candidate with current route counts and candidate diagnostics instead of leaving the previous run's `accepted: true` metrics beside the newer dataset.
+
 The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
