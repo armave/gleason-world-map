@@ -13,14 +13,14 @@
       "maxLeaveOneOutMapePercent": 15
     }
   },
-  "generatedAt": "2026-11-21T10:23:44.734Z",
+  "generatedAt": "2026-11-21T10:27:57.631Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-21T10:23:44.489Z",
+  "sourceRetrievedAt": "2026-11-21T10:27:57.350Z",
   "method": {
     "target": "Median observed flown-path length per airport pair",
     "targetSource": "ADS-B ground-speed telemetry integrated over timestamps",
     "formula": "sum(ground_speed_knots * elapsed_seconds / 3600) * 1.852",
-    "inputGeometry": "Flat radial disk chord with R=1, followed by empirical radial scale and a three-feature ridge residual fit",
+    "inputGeometry": "Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route empirical mileage-per-chord ratios over three flat-disk endpoint features",
     "features": [
       "meanColatitude",
       "colatitudeSpan",
@@ -434,7 +434,8 @@
         "medianTrackKm": 701.1541073892322,
         "sampleCount": 5
       }
-    ]
+    ],
+    "holdoutRouteCount": 4
   },
   "metrics": {
     "training": {
@@ -814,6 +815,7 @@
   },
   "routeCoverage": {
     "trainingRoutes": 33,
+    "holdoutRoutes": 4,
     "totalRoutes": 37
   }
 }

@@ -404,5 +404,6 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "medianTrackKm": 701.1541073892322,
       "sampleCount": 5
     }
-  ]
+  ],
+  "holdoutRouteCount": 4
 });
