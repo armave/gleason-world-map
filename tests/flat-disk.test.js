@@ -166,8 +166,13 @@ test('Antarctica area preserves the full southern rim sweep shown by the map', (
   assert.ok(rim.length > collapsed.length + 100);
   const withoutRim = flatDiskFeatureAreaM2(feature, projector, 400);
   const withRim = flatDiskFeatureAreaM2(feature, projector, 400, {preserveAntarcticRim:true});
-  assert.ok(withRim > withoutRim);
-  assert.ok(withRim > 0);
+  const mapRadius = 400;
+  const scale = DISK_RADIUS_METERS / mapRadius;
+  const expectedAnnulusArea = Math.PI * (
+    mapRadius ** 2 - (mapRadius * 5 / 6) ** 2
+  ) * scale ** 2;
+  close(withRim, expectedAnnulusArea, expectedAnnulusArea * 0.001);
+  assert.ok(Math.abs(withRim - withoutRim) > expectedAnnulusArea * 0.05);
 });
 
 test('canvas normalization keeps planar measurements stable across resize', () => {
