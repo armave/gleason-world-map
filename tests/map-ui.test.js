@@ -134,7 +134,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /Flat-disk planar chord · ice-wall zone/);
+  assert.match(app, /Flat-disk chord · Antarctic band involved/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
@@ -181,7 +181,7 @@ test('measurement buttons have prepended icons and Area mode stays compact',()=>
  assert.match(html,/tool-icon[^>]*>⌖<\/span> Explore/);
  assert.match(html,/tool-icon[^>]*>↔<\/span> Distance/);
  assert.match(html,/tool-icon[^>]*>⬡<\/span> Area/);
- assert.match(html,/class="area-actions"/);
+ assert.match(html,/class="endpoint-actions area-actions"/);
  assert.match(app,/button-label/);
  assert.match(styles,/data-active-mode="explore"\] \.map-measure-readings/);
  assert.match(styles,/data-active-mode="area"\] \.map-measure-reading:first-child/);
