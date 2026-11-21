@@ -59,6 +59,19 @@ test('ignores non-airborne or invalid speed samples', () => {
   assert.equal(result.intervalCount, 2);
 });
 
+test('does not forward-fill a ground-speed sample across a long interval in one sequence', () => {
+  const pathGs = [[
+    [0, 400], [600, 400], [1200, 400], [1800, 400], [2400, 400],
+    [5400, 400], [6000, 400], [6600, 400], [7200, 400], [7800, 400]
+  ]];
+  const result = integrateGroundSpeedSeries(pathGs, 0, 7800);
+  assert.equal(result.accepted, true);
+  assert.equal(result.speedIntervals, 8);
+  assert.ok(Math.abs(result.coverage - 4800 / 7800) < 1e-12);
+  assert.equal(result.maxGapMinutes, 50);
+  assert.ok(Math.abs(result.observedTrackKm - 400 * (8 / 6) * 1.852) < 1e-9);
+});
+
 test('rejects missing series and invalid observation windows', () => {
   assert.deepEqual(
     integrateGroundSpeedSeries(null, 0, 3600),
