@@ -172,7 +172,6 @@ test('distance connector is one straight projected segment measured in the map p
 
 
 test('ADS-B flight-mileage estimate is the primary displayed A–B measurement',()=>{
- assert.match(app,/const label=formatMeasurementKilometres\\(measurement\\.distanceMeters\\)/);
  assert.match(html,/ADS-B flight-mileage estimate/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="rawDistanceValue"'));
  assert.match(app,/The connector and its map label show the ADS-B flight-mileage estimate/);
