@@ -59,7 +59,7 @@ const ROUTES = [
   { from: 'WSSS', to: 'VRMM', split: 'train' },
   { from: 'WMKK', to: 'VTBS', split: 'train' },
   { from: 'YSSY', to: 'YMML', split: 'train' },
-  { from: 'YSSY', to: 'YBBN', split: 'train' },
+  { from: 'YSSY', to: 'YBBN', split: 'holdout' },
   { from: 'SCEL', to: 'SAEZ', split: 'train' },
   { from: 'SCEL', to: 'SBGR', split: 'train' },
 
