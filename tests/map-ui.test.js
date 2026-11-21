@@ -23,8 +23,8 @@ test('map layers expose country names and no U.S. county boundary overlay', () =
   assert.match(html, /id="layerCountryNames" checked/);
   assert.match(html, /Country names \(16,000–500 km\)/);
   assert.doesNotMatch(html, /layerCountyNames|countyLayerStatus|U\.S\. county boundaries/);
-  assert.match(app, /function drawCountryLabels\(\)/);
-  assert.match(app, /drawCapitals\(\);drawCountryLabels\(\);/);
+  assert.match(app, /function drawCountryLabels\(allowLabels=true\)/);
+  assert.match(app, /drawCapitals\(!interactionSimplified\);drawCountryLabels\(!interactionSimplified\);/);
   assert.doesNotMatch(app, /drawCountyBoundaries|drawCountyLabels|loadCountyBoundaryDataset/);
 });
 
@@ -72,7 +72,7 @@ test('ocean surface is blue, ocean and sea names are a toggleable shareable laye
 test('coastline and island shoreline layer is independent and shareable',()=>{
  assert.match(html,/id="layerCoastlines" checked/);
  assert.match(app,/layers\.coastlines/);
- assert.match(app,/drawCoastlinesLayer\(\)/);
+ assert.match(app,/drawCoastlinesLayer\(interactionSimplified\)/);
  assert.match(app,/layers\.coastlines\].map\(v=>v\?'1':'0'\)/);
  assert.match(coastlines,/createCoastlinePath/);
 });
@@ -109,7 +109,7 @@ test('coordinate annotations reserve collision space and the compass remains scr
  assert.match(app,/right:62,bottom:62/);
  assert.match(app,/dockRect\.left-canvasRect\.left/);
  assert.match(app,/function drawUprightMapText[\s\S]*?labelCollisionBoxes\.push\(box\)/);
- assert.match(app,/if\(layers\.grid\)drawAnnotations\(\);[\s\S]*?drawCapitals\(\);drawCountryLabels\(\)/);
+ assert.match(app,/if\(layers\.grid\)drawAnnotations\(\);[\s\S]*?drawCapitals\(!interactionSimplified\);drawCountryLabels\(!interactionSimplified\)/);
  assert.match(app,/const cx=31,cy=31,r=14,angle=rotationRadians\(\)/);
 });
 test('switching measurement tools clears distance and area drawings',()=>{
@@ -282,7 +282,7 @@ test('registration-point triangulation is bounded in the UI and restored share l
 test('map geometry is not reprojected when a resize leaves the disk radius unchanged',()=>{
  assert.match(app,/geometryBaseR=NaN/);
  assert.match(app,/Math\.abs\(nextBaseR-geometryBaseR\)>1e-6/);
- assert.match(app,/geometryBaseR=baseR/);
+ assert.match(app,/geometryBaseR=projectionBaseR/);
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
@@ -331,7 +331,7 @@ test('base map becomes interactive before optional county, coastline and Antarct
 
 test('Antarctic ice-wall detail is grouped into reusable paths and built on resize',()=>{
  assert.match(app,/createIceWallTexturePaths\(baseR\)/);
- assert.match(app,/antarcticSurfacePaths,iceWallTexturePaths\)/);
+ assert.match(app,/simplified\?null:antarcticSurfacePaths,simplified\?null:iceWallTexturePaths/);
  assert.match(iceWall,/export function createIceWallTexturePaths/);
  assert.match(iceWall,/texturePaths\.accentRidges/);
 });
@@ -350,4 +350,38 @@ test('Antarctic texture builder combines ridges and crevasses into three reusabl
  assert.equal(moveCount(paths.ridges),ICE_RIDGE_COUNT-Math.ceil(ICE_RIDGE_COUNT/4));
  assert.equal(moveCount(paths.accentRidges),Math.ceil(ICE_RIDGE_COUNT/4));
  assert.equal(moveCount(paths.crevasses),ICE_CREVASSE_COUNT);
+});
+
+test('map gestures use a lightweight preview and redraw full detail when settled',()=>{
+ assert.match(app,/interactionSimplified=Boolean\(\(pointerDown&&didDrag\)\|\|wheelZoomActive\|\|rotationAnimationFrame!==null\)/);
+ assert.match(app,/function drawCoastlinesLayer\(simplified=false\)\{if\(simplified\|\|/);
+ assert.match(app,/function drawIceWall\(simplified=false\)/);
+ assert.match(app,/drawCapitals\(!interactionSimplified\);drawCountryLabels\(!interactionSimplified\);/);
+ assert.match(app,/if\(layers\.oceanLabels\)\{\s*if\(!interactionSimplified\)/);
+ assert.match(app,/wheelZoomActive=true/);
+ assert.match(app,/canvas\.addEventListener\('pointerup'[\s\S]*?scheduleDraw\(\)/);
+});
+
+test('large coastline and Antarctic surface paths are built in yielding batches',()=>{
+ assert.match(app,/createCoastlinePathAsync\(source,/);
+ assert.match(app,/createAntarcticSurfacePathsAsync\(source,/);
+});
+
+
+test('resize rebuilds deferred detail paths with a stable projection snapshot',()=>{
+ assert.match(app,/const fixedProject=\(lon,lat\)=>projectFlatDisk\(lon,lat,projectionBaseR\)/);
+ assert.match(app,/const makeResizedPath=.*fixedProject/);
+ assert.match(app,/geometryBaseR!==projectionBaseR/);
+ assert.doesNotMatch(app,/createCoastlinePath\(coastlineData,project\)|createAntarcticSurfacePaths\(antarcticAddData,project\)/);
+ assert.match(app,/createCoastlinePathAsync\(source,buildProject\)/);
+ assert.match(app,/createAntarcticSurfacePathsAsync\(source,buildProject\)/);
+});
+
+
+test('static country fills are cached while country outlines remain zoom-crisp',()=>{
+ assert.match(app,/function buildCountryLayerCache\(\)/);
+ assert.match(app,/ctx\.drawImage\(countryLayerCanvas,-baseR,-baseR,baseR\*2,baseR\*2\)/);
+ assert.match(app,/ctx\.lineWidth=\.62\/zoom;ctx\.stroke\(countryOutlinesPath\)/);
+ assert.match(app,/countryLayerStyle===visualStyle/);
+ assert.match(app,/buildCountryLayerCache\(\);/);
 });

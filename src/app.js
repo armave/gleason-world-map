@@ -4,11 +4,11 @@ import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js'
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
-import {createAntarcticSurfacePaths} from './map/antarctic-surfaces.js';
+import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
 import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
-import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coastlines.js';
+import {createCoastlinePathAsync,drawCoastlines as renderCoastlines} from './map/coastlines.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
@@ -26,11 +26,13 @@ const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
+let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,countryOutlinesPath=null;
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
 let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [], scheduledDrawFrame = null, hoverFrame = null, pendingHoverPoint = null;
+let wheelZoomActive = false, wheelZoomResetTimer = null;
 let frameScaleBarReadingKm = Infinity;
 let boundaryScaleLabel='Natural Earth 1:50m';
 const QUALITY_STORAGE_KEY='gleason-map:quality:v1',STYLE_STORAGE_KEY='gleason-map:style:v1';
@@ -47,7 +49,7 @@ let registrationPoints = [], registrationPickActive = false, pendingRegistration
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
 let colors=visualPalette.countryColors;
 const hashColor=key=>hashColorForPalette(key,colors);
-function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}}
+function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}buildCountryLayerCache();}
 function rotationRadians(){return rad(rotationDegrees);}
 function normalizeRotation(value){return normalizeRotationDegrees(value);}
 function scheduleDraw(){
@@ -109,7 +111,6 @@ function drawUprightMapText(text,x,y,{reserve=true,avoidReserved=false}={}){
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
 const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
 const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
-const makePath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,project,preserveAntarcticRim);
 function resize(){
  const rect=canvas.getBoundingClientRect();
  width=rect.width;height=rect.height;
@@ -119,15 +120,35 @@ function resize(){
  const nextBaseR=Math.min(width,height)*.405;
  if(!Number.isFinite(geometryBaseR)||Math.abs(nextBaseR-geometryBaseR)>1e-6){
   baseR=nextBaseR;
+  const projectionBaseR=baseR,resizeGeneration=loadGeneration;
+  const fixedProject=(lon,lat)=>projectFlatDisk(lon,lat,projectionBaseR);
+  const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,fixedProject,preserveAntarcticRim);
   iceWallTexturePaths=createIceWallTexturePaths(baseR);
-  pathRecords=countries.map(country=>({country,path:makePath(country.feature)}));
-  antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;
-  antarcticSurfacePaths=antarcticAddData?createAntarcticSurfacePaths(antarcticAddData,project):null;
+  pathRecords=countries.map(country=>({country,path:makeResizedPath(country.feature)}));
+  countryOutlinesPath=new Path2D();
+  for(const record of pathRecords)countryOutlinesPath.addPath(record.path);
+  antarcticaPath=antarcticaFeature?makeResizedPath(antarcticaFeature,true):null;
+  // Optional high-detail layers are rebuilt without blocking resize/fullscreen transitions.
+  antarcticSurfacePaths=null;coastlinePath=null;
   landMaskPath=new Path2D();
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
-  coastlinePath=coastlineData?createCoastlinePath(coastlineData,project):null;
-  geometryBaseR=baseR;
+  geometryBaseR=projectionBaseR;
+  buildCountryLayerCache();
+  if(antarcticAddData){
+   const source=antarcticAddData;
+   createAntarcticSurfacePathsAsync(source,fixedProject).then(paths=>{
+    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
+    antarcticSurfacePaths=paths;draw();
+   }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
+  }
+  if(coastlineData){
+   const source=coastlineData;
+   createCoastlinePathAsync(source,fixedProject).then(path=>{
+    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
+    coastlinePath=path;draw();
+   }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
+  }
  }else baseR=nextBaseR;
  draw();
 }
@@ -154,13 +175,33 @@ function drawAnnotations(){
  for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a),{avoidReserved:true});}}
  ctx.restore();
 }
-function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
+function buildCountryLayerCache(){
+ countryLayerCanvas=null;countryLayerBaseR=NaN;countryLayerStyle=null;
+ if(!pathRecords.length||!Number.isFinite(baseR)||baseR<=0)return;
+ const pixelRatio=dpr||1,size=Math.max(1,Math.ceil(baseR*2*pixelRatio));
+ const layer=document.createElement('canvas');layer.width=size;layer.height=size;
+ const layerCtx=layer.getContext('2d');
+ if(!layerCtx)return;
+ layerCtx.setTransform(pixelRatio,0,0,pixelRatio,baseR,baseR);
+ for(const rec of pathRecords){
+  layerCtx.fillStyle=hashColorForPalette(rec.country.iso,visualPalette.countryColors);
+  layerCtx.globalAlpha=.93;layerCtx.fill(rec.path,'evenodd');layerCtx.globalAlpha=1;
+ }
+ countryLayerCanvas=layer;countryLayerBaseR=baseR;countryLayerStyle=visualStyle;
+}
+function drawCountries(){
+ if(countryLayerCanvas&&countryLayerBaseR===baseR&&countryLayerStyle===visualStyle){
+  ctx.drawImage(countryLayerCanvas,-baseR,-baseR,baseR*2,baseR*2);
+  if(countryOutlinesPath){ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(countryOutlinesPath);}
+ }else{
+  for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
+ }
  if(hoveredCountry){const rec=pathRecords.find(x=>x.country===hoveredCountry);if(rec){ctx.fillStyle='#d18b57';ctx.globalAlpha=.30;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle='#8c482b';ctx.lineWidth=2/zoom;ctx.stroke(rec.path);}}
  if(selected&&selected.type==='country'){const rec=pathRecords.find(x=>x.country===selected.country);if(rec){ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(rec.path);}}
 }
-function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;if(mapQuality==='high'&&frameScaleBarReadingKm<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
-function drawIceWall(){
- renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),antarcticSurfacePaths,iceWallTexturePaths);
+function drawCoastlinesLayer(simplified=false){if(simplified||!layers.coastlines||!coastlinePath)return;if(mapQuality==='high'&&frameScaleBarReadingKm<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
+function drawIceWall(simplified=false){
+ renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),simplified?null:antarcticSurfacePaths,simplified?null:iceWallTexturePaths);
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
@@ -189,9 +230,9 @@ function drawRestrictedParallel(){
  }
  ctx.restore();
 }
-function drawCapitals(){
+function drawCapitals(allowLabels=true){
  if(!layers.capitals)return;
- const labelOn=layers.capitalNames&&(shouldShowCapitalLabels(frameScaleBarReadingKm)||(selected&&selected.type==='capital')),candidates=[];
+ const labelOn=allowLabels&&layers.capitalNames&&(shouldShowCapitalLabels(frameScaleBarReadingKm)||(selected&&selected.type==='capital')),candidates=[];
  for(const p of capitals){
   const [x,y]=project(p.lon,p.lat),active=selected&&selected.type==='capital'&&selected.capital===p;
   ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);
@@ -213,7 +254,8 @@ function drawCapitals(){
   for(const item of visible){ctx.save();ctx.translate(item.labelX,item.labelY);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.font=`600 ${item.labelFontSize/zoom}px ui-sans-serif,system-ui`;ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,0,0);ctx.fillStyle='#243a43';ctx.fillText(item.text,0,0);ctx.restore();}
  }
 }
-function drawCountryLabels(){
+function drawCountryLabels(allowLabels=true){
+ if(!allowLabels)return;
  const showCountryLabels=shouldShowCountryLabels(frameScaleBarReadingKm);
  const selectedCountry=selected&&selected.type==='country'?selected.country:null;
  if(!layers.countryNames||(!showCountryLabels&&!selectedCountry)||!countries.length)return;
@@ -410,6 +452,8 @@ function drawHistoricalOverlay(){
 }
 function draw(){
  if(!width||!height)return;
+ // Keep gestures responsive; detailed overlays return on the settled frame.
+ const interactionSimplified=Boolean((pointerDown&&didDrag)||wheelZoomActive||rotationAnimationFrame!==null);
  const scaleLayout=calculateScaleBarLayout();
  frameScaleBarReadingKm=scaleLayout?.targetKm??Infinity;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle=visualPalette.canvas;ctx.fillRect(0,0,width,height);
@@ -418,19 +462,21 @@ function draw(){
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  if(layers.grid)drawGrid();
  if(layers.countries)drawCountries();
- drawCoastlinesLayer();
- if(layers.antarctica)drawIceWall();
+ drawCoastlinesLayer(interactionSimplified);
+ if(layers.antarctica)drawIceWall(interactionSimplified);
  drawHistoricalOverlay();drawRestrictedParallel();
  ctx.restore();
  if(layers.grid)drawAnnotations();
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
- drawCapitals();drawCountryLabels();
+ drawCapitals(!interactionSimplified);drawCountryLabels(!interactionSimplified);
  if(layers.oceanLabels){
-  const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,frameScaleBarReadingKm,{
-   width,height,panX,panY,rotation:rotationRadians(),palette:visualPalette,reservedBoxes:labelCollisionBoxes,selectNonOverlappingLabels,
-   isLand:(x,y)=>landMaskPath?ctx.isPointInPath(landMaskPath,x,y,'evenodd'):pathRecords.some(rec=>ctx.isPointInPath(rec.path,x,y,'evenodd'))
-  });
-  labelCollisionBoxes.push(...oceanBoxes);
+  if(!interactionSimplified){
+   const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,frameScaleBarReadingKm,{
+    width,height,panX,panY,rotation:rotationRadians(),palette:visualPalette,reservedBoxes:labelCollisionBoxes,selectNonOverlappingLabels,
+    isLand:(x,y)=>landMaskPath?ctx.isPointInPath(landMaskPath,x,y,'evenodd'):pathRecords.some(rec=>ctx.isPointInPath(rec.path,x,y,'evenodd'))
+   });
+   labelCollisionBoxes.push(...oceanBoxes);
+  }
  }
  drawMeasure();drawArea();
  ctx.restore();
@@ -892,8 +938,11 @@ async function load(){
    coastlineData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    try{coastlinePath=createCoastlinePath(coastlineData,project);draw();}
-    catch(error){console.warn('Coastline geometry could not be prepared:',error);}
+    const source=coastlineData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
+    createCoastlinePathAsync(source,buildProject).then(path=>{
+     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
+     coastlinePath=path;draw();
+    }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
    });
   }).catch(error=>console.warn('Coastline data unavailable; country outlines remain available:',error));
 
@@ -902,8 +951,11 @@ async function load(){
    antarcticAddData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    try{antarcticSurfacePaths=createAntarcticSurfacePaths(antarcticAddData,project);draw();}
-    catch(error){console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error);}
+    const source=antarcticAddData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
+    createAntarcticSurfacePathsAsync(source,buildProject).then(paths=>{
+     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
+     antarcticSurfacePaths=paths;draw();
+    }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
    });
   }).catch(error=>console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error));
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
@@ -950,7 +1002,7 @@ $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;animateRotatio
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
 async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
 $('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});
-canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=screenToWorld(sx,sy),lx=p.x,ly=p.y;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const offset=unrotatePoint(width/2-sx,height/2-sy,rotationRadians()),anchor={x:lx+offset.x/nz,y:ly+offset.y/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}const rpoint=rotatePoint(lx,ly,rotationRadians());panX=sx-width/2-rpoint.x*nz;panY=sy-height/2-rpoint.y*nz;zoom=nz;scheduleDraw();},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();wheelZoomActive=true;if(wheelZoomResetTimer!==null)window.clearTimeout(wheelZoomResetTimer);wheelZoomResetTimer=window.setTimeout(()=>{wheelZoomActive=false;wheelZoomResetTimer=null;scheduleDraw();},140);const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=screenToWorld(sx,sy),lx=p.x,ly=p.y;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const offset=unrotatePoint(width/2-sx,height/2-sy,rotationRadians()),anchor={x:lx+offset.x/nz,y:ly+offset.y/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}const rpoint=rotatePoint(lx,ly,rotationRadians());panX=sx-width/2-rpoint.x*nz;panY=sy-height/2-rpoint.y*nz;zoom=nz;scheduleDraw();},{passive:false});
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointerDown={x:e.clientX,y:e.clientY,px:panX,py:panY,rotation:rotationDegrees,rotate:e.shiftKey};didDrag=false;});
 canvas.addEventListener('pointermove',e=>{
  if(pointerDown){
@@ -971,7 +1023,7 @@ canvas.addEventListener('pointermove',e=>{
   if(latest&&!pointerDown)updateHoverAt(latest.clientX,latest.clientY);
  });
 });
-canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging','rotating');});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging','rotating');});
+canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging','rotating');scheduleDraw();});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging','rotating');scheduleDraw();});
 $('retryMapLoading').addEventListener('click',load);
 window.addEventListener('resize',resize);
 syncRotationControls();resize();draw();
