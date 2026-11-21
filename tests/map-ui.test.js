@@ -140,7 +140,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /Straight line on the flat-disk map/);
+  assert.match(app, /Empirically calibrated straight-line distance/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
 
@@ -248,7 +248,7 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/measureDirectDistance uses the straight projected chord, matching A–B measurements/);
+ assert.match(app,/measureDirectDistance applies the empirical flat-map factor to the same straight projected chord/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
