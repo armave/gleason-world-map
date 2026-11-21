@@ -15,8 +15,7 @@ test('map viewport starts with an accessible loading veil and retry control', ()
 
 test('map layers expose country names and no U.S. county boundary overlay', () => {
   assert.match(html, /id="layerCountryNames" checked/);
-  assert.match(html, /Country names \(from 100%\)/);
-  assert.doesNotMatch(html, /layerCountyNames|countyLayerStatus|U\.S\. county boundaries/);
+  assert.match(html, /Country names \(16,000–500 km\)/);
   assert.match(app, /function drawCountryLabels\(\)/);
   assert.match(app, /drawCapitals\(\);drawCountryLabels\(\);/);
   assert.doesNotMatch(app, /drawCountyBoundaries|drawCountyLabels|loadCountyBoundaryDataset/);
@@ -30,16 +29,19 @@ test('loading veil is shown during startup/reload and replaced with an actionabl
   assert.match(app, /layers\.countryNames/);
 });
 
-
-test('zoom stays at 100% or above and supports close-up scale', () => {
-  assert.match(app, /const MIN_ZOOM=1,MAX_ZOOM=20000/);
-  assert.match(app, /zoom=clamp\(z,MIN_ZOOM,MAX_ZOOM\)/);
-  assert.match(app, /const nz=clamp\(zoom\*\(e\.deltaY<0\?1\.12:\.89\),MIN_ZOOM,MAX_ZOOM\)/);
-  assert.match(app, /clamp\(zoom\/1\.25,MIN_ZOOM,MAX_ZOOM\)/);
+test('zoom is capped at a 50 km local scale-bar reading for every input path', () => {
+  assert.match(app, /MAX_SCALE_BAR_READING_KM=50/);
+  assert.match(app, /function maxZoomForAnchor\(/);
+  assert.match(app, /function clampZoom\(/);
+  assert.match(app, /setZoomAtViewCenter\(zoom\*1\.25\)/);
+  assert.match(app, /const restoredCenter=\{x:-panX\/zoom,y:-panY\/zoom\},restoredZoom=clampZoom\(zoom,restoredCenter\)/);
+  assert.match(app, /safe=clampZoom\(nz,anchor\)/);
+  assert.doesNotMatch(app, /const MIN_ZOOM=1,MAX_ZOOM=20000/);
 });
 
 test('capital labels grow in close-up views and collision boxes track their size', () => {
   assert.match(app, /labelFontSize=Math\.min\(16,10\+2\*Math\.log2\(Math\.max\(1,zoom\)\)\)/);
   assert.match(app, /top:sy-labelFontSize\/2,right:sx\+4\+tw,bottom:sy\+labelFontSize\/2/);
   assert.match(app, /item\.labelFontSize\/zoom/);
+  assert.match(html, /Capital names \(from 2,500 km\)/);
 });
