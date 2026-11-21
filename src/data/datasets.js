@@ -1,3 +1,17 @@
+const DATASET_PROMISES = new Map();
+
+function loadOnce(key, loader) {
+  const cached = DATASET_PROMISES.get(key);
+  if (cached) return cached;
+  let pending;
+  pending = Promise.resolve().then(loader).catch(error => {
+    if (DATASET_PROMISES.get(key) === pending) DATASET_PROMISES.delete(key);
+    throw error;
+  });
+  DATASET_PROMISES.set(key, pending);
+  return pending;
+}
+
 export const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
 
 export const MAP_QUALITY_OPTIONS = Object.freeze({
@@ -41,20 +55,24 @@ export function validateCapitalDataset(data) {
   return data;
 }
 
-export async function loadCountryDataset(quality = 'medium') {
-  if (!Object.hasOwn(COUNTRY_DATA_FILES, quality)) throw new Error(`Unknown map quality: ${quality}`);
-  if (typeof DecompressionStream !== 'function') {
-    throw new Error('This browser does not support local gzip decompression. Please use a current browser version.');
+export function loadCountryDataset(quality = 'medium') {
+  if (!Object.hasOwn(COUNTRY_DATA_FILES, quality)) {
+    return Promise.reject(new Error(`Unknown map quality: ${quality}`));
   }
-  const response = await fetch(COUNTRY_DATA_FILES[quality]);
-  if (!response.ok) throw new Error(`Unable to load the bundled ${quality} country boundaries (HTTP ${response.status}).`);
-  if (!response.body) throw new Error('The bundled country-boundary response has no data stream.');
-  const decompressed = response.body.pipeThrough(new DecompressionStream('gzip'));
-  const text = await new Response(decompressed).text();
-  let data;
-  try { data = JSON.parse(text); }
-  catch (error) { throw new Error(`The bundled ${quality} country boundaries are not valid JSON: ${error.message}`); }
-  return validateCountryDataset(data);
+  return loadOnce(`countries:${quality}`, async () => {
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('This browser does not support local gzip decompression. Please use a current browser version.');
+    }
+    const response = await fetch(COUNTRY_DATA_FILES[quality]);
+    if (!response.ok) throw new Error(`Unable to load the bundled ${quality} country boundaries (HTTP ${response.status}).`);
+    if (!response.body) throw new Error('The bundled country-boundary response has no data stream.');
+    const decompressed = response.body.pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(decompressed).text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (error) { throw new Error(`The bundled ${quality} country boundaries are not valid JSON: ${error.message}`); }
+    return validateCountryDataset(data);
+  });
 }
 
 
@@ -75,22 +93,28 @@ export function validateCoastlineDataset(data){
  return data;
 }
 
-export async function loadCoastlineDataset(){
- const response=await fetch(COASTLINE_DATA_FILE);
- if(!response.ok)throw new Error(`Unable to load the bundled Natural Earth coastlines (HTTP ${response.status}).`);
- let data;
- try{data=await response.json();}catch(error){throw new Error(`The bundled coastline geometry is not valid JSON: ${error.message}`);}
- return validateCoastlineDataset(data);
+export function loadCoastlineDataset(){
+ return loadOnce('coastlines',async()=>{
+  const response=await fetch(COASTLINE_DATA_FILE);
+  if(!response.ok)throw new Error(`Unable to load the bundled Natural Earth coastlines (HTTP ${response.status}).`);
+  let data;
+  try{data=await response.json();}catch(error){throw new Error(`The bundled coastline geometry is not valid JSON: ${error.message}`);}
+  return validateCoastlineDataset(data);
+ });
 }
 
-export async function loadCapitalDataset() {
-  const response = await fetch(CAPITAL_DATA_FILE);
-  if (!response.ok) throw new Error(`Unable to load the bundled capital coordinates (HTTP ${response.status}).`);
-  let data;
-  try { data = await response.json(); }
-  catch (error) { throw new Error(`The bundled capital coordinates are not valid JSON: ${error.message}`); }
-  return validateCapitalDataset(data);
+
+export function loadCapitalDataset() {
+  return loadOnce('capitals',async()=>{
+    const response = await fetch(CAPITAL_DATA_FILE);
+    if (!response.ok) throw new Error(`Unable to load the bundled capital coordinates (HTTP ${response.status}).`);
+    let data;
+    try { data = await response.json(); }
+    catch (error) { throw new Error(`The bundled capital coordinates are not valid JSON: ${error.message}`); }
+    return validateCapitalDataset(data);
+  });
 }
+
 
 export const COUNTY_DATA_FILE = new URL('../../data/us-counties.json', import.meta.url);
 export function validateCountyDataset(data) {
@@ -109,11 +133,12 @@ export function validateCountyDataset(data) {
   }
   return data.counties.map(([geoid,stateCode,name,lat,lon])=>({geoid,stateCode,name,lat,lon}));
 }
-export async function loadCountyDataset() {
-  const response=await fetch(COUNTY_DATA_FILE);
-  if(!response.ok)throw new Error(`Unable to load the bundled U.S. county labels (HTTP ${response.status}).`);
-  let data;
-  try{data=await response.json();}catch(error){throw new Error(`The bundled county-label data is not valid JSON: ${error.message}`);}
-  return validateCountyDataset(data);
+export function loadCountyDataset() {
+  return loadOnce('county-labels',async()=>{
+    const response=await fetch(COUNTY_DATA_FILE);
+    if(!response.ok)throw new Error(`Unable to load the bundled U.S. county labels (HTTP ${response.status}).`);
+    let data;
+    try{data=await response.json();}catch(error){throw new Error(`The bundled county-label data is not valid JSON: ${error.message}`);}
+    return validateCountyDataset(data);
+  });
 }
-

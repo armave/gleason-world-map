@@ -47,7 +47,7 @@
         <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
-          <span class="map-measure-restriction">60°S · forbidden line</span>
+          <span class="map-measure-restriction">60°S · metric transition</span>
           <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails" hidden>Details</button>
         </div>
         <div class="mode-row map-measure-modes" role="group" aria-label="Map mode">
@@ -160,13 +160,13 @@
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Direct dashed line</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses WGS84 only north of the restricted 60°S parallel; measurements in the ice-wall band use flat-disk Euclidean distance without globe calculations. Direct connectors and polygon edges are rejected when they cross 60°S. Polygon area and perimeter remain planar.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses WGS84 only when both endpoints are north of 60°S; if either endpoint is at or south of 60°S, the complete A–B distance uses a flat-disk Euclidean chord. Direct connectors and polygon edges may cross 60°S: the circle marks a metric transition, not a barrier. Polygon area and perimeter remain planar.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
       <label class="small"><input type="checkbox" id="historicalEnabled"> Show original Boston Public Library scan</label>
       <div class="small" id="historicalStatus" style="margin:7px 0">Scan not loaded. Enable to compare the printed disk with the digital map.</div>
-      <div class="small" style="margin:7px 0 5px">Control-point registration: click “Pick map point”, select a known location on the map, then click the same point in the scan preview. At least 3 non-collinear points are required; use 8–12 points spread around the disk for better coverage. When registered, the crop/scale/rotation sliders below apply only to the unregistered fallback.</div>
+      <div class="small" style="margin:7px 0 5px">Control-point registration: click “Pick map point”, select a known location on the map, then click the same point in the scan preview. At least 3 non-collinear points are required; use 8–12 points spread around the disk for better coverage (maximum 30 control points). When registered, the crop/scale/rotation sliders below apply only to the unregistered fallback.</div>
       <button id="pickRegistrationPoint" style="width:100%">Pick map point</button>
       <div class="small" id="registrationStatus" style="margin:6px 0">0 control points · manual crop alignment active</div>
       <canvas id="historicalPicker" aria-label="Historical scan control-point picker"></canvas>
@@ -203,7 +203,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distances use WGS84 north of the 60°S parallel and flat-disk geometry in the ice-wall zone; direct segments crossing the 60°S restricted boundary are blocked. Polygon areas and perimeters use planar geometry and polygon edges crossing that boundary are rejected. The scale bar uses the local map metric and falls back to planar calibration when its sample spans the restricted line. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distances use WGS84 only when both endpoints are north of 60°S and use the complete projected flat-disk chord when either endpoint is at or south of 60°S. Direct segments and planar polygon edges may cross 60°S; the circle marks a metric transition, not a barrier. Polygon areas and perimeters remain planar. The scale bar uses the same local hybrid metric as A–B measurements. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>

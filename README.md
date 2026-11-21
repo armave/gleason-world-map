@@ -20,7 +20,7 @@ The outer disk radius is **pi * R = 20,015.09 km**. These values define the X/Y 
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not used as a universal ground-distance conversion. The measurement engine uses WGS84 when both A–B endpoints are north of 60°S. If either endpoint is in the 60°S-to-rim ice-wall band, the complete segment uses flat-disk Euclidean chord distance instead of globe/ellipsoid math. The 60°S parallel is a visible metric-transition reference, not a measurement barrier: direct segments may cross it.
+The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not used as a universal ground-distance conversion. The measurement engine uses WGS84 when both A–B endpoints are north of 60°S. If either endpoint is at or south of 60°S (the 60°S-to-rim ice-wall band), the complete segment uses flat-disk Euclidean chord distance instead of ellipsoidal math. The 60°S parallel is a visible metric-transition reference, not a measurement barrier: direct segments may cross it.
 
 ## Direct geographic distance and planar area measurements
 
@@ -28,7 +28,7 @@ The distance and area tools deliberately use different metrics because the disk 
 
 **Direct A–B distance**
 
-For two endpoints north of 60°S, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). If either endpoint is south of 60°S, the readout instead uses the Euclidean chord between the projected disk coordinates. This hybrid rule allows a direct A–B segment to cross the 60°S metric-transition circle; the displayed straight connector remains a projected map segment.
+For two endpoints north of 60°S, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). If either endpoint is at or south of 60°S, the readout instead uses the Euclidean chord between the projected disk coordinates. This hybrid rule allows a direct A–B segment to cross the 60°S metric-transition circle; the displayed straight connector remains a projected map segment.
 
 The 60°S parallel is drawn as a red dashed metric-transition circle with two opposing callouts. Direct distance segments and user-drawn polygon edges, including the closing edge, may cross it. The callouts identify the change in distance metric; they do not indicate a crossing prohibition.
 
@@ -106,11 +106,8 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
 - A locally WGS84-calibrated scale bar at the current view centre
 - Search and select countries, capitals, and U.S. county-equivalents
-- U.S. county boundary geometry is loaded from the U.S. Census Bureau's 2026 TIGERweb Counties layer (January 1, 2026 vintage); labels use each polygon's Census internal point and are hidden when their label box would cross the county boundary
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
-- Official 2026 Census TIGERweb county-equivalent polygons and internal points (boundary lines from 225%, labels from 270% zoom)
-- County labels are placed only when their full label box fits inside their own county polygon; county labels use warm serif styling, while capital labels use blue sans-serif text and point markers
-- County search, selection, and shareable layer visibility
+- Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
 - View-centred scale bar calibrated to local WGS84 ground distance
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
@@ -129,7 +126,7 @@ Static GitHub Pages deployment uses browser-native ES modules; no bundler is req
 index.html                  page shell and app entry point
 styles.css                  responsive styling
 data/
-  us-counties.json          U.S. Census 2024 county-equivalent label points
+  us-counties.json          U.S. Census 2026 county-equivalent search points
   countries/
     low.geojson.gz          Natural Earth 1:110m boundaries
     medium.geojson.gz       Natural Earth 1:50m boundaries
@@ -215,11 +212,11 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 - Seam-crossing and high-latitude polygon topology should still be reviewed against the source geometry.
 
 
-## Zoom-adaptive place labels
+## County search
 
-Capital markers remain available at every zoom level. Their names appear from 125% zoom, with screen-space collision filtering so nearby capitals do not overwrite one another. The selected capital label receives priority.
+The county search index uses U.S. Census Bureau 2026 National Counties Gazetteer internal-point coordinates. It covers county-equivalents in the 50 states, the District of Columbia, and Puerto Rico. The separately published Island Areas (American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands) are not included in this national file.
 
-The optional “U.S. county names” layer uses the U.S. Census Bureau's 2024 National Counties Gazetteer internal points. It covers U.S. counties and county-equivalents in the 50 states, the District of Columbia, and Puerto Rico, including Alaska boroughs/census areas and Puerto Rico municipios. The 2026 Census national file does not include the separately published Island Areas (American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands). Names appear from 270% zoom, after which labels are collision-filtered against capital labels and one another. This is a label-point layer, not county boundary geometry; the app does not imply that county polygons are available worldwide.
+County results are search-and-selection references only: the app does not render county polygons or county-name labels. Selecting a result displays its name, state or territory, GEOID, and internal-point coordinates.
 
 The compact data file is generated from the Census Bureau's public-domain 2026 Gazetteer. Download and extract `2026_Gaz_counties_national.zip` from [the Census Gazetteer archive](https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_counties_national.zip), then run:
 
@@ -227,4 +224,4 @@ The compact data file is generated from the Census Bureau's public-domain 2026 G
 node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.txt
 ```
 
-Older share links containing the original five-layer visibility code remain compatible; county names default to on unless the new sixth layer bit is present.
+Older share links containing the original five-layer visibility code remain compatible; county search data is independent of map-layer visibility.

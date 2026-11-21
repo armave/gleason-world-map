@@ -209,15 +209,48 @@ test('compact measurement dock is embedded in the map viewport',()=>{
  assert.match(app,/\$\('areaDetails'\)\.hidden=mode!=='area'/);
 });
 
-test('60°S callouts use forbidden-line wording and rotate with the map',()=>{
- assert.match(html,/60°S · forbidden line/);
+test('60°S callouts identify the metric transition and rotate with the map',()=>{
+ assert.match(html,/60°S · metric transition/);
+ assert.doesNotMatch(html,/forbidden line/i);
  assert.match(app,/function drawRestrictedParallel\(\)/);
  assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
  assert.match(app,/for\(const degree of \[45,225\]\)/);
- assert.match(app,/60°S · FORBIDDEN LINE/);
+ assert.match(app,/60°S · METRIC TRANSITION/);
+ assert.doesNotMatch(app,/60°S · FORBIDDEN LINE/);
  assert.match(app,/let readableAngle=\(\(angle\+Math\.PI\/2\)%Math\.PI\+Math\.PI\)%Math\.PI-Math\.PI\/2/);
  assert.match(app,/ctx\.translate\(labelX,labelY\);ctx\.rotate\(readableAngle\)/);
  assert.doesNotMatch(app,/segmentCrossesRestrictedParallel/);
  assert.doesNotMatch(app,/polylineCrossesRestrictedParallel/);
  assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
+});
+
+
+test('Antarctica remains separately rendered but can be selected and searched',()=>{
+ assert.match(app,/antarcticaCountry=antarcticaFeature\?/);
+ assert.match(app,/layers\.antarctica&&antarcticaCountry&&antarcticaPath&&ctx\.isPointInPath/);
+ assert.match(app,/searchIndex=buildSearchIndex/);
+ assert.match(app,/item\.obj\.iso==='ATA'\?'ANTARCTICA · ICE WALL'/);
+});
+
+test('registration-point triangulation is bounded in the UI and restored share links',()=>{
+ assert.match(app,/MAX_REGISTRATION_POINTS=30/);
+ assert.match(app,/registrationPoints\.length>=MAX_REGISTRATION_POINTS/);
+ assert.match(app,/\.slice\(0,MAX_REGISTRATION_POINTS\)/);
+ assert.match(html,/maximum 30 control points/);
+});
+
+test('map geometry is not reprojected when a resize leaves the disk radius unchanged',()=>{
+ assert.match(app,/geometryBaseR=NaN/);
+ assert.match(app,/Math\.abs\(nextBaseR-geometryBaseR\)>1e-6/);
+ assert.match(app,/geometryBaseR=baseR/);
+});
+
+test('scale-bar calculations use the same hybrid metric as A-B distance',()=>{
+ assert.match(app,/measureDirectDistance applies the same WGS84 \/ flat-disk transition/);
+ assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
+});
+
+
+test('searching for Antarctica returns to a whole-disk view so the full ice-wall band remains visible',()=>{
+ assert.match(app,/if\(item\.obj\.iso==='ATA'\)\{\s*\/\/ Keep the complete circumferential ice-wall band in view[\s\S]*?focusGeo\(90,0,MIN_ZOOM\)/);
 });
