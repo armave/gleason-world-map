@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   ANTARCTIC_SURFACES,
   validateAntarcticAddDataset,
-  createAntarcticSurfacePaths
+  createAntarcticSurfacePaths,
+  createAntarcticSurfacePathsAsync
 } from '../src/map/antarctic-surfaces.js';
 
 class FakePath2D {
@@ -54,4 +55,16 @@ test('surface polygons are separated into reusable projected paths', () => {
     assert.equal(paths[surface].commands[0][0], 'M');
     assert.ok(paths[surface].commands.some(command => command[0] === 'Z'));
   }
+});
+
+test('async Antarctic path builder yields between bounded feature batches',async()=>{
+ const validated=validateAntarcticAddDataset(collection);
+ let yields=0;
+ const paths=await createAntarcticSurfacePathsAsync(
+  validated,(lon,lat)=>[lon*2,lat*2],FakePath2D,
+  {batchSize:2,yieldControl:async()=>{yields++;}}
+ );
+ assert.deepEqual(Object.keys(paths),ANTARCTIC_SURFACES);
+ assert.equal(yields,1);
+ for(const surface of ANTARCTIC_SURFACES)assert.ok(paths[surface].commands.some(command=>command[0]==='Z'));
 });
