@@ -162,17 +162,26 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  ctx.setTransform(dpr,0,0,dpr,0,0);
  ctx.font='700 11px ui-sans-serif,system-ui,sans-serif';
  const paddingX=8,boxHeight=20,boxWidth=ctx.measureText(text).width+paddingX*2;
- if(screen.x+boxWidth/2<0||screen.x-boxWidth/2>width||
-    screen.y+boxHeight/2<0||screen.y-boxHeight/2>height){ctx.restore();return;}
+ let labelX=screen.x,labelY=screen.y;
+ // Keep the complete tag inside the circular map clip near the Antarctic rim.
+ const mapCenterX=width/2+panX,mapCenterY=height/2+panY;
+ const dx=labelX-mapCenterX,dy=labelY-mapCenterY,radialDistance=Math.hypot(dx,dy);
+ const radialLimit=Math.max(0,baseR*zoom-Math.hypot(boxWidth/2,boxHeight/2)-3);
+ if(radialDistance>radialLimit&&radialDistance>0){
+  const factor=radialLimit/radialDistance;
+  labelX=mapCenterX+dx*factor;labelY=mapCenterY+dy*factor;
+ }
+ if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
+    labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
  const isArea=kind==='area';
  ctx.fillStyle='rgba(255,250,238,.96)';
  ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
  ctx.lineWidth=1;
- ctx.fillRect(screen.x-boxWidth/2,screen.y-boxHeight/2,boxWidth,boxHeight);
- ctx.strokeRect(screen.x-boxWidth/2,screen.y-boxHeight/2,boxWidth,boxHeight);
+ ctx.fillRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
+ ctx.strokeRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
  ctx.fillStyle=isArea?'#315d6c':'#87452e';
  ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText(text,screen.x,screen.y+.5);
+ ctx.fillText(text,labelX,labelY+.5);
  ctx.restore();
 }
 function projectedPolygonLabelAnchor(vertices){
