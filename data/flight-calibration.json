@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-21T14:25:49.136Z",
+    "retrievedAt": "2026-11-21T18:38:35.555Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-21"
@@ -2946,8 +2946,8 @@
       "medianMaxGapMinutes": 21.035250000158946,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 175,
-        "too-few-speed-intervals": 3,
         "missing-ground-speed-or-duration": 6,
+        "too-few-speed-intervals": 3,
         "low-telemetry-coverage": 9
       },
       "pagesScanned": 1,
@@ -6197,8 +6197,8 @@
       "medianMaxGapMinutes": 9.010083333651224,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 49,
-        "low-telemetry-coverage": 3,
-        "too-few-speed-intervals": 5
+        "too-few-speed-intervals": 5,
+        "low-telemetry-coverage": 3
       },
       "pagesScanned": 2,
       "candidatesSeen": 29,
