@@ -26,7 +26,7 @@ const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
-let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null;
+let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,countryOutlinesPath=null;
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
@@ -125,6 +125,8 @@ function resize(){
   const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,fixedProject,preserveAntarcticRim);
   iceWallTexturePaths=createIceWallTexturePaths(baseR);
   pathRecords=countries.map(country=>({country,path:makeResizedPath(country.feature)}));
+  countryOutlinesPath=new Path2D();
+  for(const record of pathRecords)countryOutlinesPath.addPath(record.path);
   antarcticaPath=antarcticaFeature?makeResizedPath(antarcticaFeature,true):null;
   // Optional high-detail layers are rebuilt without blocking resize/fullscreen transitions.
   antarcticSurfacePaths=null;coastlinePath=null;
@@ -184,13 +186,13 @@ function buildCountryLayerCache(){
  for(const rec of pathRecords){
   layerCtx.fillStyle=hashColorForPalette(rec.country.iso,visualPalette.countryColors);
   layerCtx.globalAlpha=.93;layerCtx.fill(rec.path,'evenodd');layerCtx.globalAlpha=1;
-  layerCtx.strokeStyle=visualPalette.outline;layerCtx.lineWidth=.62;layerCtx.stroke(rec.path);
  }
  countryLayerCanvas=layer;countryLayerBaseR=baseR;countryLayerStyle=visualStyle;
 }
 function drawCountries(){
  if(countryLayerCanvas&&countryLayerBaseR===baseR&&countryLayerStyle===visualStyle){
   ctx.drawImage(countryLayerCanvas,-baseR,-baseR,baseR*2,baseR*2);
+  if(countryOutlinesPath){ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(countryOutlinesPath);}
  }else{
   for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
  }
