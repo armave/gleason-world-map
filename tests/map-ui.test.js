@@ -101,7 +101,9 @@ test('ocean and Antarctic rim labels keep left-to-right reading direction throug
  assert.match(iceWall,/uprightTextAngle\(localTangent\+mapRotation\)/);
 });
 test('coordinate annotations reserve collision space and the compass remains screen-anchored',()=>{
- assert.match(app,/labelCollisionBoxes\.push\(\{left:2,top:2,right:62,bottom:62\}\)/);
+ assert.match(app,/function reserveScreenUiCollisionBoxes\(\)/);
+ assert.match(app,/right:62,bottom:62/);
+ assert.match(app,/dockRect\.left-canvasRect\.left/);
  assert.match(app,/function drawUprightMapText[\s\S]*?labelCollisionBoxes\.push\(box\)/);
  assert.match(app,/if\(layers\.grid\)drawAnnotations\(\);[\s\S]*?drawCapitals\(\);drawCountryLabels\(\)/);
  assert.match(app,/const cx=31,cy=31,r=14,angle=rotationRadians\(\)/);
