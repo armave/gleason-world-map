@@ -328,7 +328,7 @@ function syncMeasurementActionButtons(){
  $('undoArea').disabled=areaPoints.length===0;
  $('clearArea').disabled=areaPoints.length===0;
  $('finishArea').classList.toggle('is-complete',areaFinished);
- $('finishArea').textContent=areaFinished?'Polygon finished':'Finish polygon';
+ $('finishArea').querySelector('.button-label').textContent=areaFinished?'Finished':'Finish';
 }
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=areaPoints.length+' vertices';
