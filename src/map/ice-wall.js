@@ -14,31 +14,39 @@ function pointOnDisk(radius,angle){
  return [radius*Math.cos(angle),-radius*Math.sin(angle)];
 }
 
-function drawRidge(ctx,baseR,angle,index,zoom){
+function appendRidge(path,baseR,angle,index){
  const start=baseR*(.755+.018*Math.sin(index*1.73));
  const end=baseR*.998;
- ctx.beginPath();
  for(let step=0;step<=8;step++){
   const t=step/8,r=start+(end-start)*t;
   const bend=.0028*Math.sin(t*Math.PI*2+index*.61)+.0012*Math.sin(t*Math.PI*5+index*.27);
   const [x,y]=pointOnDisk(r,angle+bend);
-  if(step===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  if(step===0)path.moveTo(x,y);else path.lineTo(x,y);
  }
- ctx.strokeStyle=index%4===0?'rgba(113,165,183,.38)':'rgba(157,194,207,.46)';
- ctx.lineWidth=(index%4===0?.9:.58)/zoom;ctx.stroke();
 }
 
-function drawCrevasse(ctx,baseR,angle,index,zoom){
+function appendCrevasse(path,baseR,angle,index){
  const start=baseR*(.84+.025*Math.sin(index*2.1)),end=baseR*(.965+.012*Math.cos(index*1.4));
  const bend=.0035*Math.sin(index*1.9);
- ctx.beginPath();
  for(let step=0;step<=4;step++){
   const t=step/4,r=start+(end-start)*t;
   const a=angle+bend+(step%2===0?-.0025:.0025);
   const [x,y]=pointOnDisk(r,a);
-  if(step===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  if(step===0)path.moveTo(x,y);else path.lineTo(x,y);
  }
- ctx.strokeStyle='rgba(91,145,163,.34)';ctx.lineWidth=.7/zoom;ctx.stroke();
+}
+
+/** Build the detailed ice-wall linework once per disk size, then stroke each combined path per frame. */
+export function createIceWallTexturePaths(baseR,PathConstructor=globalThis.Path2D){
+ if(!Number.isFinite(baseR)||baseR<=0||typeof PathConstructor!=='function')return null;
+ const ridges=new PathConstructor(),accentRidges=new PathConstructor(),crevasses=new PathConstructor();
+ for(let i=0;i<ICE_RIDGE_COUNT;i++){
+  appendRidge(i%4===0?accentRidges:ridges,baseR,i*Math.PI*2/ICE_RIDGE_COUNT,i);
+ }
+ for(let i=0;i<ICE_CREVASSE_COUNT;i++){
+  appendCrevasse(crevasses,baseR,(i+.35)*Math.PI*2/ICE_CREVASSE_COUNT,i);
+ }
+ return {ridges,accentRidges,crevasses};
 }
 
 function drawRimLabels(ctx,baseR,zoom,mapRotation=0){
@@ -70,7 +78,7 @@ function drawAntarcticSurfaceOverlays(ctx,surfacePaths,zoom){
  }
 }
 
-export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0,surfacePaths=null){
+export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0,surfacePaths=null,texturePaths=null){
  if(!ctx||!antarcticaPath||!Number.isFinite(baseR)||baseR<=0||!Number.isFinite(zoom)||zoom<=0)return;
  ctx.save();
  ctx.shadowColor='rgba(78,130,151,.2)';ctx.shadowBlur=3/zoom;
@@ -91,8 +99,11 @@ export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0,surfaceP
   ctx.beginPath();ctx.arc(0,0,baseR*radius,0,Math.PI*2);
   ctx.strokeStyle=color;ctx.lineWidth=width/zoom;ctx.stroke();
  }
- for(let i=0;i<ICE_RIDGE_COUNT;i++)drawRidge(ctx,baseR,i*Math.PI*2/ICE_RIDGE_COUNT,i,zoom);
- for(let i=0;i<ICE_CREVASSE_COUNT;i++)drawCrevasse(ctx,baseR,(i+.35)*Math.PI*2/ICE_CREVASSE_COUNT,i,zoom);
+ if(texturePaths){
+  ctx.lineWidth=.58/zoom;ctx.strokeStyle='rgba(157,194,207,.46)';ctx.stroke(texturePaths.ridges);
+  ctx.lineWidth=.9/zoom;ctx.strokeStyle='rgba(113,165,183,.38)';ctx.stroke(texturePaths.accentRidges);
+  ctx.lineWidth=.7/zoom;ctx.strokeStyle='rgba(91,145,163,.34)';ctx.stroke(texturePaths.crevasses);
+ }
  ctx.restore();
 
  ctx.beginPath();ctx.arc(0,0,baseR*.999,0,Math.PI*2);
