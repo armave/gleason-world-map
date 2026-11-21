@@ -1,4 +1,4 @@
-import {getLocalWgs84ScaleFactors} from '../core/wgs84.js';
+import {getLocalWgs84ScaleFactors,meridionalDistanceFromNorthKm} from '../core/wgs84.js';
 import {scaleFactorText} from '../core/format.js';
 export function renderRadialCalibration(radialRows){
  const rows=[90,60,30,0,-30,-60,-90].map(lat=>{
