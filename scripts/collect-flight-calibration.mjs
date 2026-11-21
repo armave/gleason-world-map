@@ -59,6 +59,18 @@ const ROUTES = [
   { from: 'WSSS', to: 'VRMM', split: 'train' },
   { from: 'WMKK', to: 'VTBS', split: 'train' },
   { from: 'YSSY', to: 'YMML', split: 'train' },
+  // Southern-hemisphere short and medium regional routes for low-latitude fit coverage.
+  { from: 'YBBN', to: 'YMML', split: 'train' },
+  { from: 'YBBN', to: 'YPPH', split: 'train' },
+  { from: 'YMML', to: 'YPAD', split: 'train' },
+  { from: 'YSSY', to: 'YPAD', split: 'train' },
+  { from: 'YPAD', to: 'YPPH', split: 'train' },
+  { from: 'YSSY', to: 'YPDN', split: 'train' },
+  { from: 'YBBN', to: 'YPDN', split: 'train' },
+  { from: 'YSSY', to: 'YBCG', split: 'train' },
+  { from: 'SCEL', to: 'SCFA', split: 'train' },
+  { from: 'SCEL', to: 'SAAR', split: 'train' },
+
   { from: 'YSSY', to: 'YBBN', split: 'holdout' },
   { from: 'SCEL', to: 'SAEZ', split: 'train' },
   { from: 'SCEL', to: 'SBGR', split: 'train' },
