@@ -294,3 +294,43 @@ test('scale-bar calculations use the same direct projected metric as A–B measu
 test('searching for Antarctica returns to a whole-disk view so the full ice-wall band remains visible',()=>{
  assert.match(app,/if\(item\.obj\.iso==='ATA'\)\{\s*\/\/ Keep the complete circumferential ice-wall band in view[\s\S]*?focusGeo\(90,0,MIN_ZOOM\)/);
 });
+
+
+test('pointer, hover and wheel interactions coalesce expensive work to animation frames',()=>{
+ assert.match(app,/function scheduleDraw\(\)/);
+ assert.match(app,/function updateHoverAt\(clientX,clientY\)/);
+ assert.match(app,/pendingHoverPoint=\{clientX:e\.clientX,clientY:e\.clientY\}/);
+ assert.match(app,/zoom=nz;scheduleDraw\(\)/);
+ const pointer=app.match(/canvas\.addEventListener\('pointermove',[\s\S]*?\n\}\);/);
+ assert.ok(pointer);
+ assert.match(pointer[0],/requestAnimationFrame/);
+ assert.match(pointer[0],/scheduleDraw\(\)/);
+ assert.doesNotMatch(pointer[0],/draw\(\)/);
+});
+
+test('scale-bar measurement is calculated once per frame and uses a pixel-accurate search',()=>{
+ assert.match(app,/const scaleLayout=calculateScaleBarLayout\(\)/);
+ assert.match(app,/frameScaleBarReadingKm=scaleLayout\?\.targetKm\?\?Infinity/);
+ assert.match(app,/shouldShowCapitalLabels\(frameScaleBarReadingKm\)/);
+ assert.match(app,/shouldShowCountryLabels\(frameScaleBarReadingKm\)/);
+ assert.match(app,/drawOceanLabels\(ctx,project,baseR,zoom,frameScaleBarReadingKm/);
+ assert.match(app,/for\(let i=0;i<16;i\+\+\)/);
+ assert.doesNotMatch(app,/for\(let i=0;i<36;i\+\+\)\{const mid=\(low\+high\)\/2;if\(flatDiskDistanceForScalePixels/);
+});
+
+test('base map becomes interactive before optional county, coastline and Antarctic detail loads',()=>{
+ const loader=app.slice(app.indexOf('async function load()'),app.indexOf("$('mapQuality').addEventListener"));
+ assert.match(loader,/const \[geoData,capRaw\]=await Promise\.all/);
+ assert.match(loader,/setMapLoading\(false\)/);
+ assert.match(loader,/loadCountyDataset\(\)\.then/);
+ assert.match(loader,/loadCoastlineDataset\(\)\.then/);
+ assert.match(loader,/loadAntarcticAddDataset\(\)\.then/);
+ assert.match(loader,/runWhenIdle\(\(\)=>/);
+});
+
+test('Antarctic ice-wall detail is grouped into reusable paths and built on resize',()=>{
+ assert.match(app,/createIceWallTexturePaths\(baseR\)/);
+ assert.match(app,/antarcticSurfacePaths,iceWallTexturePaths\)/);
+ assert.match(iceWall,/export function createIceWallTexturePaths/);
+ assert.match(iceWall,/texturePaths\.accentRidges/);
+});
