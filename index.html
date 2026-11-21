@@ -148,13 +148,13 @@
     </section>
     <section class="panel">
       <h2>Flat-disk radial calibration</h2>
-      <div class="formula">R = 2,778.193571 km (flat-map scale)<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR = 8,727.952513 km</div>
-      <p class="note" style="margin:8px 0 0">City-centre reference: Canberra–Santiago is calibrated to 11,340 km. Independent sources quote 11,340–11,345 km for the city pair. This is one uniform flat-map reference; route discrepancies elsewhere remain because a straight-line flat-disk scale cannot match every real-world route.</p>
+      <div class="formula">R = fitted ADS-B flight-mileage scale<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR = 8,727.952513 km</div>
+      <p class="note" style="margin:8px 0 0">The radial scale R is generated from median observed airport-pair flight mileage, estimated by integrating ADS-B ground speed over recorded time. It is not anchored to a published shortest-distance table. The flight-empirical estimate is typical observed flown mileage, not a shortest point-to-point path.</p>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ. The A–B connector is always one straight projected segment. The distance tool shows both its raw Euclidean disk chord and a separate bounded empirical estimate. The correction is fitted to 15 city-distance references using endpoint colatitudes and longitude separation. The running measurement engine does not calculate globe or geodesic distances. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates use the planar radial relation r = Rθ. The A–B connector is always one straight projected segment. The distance tool displays its raw Euclidean disk chord and a separate ADS-B flight-empirical estimate fitted from ground-speed/time observations. Aircraft mileage is estimated from speed integrated over timestamps; map coordinates are not used to calculate those target mileages. The active distance engine has no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
@@ -203,11 +203,11 @@
         <button id="resetHistorical">Reset alignment</button>
         <button id="retryHistorical">Reload scan</button>
       </div>
-      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. Registered scan control points target the R = 2,778.193571 km flat-disk coordinate calibration.</p>
+      <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. Registered scan control points target the current ADS-B-calibrated flat-disk coordinates.</p>
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 2,778.193571 km and outer radius πR = 8,727.952513 km. A–B distance is a straight projected segment with a bounded empirical flat-map length correction; the running measurement engine does not use globe or geodesic calculations. The 60°S Restricted Line is a visual reference only and does not alter the direct-line measurement. Polygon areas and perimeters remain planar. The scale bar uses the same local empirical flat-map correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat radial disk coordinate model r = Rθ; R is generated from the ADS-B flight-mileage training sample. A–B displays a raw straight projected chord and a separate empirical flight-mileage estimate based on measured ground speed and time. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same empirical endpoint correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
