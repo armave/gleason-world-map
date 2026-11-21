@@ -178,7 +178,7 @@ test('longitude-separated South Pole coordinates remain distinct in the disk and
   assert.ok(result.warnings.includes('near-south-rim'));
 });
 
-test('ordinary benchmark endpoints remain within the fitted mean-colatitude and span ranges', () => {
+test('ordinary benchmark endpoints remain within the fitted colatitude and longitude ranges', () => {
   const diagnostics = directLineCalibrationDiagnostics(
     point(40.17, 44.5), point(55.75, 37.6)
   );
