@@ -282,7 +282,7 @@ test('registration-point triangulation is bounded in the UI and restored share l
 test('map geometry is not reprojected when a resize leaves the disk radius unchanged',()=>{
  assert.match(app,/geometryBaseR=NaN/);
  assert.match(app,/Math\.abs\(nextBaseR-geometryBaseR\)>1e-6/);
- assert.match(app,/geometryBaseR=baseR/);
+ assert.match(app,/geometryBaseR=projectionBaseR/);
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
@@ -331,7 +331,7 @@ test('base map becomes interactive before optional county, coastline and Antarct
 
 test('Antarctic ice-wall detail is grouped into reusable paths and built on resize',()=>{
  assert.match(app,/createIceWallTexturePaths\(baseR\)/);
- assert.match(app,/antarcticSurfacePaths,iceWallTexturePaths\)/);
+ assert.match(app,/simplified\?null:antarcticSurfacePaths,simplified\?null:iceWallTexturePaths/);
  assert.match(iceWall,/export function createIceWallTexturePaths/);
  assert.match(iceWall,/texturePaths\.accentRidges/);
 });
