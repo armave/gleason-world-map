@@ -20,7 +20,7 @@ The outer disk radius is **pi * R = 20,015.09 km**. These values define the X/Y 
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not used as a universal ground-distance conversion. The measurement engine uses WGS84 when both A–B endpoints are north of 60°S. If either endpoint is at or south of 60°S (the 60°S-to-rim ice-wall band), the complete segment uses flat-disk Euclidean chord distance instead of ellipsoidal math. The 60°S parallel is a visible metric-transition reference, not a measurement barrier: direct segments may cross it.
+The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not a universal ground-distance conversion. The measurement engine uses the shortest WGS84 ellipsoidal geodesic for A–B distance at every latitude, including routes in the Antarctic / ice-wall band. The 60°S Restricted Line is a visual reference only: it neither switches the measurement metric nor blocks a route.
 
 ## Direct geographic distance and planar area measurements
 
@@ -28,11 +28,11 @@ The distance and area tools deliberately use different metrics because the disk 
 
 **Direct A–B distance**
 
-For two endpoints north of 60°S, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). If either endpoint is at or south of 60°S, the readout instead uses the Euclidean chord between the projected disk coordinates. This hybrid rule allows a direct A–B segment to cross the 60°S metric-transition circle; the displayed straight connector remains a projected map segment.
+The engine always calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method), regardless of endpoint latitude or whether the shortest route passes south of 60°S. This avoids a discontinuous jump in the readout when a point is moved across the 60°S line. The displayed dashed connector remains a straight projected map segment; it is a visual link between endpoints, while the numeric distance is the WGS84 surface distance.
 
-The 60°S parallel is drawn as a red dashed restricted line with two opposing callouts. Direct distance segments and user-drawn polygon edges, including the closing edge, may cross it. The callouts identify the change in distance metric; they do not indicate a crossing prohibition.
+The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
-The WGS84 calculation uses ellipsoid parameters. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; ordinary northern-side routes use the ellipsoidal result.
+The WGS84 calculation uses ellipsoid parameters at all latitudes. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; other routes use the ellipsoidal result.
 
 **Polygon area and perimeter**
 
@@ -52,7 +52,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 / flat-disk metric selection; if its sample extends into the Antarctic band it uses planar calibration rather than globe math. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 surface-distance calculation as A–B at every latitude. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
 
 ## Flight-route calibration and validation
 
@@ -100,8 +100,8 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- Hybrid A–B distance: WGS84 north of 60°S, flat-disk planar chord in the ice-wall zone
-- Direct A–B segments may cross 60°S; the selected metric depends on whether either endpoint is in the Antarctic band
+- A–B distance: shortest WGS84 ellipsoidal geodesic at every latitude
+- The 60°S Restricted Line is a visual reference only and never switches A–B distance to a planar chord
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
 - A locally WGS84-calibrated scale bar at the current view centre
@@ -139,7 +139,7 @@ src/
   core/
     flat-disk.js            map projection, planar area and perimeter
     geodesic.js              WGS84 inverse/direct distances and projected geodesic paths
-    measurement-engine.js    60°S metric transition and WGS84/flat-disk metric selection
+    measurement-engine.js    WGS84 direct-distance selection and 60°S reference-line geometry
     format.js                coordinates, units, and search formatting
   data/
     datasets.js             local asset loading, decompression, and validation
@@ -159,7 +159,7 @@ scripts/
 tests/
   flat-disk.test.js        projection, planar area and perimeter regressions
   geodesic.test.js         flight-route benchmarks, WGS84 distance and path regressions
-  measurement-engine.test.js WGS84/flat-disk metric selection and 60°S crossing regressions
+  measurement-engine.test.js WGS84 distance regressions across the 60°S reference line
   registration.test.js      registration transform regressions
   datasets.test.js          bundled-data integrity and quality tests
 .github/workflows/test.yml automated Node tests
@@ -205,7 +205,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 - The radial disk calibration controls map placement; it is not a globally uniform conversion from projected X/Y coordinates to ground distance.
 - A–B distance is a shortest WGS84 surface geodesic, not an actual flight, road, rail, or other travelled route. Real aircraft tracks can be materially longer and may avoid polar regions.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
-- The WGS84 inverse uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge. The app does not call the WGS84 engine for A–B measurements in the ice-wall band.
+- The WGS84 inverse uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
