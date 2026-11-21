@@ -90,22 +90,22 @@ route_reference_i = median estimated ADS-B flight mileage for route i
 R = median(route_reference_i / unit_chord_i) across training routes
 ```
 
-The fit then models the remaining route-level ratio using only three symmetric flat-disk endpoint features:
+The model then predicts the mileage-per-unit-chord ratio from three symmetric flat-disk endpoint features:
 
 1. Mean endpoint colatitude.
 2. Absolute colatitude separation.
 3. Absolute wrapped longitude separation.
 
-The model is a ridge-regularized linear fit in log-factor space:
+For a new pair, it finds the three nearest training route examples in standardized feature space and takes an inverse-square-distance-weighted geometric mean of their observed mileage-per-unit-chord ratios:
 
 ```text
 features = [mean_colatitude, colatitude_span, wrapped_longitude_span]
-target_log_factor = ln(route_reference_km / (unit_chord * R))
-factor = clamp(exp(intercept + standardized_features · coefficients), 0.5, 2.5)
-flight_empirical_estimate = raw_flat_disk_chord * R * factor
+route_ratio_i = route_median_flight_km_i / unit_chord_i
+predicted_ratio = weighted_geometric_mean(three_nearest_route_ratios)
+flight_empirical_estimate = unit_chord * clamp(predicted_ratio, 0.5 * R, 2.5 * R)
 ```
 
-The generated parameter file records the fitted radial scale, feature means/scales/ranges, coefficients, factor bounds, number of training and holdout routes, and source dataset version. The code is plain JavaScript; no external math or geodesic package is used.
+This local neighbour method was chosen over a linear residual model after route-level holdout tests showed that the linear model could over-correct some regional routes. The generated parameter file records the fitted radial scale, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, number of training and holdout routes, and source dataset version. The code is plain JavaScript; no external math or geodesic package is used.
 
 ## Validation gate and interpretation
 
