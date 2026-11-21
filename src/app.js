@@ -1,7 +1,7 @@
 import {rad,clamp,radialFraction,meridionalDistanceFromNorthKm,wrapLongitude,project as projectWgs84,unproject as unprojectWgs84,geodesicInverse,geodesicDirect,geodesicLinePath as createGeodesicLinePath,wgs84PolygonMetrics,featureGeodesicAreaM2} from './core/wgs84.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
-import {HISTORICAL_SCAN_URL,COUNTRY_URL,COUNTRY_FALLBACK_URL,CAPITAL_URL,parseCSV,fetchTextCached} from './data/datasets.js';
+import {HISTORICAL_SCAN_URL,COUNTRY_URLS,MAP_QUALITY_OPTIONS,CAPITAL_URL,parseCSV,fetchTextCached} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
 import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
@@ -20,6 +20,9 @@ let baseR = 300, width = 800, height = 650, dpr = 1;
 let zoom = 1, panX = 0, panY = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [];
 let boundaryScaleLabel='Natural Earth 1:50m';
+const QUALITY_STORAGE_KEY='gleason-map:quality:v1';
+function readMapQuality(){try{const value=localStorage.getItem(QUALITY_STORAGE_KEY);return Object.hasOwn(MAP_QUALITY_OPTIONS,value)?value:'medium';}catch{return 'medium';}}
+let mapQuality=readMapQuality(),loadGeneration=0;
 let distortionAnchor = {lat:0,lon:0,label:'Equator / Greenwich'};
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,grid:true,capitals:true,capitalNames:true,antarctica:true};
@@ -232,12 +235,14 @@ function showLoadError(err){
  box.append(msg,retry);document.querySelector('.map-card').append(box);
 }
 async function load(){
+ const generation=++loadGeneration;
  document.querySelector('.load-error')?.remove();
- try{$('status').textContent='Loading country boundaries and capital coordinates…';
+ try{mapQuality=readMapQuality();$('mapQuality').value=mapQuality;$('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and capital coordinates…';
   const [geoData,capData]=await Promise.all([
-   (async()=>{try{return await fetchTextCached(COUNTRY_URL,'countries-50m');}catch(highResError){console.warn('Natural Earth 1:50m unavailable; falling back to 1:110m:',highResError);const fallback=await fetchTextCached(COUNTRY_FALLBACK_URL,'countries-110m');return {...fallback,fallback:true};}})(),
+   (async()=>{try{return await fetchTextCached(COUNTRY_URLS[mapQuality],'countries-'+mapQuality);}catch(highResError){if(mapQuality==='low')throw highResError;console.warn('Requested boundary quality unavailable; falling back to low:',highResError);const fallback=await fetchTextCached(COUNTRY_URLS.low,'countries-low');return {...fallback,fallback:true};}})(),
    fetchTextCached(CAPITAL_URL,'capitals')
   ]);
+  if(generation!==loadGeneration)return;
   const geo=JSON.parse(geoData.text);features=geo.features||[];
   if(!features.length)throw new Error('The country boundary dataset contains no features.');
   antarcticaFeature=features.find(f=>isoFor(f)==='ATA'||norm(nameFor(f))==='antarctica')||null;
@@ -249,12 +254,13 @@ async function load(){
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   restoreSharedState();resize();draw();
   const cached=geoData.stale||capData.stale;
-  boundaryScaleLabel=geoData.fallback?'Natural Earth 1:110m fallback':'Natural Earth 1:50m';
+  boundaryScaleLabel=geoData.fallback?'Natural Earth 1:110m fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
   updateStatus();$('status').textContent+=' · '+boundaryScaleLabel;
   if(cached)$('status').textContent+=' · using cached data';
   updateDistortion();updateAreaMeasurement();updateRegistrationUI();
  }catch(err){showLoadError(err);}
 }
+$('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
 $('exploreMode').addEventListener('click',()=>{mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{mode='area';areaFinished=false;setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('finishArea').addEventListener('click',finishArea);
