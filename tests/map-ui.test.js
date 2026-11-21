@@ -144,7 +144,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /calibratedDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The connector and its map label show the raw Euclidean chord in the Gleason disk/);
+  assert.match(app, /The connector and its map label show the ADS-B flight-mileage estimate/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -171,9 +171,15 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
+test('ADS-B flight-mileage estimate is the primary displayed A–B measurement',()=>{
+ assert.match(html,/ADS-B flight-mileage estimate/);
+ assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="rawDistanceValue"'));
+ assert.match(app,/The connector and its map label show the ADS-B flight-mileage estimate/);
+});
+
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/const label=formatMeasurementKilometres\(measurement\.chordDistanceMeters\)/);
+ assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
  assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.calibratedDistanceMeters\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);

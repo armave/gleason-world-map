@@ -56,15 +56,15 @@
           <button id="areaMode" type="button" aria-pressed="false"><span class="tool-icon" aria-hidden="true">⬡</span> Area</button>
         </div>
         <div class="map-measure-readings" aria-live="polite">
-          <div class="map-measure-reading distance-reading">
-            <span>Raw flat-disk chord</span>
-            <div class="measure-value" id="rawDistanceValue">—</div>
-            <div class="measure-sub" id="rawDistanceSub">Uncorrected Euclidean chord</div>
-          </div>
-          <div class="map-measure-reading distance-reading">
+          <div class="map-measure-reading distance-reading primary-distance-reading">
             <span>ADS-B flight-mileage estimate</span>
             <div class="measure-value" id="distanceValue">—</div>
             <div class="measure-sub" id="distanceSub">Raw chord × local flight-mileage factor</div>
+          </div>
+          <div class="map-measure-reading distance-reading secondary-distance-reading">
+            <span>Raw flat-disk chord · reference</span>
+            <div class="measure-value" id="rawDistanceValue">—</div>
+            <div class="measure-sub" id="rawDistanceSub">Uncorrected Euclidean chord</div>
           </div>
           <div class="map-measure-reading area-reading">
             <span>Area</span>

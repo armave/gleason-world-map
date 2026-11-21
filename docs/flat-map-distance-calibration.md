@@ -7,7 +7,7 @@ The distance tool shows two values for the same pair of endpoints:
 1. **Raw flat-disk chord** — Euclidean length of the straight segment between the two projected positions.
 2. **Flight-empirical estimate** — the raw disk chord multiplied by a radial scale and a small endpoint-feature correction fitted against sampled flown mileage.
 
-The map connector is a single straight segment in the projected disk, and its on-map label always shows the raw Euclidean chord. The empirical estimate is a separate panel reading and never changes the segment label.
+The map connector is a single straight segment in the projected disk, and its on-map label reports the ADS-B flight-mileage estimate. The raw Euclidean chord remains a secondary reference reading; it does not replace the empirical estimate as the primary A–B value.
 
 
 The new calibration target is **observed aircraft mileage**, estimated from ADS-B ground-speed and timestamp telemetry. It is not a shortest path, a great-circle distance, an airline schedule estimate, or a guaranteed prediction of the track an aircraft will fly. The distinction matters: real flights may route around weather, restricted airspace, traffic flows or operational constraints.
