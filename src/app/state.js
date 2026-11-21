@@ -1,4 +1,15 @@
 const NESTED_STATE_KEYS = new Set(['view','layers','measurement','historical']);
+const DEFAULT_STATE = Object.freeze({
+  mode:'explore',
+  view:Object.freeze({zoom:1,panX:0,panY:0,rotationDegrees:0}),
+  mapQuality:'medium',
+  visualStyle:'atlas',
+  layers:Object.freeze({}),
+  selection:null,
+  measurement:Object.freeze({distancePointCount:0,areaPointCount:0,areaFinished:false}),
+  historical:Object.freeze({}),
+  searchQuery:''
+});
 
 function freezeSnapshot(state) {
   for (const key of NESTED_STATE_KEYS) {
@@ -8,18 +19,14 @@ function freezeSnapshot(state) {
 }
 
 export function createAppState(initialState = {}) {
-  let snapshot = freezeSnapshot({
-    mode:'explore',
-    view:{zoom:1,panX:0,panY:0,rotationDegrees:0},
-    mapQuality:'medium',
-    visualStyle:'atlas',
-    layers:{},
-    selection:null,
-    measurement:{distancePointCount:0,areaPointCount:0,areaFinished:false},
-    historical:{},
-    searchQuery:'',
-    ...initialState
-  });
+  const initial = initialState && typeof initialState === 'object' && !Array.isArray(initialState)
+    ? initialState
+    : {};
+  const merged = {...DEFAULT_STATE,...initial};
+  for (const key of NESTED_STATE_KEYS) {
+    merged[key] = {...DEFAULT_STATE[key],...(initial[key] || {})};
+  }
+  let snapshot = freezeSnapshot(merged);
   const listeners = new Set();
 
   function update(patch = {}, metadata = {}) {
