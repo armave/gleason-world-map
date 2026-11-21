@@ -64,18 +64,20 @@ test('the restricted line remains the 60th parallel south', () => {
   assert.equal(RESTRICTED_PARALLEL_LATITUDE, -60);
 });
 
-test('A–B distance keeps the raw chord and adds the separate ADS-B flight-mileage estimate', () => {
+test('A–B primary distance matches the visible chord and keeps ADS-B mileage as a separate estimate', () => {
   const a = point(40.17, 44.5), b = point(51.5, -0.12);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'flat-disk-flight-empirical');
+  assert.equal(result.metric, 'flat-disk-chord');
   assert.equal(result.restricted, false);
   assert.equal(result.chordDistanceMeters, flatDiskDistanceMeters(a, b));
   assert.equal(result.rawDistanceMeters, result.chordDistanceMeters);
-  assert.equal(result.flightEmpiricalDistanceMeters, result.distanceMeters);
-  assert.equal(result.calibratedDistanceMeters, result.distanceMeters);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.calibrationFactor);
+  assert.equal(result.distanceMeters, result.chordDistanceMeters);
+  assert.equal(result.flightEmpiricalDistanceMeters,
+    result.chordDistanceMeters * result.calibrationFactor);
+  assert.equal(result.calibratedDistanceMeters, result.flightEmpiricalDistanceMeters);
   assert.ok(result.calibrationFactor >= 0.5 && result.calibrationFactor <= 2.5);
   assert.ok(result.distanceMeters > 0);
+  assert.ok(result.flightEmpiricalDistanceMeters > 0);
 });
 
 test('the flight-mileage factor is symmetric and longitude-wrap safe', () => {
@@ -84,46 +86,48 @@ test('the flight-mileage factor is symmetric and longitude-wrap safe', () => {
   assert.ok(Number.isFinite(directLineCalibrationFactor(a, point(12.5, 180.2))));
 });
 
-test('the same flat-disk flight correction applies to endpoints in the Antarctic band', () => {
+test('the separate flight-mileage estimate remains available in the Antarctic band', () => {
   const a = point(-70, 10), b = point(-70, 20);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'flat-disk-flight-empirical');
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * directLineCalibrationFactor(a, b));
+  assert.equal(result.metric, 'flat-disk-chord');
+  assert.equal(result.distanceMeters, result.chordDistanceMeters);
+  assert.equal(result.flightEmpiricalDistanceMeters,
+    result.chordDistanceMeters * directLineCalibrationFactor(a, b));
 });
 
 test('crossing the 60°S reference line does not switch the direct-line metric', () => {
   const a = point(-59.9, 20), b = point(-60.1, 110);
   const result = measureDirectDistance(a, b);
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
-  assert.equal(result.metric, 'flat-disk-flight-empirical');
+  assert.equal(result.metric, 'flat-disk-chord');
   assert.equal(result.restricted, false);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.calibrationFactor);
+  assert.equal(result.distanceMeters, result.chordDistanceMeters);
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
   const a = point(-60, 0), b = point(-60, 180);
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'flat-disk-flight-empirical');
+  assert.equal(result.metric, 'flat-disk-chord');
   assert.ok(result.distanceMeters > 0);
 });
 
 test('southern local segments and one restricted-line touch remain measurable', () => {
   const a = point(-70, 10), b = point(-70, 20);
   assert.equal(segmentCrossesRestrictedParallel(a, b), false);
-  assert.equal(measureDirectDistance(a, b).metric, 'flat-disk-flight-empirical');
+  assert.equal(measureDirectDistance(a, b).metric, 'flat-disk-chord');
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric,
-    'flat-disk-flight-empirical');
+    'flat-disk-chord');
 });
 
 for (const route of heldOutFlightMileageRoutes) {
   test(`independent ADS-B holdout mileage: ${route.route}`, () => {
     const result = measureDirectDistance(route.first, route.second);
-    const predictedKm = result.distanceMeters / 1000;
+    const predictedKm = result.flightEmpiricalDistanceMeters / 1000;
     const errorPercent = (predictedKm / route.medianTrackKm - 1) * 100;
     assert.ok(Math.abs(errorPercent) <= 20,
       `${route.route}: ${predictedKm.toFixed(1)} km vs observed median ${route.medianTrackKm.toFixed(1)} km (${errorPercent.toFixed(1)}%)`);
-    assert.equal(result.metric, 'flat-disk-flight-empirical');
+    assert.equal(result.metric, 'flat-disk-chord');
     assert.ok(Number.isFinite(result.calibration.radialShareOfChord));
     assert.ok(Number.isFinite(result.calibration.tangentialShareOfChord));
     assert.ok(Math.abs(
@@ -135,6 +139,23 @@ for (const route of heldOutFlightMileageRoutes) {
       `${route.route}: expected ${route.expectedErrorPercent}% but got ${errorPercent.toFixed(2)}%`);
   });
 }
+
+test('primary A–B distance preserves ordering of the visible chord regardless of route correction', () => {
+  const shorter = measureDirectDistance(
+    point(40.17, 44.5), point(40.17, 45.5)
+  );
+  const longer = measureDirectDistance(
+    point(25.2528, 55.3644), point(1.3451159576023457, 103.99194013366014)
+  );
+  assert.ok(shorter.chordDistanceMeters < longer.chordDistanceMeters);
+  assert.equal(shorter.distanceMeters, shorter.chordDistanceMeters);
+  assert.equal(longer.distanceMeters, longer.chordDistanceMeters);
+  assert.ok(shorter.distanceMeters < longer.distanceMeters);
+  assert.equal(shorter.flightEmpiricalDistanceMeters,
+    shorter.chordDistanceMeters * shorter.calibrationFactor);
+  assert.equal(longer.flightEmpiricalDistanceMeters,
+    longer.chordDistanceMeters * longer.calibrationFactor);
+});
 
 test('invalid coordinates fail safely', () => {
   const result = measureDirectDistance(point(91, 0), point(0, 0));

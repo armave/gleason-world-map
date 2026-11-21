@@ -117,9 +117,11 @@ export function directLineCalibrationFactor(first, second) {
 }
 
 /**
- * Estimate typical flown mileage from the same endpoints used by the straight
- * projected connector. The visible connector remains a single flat-disk chord;
- * the numeric estimate is calibrated from observed ADS-B speed/time mileage.
+ * Measure the straight projected disk chord and provide a separate ADS-B estimate.
+ *
+ * distanceMeters always matches the visible connector. The optional flight
+ * estimate applies endpoint corrections to model observed flown mileage; it
+ * is not a geometric length and must not affect the scale bar.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
@@ -141,25 +143,27 @@ export function measureDirectDistance(first, second) {
   const chordDistanceMeters = flatDiskDistanceMeters(first, second);
   const calibration = directLineCalibrationDiagnostics(first, second);
   const calibrationFactor = calibration?.calibrationFactor ?? null;
-  const distanceMeters = Number.isFinite(chordDistanceMeters) &&
+  const flightEmpiricalDistanceMeters = Number.isFinite(chordDistanceMeters) &&
     Number.isFinite(calibrationFactor)
     ? chordDistanceMeters * calibrationFactor
     : null;
   const safeChordDistance = Number.isFinite(chordDistanceMeters) ? chordDistanceMeters : null;
-  const safeDistance = Number.isFinite(distanceMeters) ? distanceMeters : null;
+  const safeFlightEmpiricalDistance = Number.isFinite(flightEmpiricalDistanceMeters)
+    ? flightEmpiricalDistanceMeters
+    : null;
 
   return {
-    // Backwards-compatible distanceMeters remains the ADS-B empirical estimate.
-    distanceMeters: safeDistance,
-    calibratedDistanceMeters: safeDistance,
-    flightEmpiricalDistanceMeters: safeDistance,
+    // Primary distance is exactly the length of the visible projected chord.
+    distanceMeters: safeChordDistance,
+    calibratedDistanceMeters: safeFlightEmpiricalDistance,
+    flightEmpiricalDistanceMeters: safeFlightEmpiricalDistance,
     chordDistanceMeters: safeChordDistance,
     rawDistanceMeters: safeChordDistance,
     calibrationFactor,
     correctionPercent: calibration?.correctionPercent ?? null,
     calibration,
     warnings: calibration?.warnings ?? [],
-    metric: 'flat-disk-flight-empirical',
+    metric: 'flat-disk-chord',
     restricted: false
   };
 }

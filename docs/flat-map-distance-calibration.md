@@ -4,10 +4,10 @@
 
 The distance tool shows two values for the same pair of endpoints:
 
-1. **Raw flat-disk chord** — Euclidean length of the straight segment between the two projected positions.
-2. **Flight-empirical estimate** — the raw disk chord multiplied by a radial scale and a small endpoint-feature correction fitted against sampled flown mileage.
+1. **Projected flat-disk chord** — Euclidean length of the straight segment between the two projected positions. This is the primary A–B reading and the value printed on the map connector.
+2. **ADS-B flight-empirical estimate** — a separate estimate of typical flown mileage, calculated by multiplying the projected chord by a fitted radial scale and a small endpoint-feature correction.
 
-The map connector is a single straight segment in the projected disk, and its on-map label reports the ADS-B flight-mileage estimate. The raw Euclidean chord remains a secondary reference reading; it does not replace the empirical estimate as the primary A–B value.
+The map connector and its label always use the projected chord. That keeps the numeric reading proportional to the visible line: a longer projected segment cannot be reported as a shorter map-plane distance. The route-specific ADS-B correction remains available as a secondary reference, but it does not modify the primary measurement or scale bar.
 
 
 The new calibration target is **observed aircraft mileage**, estimated from ADS-B ground-speed and timestamp telemetry. It is not a shortest path, a great-circle distance, an airline schedule estimate, or a guaranteed prediction of the track an aircraft will fly. The distinction matters: real flights may route around weather, restricted airspace, traffic flows or operational constraints.
@@ -111,7 +111,7 @@ features = [
 ]
 ```
 
-The base scale `R` is the median of route median ADS-B mileage divided by this warped unit chord. The local model then predicts the route-mileage-per-unit-chord ratio from the two nearest training routes in standardized feature space, using inverse-distance weights and a weighted geometric mean:
+The base scale `R` is the median of route median ADS-B mileage divided by this warped unit chord. It converts the projected disk chord into map-plane kilometres. The local model separately predicts the route-mileage-per-unit-chord ratio from the two nearest training routes in standardized feature space, using inverse-distance weights and a weighted geometric mean:
 
 ```text
 route_ratio_i = route_median_flight_km_i / unit_chord_i
@@ -119,13 +119,13 @@ predicted_ratio = weighted_geometric_mean(two_nearest_route_ratios)
 flight_empirical_estimate = unit_chord * clamp(predicted_ratio, 0.5 * R, 2.5 * R)
 ```
 
-The radial/tangential split distinguishes movement across concentric rings from movement around a ring. On the current 33-route training / 4-route holdout snapshot, the smooth warp plus local route model reports **7.59% leave-one-route-out MAPE** and **4.10% independent holdout MAPE**; the worst holdout route error is **8.96%**. The previous unwarped radial geometry on the same sample reported 8.61%, 4.66%, and 7.59%, respectively. The worst leave-one-out route error remains 29.28%, so accuracy is not uniform. These are route-sample results, not proof of universal map or physical-distance accuracy.
+The radial/tangential split distinguishes movement across concentric rings from movement around a ring. This local correction is used only by the ADS-B flight-mileage estimate; it does not change the projected chord or the scale bar. On the current 33-route training / 4-route holdout snapshot, the smooth warp plus local route model reports **7.59% leave-one-route-out MAPE** and **4.10% independent holdout MAPE**; the worst holdout route error is **8.96%**. The previous unwarped radial geometry on the same sample reported 8.61%, 4.66%, and 7.59%, respectively. The worst leave-one-out route error remains 29.28%, so accuracy is not uniform. These are route-sample results, not proof of universal map or physical-distance accuracy.
 
 **Important southern-limit note:** the currently approved production snapshot has no training or holdout airport pair with an endpoint south of 60°S; its southernmost accepted endpoint is about 37.7°S. Therefore estimates near the Antarctic rim are still bounded extrapolations, not polar-validated predictions. The new southern/Antarctic airport pairs are collection candidates only. The model will keep the existing approved coefficients until actual ADS-B observations produce sufficient independent southern training and polar holdout coverage and the error gate passes.
 
 The latest collection attempt (retrieved 21 November 2026 at 12:17 UTC) contains 61 candidate airport pairs and 253 accepted flight records. After the 35% coverage and 5-hour maximum-gap filters, 32 training routes and 2 holdout routes remain—below the minimum 4 holdouts needed even to score a candidate. The eight added southern/polar candidates were each scanned for 24 pages but produced zero exact-route flight candidates. None of the accepted routes reaches 45°S. The generated fit summary now records this as a rejected candidate with current route counts and candidate diagnostics instead of leaving the previous run's `accepted: true` metrics beside the newer dataset.
 
-The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, route counts, and source dataset version.
+The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the flight-estimate neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
 The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for:

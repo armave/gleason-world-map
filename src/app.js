@@ -628,18 +628,18 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  $('rawDistanceValue').textContent=Number.isFinite(measurement.chordDistanceMeters)
-   ?formatDistance(measurement.chordDistanceMeters):'Unavailable';
-  $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
-  $('distanceValue').textContent=Number.isFinite(measurement.calibratedDistanceMeters)
-   ?formatDistance(measurement.calibratedDistanceMeters):'Unavailable';
+  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
+   ?formatDistance(measurement.distanceMeters):'Unavailable';
+  $('distanceSub').textContent='Straight projected chord · matches the drawn connector';
+  $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
+   ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
   const factor=measurement.calibrationFactor;
   const correction=measurement.correctionPercent;
-  $('distanceSub').textContent=Number.isFinite(factor)
+  $('flightDistanceSub').textContent=Number.isFinite(factor)
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The connector and its map label show the ADS-B flight-mileage estimate. The raw Euclidean chord is retained as a secondary flat-disk reference; the estimate is based on historical ground-speed and timestamp samples and is not a shortest-path distance.';
+  $('measureHelp').textContent='The connector and its map label report Euclidean distance along the straight projected chord. The ADS-B estimate is a separate empirical flight-mileage reference; it can differ because it models observed aircraft routes rather than the length of the displayed line.';
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
@@ -658,10 +658,10 @@ function updateMeasurement(){
  }else{
   $('calibrationSupport').textContent='Calibration support appears after both endpoints are set.';
   $('calibrationRoutes').textContent='Nearest reference routes: —';
-  $('rawDistanceValue').textContent='—';
-  $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
+  $('flightDistanceValue').textContent='—';
+  $('flightDistanceSub').textContent='Empirical ADS-B estimate relative to the map chord';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='Raw chord × local flight-mileage factor';
+  $('distanceSub').textContent='Straight projected chord · matches the drawn connector';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -832,9 +832,9 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
- const measurement=measureDirectDistance(first,second);
- // measureDirectDistance applies the ADS-B flight-mileage model to the same straight projected chord.
- return Number.isFinite(measurement.distanceMeters)?measurement.distanceMeters/1000:Infinity;
+ const distanceMeters=flatDiskDistanceMeters(first,second);
+ // The scale bar uses the same uncorrected map-plane chord metric as A–B.
+ return Number.isFinite(distanceMeters)?distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
  const safeAnchor=constrainScaleAnchor(anchor),pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);

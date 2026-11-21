@@ -64,7 +64,7 @@
 <map-historical-panel data-lit-panel></map-historical-panel>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. A–B displays the ADS-B empirical flight-mileage estimate as primary, with the raw straight projected chord as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same local ADS-B route-neighbour correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. A–B primary measurements and labels use the straight projected chord; the separate ADS-B empirical flight-mileage estimate remains available as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same geometric chord metric as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 
 <!-- Lit templates retained as light-DOM-compatible sources during the incremental migration. -->
 <template id="find-panel-template">
@@ -90,14 +90,14 @@
         </div>
         <div class="map-measure-readings" aria-live="polite">
           <div class="map-measure-reading distance-reading primary-distance-reading">
-            <span>ADS-B flight-mileage estimate</span>
+            <span>Straight projected A–B distance</span>
             <div class="measure-value" id="distanceValue">—</div>
-            <div class="measure-sub" id="distanceSub">Raw chord × local flight-mileage factor</div>
+            <div class="measure-sub" id="distanceSub">Euclidean chord · matches the drawn line</div>
           </div>
           <div class="map-measure-reading distance-reading secondary-distance-reading">
-            <span>Raw flat-disk chord · reference</span>
-            <div class="measure-value" id="rawDistanceValue">—</div>
-            <div class="measure-sub" id="rawDistanceSub">Uncorrected Euclidean chord</div>
+            <span>ADS-B flight-mileage estimate · reference</span>
+            <div class="measure-value" id="flightDistanceValue">—</div>
+            <div class="measure-sub" id="flightDistanceSub">Empirical estimate from observed flight telemetry</div>
           </div>
           <div class="map-measure-reading area-reading">
             <span>Area</span>
@@ -194,7 +194,7 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk uses a smooth, monotonic radial warp of latitude-ring spacing. It preserves the North Pole at the centre and 90°S at the circular outer rim. The A–B connector is one straight projected segment; its primary label is the ADS-B flight-mileage estimate, with the raw disk chord shown as a secondary reference. The estimate is fitted from ground-speed/time observations, with polar extrapolation status and nearest supporting routes available in the measurement details. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
+      <p class="note" style="margin:9px 0 0">The disk uses a smooth, monotonic radial warp of latitude-ring spacing. It preserves the North Pole at the centre and 90°S at the circular outer rim. The A–B connector and its primary label use the Euclidean chord in the projected disk, so the displayed distance matches the visible line. The ADS-B flight-mileage estimate is shown separately as an empirical reference, with polar extrapolation status and nearest supporting routes available in the measurement details. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
     </section>
 </template>
 <template id="geometry-panel-template">
@@ -206,7 +206,7 @@
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment and displays the ADS-B empirical mileage estimate as primary, with the raw Euclidean chord as a secondary reference. The estimate is not a shortest path or guaranteed flight track. Calibration support and nearest reference routes are available in the measurement details; polar extrapolation is identified there without a warning panel. The 60°S Restricted Line does not alter the estimate. Polygon area and perimeter remain planar.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment and reports its Euclidean chord as the primary distance, matching the visible connector. The ADS-B empirical mileage estimate remains available as a separate reference; it is not a shortest path or guaranteed flight track. Calibration support and nearest reference routes are available in the measurement details; polar extrapolation is identified there without a warning panel. The 60°S Restricted Line does not alter the measurement. Polygon area and perimeter remain planar.</p>
     </section>
 </template>
 <template id="historical-panel-template">

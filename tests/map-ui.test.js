@@ -159,11 +159,11 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /rawDistanceValue/);
-  assert.match(app, /calibratedDistanceMeters/);
+  assert.match(app, /flightDistanceValue/);
+  assert.match(app, /flightEmpiricalDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The connector and its map label show the ADS-B flight-mileage estimate/);
+  assert.match(app, /The connector and its map label report Euclidean distance along the straight projected chord/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -213,16 +213,18 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('ADS-B flight-mileage estimate is the primary displayed A–B measurement',()=>{
- assert.match(html,/ADS-B flight-mileage estimate/);
- assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="rawDistanceValue"'));
- assert.match(app,/The connector and its map label show the ADS-B flight-mileage estimate/);
+test('the projected chord is primary and ADS-B flight mileage is a separate reference',()=>{
+ assert.match(html,/Straight projected A–B distance/);
+ assert.match(html,/ADS-B flight-mileage estimate · reference/);
+ assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
+ assert.match(app,/The connector and its map label report Euclidean distance along the straight projected chord/);
 });
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
  assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.calibratedDistanceMeters\)/);
+ assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
+ assert.match(app,/flightDistanceValue'\)\.textContent=Number\.isFinite\(measurement\.flightEmpiricalDistanceMeters\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
@@ -301,7 +303,7 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/measureDirectDistance applies the ADS-B flight-mileage model to the same straight projected chord/);
+ assert.match(app,/The scale bar uses the same uncorrected map-plane chord metric as A–B/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
@@ -324,6 +326,11 @@ test('pointer, hover and wheel interactions coalesce expensive work to animation
  assert.doesNotMatch(pointer[0],/draw\(\)/);
 });
 
+test('scale-bar measurement uses the same geometric chord metric as A–B',()=>{
+ const scaleMetric=app.slice(app.indexOf('function flatDiskDistanceForScalePixels'),app.indexOf('function scaleBarReadingKm'));
+ assert.match(scaleMetric,/flatDiskDistanceMeters\(first,second\)/);
+ assert.doesNotMatch(scaleMetric,/measureDirectDistance/);
+});
 test('scale-bar measurement is calculated once per frame and uses a pixel-accurate search',()=>{
  assert.match(app,/const scaleLayout=calculateScaleBarLayout\(\)/);
  assert.match(app,/frameScaleBarReadingKm=scaleLayout\?\.targetKm\?\?Infinity/);
