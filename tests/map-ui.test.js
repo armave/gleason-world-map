@@ -133,6 +133,7 @@ test('distance and area drawings render km labels on their measurement geometry'
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?formatMeasurementKilometres\(distanceMeters\),'distance'\)/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
- assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatArea\(metrics\.areaM2\),'area'\)/);
+ assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
+ assert.match(app,/function formatMeasurementSquareKilometres\(/);
  assert.match(app,/ctx\.setTransform\(dpr,0,0,dpr,0,0\)/);
 });
