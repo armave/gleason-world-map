@@ -1,5 +1,4 @@
-import { radialDistanceFromNorthKm, rad, wrapLongitude } from './flat-disk.js';
-import { geodesicDistanceMeters } from './geodesic.js';
+import { flatDiskDistanceMeters, radialDistanceFromNorthKm, rad, wrapLongitude } from './flat-disk.js';
 
 export const RESTRICTED_PARALLEL_LATITUDE = -60;
 const RESTRICTED_RADIUS_KM = radialDistanceFromNorthKm(RESTRICTED_PARALLEL_LATITUDE);
@@ -48,20 +47,18 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
 }
 
 /**
- * Always measure the shortest WGS84 ellipsoidal surface distance, including
- * routes with endpoints in the Antarctic / ice-wall band. The 60°S line is a
- * visual reference only; it must never switch a ground-distance readout to a
- * projected-disk chord. Planar chord distances remain available separately
- * for polygon perimeter calculations in flat-disk.js.
+ * Measure the Euclidean length of the straight A–B chord in the calibrated
+ * flat-disk map plane. The result matches the visible direct connector and is
+ * deliberately not a WGS84 surface-geodesic distance.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return { distanceMeters: null, metric: 'unavailable', restricted: false };
   }
-  const distanceMeters = geodesicDistanceMeters(first, second);
+  const distanceMeters = flatDiskDistanceMeters(first, second);
   return {
     distanceMeters: Number.isFinite(distanceMeters) ? distanceMeters : null,
-    metric: 'wgs84',
+    metric: 'flat-disk-direct',
     restricted: false
   };
 }

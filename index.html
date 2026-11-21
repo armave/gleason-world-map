@@ -12,7 +12,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style flat circular disk · WGS84 distance &amp; planar area · 60°S Restricted Line · Historical scan registration</div>
+  <div class="subtitle">Gleason-style flat circular disk · direct-line map distance &amp; planar area · 60°S Restricted Line · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -59,7 +59,7 @@
           <div class="map-measure-reading">
             <span>Distance</span>
             <div class="measure-value" id="distanceValue">—</div>
-            <div class="measure-sub" id="distanceSub">WGS84 shortest surface distance</div>
+            <div class="measure-sub" id="distanceSub">Straight line on the flat-disk map</div>
           </div>
           <div class="map-measure-reading">
             <span>Area</span>
@@ -147,17 +147,17 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ. A–B distances use the shortest WGS84 surface geodesic at every latitude. The 60°S Restricted Line is a visual reference only and does not change the distance calculation; direct connectors and area polygons may cross it. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ. A–B distance is the Euclidean length of the straight projected segment in the calibrated disk plane, not a WGS84 surface geodesic. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
       <div class="info-grid">
         <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
-        <div class="info-box"><span>Distance</span><strong>WGS84 geodesic</strong></div>
+        <div class="info-box"><span>Distance</span><strong>Planar direct line</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
-        <div class="info-box"><span>A–B line</span><strong>Projected WGS84 geodesic</strong></div>
+        <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B distance always uses the shortest WGS84 ellipsoidal surface geodesic, even when an endpoint or the shortest route lies south of 60°S. The 60°S Restricted Line is a visual reference, not a metric switch or a barrier. The dashed A–B connector traces the projected shortest WGS84 geodesic; polygon area and perimeter remain planar.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment, and its displayed length is the Euclidean distance between the endpoints in the calibrated flat-disk plane. It is a map-plane measurement, not a WGS84 surface route. The 60°S Restricted Line is a visual reference, not a metric switch or a barrier. Polygon area and perimeter remain planar.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -200,7 +200,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distances always use the shortest WGS84 ellipsoidal surface geodesic at every latitude. The 60°S Restricted Line is a visual reference only and does not switch the distance metric or block a route. Polygon areas and perimeters remain planar. The scale bar uses the same locally calibrated WGS84 metric as A–B measurements. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distance is the Euclidean length of its straight projected segment in the calibrated flat-disk plane, not a WGS84 surface distance. The 60°S Restricted Line is a visual reference only and does not alter the direct-line measurement. Polygon areas and perimeters remain planar. The scale bar uses the same local flat-disk coordinate scale. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>

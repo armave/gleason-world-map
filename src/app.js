@@ -1,5 +1,4 @@
-import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
-import {geodesicLinePath} from './core/geodesic.js';
+import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
 import {measureDirectDistance,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
@@ -316,16 +315,16 @@ function projectedPolygonLabelAnchor(vertices){
 }
 function drawMeasure(){
  if(points.length===2){
-  // Draw the same shortest WGS84 geodesic whose length is shown in the readout.
-  const path=geodesicLinePath(points[0],points[1],project,50);
-  if(path.length>=2){
-   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);
-   for(let i=1;i<path.length;i++)ctx.lineTo(path[i][0],path[i][1]);
+  // Draw and measure one straight projected A–B segment in the flat-disk plane.
+  const path=flatDiskLinePath(points[0],points[1],project);
+  if(path.length===2){
+   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
    const label=formatMeasurementKilometres(measurement.distanceMeters);
-   const midpoint=path[Math.floor((path.length-1)/2)];
-   drawMeasurementLabelAtMap(midpoint[0],midpoint[1],label,'distance');
+   drawMeasurementLabelAtMap(
+    (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
+   );
   }
  }
  points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';drawUprightMapText(i===0?'A':'B',x,y+.3/zoom);});
@@ -434,7 +433,7 @@ function updateViewReadout(){
  const localScale=scaleBarReadingKm(),scaleText=Number.isFinite(localScale)?formatDistance(localScale*1000):'unavailable';
  const cap=layers.capitalNames?(shouldShowCapitalLabels(localScale)?'capital names visible':`capital names at ${CAPITAL_LABEL_MAX_SCALE_KM.toLocaleString()} km`):'capital names off';
  const countryNames=!layers.countryNames?'country names off':shouldShowCountryLabels(localScale)?'country names visible':localScale>COUNTRY_LABEL_MAX_SCALE_KM?`country names at ${COUNTRY_LABEL_MAX_SCALE_KM.toLocaleString()} km`:`country names hidden below ${COUNTRY_LABEL_MIN_SCALE_KM} km`;
- readout.title=`Zoom ${Math.round(zoom*100)}% · orientation ${Math.round(rotationDegrees)}° · local WGS84 scale ${scaleText} · zoom-in limit ${MAX_SCALE_BAR_READING_KM} km · ${cap} · ${countryNames}`;
+ readout.title=`Zoom ${Math.round(zoom*100)}% · orientation ${Math.round(rotationDegrees)}° · local flat-disk scale ${scaleText} · zoom-in limit ${MAX_SCALE_BAR_READING_KM} km · ${cap} · ${countryNames}`;
 }
 function findCountryAt(x,y){
  if(layers.antarctica&&antarcticaCountry&&antarcticaPath&&ctx.isPointInPath(antarcticaPath,x,y,'evenodd'))return antarcticaCountry;
@@ -444,7 +443,7 @@ function findCountryAt(x,y){
 }
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;const point=screenToWorld(sx,sy);return {x:point.x,y:point.y,sx,sy};}
-function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='WGS84 direct distance complete';}else if(mode==='area'){$('status').textContent='Area mode · '+areaPoints.length+' vertices · '+(areaFinished?'polygon finished':'add boundary points');}else{$('status').textContent=hoveredCountry?'Country: '+hoveredCountry.name:hoveredCapital?'Capital: '+hoveredCapital.city:'Explore mode · '+(countries.length+(antarcticaCountry?1:0))+' countries/areas · '+capitals.length+' capital points';}}
+function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Direct-line distance complete';}else if(mode==='area'){$('status').textContent='Area mode · '+areaPoints.length+' vertices · '+(areaFinished?'polygon finished':'add boundary points');}else{$('status').textContent=hoveredCountry?'Country: '+hoveredCountry.name:hoveredCapital?'Capital: '+hoveredCapital.city:'Explore mode · '+(countries.length+(antarcticaCountry?1:0))+' countries/areas · '+capitals.length+' capital points';}}
 function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'});$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;draw();}
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';const area=c?flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'}):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 const US_STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam',MP:'Northern Mariana Islands',VI:'U.S. Virgin Islands'};
@@ -476,11 +475,11 @@ function updateMeasurement(){
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent='WGS84 shortest surface distance';
-  $('measureHelp').textContent='The readout uses the shortest WGS84 ellipsoidal surface distance at every latitude. The 60°S Restricted Line does not change the calculation.';
+  $('distanceSub').textContent='Straight line on the flat-disk map';
+  $('measureHelp').textContent='The value is the Euclidean length of the straight A–B segment in the calibrated flat-disk map plane, not a WGS84 surface route.';
  }else{
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='WGS84 shortest surface distance';
+  $('distanceSub').textContent='Straight line on the flat-disk map';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -647,12 +646,12 @@ function scaleBarReferencePixels(anchor=scaleAnchorWorld(),scaleZoom=zoom){
 }
 function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0||!Number.isFinite(baseR)||baseR<=0)return Infinity;
- // Calibrate the horizontal screen direction at the current view anchor using the same WGS84 metric as A–B.
+ // Calibrate the horizontal screen direction at the current view anchor using the same flat-disk metric as A–B.
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
  const measurement=measureDirectDistance(first,second);
- // measureDirectDistance uses WGS84 at every latitude, matching A–B measurements.
+ // measureDirectDistance uses the straight projected chord, matching A–B measurements.
  return Number.isFinite(measurement.distanceMeters)?measurement.distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){

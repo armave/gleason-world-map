@@ -133,14 +133,14 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/geodesicLinePath/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath/);
 });
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
-  assert.match(html, /<span>A–B line<\/span><strong>Projected WGS84 geodesic<\/strong>/);
+  assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /WGS84 shortest surface distance/);
+  assert.match(app, /Straight line on the flat-disk map/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
 
@@ -156,12 +156,13 @@ test('latitude grid includes intermediate parallels, an emphasized equator, long
 });
 
 
-test('distance connector follows the projected WGS84 geodesic used by the readout',()=>{
- assert.match(app,/const path=geodesicLinePath\(points\[0\],points\[1\],project,50\)/);
- assert.match(app,/for\(let i=1;i<path\.length;i\+\+\)ctx\.lineTo\(path\[i\]\[0\],path\[i\]\[1\]\)/);
- assert.match(app,/const midpoint=path\[Math\.floor\(\(path\.length-1\)\/2\)\]/);
+test('distance connector is one straight projected segment measured in the map plane',()=>{
+ assert.match(app,/const path=flatDiskLinePath\(points\[0\],points\[1\],project\)/);
+ assert.match(app,/ctx\.lineTo\(path\[1\]\[0\],path\[1\]\[1\]\)/);
+ assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
+ assert.doesNotMatch(app,/geodesicLinePath/);
  assert.match(app,/strokeMeasurementConnector\('distance'\)/);
- assert.match(html,/Projected WGS84 geodesic/);
+ assert.match(html,/Straight projected segment/);
 });
 
 
@@ -246,8 +247,8 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
  assert.match(app,/geometryBaseR=baseR/);
 });
 
-test('scale-bar calculations use the WGS84 metric at every latitude',()=>{
- assert.match(app,/measureDirectDistance uses WGS84 at every latitude, matching A–B measurements/);
+test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
+ assert.match(app,/measureDirectDistance uses the straight projected chord, matching A–B measurements/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });

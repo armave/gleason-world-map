@@ -8,8 +8,9 @@
  *
  * R = 6,371 km is the chosen radial scale constant for this map, not a
  * geodesic or ellipsoidal measurement parameter. This module provides the
- * display projection and planar area/perimeter helpers. The active A–B
- * distance tool uses WGS84 geodesics from ./geodesic.js.
+ * display projection, straight-line A–B measurements, and planar
+ * area/perimeter helpers. A–B distance is the Euclidean length of its
+ * straight projected chord, not a WGS84 surface geodesic.
  */
 export const DISK_RADIAL_SCALE_KM = 6371;
 export const DISK_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
@@ -88,7 +89,7 @@ export function flatDiskDistanceMeters(a, b) {
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** One straight projected chord between endpoints; the distance tool uses geodesicLinePath instead. */
+/** One straight projected chord between endpoints; used by the direct-line distance tool. */
 export function flatDiskLinePath(a, b, projectPoint) {
   if (!a || !b || typeof projectPoint !== 'function' ||
       ![a.lat, a.lon, b.lat, b.lon].every(Number.isFinite) ||

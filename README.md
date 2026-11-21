@@ -2,7 +2,7 @@
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive Gleason-style north-polar circular map with WGS84 direct-distance and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive Gleason-style north-polar circular map with straight projected-line distance and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 
 ## Map layout and calibration
@@ -20,19 +20,19 @@ The outer disk radius is **pi * R = 20,015.09 km**. These values define the X/Y 
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the map's two-dimensional display layout. Its radial calibration determines where geographic coordinates appear on the disk; it is not a universal ground-distance conversion. The measurement engine uses the shortest WGS84 ellipsoidal geodesic for A–B distance at every latitude, including routes in the Antarctic / ice-wall band. The 60°S Restricted Line is a visual reference only: it neither switches the measurement metric nor blocks a route.
+The Gleason disk is also the measurement plane for the A–B tool. Once the endpoints are projected, the app measures the Euclidean length of the one straight segment between them. This is a flat-disk map-plane distance based on the selected radial calibration, not a WGS84 ground geodesic. The 60°S Restricted Line is a visual reference only and does not change the direct-line calculation.
 
 ## Direct geographic distance and planar area measurements
 
-The distance and area tools deliberately use different metrics because the disk is a map projection, not a globally distance-preserving plane.
+The A–B distance and area tools both use the calibrated flat-disk plane: A–B is one straight Euclidean segment, while polygon area uses the shoelace formula and polygon perimeter sums its straight edges.
 
 **Direct A–B distance**
 
-The engine always calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method), regardless of endpoint latitude or whether the shortest route passes south of 60°S. This avoids a discontinuous jump in the readout when a point is moved across the 60°S line. The displayed dashed connector is the shortest WGS84 geodesic sampled on the ellipsoid and projected onto the disk, so its shape corresponds to the numeric surface distance.
+The engine projects A and B into the calibrated disk plane and calculates the Euclidean length of that straight segment. The dashed connector is exactly that segment, and the numeric label is the length of the same line. It does not bend along a WGS84 geodesic or attempt to report a real-world surface/flight route. Moving an endpoint across 60°S does not switch the metric.
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
-The WGS84 calculation uses ellipsoid parameters at all latitudes. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; other routes use the ellipsoidal result.
+The distance tool always uses the straight projected A–B segment, including when either endpoint lies in the Antarctic band. There is no latitude-triggered metric change.
 
 **Polygon area and perimeter**
 
@@ -52,13 +52,13 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same WGS84 surface-distance calculation as A–B at every latitude. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same straight projected map-plane metric as A–B. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
 
-## Flight-route calibration and validation
+## Separate WGS84 geodesic utility validation
 
-The engine was checked against published shortest airport-to-airport great-circle references and separate recorded aircraft-track ranges. The examples span a southern Pacific route whose shortest path reaches about 61.8°S through to a New York–Singapore shortest path that approaches about 87.5°N. The engine column reports WGS84 inverse-geodesic distances from airport coordinates; published shortest-distance figures are rounded cross-checks, while recorded flight tracks are expected to be longer.
+The repository retains a standalone WGS84 geodesic utility in `src/core/geodesic.js`, with separate tests against published shortest airport-to-airport great-circle references and recorded aircraft-track ranges. This utility is not used by the map's A–B measurement tool. The examples span a southern Pacific route whose shortest path reaches about 61.8°S through to a New York–Singapore shortest path that approaches about 87.5°N. The utility column reports WGS84 inverse-geodesic distances from airport coordinates; published shortest-distance figures are rounded cross-checks, while recorded flight tracks are expected to be longer.
 
-| Route | Published shortest-distance reference | Recorded aircraft-track range | Engine (WGS84) |
+| Route | Published shortest-distance reference | Recorded aircraft-track range | Utility (WGS84) |
 |---|---:|---:|---:|
 | Santiago–Sydney (SCL–SYD) | 11,341 km | 11,489–11,953 km | 11,363 km |
 | London–Singapore (LHR–SIN) | 10,882 km | 11,261–11,853 km | 10,886 km |
@@ -100,15 +100,15 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: shortest WGS84 ellipsoidal geodesic at every latitude
-- The 60°S Restricted Line is a visual reference only and never switches A–B distance to a planar chord
+- A–B distance: one straight Euclidean segment in calibrated flat-disk coordinates
+- The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
-- A locally WGS84-calibrated scale bar at the current view centre
+- A locally calibrated flat-disk scale bar at the current view centre
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar calibrated to local WGS84 ground distance
+- View-centred scale bar calibrated to the local flat-disk coordinate scale
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
@@ -139,7 +139,7 @@ src/
   core/
     flat-disk.js            map projection, planar area and perimeter
     geodesic.js              WGS84 inverse/direct distances and projected geodesic paths
-    measurement-engine.js    WGS84 direct-distance selection and 60°S reference-line geometry
+    measurement-engine.js    straight projected A–B distance and 60°S reference-line geometry
     format.js                coordinates, units, and search formatting
   data/
     datasets.js             local asset loading, decompression, and validation
@@ -159,7 +159,7 @@ scripts/
 tests/
   flat-disk.test.js        projection, planar area and perimeter regressions
   geodesic.test.js         flight-route benchmarks, WGS84 distance and path regressions
-  measurement-engine.test.js WGS84 distance regressions across the 60°S reference line
+  measurement-engine.test.js direct-line distance regressions across the 60°S reference line
   registration.test.js      registration transform regressions
   datasets.test.js          bundled-data integrity and quality tests
 .github/workflows/test.yml automated Node tests
@@ -198,14 +198,14 @@ Capital coordinates are stored locally in `data/capitals.json` and were generate
 To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
-- A–B distance: the in-repository WGS84 inverse-geodesic engine in `src/core/geodesic.js`; display layout and planar area: `src/core/flat-disk.js`.
+- A–B distance: the Euclidean length of the straight projected segment in `src/core/measurement-engine.js` and `src/core/flat-disk.js`; the separate WGS84 utility in `src/core/geodesic.js` is not used by the map's distance tool.
 
 ## Important limitations
 
 - The radial disk calibration controls map placement; it is not a globally uniform conversion from projected X/Y coordinates to ground distance.
-- A–B distance is a shortest WGS84 surface geodesic, not an actual flight, road, rail, or other travelled route. Real aircraft tracks can be materially longer and may avoid polar regions.
+- A–B distance is a planar map measurement, not an ellipsoidal Earth-surface distance or an actual flight, road, rail, or other travelled route. Projection scale varies across the disk, so interpret it as the length of the straight line in this map's calibrated coordinate plane.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
-- The WGS84 inverse uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge.
+- The separate WGS84 utility uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge; this fallback does not affect the active direct-line map measurement.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
