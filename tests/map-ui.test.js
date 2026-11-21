@@ -52,7 +52,8 @@ test('capital labels grow in close-up views and collision boxes track their size
 
 test('ocean surface is blue, ocean and sea names are a toggleable shareable layer, and ice wall is white',()=>{
  assert.match(app,/ctx\.fillStyle='#dcecf1'/);
- assert.match(app,/if\(layers\.oceanLabels\)drawOceanLabels/);
+ assert.match(app,/if\(layers\.oceanLabels\)\{/);
+ assert.match(app,/selectNonOverlappingLabels,\s*isLand:/);
  assert.match(app,/layers\.oceanLabels\].map\(v=>v\?'1':'0'\)/);
  assert.match(html,/id="layerOceanLabels" checked/);
  assert.match(html,/Ocean &amp; sea names|Ocean & sea names/);
