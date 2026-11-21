@@ -23,6 +23,14 @@ test('A–B distance equals the Euclidean length of its straight projected chord
   assert.ok(result.distanceMeters > 0);
 });
 
+test('Canberra–Santiago direct-line measurement uses the 11,300 km flat-map anchor', () => {
+  const canberra = point(-35.27, 149.13);
+  const santiago = point(-33.45, -70.67);
+  const result = measureDirectDistance(canberra, santiago);
+  assert.equal(result.metric, 'flat-disk-direct');
+  assert.ok(Math.abs(result.distanceMeters / 1000 - 11300) < 1e-7);
+});
+
 test('the same direct-line metric applies to endpoints in the Antarctic band', () => {
   const a = point(-70, 10), b = point(-70, 20);
   const result = measureDirectDistance(a, b);
