@@ -28,7 +28,7 @@ The distance and area tools deliberately use different metrics because the disk 
 
 **Direct A–B distance**
 
-For two geographic points, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). The numeric readout reports this shortest direct surface distance. The visual A–B connector is deliberately different: it is always a straight dashed segment between the two projected map positions. That straight map chord is a direct A-to-B visual indicator, not the projected WGS84 geodesic, aircraft track, road journey, or other travelled route.
+For two geographic points, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). The numeric readout reports this shortest direct surface distance. The visual A–B connector is deliberately different: it is always a straight dashed segment between the two projected map positions. That straight map chord is a direct A-to-B visual indicator, not the projected WGS84 geodesic, aircraft track, road journey, or other travelled route. A km label is placed on the dashed line and shows the WGS84 readout. Near opposite sides of the Antarctic rim, the projected chord can span most of the disk even when the ellipsoidal surface distance is short; this is projection distortion, and the chord is not a scale drawing of that distance.
 
 The calculation uses WGS84 ellipsoid parameters. If the iterative inverse does not converge for a nearly antipodal pair, the engine falls back to an authalic-sphere approximation; ordinary routes use the ellipsoidal result.
 
@@ -38,7 +38,7 @@ User-drawn polygon area uses the ordinary shoelace formula in projected disk coo
 
 A = 1/2 * abs(sum(x_i * y_(i+1) - x_(i+1) * y_i))
 
-Perimeter is the sum of Euclidean lengths of the same straight projected edges. The engine rejects self-intersecting user polygons instead of returning a misleading area.
+Perimeter is the sum of Euclidean lengths of the same straight projected edges. Each boundary edge is labelled on the map with its projected-plane length in kilometres; the finished polygon also receives an area label in square kilometres. The engine rejects self-intersecting user polygons instead of returning a misleading area.
 
 Selected-country areas are calculated from the same densified projected boundary rings used to draw their outlines, subtracting interior holes and summing separate Polygon/MultiPolygon components. Antarctica's full 360° outer-rim edge is retained in its area calculation. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
 
@@ -95,8 +95,8 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
 - WGS84 shortest-surface A–B distance in metres and kilometres
-- A–B is always shown with a straight dashed line between the projected endpoints
-- Planar polygon area by shoelace formula and perimeter by straight-edge lengths
+- A–B is always shown with a straight dashed line and a WGS84 km label between the projected endpoints
+- Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
 - A locally WGS84-calibrated scale bar at the current view centre
 - Search and select countries, capitals, and U.S. county-equivalents
@@ -106,7 +106,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - County labels are placed only when their full label box fits inside their own county polygon; county labels use warm serif styling, while capital labels use blue sans-serif text and point markers
 - County search, selection, and shareable layer visibility
 - View-centred scale bar calibrated to local WGS84 ground distance
-- Direct A–B WGS84 surface-distance readout with a straight dashed map connector
+- Direct A–B WGS84 surface-distance readout and km label with a straight dashed map connector
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
 - Toggle country outlines, physical coastlines and islands, grid, capital markers and names, country names, ocean/sea labels, and Antarctica
