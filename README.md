@@ -41,7 +41,7 @@ The distortion panel reports radial scale, east–west map stretch, the east–w
 
 ## Antarctica / Ice Wall
 
-The Antarctica feature is drawn as a land band between its mapped coastline and the circular disk rim. Natural Earth's Antarctic polygon closes its southern edge with a longitude sweep from 180° to −180° at 90°S. In this disk convention, that coordinate edge represents the complete circumference of the projected rim. The Antarctic path builder preserves the full 360° sweep instead of normalizing it to a zero-length antimeridian crossing. The actual Antarctic land polygon is filled, its ice texture is clipped to that polygon, and the outer rim receives a continuous outline.
+The Antarctica feature is drawn as a white ice band between its mapped coastline and the circular disk rim. Natural Earth's Antarctic polygon closes its southern edge with a longitude sweep from 180° to −180° at 90°S. In this disk convention, that coordinate edge represents the complete circumference of the projected rim. The Antarctic path builder preserves the full 360° sweep instead of normalizing it to a zero-length antimeridian crossing. The Antarctic land polygon is filled white, its texture is clipped to that polygon, and the outer rim receives a continuous blue-white double edge. Concentric ice strata, gently irregular radial ridges, short crevasse marks, and repeated tangential rim lettering distinguish the ice wall from ordinary country boundaries.
 
 The Antarctic layer can be toggled independently. Its shape follows the selected Natural Earth boundary scale and its cartographic generalization; it is not a survey of the ice-shelf edge or a measurement of sea-ice extent.
 
@@ -69,7 +69,9 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - WGS84 ellipsoidal custom polygon area and perimeter
 - WGS84 ellipsoidal area for selected country boundaries
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
-- Continuous Antarctic land band / ice-wall rim with pole-aware GeoJSON closure
+- White Antarctic ice-wall band with pole-aware GeoJSON closure, concentric strata, radial ice ridges, crevasse marks, and repeated circumference labels
+- Dedicated Natural Earth 1:50m physical coastline and island-shoreline layer, independent of political borders
+- Curved ocean and sea labels with scale-dependent detail, water-aware anchors, and collision filtering
 - Search and select countries, capitals, and U.S. county-equivalents
 - U.S. county boundary geometry is loaded from the U.S. Census Bureau's 2026 TIGERweb Counties layer (January 1, 2026 vintage); labels use each polygon's Census internal point and are hidden when their label box would cross the county boundary
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
@@ -112,6 +114,8 @@ src/
     geojson.js              country identifiers, names, colours, centroids
   map/
     labels.js               zoom thresholds, collision-aware labels, and polygon containment checks
+    ocean-labels.js         curved ocean/sea labels, scale bands, water-aware anchors and collision checks
+    coastlines.js           dateline-safe projected Natural Earth coastline paths
     feature-paths.js        projected GeoJSON paths and Antarctic rim handling
     ice-wall.js             Antarctic land band and continuous rim
     registration.js         scan control-point triangulation and affine image warp
@@ -153,7 +157,7 @@ Expected URL: https://armave.github.io/gleason-world-map/
 
 ## Geographic data sources
 
-Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and stored locally under `data/countries/`. The browser loads only the selected quality. The datasets are vendored from the pinned Natural Earth source commit listed in `data/metadata.json`; Natural Earth identifies its vector data as public domain.
+Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and stored locally under `data/countries/`. The browser loads only the selected quality. Physical coastlines and island shorelines are bundled separately as Natural Earth 1:50m line geometry in `data/coastlines-50m.json`, allowing the app to emphasize coastlines without styling every political border as a shoreline. The datasets are vendored from the pinned Natural Earth source commit listed in `data/metadata.json`; Natural Earth identifies its vector data as public domain.
 
 Capital coordinates are stored locally in `data/capitals.json` and were generated from the pinned `country-capital.csv` source in `iliyaj/country-data`. The source identifies REST Countries v3.1 as the underlying data source; its MIT license is included in `data/capital-data-LICENSE.txt`.
 
