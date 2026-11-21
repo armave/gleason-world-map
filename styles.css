@@ -70,3 +70,28 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 @media(prefers-reduced-motion:reduce){
   .mobile-tools-toggle{transition:none}
 }
+
+
+/* The map loading veil is anchored to the geographic viewport, not the tool panels. */
+.map-viewport{position:relative;min-width:0;isolation:isolate;background:#f0e9d9}
+.map-viewport canvas{position:relative;z-index:0}
+.map-loading{position:absolute;z-index:4;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(244,238,223,.91);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);text-align:center}
+.map-loading[hidden]{display:none!important}
+.map-loading-card{width:min(100%,390px);padding:24px 26px;border:1px solid #d4c8b3;border-radius:14px;background:rgba(255,253,246,.97);box-shadow:0 12px 34px #3d31201c;color:#31434a}
+.map-loading-card strong{display:block;margin-top:12px;font:600 19px/1.2 Georgia,serif;color:#344950}
+.map-loading-card p{margin:8px 0 0;font-size:13px;line-height:1.45;color:#68716e}
+.map-loading-card button{margin-top:14px;min-height:42px}
+.map-loading-spinner{width:34px;height:34px;margin:0 auto;border:3px solid #d9d0bf;border-top-color:#426d7b;border-radius:50%;animation:map-loading-spin .8s linear infinite}
+@keyframes map-loading-spin{to{transform:rotate(360deg)}}
+.map-loading.is-error{background:rgba(244,238,223,.94)}
+.map-loading.is-error .map-loading-card{border-color:#dfb7aa}
+.map-loading.is-error .map-loading-card strong{color:#8e4032}
+.map-card:fullscreen .map-viewport,.map-card:-webkit-full-screen .map-viewport{flex:1;min-height:0}
+.map-card:fullscreen .map-viewport canvas,.map-card:-webkit-full-screen .map-viewport canvas{height:100%;min-height:0}
+@media(max-width:760px){
+ .map-loading{padding:12px}
+ .map-loading-card{padding:20px 17px}
+ .map-loading-card strong{font-size:17px}
+ .map-loading-card p{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.map-loading-spinner{animation:none}}
