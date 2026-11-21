@@ -148,7 +148,7 @@
     </section>
     <section class="panel">
       <h2>Flat-disk radial calibration</h2>
-      <div class="formula">R = fitted ADS-B flight-mileage scale<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR = 8,727.952513 km</div>
+      <div class="formula">R = fitted ADS-B flight-mileage scale<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR (R fitted from observed ADS-B mileage)</div>
       <p class="note" style="margin:8px 0 0">The radial scale R is generated from median observed airport-pair flight mileage, estimated by integrating ADS-B ground speed over recorded time. It is not anchored to a published shortest-distance table. The flight-empirical estimate is typical observed flown mileage, not a shortest point-to-point path.</p>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
@@ -207,7 +207,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat radial disk coordinate model r = Rθ; R is generated from the ADS-B flight-mileage training sample. A–B displays a raw straight projected chord and a separate empirical flight-mileage estimate based on measured ground speed and time. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same empirical endpoint correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat radial disk coordinate model r = Rθ; R is generated from the ADS-B flight-mileage training sample. A–B displays a raw straight projected chord and a separate empirical flight-mileage estimate based on measured ground speed and time. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same local ADS-B route-neighbour correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
