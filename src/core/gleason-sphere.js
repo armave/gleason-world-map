@@ -81,6 +81,62 @@ export function greatCircleDistanceMeters(a, b) {
   return EARTH_RADIUS_KM * centralAngle * 1000;
 }
 
+/**
+ * Samples the shortest spherical great-circle arc into projected disk points.
+ * Exact antipodes have infinitely many shortest routes; a stable deterministic
+ * meridian plane is selected for the displayed connector in that one case.
+ */
+export function greatCircleLinePath(a, b, projectPoint, maxStepDegrees = 1) {
+  if (!a || !b || typeof projectPoint !== 'function' ||
+      ![a.lat, a.lon, b.lat, b.lon].every(Number.isFinite)) return [];
+  const toVector = point => {
+    const phi = rad(clamp(point.lat, -90, 90)), lambda = rad(point.lon);
+    return [Math.cos(phi) * Math.cos(lambda), Math.cos(phi) * Math.sin(lambda), Math.sin(phi)];
+  };
+  const fromVector = vector => ({
+    lat: Math.asin(clamp(vector[2], -1, 1)) * RAD,
+    lon: Math.atan2(vector[1], vector[0]) * RAD
+  });
+  const start = toVector(a), end = toVector(b);
+  const dot = clamp(start[0]*end[0] + start[1]*end[1] + start[2]*end[2], -1, 1);
+  const omega = Math.acos(dot);
+  const count = Math.max(1, Math.min(720, Math.ceil(omega * RAD / Math.max(0.1, maxStepDegrees))));
+  let antipodalTangent = null;
+  if (Math.PI - omega < 1e-8) {
+    const reference = Math.abs(start[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    const cross = [
+      start[1]*reference[2] - start[2]*reference[1],
+      start[2]*reference[0] - start[0]*reference[2],
+      start[0]*reference[1] - start[1]*reference[0]
+    ];
+    const norm = Math.hypot(...cross);
+    antipodalTangent = cross.map(value => value / norm);
+  }
+  const path = [];
+  for (let i = 0; i <= count; i++) {
+    const t = i / count;
+    let vector;
+    if (omega < 1e-10) {
+      vector = start;
+    } else if (antipodalTangent) {
+      vector = start.map((value, index) =>
+        value * Math.cos(Math.PI*t) + antipodalTangent[index] * Math.sin(Math.PI*t)
+      );
+    } else {
+      const denominator = Math.sin(omega);
+      const left = Math.sin((1-t)*omega) / denominator;
+      const right = Math.sin(t*omega) / denominator;
+      vector = start.map((value, index) => left*value + right*end[index]);
+    }
+    const geographic = fromVector(vector);
+    const projected = projectPoint(geographic.lon, geographic.lat);
+    if (!Array.isArray(projected) || projected.length < 2 ||
+        !Number.isFinite(projected[0]) || !Number.isFinite(projected[1])) return [];
+    path.push(projected.slice(0, 2));
+  }
+  return path;
+}
+
 export function northSouthDistanceKm(latitude1, latitude2) {
   if (!Number.isFinite(latitude1) || !Number.isFinite(latitude2)) return null;
   return EARTH_RADIUS_KM * Math.abs(rad(latitude2) - rad(latitude1));
@@ -104,6 +160,7 @@ export function sphericalSectorAreaKm2(radius1Km, radius2Km, deltaLongitudeRadia
 export function areaDecodeFactorFromRadiusKm(radiusKm) {
   if (!Number.isFinite(radiusKm)) return null;
   const theta = clamp(radiusKm / EARTH_RADIUS_KM, 0, Math.PI);
+  if (Math.PI - theta < 1e-12) return 0;
   if (theta < 1e-6) {
     const theta2 = theta * theta;
     return 1 - theta2 / 6 + theta2 * theta2 / 120;
