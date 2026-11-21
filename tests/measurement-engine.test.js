@@ -5,7 +5,8 @@ import {
   segmentCrossesRestrictedParallel,
   polylineCrossesRestrictedParallel,
   measureDirectDistance,
-  directLineCalibrationFactor
+  directLineCalibrationFactor,
+  directLineCalibrationDiagnostics
 } from '../src/core/measurement-engine.js';
 import { flatDiskDistanceMeters } from '../src/core/flat-disk.js';
 
@@ -135,4 +136,54 @@ test('invalid coordinates fail safely', () => {
   assert.equal(result.metric, 'unavailable');
   assert.equal(directLineCalibrationFactor(point(91, 0), point(0, 0)), null);
   assert.equal(result.restricted, false);
+});
+
+test('raw chord and empirical estimate are both exposed from the same endpoints', () => {
+  const a = point(40.17, 44.5), b = point(-35.27, 149.13);
+  const result = measureDirectDistance(a, b);
+  assert.equal(result.rawDistanceMeters, result.chordDistanceMeters);
+  assert.equal(result.calibratedDistanceMeters, result.distanceMeters);
+  assert.equal(result.distanceMeters,
+    result.rawDistanceMeters * result.calibrationFactor);
+  assert.equal(result.correctionPercent,
+    (result.calibrationFactor - 1) * 100);
+  assert.equal(result.metric, 'flat-disk-empirical-direct');
+});
+
+test('calibration diagnostics identify feature inputs outside the fitted ranges', () => {
+  const diagnostics = directLineCalibrationDiagnostics(
+    point(-80, 10), point(-80, 100)
+  );
+  assert.ok(diagnostics);
+  assert.equal(diagnostics.outsideTrainingRange, true);
+  assert.ok(diagnostics.warnings.includes('outside-training-range'));
+  assert.equal(diagnostics.status, 'caution');
+});
+
+test('near-south-rim endpoints warn about longitude sensitivity without changing the chord', () => {
+  const first = point(-89.99, 0), second = point(-89.99, 180);
+  const result = measureDirectDistance(first, second);
+  assert.ok(result.rawDistanceMeters > 17_000_000);
+  assert.equal(result.rawDistanceMeters, flatDiskDistanceMeters(first, second));
+  assert.equal(result.calibration.nearSouthRim, true);
+  assert.ok(result.warnings.includes('near-south-rim'));
+  assert.ok(Number.isFinite(result.calibratedDistanceMeters));
+  assert.ok(result.calibrationFactor >= 0.9 && result.calibrationFactor <= 2.5);
+});
+
+test('longitude-separated South Pole coordinates remain distinct in the disk and are flagged', () => {
+  const result = measureDirectDistance(point(-90, 0), point(-90, 180));
+  assert.ok(result.rawDistanceMeters > 17_000_000);
+  assert.equal(result.calibration.nearSouthRim, true);
+  assert.ok(result.warnings.includes('near-south-rim'));
+});
+
+test('ordinary benchmark endpoints remain within the fitted mean-colatitude and span ranges', () => {
+  const diagnostics = directLineCalibrationDiagnostics(
+    point(40.17, 44.5), point(55.75, 37.6)
+  );
+  assert.ok(diagnostics);
+  assert.equal(diagnostics.outsideTrainingRange, false);
+  assert.equal(diagnostics.nearSouthRim, false);
+  assert.equal(diagnostics.status, 'within-fit-range');
 });
