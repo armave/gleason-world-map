@@ -117,7 +117,11 @@ function featureStats(routes) {
       column.length;
     return Math.sqrt(variance) || 1;
   });
-  return { means, scales };
+  const ranges = columns.map(column => [
+    Math.min(...column),
+    Math.max(...column)
+  ]);
+  return { means, scales, ranges };
 }
 
 function fitRegression(routes, radialScaleKm) {
@@ -151,7 +155,7 @@ function fitRegression(routes, radialScaleKm) {
   }
   const coefficients = solveLinearSystem(normal, rhs);
 
-  return { featureMeans: means, featureScales: scales, coefficients };
+  return { featureMeans: means, featureScales: scales, featureRanges: featureStats(routes).ranges, coefficients };
 }
 
 export function predictFlightCalibratedKm(first, second, model) {
@@ -217,6 +221,7 @@ export function fitFlightCalibration(dataset) {
     featureNames: ['meanColatitude', 'colatitudeSpan', 'wrappedLongitudeSpan'],
     featureMeans: fitted.featureMeans,
     featureScales: fitted.featureScales,
+    featureRanges: fitted.featureRanges,
     coefficients: fitted.coefficients,
     factorBounds: FACTOR_BOUNDS,
     ridgeLambda: RIDGE_LAMBDA,
