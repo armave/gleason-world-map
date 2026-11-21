@@ -6,7 +6,8 @@ import {
   latitudeFromRadialDistanceKm, project, unproject,
   flatDiskDistanceMeters, flatDiskLinePath,
   northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2,
-  flatDiskPolygonMetrics, flatDiskFeatureAreaM2
+  flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
+  DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
 
 const close = (actual, expected, tolerance, message='') =>
@@ -31,7 +32,7 @@ test('radial calibration is r = R times colatitude', () => {
   }
 });
 
-test('flat-disk projection round-trips and keeps Gleason eastward orientation', () => {
+test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {
   const radius = 400;
   assert.ok(Math.hypot(...project(0, 90, radius)) < 1e-10);
   assert.ok(project(90, 0, radius)[1] < 0);
@@ -39,6 +40,9 @@ test('flat-disk projection round-trips and keeps Gleason eastward orientation', 
   const decoded = unproject(xy[0], xy[1], radius);
   close(decoded.lat, 41.7151, 1e-10);
   close(decoded.lon, 44.8271, 1e-10);
+  assert.deepEqual(project(180, 0, radius), project(-180, 0, radius));
+  assert.deepEqual(project(540, 0, radius), project(-180, 0, radius));
+  assert.ok(Number.isNaN(project(0, 91, radius)[0]));
 });
 
 test('distance is the Euclidean straight segment between projected coordinates', () => {
@@ -47,6 +51,7 @@ test('distance is the Euclidean straight segment between projected coordinates',
   close(flatDiskDistanceMeters(a, b), Math.SQRT2 * radius * 1000, 1e-6);
   const direct = flatDiskDistanceMeters(point(90, -170), point(90, 150));
   close(direct, 0, 1e-9);
+  close(flatDiskDistanceMeters(point(0, 180), point(0, -180)), 0, 1e-8);
 });
 
 test('direct connector contains only the two projected endpoints', () => {
@@ -96,6 +101,24 @@ test('polygon closure is automatic and self-intersections are rejected', () => {
   assert.equal(measure(bowTie), null);
 });
 
+test('shoelace area remains accurate for a small polygon far from the coordinate origin', () => {
+  const offsetProject = (lon, lat) => [10_000_000 + lon, 10_000_000 + lat];
+  const square = [point(0, 0), point(0, 1), point(1, 1), point(1, 0)];
+  const result = flatDiskPolygonMetrics(square, offsetProject, DISK_RADIUS_METERS);
+  close(result.areaM2, 1, 1e-12);
+  close(result.perimeterM, 4, 1e-12);
+});
+
+test('non-adjacent polygon edges that touch are rejected as self-intersections', () => {
+  const touching = [
+    point(0, 0), point(0, 4), point(4, 4), point(0, 2), point(4, 0)
+  ];
+  assert.equal(
+    flatDiskPolygonMetrics(touching, (lon, lat) => [lon, lat], DISK_RADIUS_KM),
+    null
+  );
+});
+
 test('GeoJSON Polygon subtracts holes and MultiPolygon sums components', () => {
   const identity = (lon, lat) => [lon, lat];
   const feature = {geometry:{type:'Polygon',coordinates:[
@@ -109,6 +132,42 @@ test('GeoJSON Polygon subtracts holes and MultiPolygon sums components', () => {
     [[[5,0],[7,0],[7,2],[5,2],[5,0]]]
   ]}};
   close(flatDiskFeatureAreaM2(multi, identity, DISK_RADIUS_KM), 8e6, 1e-6);
+});
+
+test('country area uses the same densified projected ring as the rendered boundary', () => {
+  const projector = (lon, lat) => project(lon, lat, 600);
+  const ring = [[0, 0], [24, 24], [48, 0], [0, 0]];
+  const feature = {geometry:{type:'Polygon',coordinates:[ring]}};
+  const projectedRing = projectGeoJSONRing(ring, projector);
+  assert.ok(projectedRing.length > ring.length);
+
+  let twiceArea = 0;
+  for (let i = 0; i < projectedRing.length; i++) {
+    const a = projectedRing[i], b = projectedRing[(i + 1) % projectedRing.length];
+    twiceArea += a[0] * b[1] - b[0] * a[1];
+  }
+  const scale = DISK_RADIUS_METERS / 600;
+  close(
+    flatDiskFeatureAreaM2(feature, projector, 600),
+    Math.abs(twiceArea) / 2 * scale ** 2,
+    1e-4
+  );
+});
+
+test('Antarctica area preserves the full southern rim sweep shown by the map', () => {
+  const projector = (lon, lat) => project(lon, lat, 400);
+  const ring = [
+    [180, -60], [90, -60], [0, -60], [-90, -60], [-180, -60],
+    [-180, -90], [180, -90], [180, -60]
+  ];
+  const feature = {geometry:{type:'Polygon',coordinates:[ring]}};
+  const collapsed = projectGeoJSONRing(ring, projector);
+  const rim = projectGeoJSONRing(ring, projector, {preserveAntarcticRim:true});
+  assert.ok(rim.length > collapsed.length + 100);
+  const withoutRim = flatDiskFeatureAreaM2(feature, projector, 400);
+  const withRim = flatDiskFeatureAreaM2(feature, projector, 400, {preserveAntarcticRim:true});
+  assert.ok(withRim > withoutRim);
+  assert.ok(withRim > 0);
 });
 
 test('canvas normalization keeps planar measurements stable across resize', () => {
@@ -128,6 +187,10 @@ test('canvas normalization keeps planar measurements stable across resize', () =
 
 test('invalid coordinates and invalid calibration fail safely', () => {
   assert.equal(flatDiskDistanceMeters(point(0, 0), point(NaN, 1)), null);
+  assert.equal(flatDiskDistanceMeters(point(91, 0), point(0, 0)), null);
+  assert.equal(flatDiskPolygonMetrics(
+    [point(0, 0), point(91, 1), point(1, 1)], (lon, lat) => [lon, lat], DISK_RADIUS_KM
+  ), null);
   assert.equal(flatDiskPolygonMetrics(
     [point(0, 0), point(1, 1)], (lon, lat) => [lon, lat], 0
   ), null);
