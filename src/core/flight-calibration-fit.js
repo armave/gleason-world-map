@@ -221,6 +221,7 @@ export function predictFlightScaleRatio(features, model, { excludeRouteId = null
     .map(example => ({
       routeId: example.routeId,
       mileagePerUnitChord: example.mileagePerUnitChord,
+      qualityWeight: example.qualityWeight,
       distance: featureDistance(features, example.features, model)
     }))
     .sort((a, b) => a.distance - b.distance)
