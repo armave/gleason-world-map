@@ -1,3 +1,4 @@
+export function screenUprightRotation(localAngleRadians=0,mapAngleRadians=0){return localAngleRadians-mapAngleRadians;}
 export function normalizeRotationDegrees(value){const normalized=((value%360)+360)%360;return normalized>180?normalized-360:normalized;}
 export function shortestRotationDelta(from,to){return normalizeRotationDegrees(normalizeRotationDegrees(to)-normalizeRotationDegrees(from));}
 export function rotatePoint(x,y,angleRadians=0){const c=Math.cos(angleRadians),s=Math.sin(angleRadians);return {x:x*c-y*s,y:x*s+y*c};}
