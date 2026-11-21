@@ -34,9 +34,9 @@ The 60°S parallel is drawn as a red dashed Restricted Line with two opposing ca
 
 The distance tool always uses the straight projected A–B segment, including when either endpoint lies in the Antarctic band. There is no latitude-triggered metric change.
 
-**Real-distance cross-checks**
+**Published straight-line benchmark comparisons**
 
-The empirical correction is fitted on the 15 city pairs below. Five separate airport pairs were excluded from fitting and used as holdout checks. The visible connector remains straight; only the numeric length receives the correction. Results are empirical benchmark comparisons, not proof of universal accuracy.
+The empirical correction is fitted on the 15 city pairs below. Five airport pairs were held out from fitting and used as route checks. All 20 reference values come from Travelmath's straight-line “flying distance” estimates; Travelmath describes these as “as the crow flies” great-circle distances, using Vincenty on the WGS84 ellipsoid. They are not recorded airline tracks. The five airport pairs are held out by route, but use the same reference provider and methodology as the city-pair fit. The visible connector remains straight; only the numeric length receives the correction. For the detailed data, coordinates, formula, coefficient values, and limitations, see [Flat-map distance calibration: data and methodology](docs/flat-map-distance-calibration.md).
 
 **Fitted city-pair benchmarks (15 routes)**
 
@@ -90,7 +90,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same endpoint-based empirical correction as A–B. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same endpoint-based empirical correction as A–B. Because map scale varies by position and direction in the base projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the reference data and limitations.
 
 ## Separate WGS84 geodesic utility validation
 
