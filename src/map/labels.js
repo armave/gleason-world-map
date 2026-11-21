@@ -1,11 +1,6 @@
 // Screen-space label thresholds and decluttering for the canvas map.
 export const CAPITAL_LABEL_MIN_ZOOM=1.25;
 export const COUNTRY_LABEL_MIN_ZOOM=1.0;
-export const COUNTY_BOUNDARY_MIN_ZOOM=2.25;
-export const COUNTY_LABEL_MIN_ZOOM=2.7;
-export function countyLabelText(name){
- return String(name||'').replace(/\s+(?:City and Borough|County|Parish|Borough|Census Area|Municipality|Municipio|City)$/i,'');
-}
 function overlaps(a,b,gap){return a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;}
 function cellKeys(box){
  const size=36,x0=Math.floor(box.left/size),x1=Math.floor(box.right/size),y0=Math.floor(box.top/size),y1=Math.floor(box.bottom/size),keys=[];
