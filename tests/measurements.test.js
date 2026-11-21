@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
  createProjectedMeasurementSegments,
+ createProjectedSegmentLabels,
  measurementStrokeStyle
 } from '../src/map/measurements.js';
 
@@ -48,4 +49,26 @@ test('distance connector is dashed; area retains its distinct dashed outline',()
  assert.notEqual(distance.color,area.color);
  assert.notDeepEqual(distance.dash,area.dash);
  assert.throws(()=>measurementStrokeStyle('unknown'),/Unknown measurement connector/);
+});
+
+
+test('area edge labels use each straight projected edge midpoint and its supplied km metric',()=>{
+ const points=[point(0,0),point(0,2),point(2,2)];
+ const labels=createProjectedSegmentLabels(points,project,(a,b)=>Math.hypot(b.lon-a.lon,b.lat-a.lat)*1000);
+ assert.equal(labels.length,2);
+ assert.deepEqual([labels[0].x,labels[0].y],[2,0]);
+ assert.equal(labels[0].meters,2000);
+ assert.deepEqual([labels[1].x,labels[1].y],[4,3]);
+ assert.equal(labels[1].meters,2000);
+ const closed=createProjectedSegmentLabels(points,project,(a,b)=>Math.hypot(b.lon-a.lon,b.lat-a.lat)*1000,true);
+ assert.equal(closed.length,3);
+ assert.deepEqual([closed[2].x,closed[2].y],[2,3]);
+ assert.ok(Math.abs(closed[2].meters-Math.sqrt(8)*1000)<1e-9);
+});
+
+test('edge labels skip invalid projected points and invalid distance results',()=>{
+ const points=[point(0,0),point(1,1),point(2,2)];
+ assert.deepEqual(createProjectedSegmentLabels(points,()=>[NaN,0],()=>100),[]);
+ assert.deepEqual(createProjectedSegmentLabels(points,project,()=>null),[]);
+ assert.deepEqual(createProjectedSegmentLabels(points,null,()=>100),[]);
 });

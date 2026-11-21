@@ -104,7 +104,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
-  assert.match(app, /dashed A–B connector is always a straight line/);
+  assert.match(app, /connector itself is a straight chord between the projected map points/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
@@ -125,4 +125,15 @@ test('distance connector is drawn as a straight projected segment rather than a 
  assert.match(app,/strokeMeasurementConnector\('distance'\)/);
  assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
  assert.match(html,/Direct dashed line/);
+});
+
+
+test('distance and area drawings render km labels on their measurement geometry',()=>{
+ assert.match(app,/function drawMeasurementLabelAtMap\(/);
+ assert.match(app,/formatMeasurementKilometres\(distanceMeters\),'distance'/);
+ assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
+ assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
+ assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
+ assert.match(app,/function formatMeasurementSquareKilometres\(/);
+ assert.match(app,/ctx\.setTransform\(dpr,0,0,dpr,0,0\)/);
 });

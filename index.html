@@ -93,7 +93,7 @@
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. The distance value uses the shortest WGS84 surface path; the A–B connector is always a straight dashed line between the projected points.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. The distance value uses the shortest WGS84 surface path; its straight dashed A–B line carries a km label. Area edges also show km labels, and the finished polygon shows its area in km².</p>
       <div class="measure-value" id="distanceValue">—</div>
       <div class="measure-sub" id="distanceSub">WGS84 direct surface distance</div>
       <div id="endpointRows" style="margin-top:8px">
@@ -102,7 +102,7 @@
       </div>
       <div class="endpoint-actions"><button id="clearMeasure">Clear points</button></div>
       <div class="divider"></div>
-      <div class="small" id="areaHelp">Choose Area, then click three or more points. Finish to calculate shoelace area and the perimeter of the straight edges drawn on the disk.</div>
+      <div class="small" id="areaHelp">Choose Area and click three or more points. Each straight boundary edge is labelled in km; Finish shows the planar area in km² and the perimeter.</div>
       <div class="measure-value" id="areaValue">—</div>
       <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
       <div class="small" id="areaVertexCount">0 vertices</div>
@@ -138,7 +138,7 @@
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Direct dashed line</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. The A–B numeric distance is the shortest WGS84 ellipsoidal surface distance. Its visual connector is always a straight dashed line between the two projected map positions; the dashed line is not the WGS84 geodesic path. Polygon areas and perimeters remain planar measurements in projected X/Y coordinates.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. The A–B numeric distance is the shortest WGS84 ellipsoidal surface distance; its straight dashed map connector carries that km label but is not the WGS84 geodesic path. Area boundary edges show projected-plane km lengths, and the completed polygon displays its planar area in km².</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -181,7 +181,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B numeric distances use shortest WGS84 geodesics; the visible connector is always a straight dashed segment between projected endpoints. Polygon areas use planar shoelace geometry and perimeters sum straight edges. The scale bar is locally calibrated to the WGS84 ground distance at the current view centre. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B numeric distances use shortest WGS84 geodesics; the visible connector is always a straight dashed segment with its WGS84 km label. Polygon areas use planar shoelace geometry; each boundary edge is labelled in projected-plane km and completed polygons show their area in km². The scale bar is locally calibrated to WGS84 ground distance at the current view centre. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>

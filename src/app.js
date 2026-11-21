@@ -1,4 +1,4 @@
-import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
+import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
 import {geodesicDistanceMeters} from './core/geodesic.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
@@ -10,7 +10,7 @@ import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coas
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
-import {createProjectedMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
+import {createProjectedMeasurementSegments,createProjectedSegmentLabels,measurementStrokeStyle} from './map/measurements.js';
 import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint} from './map/view-transform.js';
 
 (() => {
@@ -145,13 +145,72 @@ function strokeMeasurementConnector(tool){
  ctx.strokeStyle=style.color;ctx.lineWidth=style.lineWidth;ctx.stroke();
  ctx.restore();
 }
+function formatMeasurementKilometres(meters){
+ if(!Number.isFinite(meters)||meters<0)return '—';
+ return `${(meters/1000).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})} km`;
+}
+function formatMeasurementSquareKilometres(areaM2){
+ if(!Number.isFinite(areaM2)||areaM2<0)return '—';
+ return `${(areaM2/1e6).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} km²`;
+}
+function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
+ if(!Number.isFinite(x)||!Number.isFinite(y)||!text)return;
+ const screen=worldToScreen(x,y);
+ if(!Number.isFinite(screen.x)||!Number.isFinite(screen.y))return;
+ ctx.save();
+ // Draw labels in screen space so they stay upright and readable when the map rotates or zooms.
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.font='700 11px ui-sans-serif,system-ui,sans-serif';
+ const paddingX=8,boxHeight=20,boxWidth=ctx.measureText(text).width+paddingX*2;
+ let labelX=screen.x,labelY=screen.y;
+ // Keep the complete tag inside the circular map clip near the Antarctic rim.
+ const mapCenterX=width/2+panX,mapCenterY=height/2+panY;
+ const dx=labelX-mapCenterX,dy=labelY-mapCenterY,radialDistance=Math.hypot(dx,dy);
+ const radialLimit=Math.max(0,baseR*zoom-Math.hypot(boxWidth/2,boxHeight/2)-3);
+ if(radialDistance>radialLimit&&radialDistance>0){
+  const factor=radialLimit/radialDistance;
+  labelX=mapCenterX+dx*factor;labelY=mapCenterY+dy*factor;
+ }
+ if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
+    labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
+ const isArea=kind==='area';
+ ctx.fillStyle='rgba(255,250,238,.96)';
+ ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
+ ctx.lineWidth=1;
+ ctx.fillRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
+ ctx.strokeRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
+ ctx.fillStyle=isArea?'#315d6c':'#87452e';
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText(text,labelX,labelY+.5);
+ ctx.restore();
+}
+function projectedPolygonLabelAnchor(vertices){
+ const projected=vertices.map(point=>project(point.lon,point.lat));
+ if(projected.length<3||projected.some(point=>!point.every(Number.isFinite)))return null;
+ let twiceArea=0,centroidX=0,centroidY=0,meanX=0,meanY=0;
+ for(let i=0;i<projected.length;i++){
+  const a=projected[i],b=projected[(i+1)%projected.length];
+  const cross=a[0]*b[1]-b[0]*a[1];
+  twiceArea+=cross;
+  centroidX+=(a[0]+b[0])*cross;
+  centroidY+=(a[1]+b[1])*cross;
+  meanX+=a[0];meanY+=a[1];
+ }
+ if(Math.abs(twiceArea)>1e-9)return {x:centroidX/(3*twiceArea),y:centroidY/(3*twiceArea)};
+ return {x:meanX/projected.length,y:meanY/projected.length};
+}
 function drawMeasure(){
  if(points.length===2){
-  // The visual connector is always a straight projected A–B line; the numeric readout is WGS84.
+  // The visual connector is a straight projected A–B line; the numeric readout is WGS84.
   const path=flatDiskLinePath(points[0],points[1],project);
   if(path.length===2){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
+   const distanceMeters=geodesicDistanceMeters(points[0],points[1]);
+   drawMeasurementLabelAtMap(
+    (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,
+    formatMeasurementKilometres(distanceMeters),'distance'
+   );
   }
  }
  points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});
@@ -169,17 +228,27 @@ function drawArea(){
   strokeMeasurementConnector('area');
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x,y);});
+ // Each edge label uses the same projected-plane kilometres as the polygon perimeter.
+ const edgeLabels=createProjectedSegmentLabels(areaPoints,project,flatDiskDistanceMeters,closed);
+ edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
+  label.x,label.y,formatMeasurementKilometres(label.meters),'area'
+ ));
+ if(closed){
+  const metrics=flatDiskPolygonMetrics(areaPoints,project,baseR);
+  const anchor=projectedPolygonLabelAnchor(areaPoints);
+  if(metrics&&anchor)drawMeasurementLabelAtMap(anchor.x,anchor.y,formatMeasurementSquareKilometres(metrics.areaM2),'area');
+ }
  ctx.restore();
 }
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=`${areaPoints.length} vertices`;
  if(areaFinished&&areaPoints.length>=3){
   const result=flatDiskPolygonMetrics(areaPoints,project,baseR);
-  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`Straight-edge perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Planar area uses the shoelace formula on the disk coordinates; perimeter is the sum of the same straight edges.';}
+  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`Straight-edge perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Planar area uses shoelace on the disk. Each boundary edge is labelled with its projected map length in km; the polygon label shows km².';}
   else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='Invalid polygon · check for crossing edges';$('areaHelp').textContent='This polygon could not be measured. Check that its edges do not cross and that it has at least three valid vertices.';}
  }else{
   $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
-  $('areaHelp').textContent=areaPoints.length?'Add more vertices; straight disk segments join each successive point. Finish the polygon to calculate planar area and straight-edge perimeter.':'Choose Area, then click at least three points on the disk. Finish closes the outline and calculates Euclidean area and perimeter in the flat-disk coordinate system.';
+  $('areaHelp').textContent=areaPoints.length?'Add vertices; each straight edge receives a km label. Finish the polygon to show its planar area in km² and the perimeter.':'Choose Area, then click at least three points. Each straight edge receives a km label; Finish adds the polygon area label in km².';
  }
 }
 function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
@@ -245,7 +314,7 @@ function showCounty(county){
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){
  $('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const distanceMeters=geodesicDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='WGS84 shortest surface distance';$('measureHelp').textContent='The numeric readout is the shortest path along the WGS84 reference ellipsoid. The dashed A–B connector is always a straight line between the two projected map points; it is a visual map chord, not the geodesic path or an actual flight route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 direct surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
+ if(points.length===2){const distanceMeters=geodesicDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='WGS84 shortest surface distance';$('measureHelp').textContent='The numeric readout and dashed-line label show the shortest WGS84 surface distance. The connector itself is a straight chord between the projected map points, not the geodesic path or an actual flight route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 direct surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
 }
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});const offset=panForWorldCenterPoint(x,y,zoom,rotationRadians());panX=offset.panX;panY=offset.panY;draw();}
