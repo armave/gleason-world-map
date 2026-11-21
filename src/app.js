@@ -491,7 +491,7 @@ function updateMeasurement(){
 
   const messages=[];
   if(measurement.calibration?.outsideTrainingRange){
-   messages.push('Outside fitted feature range: mean colatitude or endpoint separation exceeds the calibration sample bounds. The model clamps these inputs to its fitted limits.');
+   messages.push('Outside fitted feature range: mean colatitude, endpoint separation, or wrapped longitude span exceeds the calibration sample. Mean colatitude and endpoint separation are clamped; longitude span still enters the model unchanged.');
   }
   if(measurement.calibration?.nearSouthRim){
    messages.push('Southern-rim sensitivity: an endpoint is at or below 85°S. Longitude has a strong effect on position near the disk edge; interpret both readings as flat-disk model outputs.');
