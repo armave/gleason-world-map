@@ -1,4 +1,4 @@
-import {rad,clamp,radialFraction,radialDistanceFromNorthKm,wrapLongitude,project as projectSphere,unproject as unprojectSphere, greatCircleDistanceMeters, greatCircleLinePath, sphericalPolygonMetrics, sphericalFeatureAreaM2} from './core/gleason-sphere.js';
+import {rad,clamp,radialFraction,wrapLongitude,project as projectSphere,unproject as unprojectSphere,greatCircleDistanceMeters,greatCircleLinePath,sphericalPolygonMetrics,sphericalFeatureAreaM2} from './core/gleason-sphere.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -170,7 +170,7 @@ function updateAreaMeasurement(){
   else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='Invalid polygon · check for crossing edges';$('areaHelp').textContent='This polygon could not be measured. Check that its edges do not cross and that it has at least three valid vertices.';}
  }else{
   $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
-  $('areaHelp').textContent=areaPoints.length?'Add more vertices; straight segments join each successive point. Finish the polygon to close it and calculate projected-plane area and perimeter.':'Choose Area, then click at least three points on the disk. Straight map-plane segments join successive vertices; Finish closes the outline and calculates planar area and perimeter.';
+  $('areaHelp').textContent=areaPoints.length?'Add more vertices; straight disk segments join each successive point. Finish the polygon to integrate spherical surface area and corrected perimeter.':'Choose Area, then click at least three points on the disk. Finish closes the outline and integrates spherical surface area using the sin(θ)/θ correction.';
  }
 }
 function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
