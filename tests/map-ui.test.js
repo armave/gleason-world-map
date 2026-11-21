@@ -47,7 +47,9 @@ test('zoom is capped at a 50 km local scale-bar reading for every input path', (
 
 test('capital labels grow in close-up views and collision boxes track their size', () => {
   assert.match(app, /labelFontSize=Math\.min\(16,10\+2\*Math\.log2\(Math\.max\(1,zoom\)\)\)/);
-  assert.match(app, /const a=rotationRadians\(\),center=worldToScreen/);
+  assert.match(app, /labelX=x\+4\/zoom,labelY=y-3\/zoom,labelScreen=worldToScreen/);
+  assert.match(app, /box:\{left:labelScreen\.x-2,top:labelScreen\.y-labelFontSize\/2-2/);
+  assert.match(app, /ctx\.rotate\(screenUprightRotation\(0,rotationRadians\(\)\)\)/);
   assert.match(app, /item\.labelFontSize\/zoom/);
   assert.match(html, /Capital names \(from 2,500 km\)/);
 });
