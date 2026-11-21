@@ -139,7 +139,7 @@ function drawCompassRose(){
  ctx.beginPath();ctx.arc(0,0,r*1.72,0,Math.PI*2);ctx.fillStyle='rgba(255,253,246,.92)';ctx.fill();
  ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1;ctx.stroke();
  ctx.rotate(angle);ctx.beginPath();
- for(let i=0;i<16;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.32,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+ for(let i=0;i<12;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.32,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
  ctx.closePath();ctx.fillStyle='rgba(255,253,246,.78)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1.15;ctx.stroke();
  ctx.beginPath();ctx.moveTo(0,-r*.9);ctx.lineTo(0,r*.9);ctx.moveTo(-r*.9,0);ctx.lineTo(r*.9,0);ctx.stroke();
  ctx.fillStyle=visualPalette.labels;ctx.font='700 8px Georgia,serif';ctx.textAlign='center';ctx.textBaseline='middle';
@@ -763,7 +763,7 @@ function calculateScaleBarLayout(){
  const maxKm=flatDiskDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*SCALE_BAR_HEADROOM);
  if(!targetKm)return null;
  let low=0,high=maxPx;
- // Sixteen iterations resolve the bar to substantially less than one screen pixel.
+ // Twelve iterations resolve the bar to a small fraction of one screen pixel.
  for(let i=0;i<16;i++){
   const mid=(low+high)/2;
   if(flatDiskDistanceForScalePixels(mid,anchor)<targetKm)low=mid;else high=mid;
