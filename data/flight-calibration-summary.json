@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "accepted": false,
   "status": "insufficient-route-coverage",
-  "generatedAt": "2026-11-21T12:22:55.890Z",
+  "generatedAt": "2026-11-21T12:28:23.665Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-21T12:17:02.070Z",
+  "sourceRetrievedAt": "2026-11-21T12:28:23.360Z",
   "rejectionReason": "Insufficient empirical route coverage: need at least 10 training and 4 holdout routes with 3 usable flights each; got 32 training and 2.",
   "qualityGate": {
     "trainingRouteCount": 32,
@@ -21,12 +21,6 @@
       "minimumSouthernHoldoutRoutes": 1,
       "minimumPolarHoldoutRoutes": 1
     }
-  },
-  "method": {
-    "target": "Median telemetry-span flown-mileage estimate per airport pair",
-    "targetSource": "ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate",
-    "qualification": "At least 3 accepted observations per route; each observation has at least 35% telemetry coverage and a maximum telemetry gap no larger than 300 minutes.",
-    "fitting": "No model is fitted when candidate route coverage is insufficient; the last approved production coefficients remain active."
   },
   "model": null,
   "metrics": null,
