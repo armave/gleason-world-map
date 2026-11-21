@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 const featurePaths = await readFile(new URL('../src/map/feature-paths.js', import.meta.url), 'utf8');
 const coastlines = await readFile(new URL('../src/map/coastlines.js', import.meta.url), 'utf8');
 const iceWall = await readFile(new URL('../src/map/ice-wall.js', import.meta.url), 'utf8');
@@ -98,13 +99,14 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/geodesicDistanceMeters/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
 });
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
-  assert.match(app, /connector itself is a straight chord between the projected map points/);
+  assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
+  assert.match(app, /Flat-disk planar chord · ice-wall zone/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
@@ -130,10 +132,34 @@ test('distance connector is drawn as a straight projected segment rather than a 
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/formatMeasurementKilometres\(distanceMeters\),'distance'/);
+ assert.match(app,/const label=measurement\.restricted\?'RESTRICTED · 60°S'/);
+ assert.match(app,/formatMeasurementKilometres\(measurement\.distanceMeters\)/);
+ assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
  assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
  assert.match(app,/function formatMeasurementSquareKilometres\(/);
  assert.match(app,/ctx\.setTransform\(dpr,0,0,dpr,0,0\)/);
+});
+
+test('compact measurement dock is embedded in the map viewport',()=>{
+ const viewport=html.indexOf('class="map-viewport"');
+ const dock=html.indexOf('class="map-measure-tools" id="measurementTools"');
+ const loading=html.indexOf('id="mapLoading"');
+ assert.ok(viewport>=0&&dock>viewport&&loading>dock);
+ assert.match(html,/id="toggleMeasurementDetails"/);
+ assert.match(html,/id="exploreMode"/);
+ assert.match(html,/id="measureMode"/);
+ assert.match(html,/id="areaMode"/);
+ assert.match(styles,/\.map-measure-tools\s*\{/);
+});
+
+test('60°S is marked as a restricted crossing and blocks distance and polygon edges',()=>{
+ assert.match(html,/60°S · restricted/);
+ assert.match(app,/function drawRestrictedParallel\(\)/);
+ assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
+ assert.match(app,/segmentCrossesRestrictedParallel\(points\[0\],obj\)/);
+ assert.match(app,/polylineCrossesRestrictedParallel\(areaPoints,true\)/);
+ assert.match(app,/measureDirectDistance\(first,second\)/);
+ assert.doesNotMatch(app,/geodesicDistanceMeters\(points\[0\],points\[1\]\)/);
 });

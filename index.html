@@ -12,7 +12,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style flat circular disk · Direct surface distance & planar area · Flat-disk calibration · Historical scan registration</div>
+  <div class="subtitle">Gleason-style flat circular disk · Hybrid distance &amp; planar area · 60°S restricted crossing · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -36,6 +36,46 @@
     </div>
     <div class="map-viewport" id="mapViewport" aria-busy="true">
       <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
+      <section class="map-measure-tools" id="measurementTools" aria-label="Distance and area measurement tools">
+        <div class="map-measure-head">
+          <strong>Measure</strong>
+          <span class="map-measure-restriction">60°S · restricted</span>
+          <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails">Details</button>
+        </div>
+        <div class="mode-row map-measure-modes" role="group" aria-label="Map mode">
+          <button id="exploreMode" class="active" type="button" aria-pressed="true">Explore</button>
+          <button id="measureMode" type="button" aria-pressed="false">Distance</button>
+          <button id="areaMode" type="button" aria-pressed="false">Area</button>
+        </div>
+        <div class="map-measure-readings" aria-live="polite">
+          <div class="map-measure-reading">
+            <span>Distance</span>
+            <div class="measure-value" id="distanceValue">—</div>
+            <div class="measure-sub" id="distanceSub">WGS84 north of 60°S · planar in ice-wall zone</div>
+          </div>
+          <div class="map-measure-reading">
+            <span>Area</span>
+            <div class="measure-value" id="areaValue">—</div>
+            <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
+          </div>
+        </div>
+        <div class="map-measure-details" id="measurementDetails" hidden>
+          <p class="small" id="measureHelp">Choose two locations. Measurements cannot cross the restricted 60°S parallel.</p>
+          <div id="endpointRows" style="margin-top:8px">
+            <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
+            <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
+          </div>
+          <div class="endpoint-actions"><button id="clearMeasure" type="button">Clear distance</button></div>
+          <div class="divider"></div>
+          <p class="small" id="areaHelp">Choose Area and click at least three points. Polygon edges may not cross the restricted 60°S parallel.</p>
+          <div class="small" id="areaVertexCount">0 vertices</div>
+          <div class="endpoint-actions">
+            <button id="finishArea" type="button">Finish polygon</button>
+            <button id="undoArea" type="button">Undo vertex</button>
+            <button id="clearArea" type="button">Clear area</button>
+          </div>
+        </div>
+      </section>
       <div class="map-loading" id="mapLoading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="false">
         <div class="map-loading-card">
           <div class="map-loading-spinner" id="mapLoadingSpinner" aria-hidden="true"></div>
@@ -45,7 +85,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · red 60°S restricted line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -86,28 +126,6 @@
         <div class="small" id="mapQualityHelp">Higher quality uses more data and may take longer to load.</div>
       </div>
     </section>
-    <section class="panel">
-      <h2>Distance &amp; area measurements</h2>
-      <div class="mode-row">
-        <button id="exploreMode" class="active">Explore</button>
-        <button id="measureMode">Distance</button>
-        <button id="areaMode">Area</button>
-      </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. The distance value uses the shortest WGS84 surface path; its straight dashed A–B line carries a km label. Area edges also show km labels, and the finished polygon shows its area in km².</p>
-      <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">WGS84 direct surface distance</div>
-      <div id="endpointRows" style="margin-top:8px">
-        <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
-        <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
-      </div>
-      <div class="endpoint-actions"><button id="clearMeasure">Clear points</button></div>
-      <div class="divider"></div>
-      <div class="small" id="areaHelp">Choose Area and click three or more points. Each straight boundary edge is labelled in km; Finish shows the planar area in km² and the perimeter.</div>
-      <div class="measure-value" id="areaValue">—</div>
-      <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
-      <div class="small" id="areaVertexCount">0 vertices</div>
-      <div class="endpoint-actions"><button id="finishArea">Finish polygon</button><button id="undoArea">Undo vertex</button><button id="clearArea">Clear area</button></div>
-    </section>
     <section class="panel" id="selectionPanel">
       <h2>Selection details</h2>
       <div class="info-title" id="selectionName">No selection</div>
@@ -128,17 +146,17 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ; this controls the map layout, not the A–B distance metric. The scale bar is locally calibrated with the WGS84 geodesic at the current view centre. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ. A–B distances use WGS84 north of 60°S and flat-disk chord lengths in the ice-wall zone. The 60°S circle is a restricted-crossing boundary for direct measurement segments and polygon edges. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
       <div class="info-grid">
         <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
-        <div class="info-box"><span>Distance</span><strong>WGS84 geodesic</strong></div>
+        <div class="info-box"><span>Distance</span><strong>WGS84 / flat-disk</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Direct dashed line</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. The A–B numeric distance is the shortest WGS84 ellipsoidal surface distance; its straight dashed map connector carries that km label but is not the WGS84 geodesic path. Area boundary edges show projected-plane km lengths, and the completed polygon displays its planar area in km².</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses WGS84 only north of the restricted 60°S parallel; measurements in the ice-wall band use flat-disk Euclidean distance without globe calculations. Direct connectors and polygon edges are rejected when they cross 60°S. Polygon area and perimeter remain planar.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -181,7 +199,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B numeric distances use shortest WGS84 geodesics; the visible connector is always a straight dashed segment with its WGS84 km label. Polygon areas use planar shoelace geometry; each boundary edge is labelled in projected-plane km and completed polygons show their area in km². The scale bar is locally calibrated to WGS84 ground distance at the current view centre. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distances use WGS84 north of the 60°S parallel and flat-disk geometry in the ice-wall zone; direct segments crossing the 60°S restricted boundary are blocked. Polygon areas and perimeters use planar geometry and polygon edges crossing that boundary are rejected. The scale bar uses the local map metric and falls back to planar calibration when its sample spans the restricted line. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
