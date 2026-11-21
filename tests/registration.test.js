@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {triangulateControlPoints,affineFromTriangles} from '../src/map/registration.js';
+test('triangulation covers non-collinear control points',()=>{const p=[{x:0,y:0},{x:100,y:0},{x:100,y:100},{x:0,y:100},{x:50,y:50}],t=triangulateControlPoints(p);assert.ok(t.length>=4);for(let i=0;i<p.length;i++)assert.ok(t.some(q=>q.includes(i)));});
+test('affine transform reproduces destination vertices',()=>{const s=[{x:0,y:0},{x:100,y:0},{x:100,y:100}],d=s.map(p=>({x:20+2*p.x+.5*p.y,y:-10-.25*p.x+1.5*p.y})),m=affineFromTriangles(s,d);assert.ok(m);s.forEach((p,i)=>assert.ok(Math.hypot(m.a*p.x+m.c*p.y+m.e-d[i].x,m.b*p.x+m.d*p.y+m.f-d[i].y)<1e-9));});
+test('collinear affine triangles rejected',()=>{const p=[{x:0,y:0},{x:1,y:1},{x:2,y:2}];assert.equal(affineFromTriangles(p,p),null);});

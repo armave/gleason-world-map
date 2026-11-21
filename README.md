@@ -77,6 +77,41 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Share URLs preserving zoom, pan, layers, overlay settings, endpoints, area vertices, and historical registration points
 - Retriable data loading, browser cache fallback, and explicit retry button
 
+## Project structure
+
+Static GitHub Pages deployment uses browser-native ES modules; no bundler is required.
+
+```text
+index.html                  page shell and app entry point
+styles.css                  responsive styling
+src/
+  app.js                    state, UI wiring, and lifecycle
+  core/
+    wgs84.js                WGS84 radial calibration, projection, geodesics, local scales
+    format.js               coordinates, units, and search formatting
+  data/
+    datasets.js             sources, CSV parsing, validation, retry, browser cache
+    geojson.js              country identifiers, names, colours, centroids
+  map/
+    feature-paths.js        projected GeoJSON paths and Antarctic rim handling
+    ice-wall.js             Antarctic land band and continuous rim
+    registration.js         scan control-point triangulation and affine image warp
+  ui/
+    calibration.js          radial table and distortion panel
+tests/
+  wgs84.test.js             WGS84 geometry regressions
+  registration.test.js      registration transform regressions
+  datasets.test.js          capital CSV parser regressions
+.github/workflows/test.yml automated Node tests
+package.json                dependency-free test command
+```
+
+Run tests with Node.js 20 or newer:
+
+```bash
+npm test
+```
+
 ## Run locally
 
 Run a static web server from the repository root:
