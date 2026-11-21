@@ -97,7 +97,7 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\\(lon,lat,baseR\\)/);assert.match(app,/flatDiskDistanceMeters/););
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/flatDiskDistanceMeters/);
 });
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
  assert.match(html,/id="mapRotation"/);assert.match(html,/id="rotateLeft"/);assert.match(html,/id="rotateRight"/);
