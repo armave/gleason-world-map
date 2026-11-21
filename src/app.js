@@ -2,8 +2,10 @@ import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unproje
 import {measureDirectDistance,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
-import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
+import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
+import {createAntarcticSurfacePaths} from './map/antarctic-surfaces.js';
+import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
 import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coastlines.js';
@@ -22,7 +24,7 @@ let historicalImage = null, historicalLoading = false, historicalFailed = false;
 const historical = {enabled:false,opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0};
 const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
-let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
+let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
@@ -114,6 +116,7 @@ function resize(){
   baseR=nextBaseR;
   pathRecords=countries.map(country=>({country,path:makePath(country.feature)}));
   antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;
+  antarcticSurfacePaths=antarcticAddData?createAntarcticSurfacePaths(antarcticAddData,project):null;
   landMaskPath=new Path2D();
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
@@ -151,7 +154,7 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
 }
 function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;const localScale=scaleBarReadingKm();if(mapQuality==='high'&&localScale<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
 function drawIceWall(){
- renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians());
+ renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),antarcticSurfacePaths);
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
@@ -781,15 +784,17 @@ async function load(){
  try{
   mapQuality=readMapQuality();$('mapQuality').value=mapQuality;
   $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and geographic labels…';
-  const [geoData,capRaw,countyRaw,coastlineRaw]=await Promise.all([
+  const [geoData,capRaw,countyRaw,coastlineRaw,antarcticAddRaw]=await Promise.all([
    (async()=>{try{return {data:await loadCountryDataset(mapQuality),fallback:false};}
     catch(boundaryError){if(mapQuality==='low')throw boundaryError;console.warn('Requested bundled boundary quality unavailable; falling back to low:',boundaryError);return {data:await loadCountryDataset('low'),fallback:true};}})(),
    loadCapitalDataset(),
    loadCountyDataset().catch(error=>{console.warn('County search data unavailable:',error);return []; }),
-   loadCoastlineDataset().catch(error=>{console.warn('Coastline data unavailable; country outlines remain available:',error);return null;})
+   loadCoastlineDataset().catch(error=>{console.warn('Coastline data unavailable; country outlines remain available:',error);return null;}),
+   loadAntarcticAddDataset().catch(error=>{console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error);return null;})
   ]);
   if(generation!==loadGeneration)return;
   features=geoData.data.features||[];
+  antarcticAddData=antarcticAddRaw;
   if(!features.length)throw new Error('The bundled country boundary dataset contains no features.');
   antarcticaFeature=features.find(f=>isoFor(f)==='ATA'||norm(nameFor(f))==='antarctica')||null;
   const usable=features.filter(f=>isoFor(f)!=='ATA'&&norm(nameFor(f))!=='antarctica');
