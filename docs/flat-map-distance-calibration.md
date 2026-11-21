@@ -57,14 +57,15 @@ The filters are defined once in `src/core/flight-telemetry.js` and copied into t
 - Ground-speed samples below 40 knots or above 750 knots are excluded from the airborne integration.
 - Telemetry span must be at least 35 minutes.
 - At least 8 valid speed intervals are required.
-- Valid speed intervals must cover at least 30% of the first-to-last telemetry span.
+- Valid speed intervals must cover at least 35% of the first-to-last telemetry span.
+- No single ground-speed sample is held across an interval longer than 15 minutes; such intervals are excluded and counted as telemetry gaps.
 - No time is inferred outside the first and last speed timestamps.
 
 The minimum coverage threshold is a collection-quality floor, not a guarantee of high accuracy. Coverage and largest-gap statistics remain in the dataset so a reviewer can decide whether a route observation is sufficiently representative.
 
 ## Route sampling and validation
 
-Routes are collected by airport-pair identifier. The collector tries to fill a target of 5 accepted flights per route and stores every accepted observation. It uses the airport's published terminal boundary when available, or a 20 km airport-centred fallback search circle, only to ask the source API for flights with the requested origin and destination. It then checks the flight's own departure/arrival identifiers against the requested pair.
+Routes are collected by airport-pair identifier. The collector tries to fill a target of 8 accepted flights per route and stores every accepted observation. It uses the airport's published terminal boundary when available, or a 20 km airport-centred fallback search circle, only to ask the source API for flights with the requested origin and destination. It then checks the flight's own departure/arrival identifiers against the requested pair.
 
 The calibration split is at the **airport-pair level**:
 
@@ -72,7 +73,7 @@ The calibration split is at the **airport-pair level**:
 - Holdout routes are not used during fitting. They are evaluated only after the model has been fitted.
 - Leave-one-route-out validation refits the model after removing each training route in turn.
 
-A route needs at least 3 accepted flights before it can be used as a calibration observation. The fitter requires at least 10 training routes and 4 holdout routes. If route coverage is below that threshold, it does not write a production parameter file.
+A route needs at least 3 accepted flights before it can be used as a calibration observation. The fitter recomputes each route target from individual observations and retains only flights with at least 35% telemetry coverage and a largest gap no greater than 5 hours. Route examples with better coverage, shorter gaps and more accepted flights receive greater model weight. The candidate fitter requires at least 10 training routes and 4 holdout routes to calculate validation metrics; the production acceptance gate is stricter: at least 30 training routes, 4 holdout routes, 4 training routes south of 45°S, at least one training and one holdout route south of 60°S, and at least one southern holdout route. Existing error limits also have to pass. If any requirement fails, it does not write a production parameter file and the last approved coefficients remain active.
 
 ## Flat-disk model
 
