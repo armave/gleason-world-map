@@ -1,7 +1,7 @@
 import { norm } from '../core/format.js';
 export const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
 
-export const COUNTRY_URL='https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson';
+export const COUNTRY_URL='https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson';
 export const COUNTRY_FALLBACK_URL='https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
 export const CAPITAL_URL='https://raw.githubusercontent.com/iliyaj/country-data/main/data/country-capital.csv';
 export function parseCSV(text){
@@ -31,9 +31,9 @@ export function validateDatasetText(text,key){
  else if(key==='capitals'&&!parseCSV(text).length)throw new Error('Capital coordinate data contains no valid rows.');
 }
 export async function fetchTextCached(url,key){
- const cacheKey='gleason-map:'+key+':v1';let lastError=null;
+ const cacheKey='gleason-map:'+key+':v2';let lastError=null;
  for(let attempt=0;attempt<2;attempt++){
-  try{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),key==='countries-10m'?60000:15000);let response;try{response=await fetch(url,{cache:'no-cache',signal:controller.signal});}finally{clearTimeout(timeout);}if(!response.ok)throw new Error(`HTTP ${response.status} while loading ${key}`);
+  try{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),key==='countries-50m'?30000:15000);let response;try{response=await fetch(url,{signal:controller.signal});}finally{clearTimeout(timeout);}if(!response.ok)throw new Error(`HTTP ${response.status} while loading ${key}`);
    const text=await response.text();if(!text||text.length<20)throw new Error(`The ${key} dataset was empty.`);
    validateDatasetText(text,key);
    // Large boundary files can exceed browser storage quotas; keep them in memory only.
