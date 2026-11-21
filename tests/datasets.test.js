@@ -5,7 +5,7 @@ import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import {
   COUNTRY_DATA_FILES, CAPITAL_DATA_FILE, COUNTY_DATA_FILE, MAP_QUALITY_OPTIONS,
-  validateCountryDataset, validateCapitalDataset, validateCountyDataset
+  validateCountryDataset, validateCapitalDataset, validateCountyDataset, COUNTY_BOUNDARY_SERVICE_URL, validateCountyBoundaryDataset
 } from '../src/data/datasets.js';
 import { isoFor, nameFor } from '../src/data/geojson.js';
 
@@ -66,4 +66,18 @@ test('bundled Census county-equivalent labels contain complete, unique internal 
   assert.deepEqual(counties.find(county => county.geoid === '01005'), {
     geoid: '01005', stateCode: 'AL', name: 'Barbour County', lat: 31.870069, lon: -85.400142
   });
+});
+
+
+test('official 2026 TIGERweb county-boundary layer is validated as GeoJSON',()=>{
+  assert.ok(COUNTY_BOUNDARY_SERVICE_URL.endsWith('/tigerWMS_ACS2026/MapServer/82'));
+  const geometry={type:'Polygon',coordinates:[[[0,0],[2,0],[2,2],[0,2],[0,0]]]};
+  const features=Array.from({length:3001},(_,i)=>({
+    type:'Feature',
+    properties:{GEOID:String(i).padStart(5,'0'),STATE:'01',BASENAME:'County '+i,NAME:'County '+i,INTPTLAT:'1',INTPTLON:'1'},
+    geometry
+  }));
+  const data=validateCountyBoundaryDataset({type:'FeatureCollection',features});
+  assert.equal(data.features.length,3001);
+  assert.throws(()=>validateCountyBoundaryDataset({type:'FeatureCollection',features:[...features.slice(0,-1),features[0]]}),/invalid or duplicate/);
 });

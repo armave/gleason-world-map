@@ -1,5 +1,6 @@
 // Screen-space label thresholds and decluttering for the canvas map.
 export const CAPITAL_LABEL_MIN_ZOOM=1.25;
+export const COUNTY_BOUNDARY_MIN_ZOOM=2.25;
 export const COUNTY_LABEL_MIN_ZOOM=2.7;
 export function countyLabelText(name){
  return String(name||'').replace(/\s+(?:City and Borough|County|Parish|Borough|Census Area|Municipality|Municipio|City)$/i,'');
@@ -22,4 +23,41 @@ export function selectNonOverlappingLabels(candidates,reserved=[],gap=3){
   accepted.push(candidate);register(expanded);
  }
  return accepted;
+}
+
+
+// Ray-casting test used to keep county labels strictly inside their own
+// Census polygon. Polygon holes are excluded; MultiPolygon islands are supported.
+function pointInRing(lon, lat, ring) {
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const a=ring[i],b=ring[j];
+  const ax=Number(a?.[0]),ay=Number(a?.[1]),bx=Number(b?.[0]),by=Number(b?.[1]);
+  if(![ax,ay,bx,by].every(Number.isFinite))continue;
+  const cross=(lon-ax)*(by-ay)-(lat-ay)*(bx-ax);
+  if(Math.abs(cross)<1e-10&&lon>=Math.min(ax,bx)-1e-10&&lon<=Math.max(ax,bx)+1e-10&&
+     lat>=Math.min(ay,by)-1e-10&&lat<=Math.max(ay,by)+1e-10)return true;
+  if((ay>lat)!==(by>lat)&&lon<(bx-ax)*(lat-ay)/(by-ay)+ax)inside=!inside;
+ }
+ return inside;
+}
+
+export function pointInCountyGeometry(lon,lat,geometry) {
+ if(!Number.isFinite(lon)||!Number.isFinite(lat)||!geometry)return false;
+ const polygons=geometry.type==='Polygon'?[geometry.coordinates]:
+  geometry.type==='MultiPolygon'?geometry.coordinates:[];
+ for(const rings of polygons){
+  if(!Array.isArray(rings)||!rings.length||!pointInRing(lon,lat,rings[0]))continue;
+  if(rings.slice(1).some(hole=>pointInRing(lon,lat,hole)))continue;
+  return true;
+ }
+ return false;
+}
+
+export function countyAnchorForFeature(feature) {
+ const p=feature?.properties||{};
+ const lat=Number(p.INTPTLAT),lon=Number(p.INTPTLON);
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||
+    !pointInCountyGeometry(lon,lat,feature?.geometry))return null;
+ return {lat,lon};
 }

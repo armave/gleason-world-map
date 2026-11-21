@@ -28,7 +28,7 @@
       </div>
     </div>
     <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
-    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Labels appear as you zoom in</span><span>Country outlines · WGS84 local ground scale · continuous Antarctic rim</span></div>
+    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Labels appear as you zoom in</span><span>Country outlines · WGS84 local ground scale · continuous Antarctic rim</span><span>Capitals: navy markers and sans-serif labels · Counties: sepia outlines and serif labels</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -38,7 +38,7 @@
         <input id="search" type="search" autocomplete="off" placeholder="Search e.g. Armenia, Yerevan, Tokyo, Los Angeles County…" aria-label="Search countries, capitals and U.S. county-equivalents">
         <div id="suggestions" class="suggestions"></div>
       </div>
-      <div class="small" style="margin-top:7px">Search countries, national capitals and U.S. county-equivalents. County names appear at closer zoom; labels are collision-filtered to keep the map legible.</div>
+      <div class="small" style="margin-top:7px">Search countries, national capitals and U.S. county-equivalents. County names appear inside Census county boundaries at closer zoom. Labels that cannot fit inside their own county are hidden.</div>
     </section>
     <section class="panel">
       <h2>Map layers</h2>
@@ -47,7 +47,8 @@
         <label><input type="checkbox" id="layerGrid" checked> Grid & coordinates</label>
         <label><input type="checkbox" id="layerCapitals" checked> Capital markers</label>
         <label><input type="checkbox" id="layerCapitalNames" checked> Capital names (from 125%)</label>
-        <label><input type="checkbox" id="layerCountyNames" checked> U.S. county names (from 270%)</label>
+        <label><input type="checkbox" id="layerCountyNames" checked> U.S. county boundaries (225%) + labels (270%)</label>
+        <div class="small" id="countyLayerStatus" style="grid-column:1/-1">Loading official 2026 Census county polygons…</div>
         <label><input type="checkbox" id="layerAntarctica" checked> Antarctica / ice wall</label>
       </div>
       <div class="range-control">
