@@ -215,7 +215,8 @@ test('60°S callouts use forbidden-line wording and rotate with the map',()=>{
  assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
  assert.match(app,/for\(const degree of \[45,225\]\)/);
  assert.match(app,/60°S · FORBIDDEN LINE/);
- assert.match(app,/ctx\.rotate\(rotationRadians\(\)\);labelX=0;labelY=0/);
+ assert.match(app,/let readableAngle=\(\(angle\+Math\.PI\/2\)%Math\.PI\+Math\.PI\)%Math\.PI-Math\.PI\/2/);
+ assert.match(app,/ctx\.translate\(labelX,labelY\);ctx\.rotate\(readableAngle\)/);
  assert.doesNotMatch(app,/segmentCrossesRestrictedParallel/);
  assert.doesNotMatch(app,/polylineCrossesRestrictedParallel/);
  assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
