@@ -16,7 +16,7 @@ r = R * theta
 x = r cos(lambda)
 y = -r sin(lambda)
 
-The outer disk radius is **pi * R = 8,727.952513 km**. These values define the X/Y coordinate scale on the flat disk; the south-pole rim corresponds to theta = pi. The same linear scale applies to every direct-line and perimeter measurement, and area values scale by its square. Canberra–Santiago is the calibration anchor, not a universal route fit. Cross-checks against other real-distance pairs show that the current polar disk's straight chords can differ substantially by route; the table below reports that limitation rather than applying route-specific corrections.
+The outer disk radius is **pi * R = 8,727.952513 km**. These values define the X/Y coordinate scale on the flat disk; the south-pole rim corresponds to theta = pi. The base linear scale applies to projected coordinates, polygon perimeter, and planar area (which scales by its square). The A–B numeric readout additionally applies the empirical endpoint correction described below. Canberra–Santiago defines the base radial scale, not a universal route fit.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
