@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-21T12:17:02.070Z",
+    "retrievedAt": "2026-11-21T12:26:10.091Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-21"
@@ -6493,8 +6493,8 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 222,
         "too-few-speed-intervals": 8,
-        "flight-too-short": 46,
         "missing-ground-speed-or-duration": 6,
+        "flight-too-short": 46,
         "low-telemetry-coverage": 1
       },
       "pagesScanned": 3,
@@ -6924,8 +6924,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 10,
-        "low-telemetry-coverage": 54,
-        "too-few-speed-intervals": 10
+        "too-few-speed-intervals": 10,
+        "low-telemetry-coverage": 54
       },
       "pagesScanned": 1,
       "candidatesSeen": 64,
