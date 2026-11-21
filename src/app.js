@@ -73,6 +73,18 @@ function animateRotation(value){
 }
 function worldToScreen(x,y){return worldToScreenPoint(x,y,zoom,panX,panY,width,height,rotationRadians());}
 function boxesOverlap(a,b,gap=0){return a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;}
+function reserveScreenUiCollisionBoxes(){
+ // Compass and scale bar are fixed to the viewport, so geographic labels must leave them clear.
+ labelCollisionBoxes.push(
+  {left:2,top:2,right:62,bottom:62},
+  {left:2,top:Math.max(0,height-54),right:Math.min(width,230),bottom:height-1}
+ );
+ const canvasRect=canvas.getBoundingClientRect(),dockRect=$('measurementTools').getBoundingClientRect();
+ if(dockRect.width>0&&dockRect.height>0){
+  const box={left:dockRect.left-canvasRect.left,top:dockRect.top-canvasRect.top,right:dockRect.right-canvasRect.left,bottom:dockRect.bottom-canvasRect.top};
+  if(box.right>0&&box.left<width&&box.bottom>0&&box.top<height)labelCollisionBoxes.push(box);
+ }
+}
 function drawUprightMapText(text,x,y,{reserve=true,avoidReserved=false}={}){
  const screen=worldToScreen(x,y);
  if(!Number.isFinite(screen.x)||!Number.isFinite(screen.y))return false;
@@ -357,9 +369,7 @@ function drawHistoricalOverlay(){
 function draw(){
  if(!width||!height)return;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle=visualPalette.canvas;ctx.fillRect(0,0,width,height);
- labelCollisionBoxes=[];ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
- // Keep the compass inside the visible canvas instead of tying it to a clipped map coordinate.
- labelCollisionBoxes.push({left:2,top:2,right:62,bottom:62});
+ labelCollisionBoxes=[];reserveScreenUiCollisionBoxes();ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
  // Draw geographic geometry first; labels are placed afterward against a shared collision map.
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  if(layers.grid)drawGrid();
