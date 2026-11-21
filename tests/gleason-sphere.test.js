@@ -4,7 +4,7 @@ import {
   EARTH_RADIUS_KM, DISK_RADIUS_KM,
   colatitudeRadians, radialDistanceFromNorthKm, radialFraction,
   latitudeFromRadialDistanceKm, project, unproject,
-  greatCircleDistanceMeters, sphericalDistanceMeters,
+  greatCircleDistanceMeters, greatCircleLinePath, sphericalDistanceMeters,
   northSouthDistanceKm, eastWestDistanceKm, sphericalSectorAreaKm2,
   areaDecodeFactorFromRadiusKm, getLocalScaleFactors,
   sphericalPolygonMetrics, sphericalFeatureAreaM2
@@ -65,6 +65,16 @@ test('great-circle distance handles coincident, antipodal and polar points', () 
   assert.equal(greatCircleDistanceMeters({lat:0,lon:0},{lat:0,lon:0}), 0);
   close(greatCircleDistanceMeters({lat:90,lon:0},{lat:-90,lon:0}), Math.PI * EARTH_RADIUS_KM * 1000, 1e-6);
   close(greatCircleDistanceMeters({lat:90,lon:0},{lat:90,lon:125}), 0, 1e-6);
+});
+
+test('great-circle connector starts and ends at projected coordinates', () => {
+  const a={lat:40.17,lon:44.5}, b={lat:-8.0476,lon:-34.877};
+  const projector=(lon,lat)=>project(lon,lat,500);
+  const path=greatCircleLinePath(a,b,projector,0.5);
+  assert.ok(path.length>2);
+  const start=projector(a.lon,a.lat), end=projector(b.lon,b.lat);
+  close(Math.hypot(path[0][0]-start[0],path[0][1]-start[1]),0,1e-8);
+  close(Math.hypot(path.at(-1)[0]-end[0],path.at(-1)[1]-end[1]),0,1e-8);
 });
 
 test('area correction m(theta) and stretch k(theta) match the quick-reference table', () => {
