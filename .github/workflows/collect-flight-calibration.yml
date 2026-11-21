@@ -43,6 +43,8 @@ jobs:
           fi
           if ! git diff --cached --quiet; then
             git commit -m "Add observed ADS-B flight calibration sample"
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
       - name: Upload the collected telemetry dataset
