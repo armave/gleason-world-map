@@ -138,7 +138,7 @@ test('visual presets are selectable, remembered and keep the flat-disk projectio
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
-  assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
+  assert.match(html, /<span>A–B line<\/span><strong>Projected WGS84 geodesic<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
   assert.match(app, /WGS84 shortest surface distance/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
