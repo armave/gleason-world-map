@@ -386,7 +386,7 @@ async function load(){
    const countyRecords=countyBoundaryResult.data.features.map(feature=>{
     const props=feature.properties||{},geoid=String(props.GEOID||''),gazetteer=gazetteerByGeoid.get(geoid);
     const anchor=countyAnchorForFeature(feature);if(!anchor)return null;
-    return {geoid,stateCode:gazetteer?.stateCode||stateFipsToUsps(String(props.STATE||'')),
+    return {geoid,stateCode:gazetteer?.stateCode||stateFipsToUsps[String(props.STATE||'')]||'',
      name:gazetteer?.name||String(props.BASENAME||props.NAME||'County'),lat:anchor.lat,lon:anchor.lon,feature};
    }).filter(Boolean);
    if(countyRecords.length>=3000)counties=countyRecords;
