@@ -1,6 +1,6 @@
 # Flat Disk World Map
 
-[View Online](https://armave.github.io/gleason-world-map/)
+[View Online](https://armave.github.io/gleason-world-map/){:target="_blank"}
 
 An interactive Gleason-style north-polar circular map with WGS84 ellipsoidal ground-distance and area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
