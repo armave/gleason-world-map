@@ -105,7 +105,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
-  assert.match(app, /connector itself is a straight chord between the projected map points/);
+  assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
+  assert.match(app, /flat-disk planar chord · ice-wall zone/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
@@ -131,7 +132,9 @@ test('distance connector is drawn as a straight projected segment rather than a 
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/formatMeasurementKilometres\(measurement\.distanceMeters\),'distance'/);
+ assert.match(app,/const label=measurement\.restricted\?'RESTRICTED · 60°S'/);
+ assert.match(app,/formatMeasurementKilometres\(measurement\.distanceMeters\)/);
+ assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
  assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
