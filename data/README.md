@@ -37,3 +37,11 @@ Source ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazet
 
 To regenerate the compact file from the extracted Census text file, run `node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.txt`.
 
+
+## Coastlines and islands
+
+`coastlines-50m.json` contains 1:50m Natural Earth physical coastlines as compact MultiLineString geometry. It is separate from country boundaries so coastlines and island shorelines can be emphasized without making every international border equally heavy. The linework is generated from the same pinned Natural Earth commit recorded in `data/metadata.json`; Natural Earth data is public domain.
+
+The app bundles this file locally and builds the projected coastline path once per canvas resize. When 1:10m high-quality country boundaries are selected and the view reaches close regional detail, the medium-resolution coastline overlay is suppressed so it does not conflict with the more detailed country outlines.
+
+Run `npm run vendor:data` to regenerate the coastline file and its checksum alongside the boundary and capital datasets.
