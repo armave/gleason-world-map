@@ -52,8 +52,8 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
  * ADS-B flight-mileage correction for a straight segment in the flat disk.
  *
  * The radial scale is fitted from observed ground-speed × timestamp mileage.
- * A local inverse-distance-weighted neighbour model predicts the mileage per
- * unit disk chord using only three symmetric flat-disk endpoint features.
+ * A local inverse-distance-weighted neighbour model predicts mileage per
+ * unit disk chord from mean colatitude and radial/tangential chord shares.
  * Runtime contains no globe-distance formula, ellipsoid, geodesic or path
  * coordinate distance calculation.
  */

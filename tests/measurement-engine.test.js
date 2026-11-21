@@ -124,6 +124,12 @@ for (const route of heldOutFlightMileageRoutes) {
     assert.ok(Math.abs(errorPercent) <= 20,
       `${route.route}: ${predictedKm.toFixed(1)} km vs observed median ${route.medianTrackKm.toFixed(1)} km (${errorPercent.toFixed(1)}%)`);
     assert.equal(result.metric, 'flat-disk-flight-empirical');
+    assert.ok(Number.isFinite(result.calibration.radialShareOfChord));
+    assert.ok(Number.isFinite(result.calibration.tangentialShareOfChord));
+    assert.ok(Math.abs(
+      result.calibration.radialShareOfChord ** 2 +
+      result.calibration.tangentialShareOfChord ** 2 - 1
+    ) < 1e-9);
     assert.ok(Number.isFinite(route.telemetryCoverage));
   });
 }
