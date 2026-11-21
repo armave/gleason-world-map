@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+const featurePaths = await readFile(new URL('../src/map/feature-paths.js', import.meta.url), 'utf8');
 const coastlines = await readFile(new URL('../src/map/coastlines.js', import.meta.url), 'utf8');
 const iceWall = await readFile(new URL('../src/map/ice-wall.js', import.meta.url), 'utf8');
 const oceanLabels = await readFile(new URL('../src/map/ocean-labels.js', import.meta.url), 'utf8');
@@ -99,6 +100,13 @@ test('visual presets are selectable, remembered and keep the flat-disk projectio
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
  assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/flatDiskDistanceMeters/);
 });
+test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
+  assert.match(featurePaths, /projectGeoJSONRing/);
+  assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
+  assert.match(html, /<span>A–B line<\/span><strong>Direct segment<\/strong>/);
+  assert.match(app, /not a travelled route/);
+});
+
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
  assert.match(html,/id="mapRotation"/);assert.match(html,/id="rotateLeft"/);assert.match(html,/id="rotateRight"/);
  assert.match(app,/ctx\.rotate\(rotationRadians\(\)\)/);assert.match(app,/screenToWorldPoint/);
