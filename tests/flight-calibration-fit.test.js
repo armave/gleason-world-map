@@ -93,6 +93,26 @@ test('flight telemetry calibration fits a radial scale and direction-aware route
   assert.ok(Number.isFinite(prediction) && prediction > 0);
 });
 
+test('route targets exclude low-coverage and long-gap observations before fitting', () => {
+  const dataset = syntheticDataset();
+  dataset.routes = dataset.routes.map((route, index) => ({
+    ...route,
+    observations: Array.from({ length: 4 }, (_, sample) => ({
+      accepted: true,
+      trackKm: route.medianTrackKm * (1 + (sample - 1.5) * 0.002),
+      coverage: index === 0 ? 0.2 : 0.55,
+      maxGapMinutes: index === 1 ? 360 : 15
+    }))
+  }));
+  const result = fitFlightCalibration(dataset);
+  assert.equal(result.model.trainingRouteCount, 10);
+  assert.equal(result.metrics.holdout.routeCount, 4);
+  assert.ok(result.model.trainingExamples.every(example => example.qualityWeight > 0 && example.qualityWeight <= 1));
+  assert.ok(result.model.trainingExamples.every(example => example.medianTelemetryCoverage >= 0.35));
+  assert.ok(result.model.trainingExamples.every(example => example.medianMaxGapMinutes <= 300));
+  assert.ok(result.model.trainingExamples.some(example => example.qualityWeight < 0.5));
+});
+
 test('calibration refuses to emit coefficients without enough independent route pairs', () => {
   const dataset = syntheticDataset();
   dataset.routes = dataset.routes.filter(route => route.split === 'train').slice(0, 5);
