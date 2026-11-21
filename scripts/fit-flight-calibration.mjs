@@ -73,7 +73,7 @@ async function main() {
       target: 'Median observed flown-path length per airport pair',
       targetSource: 'ADS-B ground-speed telemetry integrated over timestamps',
       formula: 'sum(ground_speed_knots * elapsed_seconds / 3600) * 1.852',
-      inputGeometry: 'Flat radial disk chord with R=1, followed by empirical radial scale and a three-feature ridge residual fit',
+      inputGeometry: 'Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route empirical mileage-per-chord ratios over three flat-disk endpoint features',
       features: fitted.model.featureNames,
       trainingUnit: 'one independent airport pair, target is median of >=3 observed flights',
       splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted'
