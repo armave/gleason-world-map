@@ -91,7 +91,7 @@ async function main() {
           southernRouteCandidates: southernCandidates
         }
       };
-      await writeFile(SUMMARY_PATH, JSON.stringify(rejectedSummary, null, 2) + '\\n', 'utf8');
+      await writeFile(SUMMARY_PATH, JSON.stringify(rejectedSummary, null, 2) + '\n', 'utf8');
       console.warn(error.message);
       console.warn('Candidate summary recorded as rejected; production coefficients were preserved.');
       return;
