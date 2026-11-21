@@ -23,7 +23,7 @@ This is a flat map projection, not a claim that the physical Earth is a flat pla
 
 ## WGS84 distances and areas
 
-Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The distance tool draws a straight visual connector between the two projected disk locations. The numeric result remains the shortest WGS84 surface geodesic, calculated independently of that straight connector. The area tool still draws its successive polygon edges as sampled WGS84 geodesics. Results are shown in metres below 1 km and kilometres for longer distances. Results are shown in metres below 1 km and kilometres for longer distances.
+Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The distance tool draws a straight visual connector between the two projected disk locations. The numeric result remains the shortest WGS84 surface geodesic, calculated independently of that straight connector. The area tool still draws its successive polygon edges as sampled WGS84 geodesics. Results are shown in metres below 1 km and kilometres for longer distances.
 
 The custom area tool calculates ellipsoidal polygon area and perimeter using GeographicLib's WGS84 PolygonArea implementation. Each edge is treated as the shorter WGS84 geodesic between successive vertices. Selected-country areas are calculated from Natural Earth boundary rings with ellipsoidal polygon area, subtracting holes and summing polygon parts. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
 
@@ -72,9 +72,6 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - WGS84 ellipsoidal custom polygon area and perimeter
 - WGS84 ellipsoidal area for selected country boundaries
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
-- White Antarctic ice-wall band with pole-aware GeoJSON closure, concentric strata, radial ice ridges, crevasse marks, and repeated circumference labels
-- Dedicated Natural Earth 1:50m physical coastline and island-shoreline layer, independent of political borders
-- Curved ocean and sea labels with scale-dependent detail, water-aware anchors, and collision filtering
 - Search and select countries, capitals, and U.S. county-equivalents
 - U.S. county boundary geometry is loaded from the U.S. Census Bureau's 2026 TIGERweb Counties layer (January 1, 2026 vintage); labels use each polygon's Census internal point and are hidden when their label box would cross the county boundary
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
