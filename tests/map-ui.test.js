@@ -209,13 +209,13 @@ test('compact measurement dock is embedded in the map viewport',()=>{
  assert.match(app,/\$\('areaDetails'\)\.hidden=mode!=='area'/);
 });
 
-test('60°S callouts identify the metric transition and rotate with the map',()=>{
- assert.match(html,/60°S · metric transition/);
+test('60°S callouts identify the restricted line and rotate with the map',()=>{
+ assert.match(html,/60°S · restricted line/);
  assert.doesNotMatch(html,/forbidden line/i);
  assert.match(app,/function drawRestrictedParallel\(\)/);
  assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
  assert.match(app,/for\(const degree of \[45,225\]\)/);
- assert.match(app,/60°S · METRIC TRANSITION/);
+ assert.match(app,/60°S · RESTRICTED LINE/);
  assert.doesNotMatch(app,/60°S · FORBIDDEN LINE/);
  assert.match(app,/let readableAngle=\(\(angle\+Math\.PI\/2\)%Math\.PI\+Math\.PI\)%Math\.PI-Math\.PI\/2/);
  assert.match(app,/ctx\.translate\(labelX,labelY\);ctx\.rotate\(readableAngle\)/);
