@@ -64,7 +64,8 @@ export function selectNonOverlappingMarkers(candidates,reserved=[],minimumGap=1.
   let collision=false;
   for(const other of nearby){
    const dx=item.screenX-other.screenX,dy=item.screenY-other.screenY;
-   const separation=radius+other.radiusPx+gap;
+   const otherRadius=Number.isFinite(other.radiusPx)?Math.max(0,other.radiusPx):2.45;
+   const separation=radius+otherRadius+gap;
    if(dx*dx+dy*dy<separation*separation){collision=true;break;}
   }
   if(collision)continue;
