@@ -88,7 +88,7 @@ function makeCurvedCandidate(ctx,label,anchor,project,baseR,zoom,viewport,isLand
   cursor+=advances[i];
  }
  const tangent=curved?Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta)):0;
- const screenTangent=tangent+viewport.rotation,boxWidth=Math.abs(totalWidth*zoom*Math.cos(screenTangent))+Math.abs(fontSize*1.45*Math.sin(screenTangent))+8;
+ const screenTangent=tangent,boxWidth=Math.abs(totalWidth*zoom*Math.cos(screenTangent))+Math.abs(fontSize*1.45*Math.sin(screenTangent))+8;
  const boxHeight=Math.abs(totalWidth*zoom*Math.sin(screenTangent))+Math.abs(fontSize*1.45*Math.cos(screenTangent))+6;
  const cosine=Math.cos(viewport.rotation),sine=Math.sin(viewport.rotation);
  const screenX=viewport.width/2+viewport.panX+(center[0]*cosine-center[1]*sine)*zoom;
@@ -121,7 +121,7 @@ export function drawOceanLabels(ctx,project,baseR,zoom,localScaleKm,options={}){
   ctx.fillStyle=candidate.ocean?(palette.oceanLabel||'#355f70'):(palette.seaLabel||'#4c6b76');
   for(const glyph of candidate.glyphs){
    if(!glyph.char.trim())continue;
-   ctx.save();ctx.translate(glyph.x,glyph.y);ctx.rotate(glyph.rotation);
+   ctx.save();ctx.translate(glyph.x,glyph.y);ctx.rotate(glyph.rotation-viewport.rotation);
    ctx.strokeText(glyph.char,0,0);ctx.fillText(glyph.char,0,0);ctx.restore();
   }
   accepted.push(candidate);occupied.push(candidate.box);
