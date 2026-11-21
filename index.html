@@ -142,7 +142,8 @@
     </section>
     <section class="panel">
       <h2>Flat-disk radial calibration</h2>
-      <div class="formula">R = 6,371 km (radial scale)<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR = 20,015.09 km</div>
+      <div class="formula">R = 2,768.393946 km (flat-map scale)<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>r = R · θ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR = 8,697.166084 km</div>
+      <p class="note" style="margin:8px 0 0">Uniform scale anchor: the straight projected Canberra–Santiago segment is calibrated to 11,300 km. This is one flat-map reference; all other distances and areas use the same global linear scale and are not independently fitted to real-world routes.</p>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
@@ -200,7 +201,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distance is the Euclidean length of its straight projected segment in the calibrated flat-disk plane, not a WGS84 surface distance. The 60°S Restricted Line is a visual reference only and does not alter the direct-line measurement. Polygon areas and perimeters remain planar. The scale bar uses the same local flat-disk coordinate scale. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 2,768.393946 km and outer radius πR = 8,697.166084 km. A–B distance is the Euclidean length of its straight projected segment in the calibrated flat-disk plane, not a WGS84 surface distance. The 60°S Restricted Line is a visual reference only and does not alter the direct-line measurement. Polygon areas and perimeters remain planar. The scale bar uses the same local flat-disk coordinate scale. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
