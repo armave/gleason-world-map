@@ -4,18 +4,28 @@ on:
     branches: [feat/flight-telemetry-calibration]
     paths:
       - scripts/collect-flight-calibration.mjs
+      - src/core/flight-telemetry.js
       - package.json
       - .github/workflows/collect-flight-calibration.yml
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Collect observed ground-speed and timestamp samples
-        run: npm run collect:flight-calibration -- --max-pages=24 --samples-per-route=5
+        run: npm run collect:flight-calibration -- --max-pages-per-route=16 --samples-per-route=5
+      - name: Upload the collected telemetry dataset
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flight-calibration-telemetry
+          path: data/flight-calibration.json
+          if-no-files-found: warn
+          retention-days: 30
