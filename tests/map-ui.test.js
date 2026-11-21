@@ -142,8 +142,9 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
   assert.match(app, /rawDistanceValue/);
   assert.match(app, /calibratedDistanceMeters/);
-  assert.match(app, /calibrationDiagnostics/);
-  assert.match(app, /The first value is its raw Euclidean chord; the second estimates typical flown mileage from ADS-B ground-speed and timestamp samples/);
+  assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
+  assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
+  assert.match(app, /The connector and its map label show the raw Euclidean chord in the Gleason disk/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
