@@ -87,15 +87,15 @@
       </div>
     </section>
     <section class="panel">
-      <h2>Flat-disk measurement</h2>
+      <h2>Distance &amp; area measurements</h2>
       <div class="mode-row">
         <button id="exploreMode" class="active">Explore</button>
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. Distance is the direct Euclidean line between their plotted positions on the flat disk.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. Distance is the shortest path along the WGS84 reference ellipsoid, shown projected on the flat disk.</p>
       <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">Flat-disk straight-line distance</div>
+      <div class="measure-sub" id="distanceSub">WGS84 direct surface distance</div>
       <div id="endpointRows" style="margin-top:8px">
         <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
         <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
@@ -128,17 +128,17 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk coordinates are measured in kilometres using r = Rθ. Every straight-line measurement uses the same Euclidean plane scale; no latitude-dependent correction is applied. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ; this controls the map layout, not the A–B distance metric. The scale bar is locally calibrated with the WGS84 geodesic at the current view centre. East longitudes run counter-clockwise, matching the Gleason sheet.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
       <div class="info-grid">
         <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
-        <div class="info-box"><span>Distance</span><strong>Euclidean</strong></div>
+        <div class="info-box"><span>Distance</span><strong>WGS84 geodesic</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
-        <div class="info-box"><span>A–B line</span><strong>Direct segment</strong></div>
+        <div class="info-box"><span>A–B line</span><strong>Projected geodesic</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is treated as one flat mathematical disk. Distances, areas and perimeters are calculated directly from projected X/Y coordinates with no globe-based or latitude-dependent correction.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B distance is the shortest WGS84 ellipsoidal surface distance and its geodesic is projected onto the disk. Polygon areas and perimeters remain planar measurements in projected X/Y coordinates.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -181,7 +181,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. Distances are direct Euclidean line lengths on the disk, areas use planar shoelace geometry, and perimeters sum straight edges. The scale bar uses the same uniform planar kilometre calibration. These are measurements of the selected flat-disk model, not curved-surface geodesics. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. Distances are direct Euclidean line lengths on the disk, areas use planar shoelace geometry, and perimeters sum straight edges. The scale bar is locally calibrated to the WGS84 ground distance at the current view centre. A–B distance uses WGS84 geodesics; area and perimeter remain planar. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
