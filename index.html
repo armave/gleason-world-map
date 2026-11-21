@@ -12,7 +12,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style flat circular disk · WGS84 ellipsoidal measurements · Local distortion diagnostics · Historical scan registration</div>
+  <div class="subtitle">Gleason-style flat circular disk · Planar disk distance & area tools · Local distortion diagnostics · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -73,22 +73,22 @@
       </div>
     </section>
     <section class="panel">
-      <h2>Real-world measurement</h2>
+      <h2>Flat-disk measurement</h2>
       <div class="mode-row">
         <button id="exploreMode" class="active">Explore</button>
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations on the map. The readout is the shortest surface distance over the WGS84 reference ellipsoid, not a straight line in the flat drawing.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations on the disk. Distance is the straight-line chord in projected X/Y coordinates, using the disk's scale calibration.</p>
       <div class="measure-value" id="distanceValue">—</div>
-      <div class="measure-sub" id="distanceSub">Shortest WGS84 ellipsoidal surface distance</div>
+      <div class="measure-sub" id="distanceSub">Flat-disk distance · projected X/Y coordinates</div>
       <div id="endpointRows" style="margin-top:8px">
         <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
         <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
       </div>
       <div class="endpoint-actions"><button id="clearMeasure">Clear points</button></div>
       <div class="divider"></div>
-      <div class="small" id="areaHelp">Choose Area, then click three or more points to draw a region. Finish to calculate ellipsoidal area and perimeter.</div>
+      <div class="small" id="areaHelp">Choose Area, then click three or more points. Finish to calculate planar area and straight-edge perimeter on the disk.</div>
       <div class="measure-value" id="areaValue">—</div>
       <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
       <div class="small" id="areaVertexCount">0 vertices</div>
@@ -102,7 +102,7 @@
         <div class="info-box"><span id="selectionMetaTitle">Capital</span><strong id="selectionCapital">—</strong></div>
         <div class="info-box"><span>Coordinates</span><strong id="selectionCoords">—</strong></div>
       </div>
-      <div class="info-box" style="margin-top:8px"><span id="selectionFactTitle">WGS84 area from boundary geometry</span><strong id="selectionFactValue">—</strong></div>
+      <div class="info-box" style="margin-top:8px"><span id="selectionFactTitle">Flat-disk area from projected boundary</span><strong id="selectionFactValue">—</strong></div>
       <div class="endpoint-actions" id="selectionButtons" style="display:none">
         <button id="setA">Set as A</button><button id="setB">Set as B</button>
       </div>
@@ -114,7 +114,7 @@
         <thead><tr><th>Latitude</th><th>WGS84 distance from 90°N</th><th>Disk radius</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The radial distance is fixed to the WGS84 ellipsoidal meridian distance from the North Pole; there is no adjustable exponent. Thus distances from the map centre are true along every meridian. Distances between arbitrary off-centre places are calculated separately as WGS84 geodesics. East longitudes run counter-clockwise, matching the Gleason sheet. Local scale and area distortion vary across this flat projection.</p>
+      <p class="note" style="margin:9px 0 0">The radial coordinate remains calibrated to the WGS84 meridional distance from the North Pole. The distance and area tools are separate: they calculate straight-line lengths and planar polygon areas directly from projected X/Y coordinates, without a geodesic or ellipsoidal polygon-area engine. East longitudes run counter-clockwise, matching the Gleason sheet. Local scale and area distortion vary across this projection.</p>
     </section>
     <section class="panel" id="distortionPanel">
       <h2>Projection distortion at selected location</h2>
@@ -168,8 +168,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). Ground distances and areas use the WGS84 reference ellipsoid. The radial scale is true from the North Pole along meridians; arbitrary point-to-point distances are shortest WGS84 geodesics, and polygon areas use ellipsoidal polygon area. The scale bar is a local ground scale near the current view centre and changes with pan and zoom. The map is a flat projection, not a flat-earth physical model; local distortion is shown explicitly. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
-<script src="https://cdn.jsdelivr.net/npm/geographiclib-geodesic@2.2.0/geographiclib-geodesic.min.js" integrity="sha256-BuNRKQSzRldfR18U0LJ+oJedvNKw7d6/Xx7u/SNDlbU=" crossorigin="anonymous"></script>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). Distance and area tools use Euclidean geometry on the projected disk, with the current disk-radius calibration of 20,003.93 km for unit conversion; they do not report WGS84 surface geodesics or ellipsoidal surface areas. The radial coordinate and distortion diagnostics remain WGS84-calibrated. The scale bar is a separate local WGS84 ground-scale indicator near the current view centre and changes with pan and zoom. The map is a flat projection, not a flat-earth physical model; local distortion is shown explicitly. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>
