@@ -29,12 +29,38 @@ export function projectCoastlineLines(data,project,maxStepDegrees=1.5){
  return output;
 }
 
+function appendProjectedLines(path,lines){
+ for(const line of lines){
+  path.moveTo(line[0][0],line[0][1]);
+  for(let i=1;i<line.length;i++)path.lineTo(line[i][0],line[i][1]);
+ }
+}
+
+function yieldToMainThread(){
+ return new Promise(resolve=>{
+  if(typeof globalThis.requestIdleCallback==='function')globalThis.requestIdleCallback(()=>resolve(),{timeout:80});
+  else setTimeout(resolve,0);
+ });
+}
+
 export function createCoastlinePath(data,project,PathConstructor=globalThis.Path2D){
  if(typeof PathConstructor!=='function')throw new Error('Path2D is required to build coastline geometry.');
  const path=new PathConstructor();
- for(const line of projectCoastlineLines(data,project)){
-  path.moveTo(line[0][0],line[0][1]);
-  for(let i=1;i<line.length;i++)path.lineTo(line[i][0],line[i][1]);
+ appendProjectedLines(path,projectCoastlineLines(data,project));
+ return path;
+}
+
+export async function createCoastlinePathAsync(
+ data,project,PathConstructor=globalThis.Path2D,{batchSize=24,yieldControl=yieldToMainThread}={}
+){
+ if(typeof PathConstructor!=='function')throw new Error('Path2D is required to build coastline geometry.');
+ if(!Number.isInteger(batchSize)||batchSize<1)throw new Error('Coastline batch size must be a positive integer.');
+ const path=new PathConstructor(),coordinates=data?.coordinates;
+ if(!Array.isArray(coordinates)||typeof project!=='function')return path;
+ for(let start=0;start<coordinates.length;start+=batchSize){
+  const batch={coordinates:coordinates.slice(start,start+batchSize)};
+  appendProjectedLines(path,projectCoastlineLines(batch,project));
+  if(start+batchSize<coordinates.length)await yieldControl();
  }
  return path;
 }
