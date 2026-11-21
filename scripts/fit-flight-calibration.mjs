@@ -4,7 +4,7 @@
  * flight telemetry dataset. Target distances are ground-speed × elapsed-time
  * integrations, never coordinate-derived route lengths.
  */
-import { readFile, writeFile, unlink } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fitFlightCalibration } from '../src/core/flight-calibration-fit.js';
 
 const DATA_PATH = 'data/flight-calibration.json';
@@ -14,6 +14,7 @@ const MAX_TRAINING_MAPE = 10;
 const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_LEAVE_ONE_OUT_MAPE = 15;
+const MAX_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
 
 function asJavaScript(model) {
   return [
@@ -48,11 +49,13 @@ async function main() {
     holdoutMapePercent: fitted.metrics.holdout.meanAbsolutePercent,
     holdoutMaxErrorPercent: fitted.metrics.holdout.maxAbsolutePercent,
     leaveOneOutMapePercent: fitted.metrics.leaveOneOut?.meanAbsolutePercent ?? null,
+    leaveOneOutMaxRouteErrorPercent: fitted.metrics.leaveOneOut?.maxAbsolutePercent ?? null,
     limits: {
       maxTrainingMapePercent: MAX_TRAINING_MAPE,
       maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
-      maxLeaveOneOutMapePercent: MAX_LEAVE_ONE_OUT_MAPE
+      maxLeaveOneOutMapePercent: MAX_LEAVE_ONE_OUT_MAPE,
+      maxLeaveOneOutRouteErrorPercent: MAX_LEAVE_ONE_OUT_ROUTE_ERROR
     }
   };
   const accepted =
@@ -60,7 +63,8 @@ async function main() {
     qualityGate.holdoutMapePercent <= MAX_HOLDOUT_MAPE &&
     qualityGate.holdoutMaxErrorPercent <= MAX_HOLDOUT_ROUTE_ERROR &&
     Number.isFinite(qualityGate.leaveOneOutMapePercent) &&
-    qualityGate.leaveOneOutMapePercent <= MAX_LEAVE_ONE_OUT_MAPE;
+    qualityGate.leaveOneOutMapePercent <= MAX_LEAVE_ONE_OUT_MAPE &&
+    qualityGate.leaveOneOutMaxRouteErrorPercent <= MAX_LEAVE_ONE_OUT_ROUTE_ERROR;
 
   const summary = {
     schemaVersion: 1,
@@ -70,10 +74,10 @@ async function main() {
     sourceDataset: DATA_PATH,
     sourceRetrievedAt: dataset.source && dataset.source.retrievedAt,
     method: {
-      target: 'Median observed flown-path length per airport pair',
-      targetSource: 'ADS-B ground-speed telemetry integrated over timestamps',
-      formula: 'sum(ground_speed_knots * elapsed_seconds / 3600) * 1.852',
-      inputGeometry: 'Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route empirical mileage-per-chord ratios over three flat-disk endpoint features',
+      target: 'Median telemetry-span flown-mileage estimate per airport pair',
+      targetSource: 'ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate',
+      formula: 'observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; estimated_span_km = observed_km / time_coverage',
+      inputGeometry: 'Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route mileage-per-chord ratios over three flat-disk endpoint features',
       features: fitted.model.featureNames,
       trainingUnit: 'one independent airport pair, target is median of >=3 observed flights',
       splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted'
@@ -90,13 +94,10 @@ async function main() {
   await writeFile(SUMMARY_PATH, JSON.stringify(summary, null, 2) + '\n', 'utf8');
 
   if (!accepted) {
-    try {
-      await unlink(PARAMETERS_PATH);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-    console.warn('Calibration rejected by the independent validation gate.');
-    console.warn('No production parameters were written. Improve route coverage or telemetry quality.');
+    // Keep the last approved production model. A rejected candidate must never
+    // remove or overwrite a working calibration used by the live map.
+    console.warn('Calibration candidate rejected by the independent validation gate.');
+    console.warn('The last approved production parameters were preserved. Improve route coverage or telemetry quality.');
   } else {
     await writeFile(PARAMETERS_PATH, asJavaScript(fitted.model), 'utf8');
     console.log('Accepted calibration parameters written to ' + PARAMETERS_PATH);
