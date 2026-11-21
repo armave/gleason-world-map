@@ -187,3 +187,19 @@ test('ordinary benchmark endpoints remain within the fitted mean-colatitude and 
   assert.equal(diagnostics.nearSouthRim, false);
   assert.equal(diagnostics.status, 'within-fit-range');
 });
+
+test('opposite-side longitude separation is flagged as outside the fitted angular sample', () => {
+  const diagnostics = directLineCalibrationDiagnostics(
+    point(0, 0), point(0, 180)
+  );
+  assert.ok(diagnostics);
+  assert.equal(diagnostics.outsideTrainingRange, true);
+  assert.ok(diagnostics.warnings.includes('outside-training-range'));
+});
+
+test('the correction-bound diagnostic reports when the empirical factor is capped', () => {
+  const result = measureDirectDistance(point(30, 0), point(90, 180));
+  assert.equal(result.calibration.factorWasClamped, true);
+  assert.ok(result.warnings.includes('factor-clamped'));
+  assert.equal(result.calibrationFactor, 2.5);
+});
