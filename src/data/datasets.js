@@ -12,6 +12,7 @@ export const COUNTRY_DATA_FILES = Object.freeze({
   high: new URL('../../data/countries/high.geojson.gz', import.meta.url)
 });
 export const CAPITAL_DATA_FILE = new URL('../../data/capitals.json', import.meta.url);
+export const COASTLINE_DATA_FILE = new URL('../../data/coastlines-50m.json', import.meta.url);
 
 export function validateCountryDataset(data) {
   if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length < 150) {
@@ -56,7 +57,33 @@ export async function loadCountryDataset(quality = 'medium') {
   return validateCountryDataset(data);
 }
 
-export async function loadCapitalDataset() {
+
+export function validateCoastlineDataset(data){
+ if(!data||data.type!=='MultiLineString'||!Array.isArray(data.coordinates)||data.coordinates.length<1000)
+  throw new Error('The bundled Natural Earth coastline dataset is invalid or incomplete.');
+ let pointCount=0;
+ for(const line of data.coordinates){
+  if(!Array.isArray(line)||line.length<2)throw new Error('The coastline dataset contains a line with too few coordinates.');
+  for(const coordinate of line){
+   if(!Array.isArray(coordinate)||coordinate.length<2||!Number.isFinite(coordinate[0])||!Number.isFinite(coordinate[1])||
+      coordinate[0]<-180||coordinate[0]>180||coordinate[1]<-90||coordinate[1]>90)
+    throw new Error('The coastline dataset contains an invalid geographic coordinate.');
+   pointCount++;
+  }
+ }
+ if(pointCount<50000)throw new Error('The coastline dataset is missing detailed island and shoreline geometry.');
+ return data;
+}
+
+export async function loadCoastlineDataset(){
+ const response=await fetch(COASTLINE_DATA_FILE);
+ if(!response.ok)throw new Error(`Unable to load the bundled Natural Earth coastlines (HTTP ${response.status}).`);
+ let data;
+ try{data=await response.json();}catch(error){throw new Error(`The bundled coastline geometry is not valid JSON: ${error.message}`);}
+ return validateCoastlineDataset(data);
+}
+
+export async function loadCapitalDataset()export async function loadCapitalDataset() {
   const response = await fetch(CAPITAL_DATA_FILE);
   if (!response.ok) throw new Error(`Unable to load the bundled capital coordinates (HTTP ${response.status}).`);
   let data;
