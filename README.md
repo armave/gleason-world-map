@@ -30,7 +30,7 @@ The distance and area tools deliberately use different metrics because the disk 
 
 For two endpoints north of 60°S, the engine calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method). If either endpoint is at or south of 60°S, the readout instead uses the Euclidean chord between the projected disk coordinates. This hybrid rule allows a direct A–B segment to cross the 60°S metric-transition circle; the displayed straight connector remains a projected map segment.
 
-The 60°S parallel is drawn as a red dashed metric-transition circle with two opposing callouts. Direct distance segments and user-drawn polygon edges, including the closing edge, may cross it. The callouts identify the change in distance metric; they do not indicate a crossing prohibition.
+The 60°S parallel is drawn as a red dashed restricted line with two opposing callouts. Direct distance segments and user-drawn polygon edges, including the closing edge, may cross it. The callouts identify the change in distance metric; they do not indicate a crossing prohibition.
 
 The WGS84 calculation uses ellipsoid parameters. If its iterative inverse does not converge for a nearly antipodal pair, it falls back to an authalic-sphere approximation; ordinary northern-side routes use the ellipsoidal result.
 

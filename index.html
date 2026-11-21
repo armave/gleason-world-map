@@ -12,7 +12,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style flat circular disk · Hybrid distance &amp; planar area · 60°S metric transition · Historical scan registration</div>
+  <div class="subtitle">Gleason-style flat circular disk · Hybrid distance &amp; planar area · 60°S restricted line · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -47,7 +47,7 @@
         <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
-          <span class="map-measure-restriction">60°S · metric transition</span>
+          <span class="map-measure-restriction">60°S · restricted line</span>
           <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails" hidden>Details</button>
         </div>
         <div class="mode-row map-measure-modes" role="group" aria-label="Map mode">
@@ -97,7 +97,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · red 60°S metric-transition line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · red 60°S restricted line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">

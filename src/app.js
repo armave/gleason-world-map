@@ -172,7 +172,7 @@ function drawRestrictedParallel(){
   ctx.strokeStyle='rgba(142,53,46,.72)';ctx.lineWidth=1/zoom;ctx.stroke();
  }
  // Opposing callouts identify the 60°S crossing label.
- const label='60°S · METRIC TRANSITION';
+ const label='60°S · RESTRICTED LINE';
  ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
  for(const degree of [45,225]){
   const angle=rad(degree),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
