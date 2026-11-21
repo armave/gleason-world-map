@@ -33,7 +33,7 @@ function drawCrevasse(ctx,baseR,angle,index,zoom){
  ctx.strokeStyle='rgba(91,145,163,.34)';ctx.lineWidth=.7/zoom;ctx.stroke();
 }
 
-function drawRimLabels(ctx,baseR,zoom){
+function drawRimLabels(ctx,baseR,zoom,mapRotation=0){
  const text='ANTARCTIC ICE WALL';
  ctx.font=`700 ${8.5/zoom}px Georgia,serif`;
  ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
@@ -44,12 +44,12 @@ function drawRimLabels(ctx,baseR,zoom){
   let tangent=Math.atan2(-Math.cos(theta),-Math.sin(theta));
   if(tangent>Math.PI/2)tangent-=Math.PI;
   if(tangent< -Math.PI/2)tangent+=Math.PI;
-  ctx.save();ctx.translate(x,y);ctx.rotate(tangent);
+  ctx.save();ctx.translate(x,y);ctx.rotate(tangent-mapRotation);
   ctx.strokeText(text,0,0);ctx.fillText(text,0,0);ctx.restore();
  }
 }
 
-export function drawIceWall(ctx,antarcticaPath,baseR,zoom){
+export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0){
  if(!ctx||!antarcticaPath||!Number.isFinite(baseR)||baseR<=0||!Number.isFinite(zoom)||zoom<=0)return;
  ctx.save();
  ctx.shadowColor='rgba(78,130,151,.2)';ctx.shadowBlur=3/zoom;
@@ -74,6 +74,6 @@ export function drawIceWall(ctx,antarcticaPath,baseR,zoom){
  ctx.beginPath();ctx.arc(0,0,baseR*.999,0,Math.PI*2);
  ctx.strokeStyle='rgba(54,108,128,.34)';ctx.lineWidth=4.2/zoom;ctx.stroke();
  ctx.strokeStyle='#426f82';ctx.lineWidth=1.65/zoom;ctx.stroke();
- drawRimLabels(ctx,baseR,zoom);
+ drawRimLabels(ctx,baseR,zoom,mapRotation);
  ctx.restore();
 }
