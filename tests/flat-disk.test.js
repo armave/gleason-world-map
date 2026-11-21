@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import {
   DISK_RADIAL_SCALE_KM, DISK_RADIUS_KM,
   colatitudeRadians, radialDistanceFromNorthKm, radialFraction,
@@ -14,16 +15,14 @@ const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
 const point = (lat, lon) => ({lat, lon});
 
-test('radial scale and full disk radius use the Canberra–Santiago flat-map calibration', () => {
-  close(DISK_RADIAL_SCALE_KM, 2778.193571010486, 1e-12);
+test('radial scale and disk radius use the fitted ADS-B flight-mileage parameters', () => {
+  close(DISK_RADIAL_SCALE_KM, FLIGHT_CALIBRATION.radialScaleKm, 1e-12);
   close(DISK_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM, 1e-10);
-  close(DISK_RADIUS_KM, 8727.952512936938, 1e-9);
-});
-
-test('Canberra–Santiago straight projected distance is calibrated to 11,340 km', () => {
-  const canberra = point(-35.27, 149.13);
-  const santiago = point(-33.45, -70.67);
-  close(flatDiskDistanceMeters(canberra, santiago) / 1000, 11340, 1e-7);
+  assert.equal(FLIGHT_CALIBRATION.target,
+    'median observed ADS-B flight-track mileage from ground-speed × time integration');
+  assert.equal(FLIGHT_CALIBRATION.trainingRouteCount, 33);
+  assert.equal(FLIGHT_CALIBRATION.holdoutRouteCount, 4);
+  assert.ok(FLIGHT_CALIBRATION.trainingExamples.length >= 10);
 });
 
 test('radial calibration is r = R times colatitude', () => {
