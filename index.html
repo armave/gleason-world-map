@@ -93,7 +93,7 @@
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. Distance is the shortest path along the WGS84 reference ellipsoid, shown projected on the flat disk.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. The distance value uses the shortest WGS84 surface path; the A–B connector is always a straight dashed line between the projected points.</p>
       <div class="measure-value" id="distanceValue">—</div>
       <div class="measure-sub" id="distanceSub">WGS84 direct surface distance</div>
       <div id="endpointRows" style="margin-top:8px">
@@ -136,9 +136,9 @@
         <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
         <div class="info-box"><span>Distance</span><strong>WGS84 geodesic</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
-        <div class="info-box"><span>A–B line</span><strong>Projected geodesic</strong></div>
+        <div class="info-box"><span>A–B line</span><strong>Direct dashed line</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B distance is the shortest WGS84 ellipsoidal surface distance and its geodesic is projected onto the disk. Polygon areas and perimeters remain planar measurements in projected X/Y coordinates.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. The A–B numeric distance is the shortest WGS84 ellipsoidal surface distance. Its visual connector is always a straight dashed line between the two projected map positions; the dashed line is not the WGS84 geodesic path. Polygon areas and perimeters remain planar measurements in projected X/Y coordinates.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
