@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+const coastlines = await readFile(new URL('../src/map/coastlines.js', import.meta.url), 'utf8');
 const iceWall = await readFile(new URL('../src/map/ice-wall.js', import.meta.url), 'utf8');
 const oceanLabels = await readFile(new URL('../src/map/ocean-labels.js', import.meta.url), 'utf8');
 
@@ -60,4 +61,28 @@ test('ocean surface is blue, ocean and sea names are a toggleable shareable laye
  assert.match(oceanLabels,/MEDITERRANEAN SEA/);
  assert.match(oceanLabels,/SOUTH CHINA SEA/);
  assert.match(iceWall,/ctx\.fillStyle='#ffffff'/);
+});
+
+test('coastline and island shoreline layer is independent and shareable',()=>{
+ assert.match(html,/id="layerCoastlines" checked/);
+ assert.match(app,/layers\.coastlines/);
+ assert.match(app,/drawCoastlinesLayer\(\)/);
+ assert.match(app,/layers\.coastlines\].map\(v=>v\?'1':'0'\)/);
+ assert.match(coastlines,/createCoastlinePath/);
+});
+test('ocean labels are curved, scale-aware, water-aware and collision-filtered',()=>{
+ assert.match(oceanLabels,/NORTH SEA/);
+ assert.match(oceanLabels,/MOZAMBIQUE CHANNEL/);
+ assert.match(oceanLabels,/WEDDELL SEA/);
+ assert.match(oceanLabels,/selectNonOverlappingLabels/);
+ assert.match(oceanLabels,/isLand/);
+ assert.match(oceanLabels,/glyph\.rotation/);
+ assert.match(app,/labelCollisionBoxes\.push\(\.\.\.visible\.map/);
+});
+test('Antarctic ice wall has layered edges, strata, crevasses and repeated rim labels',()=>{
+ assert.match(iceWall,/fillStyle='#ffffff'/);
+ assert.match(iceWall,/ICE_RIDGE_COUNT=180/);
+ assert.match(iceWall,/ICE_CREVASSE_COUNT=42/);
+ assert.match(iceWall,/ICE_WALL_LABEL_COUNT=8/);
+ assert.match(iceWall,/ctx\.clip\(antarcticaPath,'evenodd'\)/);
 });
