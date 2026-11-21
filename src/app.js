@@ -146,8 +146,8 @@ function drawRestrictedParallel(){
   ctx.lineTo(outer*Math.cos(angle),-outer*Math.sin(angle));
   ctx.strokeStyle='rgba(142,53,46,.72)';ctx.lineWidth=1/zoom;ctx.stroke();
  }
- // Opposing callouts mark the latitude where the hybrid distance metric changes.
- const label='60°S · METRIC CHANGE';
+ // Opposing callouts identify the 60°S crossing label.
+ const label='60°S · FORBIDDEN TO CROSS';
  ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
  for(const degree of [45,225]){
   const angle=rad(degree),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
