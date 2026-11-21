@@ -89,3 +89,59 @@ export async function loadCountyDataset() {
   try{data=await response.json();}catch(error){throw new Error(`The bundled county-label data is not valid JSON: ${error.message}`);}
   return validateCountyDataset(data);
 }
+
+
+// Current official county-equivalent polygons from U.S. Census TIGERweb.
+// Layer 82 is the January 1, 2026 Counties layer (TIGERweb ACS2026).
+export const COUNTY_BOUNDARY_SERVICE_URL =
+  'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2026/MapServer/82';
+
+export function validateCountyBoundaryDataset(data) {
+  if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length < 3000) {
+    throw new Error('The Census 2026 county-boundary response is invalid or incomplete.');
+  }
+  const seen = new Set();
+  for (const feature of data.features) {
+    const p = feature?.properties || {};
+    const geoid = String(p.GEOID || '');
+    const state = String(p.STATE || '');
+    const name = String(p.BASENAME || p.NAME || '').trim();
+    const lat = Number(p.INTPTLAT), lon = Number(p.INTPTLON);
+    const geometry = feature?.geometry;
+    if (!/^\\d{5}$/.test(geoid) || !/^\\d{2}$/.test(state) || !name ||
+        !Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 ||
+        lon < -180 || lon > 180 || !geometry ||
+        !['Polygon', 'MultiPolygon'].includes(geometry.type) ||
+        !Array.isArray(geometry.coordinates) || seen.has(geoid)) {
+      throw new Error('The Census 2026 county-boundary response contains an invalid or duplicate feature.');
+    }
+    seen.add(geoid);
+  }
+  return data;
+}
+
+export async function loadCountyBoundaryDataset() {
+  const params = new URLSearchParams({
+    where: '1=1',
+    outFields: 'GEOID,STATE,BASENAME,NAME,INTPTLAT,INTPTLON',
+    returnGeometry: 'true',
+    outSR: '4326',
+    geometryPrecision: '5',
+    maxAllowableOffset: '0.002',
+    resultRecordCount: '10000',
+    f: 'geojson'
+  });
+  const response = await fetch(`${COUNTY_BOUNDARY_SERVICE_URL}/query?${params}`, {
+    headers: { Accept: 'application/geo+json, application/json' }
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to load 2026 Census county polygons (HTTP ${response.status}).`);
+  }
+  let data;
+  try { data = await response.json(); }
+  catch (error) { throw new Error(`The Census county-boundary response is not valid JSON: ${error.message}`); }
+  if (data?.error) {
+    throw new Error(data.error.message || 'The Census county-boundary service returned an error.');
+  }
+  return validateCountyBoundaryDataset(data);
+}
