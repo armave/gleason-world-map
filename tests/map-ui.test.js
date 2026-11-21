@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createIceWallTexturePaths,ICE_RIDGE_COUNT,ICE_CREVASSE_COUNT} from '../src/map/ice-wall.js';
 import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -314,7 +315,7 @@ test('scale-bar measurement is calculated once per frame and uses a pixel-accura
  assert.match(app,/shouldShowCapitalLabels\(frameScaleBarReadingKm\)/);
  assert.match(app,/shouldShowCountryLabels\(frameScaleBarReadingKm\)/);
  assert.match(app,/drawOceanLabels\(ctx,project,baseR,zoom,frameScaleBarReadingKm/);
- assert.match(app,/for\(let i=0;i<16;i\+\+\)/);
+ assert.match(app,/for\(let i=0;i<12;i\+\+\)/);
  assert.doesNotMatch(app,/for\(let i=0;i<36;i\+\+\)\{const mid=\(low\+high\)\/2;if\(flatDiskDistanceForScalePixels/);
 });
 
@@ -333,4 +334,20 @@ test('Antarctic ice-wall detail is grouped into reusable paths and built on resi
  assert.match(app,/antarcticSurfacePaths,iceWallTexturePaths\)/);
  assert.match(iceWall,/export function createIceWallTexturePaths/);
  assert.match(iceWall,/texturePaths\.accentRidges/);
+});
+
+
+test('Antarctic texture builder combines ridges and crevasses into three reusable paths',()=>{
+ class MockPath {
+  constructor(){this.commands=[];}
+  moveTo(x,y){this.commands.push(['M',x,y]);}
+  lineTo(x,y){this.commands.push(['L',x,y]);}
+ }
+ const paths=createIceWallTexturePaths(300,MockPath);
+ assert.ok(paths);
+ assert.equal(Object.keys(paths).length,3);
+ const moveCount=path=>path.commands.filter(command=>command[0]==='M').length;
+ assert.equal(moveCount(paths.ridges),ICE_RIDGE_COUNT-Math.ceil(ICE_RIDGE_COUNT/4));
+ assert.equal(moveCount(paths.accentRidges),Math.ceil(ICE_RIDGE_COUNT/4));
+ assert.equal(moveCount(paths.crevasses),ICE_CREVASSE_COUNT);
 });
