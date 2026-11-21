@@ -1,7 +1,7 @@
 name: Collect flight telemetry calibration sample
 on:
   push:
-    branches: [feat/flight-telemetry-calibration]
+    branches: ['**']
     paths:
       - scripts/collect-flight-calibration.mjs
       - scripts/fit-flight-calibration.mjs
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 22
       - name: Collect observed ground-speed and timestamp samples
-        run: npm run collect:flight-calibration -- --max-pages-per-route=16 --samples-per-route=5
+        run: npm run collect:flight-calibration -- --max-pages-per-route=24 --samples-per-route=8
       - name: Fit only when independent route coverage is sufficient
         run: npm run fit:flight-calibration
       - name: Commit reproducible telemetry data and fitted parameters
