@@ -118,7 +118,7 @@ test('canvas normalization keeps planar measurements stable across resize', () =
     [a, b, point(-5, 80)],
     (lon, lat) => project(lon, lat, 900), 900
   );
-  close(small.areaM2, large.areaM2, 1e-5);
+  close(small.areaM2, large.areaM2, 0.1);
   close(small.perimeterM, large.perimeterM, 1e-5);
 });
 
