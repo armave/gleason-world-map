@@ -1,10 +1,10 @@
 /**
- * WGS84 inverse/direct geodesics used by the distance tool.
+ * Standalone WGS84 inverse/direct geodesic utilities.
  *
- * The Gleason disk remains the display projection. Geographic distance is
- * measured along the shortest path on the WGS84 reference ellipsoid, then
- * that path is sampled and projected so the displayed connector represents
- * the same direct geographic path (not a flight/road track).
+ * These helpers are retained for independent geographic-reference checks;
+ * the active Gleason flat-disk map measurement tool does not import or call
+ * them. The map's A–B readout uses a straight Euclidean segment in the
+ * calibrated flat-disk coordinate plane.
  *
  * Vincenty's iterative inverse/direct formulae are used for ordinary routes.
  * The inverse falls back to an authalic-sphere solution only if the inverse
