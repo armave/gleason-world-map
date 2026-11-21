@@ -56,6 +56,10 @@ test('direct connector contains only the two projected endpoints', () => {
   assert.equal(path.length, 2);
   assert.deepEqual(path[0], projector(a.lon, a.lat));
   assert.deepEqual(path[1], projector(b.lon, b.lat));
+  const renderedLineMeters = Math.hypot(
+    path[1][0] - path[0][0], path[1][1] - path[0][1]
+  ) * (DISK_RADIUS_KM * 1000 / 500);
+  close(renderedLineMeters, flatDiskDistanceMeters(a, b), 1e-5);
   assert.deepEqual(flatDiskLinePath(a, b, () => [NaN, 0]), []);
 });
 
