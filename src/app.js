@@ -472,14 +472,45 @@ function updateMeasurement(){
   const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';
   row.append(badge,name,coord);box.append(row);
  }
+ const diagnostics=$('calibrationDiagnostics');
+ diagnostics.hidden=true;
+ diagnostics.classList.remove('is-warning');
+ diagnostics.textContent='';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent='Empirically calibrated straight-line distance';
-  $('measureHelp').textContent='The A–B connector is one straight line. Its displayed length uses a bounded empirical flat-map correction fitted to city-distance references; the running measurement engine does not use globe or geodesic calculations.';
+  $('rawDistanceValue').textContent=Number.isFinite(measurement.chordDistanceMeters)
+   ?formatDistance(measurement.chordDistanceMeters):'Unavailable';
+  $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
+  $('distanceValue').textContent=Number.isFinite(measurement.calibratedDistanceMeters)
+   ?formatDistance(measurement.calibratedDistanceMeters):'Unavailable';
+  const factor=measurement.calibrationFactor;
+  const correction=measurement.correctionPercent;
+  $('distanceSub').textContent=Number.isFinite(factor)
+   ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
+   :'Empirical correction unavailable';
+
+  const messages=[];
+  if(measurement.calibration?.outsideTrainingRange){
+   messages.push('Outside fitted feature range: mean colatitude or endpoint separation exceeds the calibration sample bounds. The model clamps these inputs to its fitted limits.');
+  }
+  if(measurement.calibration?.nearSouthRim){
+   messages.push('Southern-rim sensitivity: an endpoint is at or below 85°S. Longitude has a strong effect on position near the disk edge; interpret both readings as flat-disk model outputs.');
+  }
+  if(measurement.calibration?.factorWasClamped){
+   messages.push('Correction bound applied: the unbounded empirical factor fell outside 0.90–2.50.');
+  }
+  if(messages.length===0){
+   messages.push('Calibration features are within the fitted mean-colatitude and endpoint-span ranges. This empirical estimate is not guaranteed outside the reference sample.');
+  }
+  diagnostics.textContent=messages.join(' ');
+  diagnostics.classList.toggle('is-warning',measurement.warnings.length>0);
+  diagnostics.hidden=false;
+  $('measureHelp').textContent='The connector is one straight segment in the Gleason disk. Raw chord is the Euclidean distance in the map plane; the second reading multiplies that same chord by the empirical endpoint correction. No globe formula or geodesic library is used.';
  }else{
+  $('rawDistanceValue').textContent='—';
+  $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='Empirically calibrated straight-line distance';
+  $('distanceSub').textContent='Raw chord × empirical factor';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
