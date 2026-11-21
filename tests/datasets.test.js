@@ -53,10 +53,14 @@ test('bundled Census county-equivalent labels contain complete, unique internal 
   assert.ok(COUNTY_DATA_FILE.pathname.endsWith('/data/us-counties.json'));
   const data = JSON.parse(await readFile(COUNTY_DATA_FILE, 'utf8'));
   const counties = validateCountyDataset(data);
+  assert.equal(data.sourceYear, 2026);
   assert.equal(counties.length, 3222);
   assert.deepEqual(counties.find(county => county.geoid === '06037'), {
     geoid: '06037', stateCode: 'CA', name: 'Los Angeles County', lat: 34.196398, lon: -118.261862
   });
   assert.ok(counties.some(county => county.stateCode === 'AK' && county.name.endsWith('Borough')));
   assert.ok(counties.some(county => county.stateCode === 'PR' && county.name.endsWith('Municipio')));
+  assert.deepEqual(counties.find(county => county.geoid === '01005'), {
+    geoid: '01005', stateCode: 'AL', name: 'Barbour County', lat: 31.870069, lon: -85.400142
+  });
 });

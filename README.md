@@ -68,7 +68,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Continuous Antarctic land band / ice-wall rim with pole-aware GeoJSON closure
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
-- U.S. county-equivalent labels from 2024 Census internal points (from 270% zoom), collision-filtered for legibility
+- U.S. county-equivalent labels from 2026 Census internal points (from 270% zoom), collision-filtered for legibility
 - County search, selection, and shareable layer visibility
 - View-centred local WGS84 ground scale bar
 - Geodesic measurement path projected onto the disk
@@ -169,12 +169,12 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 Capital markers remain available at every zoom level. Their names appear from 125% zoom, with screen-space collision filtering so nearby capitals do not overwrite one another. The selected capital label receives priority.
 
-The optional “U.S. county names” layer uses the U.S. Census Bureau's 2024 National Counties Gazetteer internal points. It covers U.S. counties and county-equivalents, including Alaska boroughs/census areas and Puerto Rico municipios. Names appear from 270% zoom, after which labels are collision-filtered against capital labels and one another. This is a label-point layer, not county boundary geometry; the app does not imply that county polygons are available worldwide.
+The optional “U.S. county names” layer uses the U.S. Census Bureau's 2024 National Counties Gazetteer internal points. It covers U.S. counties and county-equivalents in the 50 states, the District of Columbia, and Puerto Rico, including Alaska boroughs/census areas and Puerto Rico municipios. The 2026 Census national file does not include the separately published Island Areas (American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands). Names appear from 270% zoom, after which labels are collision-filtered against capital labels and one another. This is a label-point layer, not county boundary geometry; the app does not imply that county polygons are available worldwide.
 
-The compact data file is generated from the Census Bureau's public-domain 2024 Gazetteer. Download and extract `2024_Gaz_counties_national.zip` from [the Census Gazetteer archive](https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_counties_national.zip), then run:
+The compact data file is generated from the Census Bureau's public-domain 2026 Gazetteer. Download and extract `2026_Gaz_counties_national.zip` from [the Census Gazetteer archive](https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2026_Gaz_counties_national.zip), then run:
 
 ```bash
-node scripts/vendor-county-labels.mjs --source-file 2024_Gaz_counties_national.txt
+node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.txt
 ```
 
 Older share links containing the original five-layer visibility code remain compatible; county names default to on unless the new sixth layer bit is present.

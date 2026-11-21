@@ -67,8 +67,8 @@ export async function loadCapitalDataset() {
 
 export const COUNTY_DATA_FILE = new URL('../../data/us-counties.json', import.meta.url);
 export function validateCountyDataset(data) {
-  if (!data || data.schemaVersion !== 1 || data.sourceYear !== 2024 || !Array.isArray(data.counties) || data.counties.length < 3000) {
-    throw new Error('The bundled 2024 U.S. county-label dataset is invalid or incomplete.');
+  if (!data || data.schemaVersion !== 1 || data.sourceYear !== 2026 || !Array.isArray(data.counties) || data.counties.length < 3000) {
+    throw new Error('The bundled 2026 U.S. county-label dataset is invalid or incomplete.');
   }
   const seen = new Set();
   for (const row of data.counties) {
