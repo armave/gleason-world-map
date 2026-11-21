@@ -24,20 +24,40 @@ class TemplatePanel extends LitElement {
   }
 
   set stateStore(store) {
+    if (this._stateStore === store) return;
     this._unsubscribe?.();
     this._stateStore = store || null;
-    this._unsubscribe = this._stateStore?.subscribe(() => this.requestUpdate()) || null;
-    this.requestUpdate();
+    this._subscribeToStateStore();
   }
 
   get stateStore() {
     return this._stateStore;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    if (this._stateStore && !this._unsubscribe) this._subscribeToStateStore();
+  }
+
   disconnectedCallback() {
     this._unsubscribe?.();
     this._unsubscribe = null;
     super.disconnectedCallback();
+  }
+
+  _subscribeToStateStore() {
+    this._unsubscribe = this._stateStore?.subscribe(snapshot => {
+      // State changes must not re-render the static panel markup: doing so
+      // would replace controls and detach the map controller's DOM listeners.
+      this._syncState(snapshot);
+    }) || null;
+    this._syncState(this._stateStore?.getState?.() || {});
+  }
+
+  _syncState(snapshot = {}) {
+    const mode = snapshot.mode || 'explore';
+    this.dataset.activeMode = mode;
+    this.querySelector('.lit-panel-content')?.setAttribute('data-active-mode', mode);
   }
 
   _relayPanelEvent(event) {
