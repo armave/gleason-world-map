@@ -1,4 +1,4 @@
-// Shared geometry and drawing metrics for distance and area point connectors.
+// Shared styles and direct projected segments for flat-disk distance and area tools.
 const CONNECTOR_STYLES = Object.freeze({
  distance: Object.freeze({
   color:'#b45c39',halo:'rgba(255,250,238,.96)',lineWidth:2.8,haloExtra:2.1,dash:Object.freeze([])
@@ -21,8 +21,7 @@ export function measurementStrokeStyle(tool,zoom=1){
  };
 }
 
-// A distance line on the flat disk is the straight segment between projected endpoints.
-// The measured WGS84 surface distance is calculated separately by the app.
+// A distance line and its measured length use the same straight projected endpoints.
 export function createProjectedMeasurementSegments(points,projectPoint,closed=false){
  if(!Array.isArray(points)||points.length<2||typeof projectPoint!=='function')return [];
  const segmentCount=closed&&points.length>=3?points.length:points.length-1;
@@ -38,8 +37,8 @@ export function createProjectedMeasurementSegments(points,projectPoint,closed=fa
  return segments;
 }
 
-// Returns one geodesic path per pair of successive points for area boundaries.
-// A finished area adds its final-to-first segment; an unfinished area remains an open chain.
+// Connects caller-supplied projected paths for area boundaries.
+// A finished area adds its final-to-first segment; an unfinished area remains open.
 export function createMeasurementSegments(points,createGeodesicPath,closed=false){
  if(!Array.isArray(points)||points.length<2||typeof createGeodesicPath!=='function')return [];
  const segmentCount=closed&&points.length>=3?points.length:points.length-1;
