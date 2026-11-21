@@ -98,13 +98,13 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/geodesicDistanceMeters/);assert.match(app,/geodesicLinePath/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/geodesicDistanceMeters/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
 });
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
-  assert.match(html, /<span>A–B line<\/span><strong>Projected geodesic<\/strong>/);
-  assert.match(app, /not an actual flight or travelled route/);
+  assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
+  assert.match(app, /dashed A–B connector is always a straight line/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
@@ -116,4 +116,13 @@ test('map orientation is display-only, pointer-safe and included in share links'
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
+});
+
+
+test('distance connector is drawn as a straight projected segment rather than a surface geodesic',()=>{
+ assert.match(app,/const path=flatDiskLinePath\(points\[0\],points\[1\],project\)/);
+ assert.match(app,/ctx\.lineTo\(path\[1\]\[0\],path\[1\]\[1\]\)/);
+ assert.match(app,/strokeMeasurementConnector\('distance'\)/);
+ assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
+ assert.match(html,/Direct dashed line/);
 });

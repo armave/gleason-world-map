@@ -93,7 +93,7 @@
         <button id="measureMode">Distance</button>
         <button id="areaMode">Area</button>
       </div>
-      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. Distance is the shortest path along the WGS84 reference ellipsoid, shown projected on the flat disk.</p>
+      <p class="small" id="measureHelp" style="margin:9px 0 7px">Choose two locations. The distance value uses the shortest WGS84 surface path; the A–B connector is always a straight dashed line between the projected points.</p>
       <div class="measure-value" id="distanceValue">—</div>
       <div class="measure-sub" id="distanceSub">WGS84 direct surface distance</div>
       <div id="endpointRows" style="margin-top:8px">
@@ -136,9 +136,9 @@
         <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
         <div class="info-box"><span>Distance</span><strong>WGS84 geodesic</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
-        <div class="info-box"><span>A–B line</span><strong>Projected geodesic</strong></div>
+        <div class="info-box"><span>A–B line</span><strong>Direct dashed line</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B distance is the shortest WGS84 ellipsoidal surface distance and its geodesic is projected onto the disk. Polygon areas and perimeters remain planar measurements in projected X/Y coordinates.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. The A–B numeric distance is the shortest WGS84 ellipsoidal surface distance. Its visual connector is always a straight dashed line between the two projected map positions; the dashed line is not the WGS84 geodesic path. Polygon areas and perimeters remain planar measurements in projected X/Y coordinates.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -181,7 +181,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B distances use shortest WGS84 geodesics projected onto the disk; polygon areas use planar shoelace geometry and perimeters sum straight edges. The scale bar is locally calibrated to the WGS84 ground distance at the current view centre. A–B distance uses WGS84 geodesics; area and perimeter remain planar. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat-disk coordinate model with radial calibration r = Rθ, R = 6,371 km and outer radius πR = 20,015.09 km. A–B numeric distances use shortest WGS84 geodesics; the visible connector is always a straight dashed segment between projected endpoints. Polygon areas use planar shoelace geometry and perimeters sum straight edges. The scale bar is locally calibrated to the WGS84 ground distance at the current view centre. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>

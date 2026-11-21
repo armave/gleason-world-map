@@ -1,5 +1,5 @@
-import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
-import {geodesicDistanceMeters,geodesicLinePath} from './core/geodesic.js';
+import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
+import {geodesicDistanceMeters} from './core/geodesic.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -147,10 +147,10 @@ function strokeMeasurementConnector(tool){
 }
 function drawMeasure(){
  if(points.length===2){
-  const path=geodesicLinePath(points[0],points[1],project);
-  if(path.length>=2){
-   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);
-   for(let i=1;i<path.length;i++)ctx.lineTo(path[i][0],path[i][1]);
+  // The visual connector is always a straight projected A–B line; the numeric readout is WGS84.
+  const path=flatDiskLinePath(points[0],points[1],project);
+  if(path.length===2){
+   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
   }
  }
@@ -245,7 +245,7 @@ function showCounty(county){
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){
  $('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const distanceMeters=geodesicDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='WGS84 shortest surface distance';$('measureHelp').textContent='The readout is the shortest path along the WGS84 reference ellipsoid. The connector shows that direct geodesic projected onto the disk; it is not an actual flight or travelled route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 direct surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
+ if(points.length===2){const distanceMeters=geodesicDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='WGS84 shortest surface distance';$('measureHelp').textContent='The numeric readout is the shortest path along the WGS84 reference ellipsoid. The dashed A–B connector is always a straight line between the two projected map points; it is a visual map chord, not the geodesic path or an actual flight route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 direct surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
 }
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});const offset=panForWorldCenterPoint(x,y,zoom,rotationRadians());panX=offset.panX;panY=offset.panY;draw();}

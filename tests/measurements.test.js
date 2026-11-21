@@ -35,15 +35,17 @@ test('projected connector skips invalid points and projected endpoints',()=>{
  assert.deepEqual(createProjectedMeasurementSegments([point(0,0),null],project),[]);
 });
 
-test('distance connector uses a solid stroke; area retains a dashed outline',()=>{
+test('distance connector is dashed; area retains its distinct dashed outline',()=>{
  const distance=measurementStrokeStyle('distance',2),area=measurementStrokeStyle('area',2);
  assert.ok(distance.lineWidth>0);
  assert.ok(distance.haloWidth>distance.lineWidth);
- assert.deepEqual(distance.dash,[]);
+ assert.equal(distance.dash.length,2);
+ assert.ok(distance.dash.every(value=>value>0));
  assert.ok(area.lineWidth>0);
  assert.ok(area.haloWidth>area.lineWidth);
  assert.equal(area.dash.length,2);
  assert.ok(area.dash.every(value=>value>0));
  assert.notEqual(distance.color,area.color);
+ assert.notDeepEqual(distance.dash,area.dash);
  assert.throws(()=>measurementStrokeStyle('unknown'),/Unknown measurement connector/);
 });
