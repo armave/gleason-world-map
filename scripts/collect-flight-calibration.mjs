@@ -105,6 +105,42 @@ function percentile(values, fraction) {
   return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower);
 }
 
+function airportGeometry(airport) {
+  const published = Array.isArray(airport.airspaces) && airport.airspaces.length
+    ? airport.airspaces[0].geometry : null;
+  if (published && (published.type === 'Polygon' || published.type === 'MultiPolygon')) {
+    return published;
+  }
+  return {
+    type: 'Circle',
+    coordinates: [airport.lon, airport.lat],
+    radius: AIRPORT_FALLBACK_RADIUS_METERS
+  };
+}
+
+function coordinatesFromPoint(point) {
+  const coordinates = point && point.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+  const lon = Number(coordinates[0]);
+  const lat = Number(coordinates[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90) return null;
+  return { lat, lon };
+}
+
+async function mapLimit(items, limit, callback) {
+  const output = new Array(items.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      output[index] = await callback(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return output;
+}
+
 async function fetchFlightDetail(candidate, airportA, airportB, counters) {
   try {
     const detail = await getJson('/flights/' + encodeURIComponent(candidate.flight_id));
