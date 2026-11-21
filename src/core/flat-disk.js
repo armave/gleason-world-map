@@ -26,11 +26,14 @@ export const wrapLongitude = longitude => {
 };
 
 export function colatitudeRadians(latitudeDegrees) {
-  return clamp(Math.PI / 2 - rad(latitudeDegrees), 0, Math.PI);
+  if (!Number.isFinite(latitudeDegrees) ||
+      latitudeDegrees < -90 || latitudeDegrees > 90) return NaN;
+  return Math.PI / 2 - rad(latitudeDegrees);
 }
 
 export function radialDistanceFromNorthKm(latitudeDegrees) {
-  return DISK_RADIAL_SCALE_KM * colatitudeRadians(latitudeDegrees);
+  const theta = colatitudeRadians(latitudeDegrees);
+  return Number.isFinite(theta) ? DISK_RADIAL_SCALE_KM * theta : NaN;
 }
 
 export function radialFraction(latitudeDegrees) {
@@ -87,7 +90,8 @@ export function flatDiskDistanceMeters(a, b) {
 /** One direct projected segment: exactly the line shown by the distance tool. */
 export function flatDiskLinePath(a, b, projectPoint) {
   if (!a || !b || typeof projectPoint !== 'function' ||
-      ![a.lat, a.lon, b.lat, b.lon].every(Number.isFinite)) return [];
+      ![a.lat, a.lon, b.lat, b.lon].every(Number.isFinite) ||
+      a.lat < -90 || a.lat > 90 || b.lat < -90 || b.lat > 90) return [];
   const start = projectPoint(a.lon, a.lat);
   const end = projectPoint(b.lon, b.lat);
   if (![start, end].every(point =>
@@ -99,7 +103,8 @@ export function flatDiskLinePath(a, b, projectPoint) {
 
 /** Radial north–south separation in the calibrated plane, in kilometres. */
 export function northSouthDistanceKm(latitude1, latitude2) {
-  if (!Number.isFinite(latitude1) || !Number.isFinite(latitude2)) return null;
+  if (![latitude1, latitude2].every(Number.isFinite) ||
+      [latitude1, latitude2].some(latitude => latitude < -90 || latitude > 90)) return null;
   return Math.abs(
     radialDistanceFromNorthKm(latitude2) -
     radialDistanceFromNorthKm(latitude1)
@@ -108,7 +113,7 @@ export function northSouthDistanceKm(latitude1, latitude2) {
 
 /** Straight chord between two points on the same latitude circle. */
 export function eastWestDistanceKm(latitudeDegrees, deltaLongitudeRadians) {
-  if (!Number.isFinite(latitudeDegrees) ||
+  if (!Number.isFinite(latitudeDegrees) || latitudeDegrees < -90 || latitudeDegrees > 90 ||
       !Number.isFinite(deltaLongitudeRadians)) return null;
   const radius = radialDistanceFromNorthKm(latitudeDegrees);
   return 2 * radius * Math.abs(Math.sin(deltaLongitudeRadians / 2));
@@ -253,6 +258,11 @@ function ringPlanarMetrics(points, validateSimple = false) {
     twiceArea += ax * by - bx * ay;
     perimeter += Math.hypot(b[0] - a[0], b[1] - a[1]);
   }
+  const localScale = Math.max(1, ...points.flatMap(point => [
+    Math.abs(point[0] - originX), Math.abs(point[1] - originY)
+  ]));
+  const areaTolerance = Number.EPSILON * 64 * localScale * localScale * points.length;
+  if (Math.abs(twiceArea) <= areaTolerance) return null;
   return { areaM2: Math.abs(twiceArea) / 2, perimeterM: perimeter };
 }
 
