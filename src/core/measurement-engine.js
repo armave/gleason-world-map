@@ -27,9 +27,14 @@ export function segmentCrossesRestrictedParallel(first, second) {
     ? Math.max(0, Math.min(1, -(a[0] * dx + a[1] * dy) / lengthSquared))
     : 0;
   const closestRadius = Math.hypot(a[0] + t * dx, a[1] + t * dy);
-  const furthestEndpointRadius = Math.max(Math.hypot(...a), Math.hypot(...b));
+  const radiusA = Math.hypot(...a), radiusB = Math.hypot(...b);
+  const furthestEndpointRadius = Math.max(radiusA, radiusB);
+  const bothEndpointsOnBoundary =
+    Math.abs(radiusA - RESTRICTED_RADIUS_KM) <= EPSILON_KM &&
+    Math.abs(radiusB - RESTRICTED_RADIUS_KM) <= EPSILON_KM;
   return closestRadius < RESTRICTED_RADIUS_KM - EPSILON_KM &&
-    furthestEndpointRadius > RESTRICTED_RADIUS_KM + EPSILON_KM;
+    (furthestEndpointRadius > RESTRICTED_RADIUS_KM + EPSILON_KM ||
+      bothEndpointsOnBoundary);
 }
 
 /** Check every straight edge of an open chain or closed polygon. */
