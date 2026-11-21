@@ -67,8 +67,10 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
 - Continuous Antarctic land band / ice-wall rim with pole-aware GeoJSON closure
 - Search and select countries, capitals, and U.S. county-equivalents
+- U.S. county boundary geometry is loaded from the U.S. Census Bureau's 2026 TIGERweb Counties layer (January 1, 2026 vintage); labels use each polygon's Census internal point and are hidden when their label box would cross the county boundary
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
-- U.S. county-equivalent labels from 2026 Census internal points (from 270% zoom), collision-filtered for legibility
+- Official 2026 Census TIGERweb county-equivalent polygons and internal points (boundary lines from 225%, labels from 270% zoom)
+- County labels are placed only when their full label box fits inside their own county polygon; county labels use warm serif styling, while capital labels use blue sans-serif text and point markers
 - County search, selection, and shareable layer visibility
 - View-centred local WGS84 ground scale bar
 - Geodesic measurement path projected onto the disk
@@ -105,7 +107,7 @@ src/
     datasets.js             local asset loading, decompression, and validation
     geojson.js              country identifiers, names, colours, centroids
   map/
-    labels.js               zoom thresholds and collision-aware label placement
+    labels.js               zoom thresholds, collision-aware labels, and polygon containment checks
     feature-paths.js        projected GeoJSON paths and Antarctic rim handling
     ice-wall.js             Antarctic land band and continuous rim
     registration.js         scan control-point triangulation and affine image warp
