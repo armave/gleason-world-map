@@ -109,8 +109,8 @@ function drawCompassRose(){
 }
 function drawAnnotations(){
  ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75],labelAngle=rad(225);
- for(const lat of ringLabels){const r=baseR*radialFraction(lat),x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y);}
- for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a));}}
+ for(const lat of ringLabels){const r=baseR*radialFraction(lat),x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y,{avoidReserved:true});}
+ for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a),{avoidReserved:true});}}
  ctx.restore();
 }
 function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
@@ -162,8 +162,7 @@ function drawCapitals(){
   const visible=selectNonOverlappingLabels(candidates,labelCollisionBoxes,4);labelCollisionBoxes.push(...visible.map(item=>item.box));
   ctx.textAlign='left';ctx.textBaseline='middle';
   for(const item of visible){ctx.save();ctx.translate(item.labelX,item.labelY);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.font=`600 ${item.labelFontSize/zoom}px ui-sans-serif,system-ui`;ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,0,0);ctx.fillStyle='#243a43';ctx.fillText(item.text,0,0);ctx.restore();}
- }else labelCollisionBoxes=[];
-}
+ }
 function drawCountryLabels(){
  const showCountryLabels=shouldShowCountryLabels(scaleBarReadingKm());
  const selectedCountry=selected&&selected.type==='country'?selected.country:null;
@@ -322,6 +321,7 @@ function updateAreaMeasurement(){
   $('areaValue').textContent='Restricted';
   $('areaPerimeter').textContent='Crosses the 60°S boundary';
   $('areaHelp').textContent='This polygon crosses the restricted 60°S parallel. Remove or reposition vertices so no straight boundary edge crosses the circle.';
+  syncMeasurementActionButtons();
   return;
  }
  if(areaFinished&&areaPoints.length>=3){
