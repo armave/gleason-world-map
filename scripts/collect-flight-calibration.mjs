@@ -221,9 +221,17 @@ async function collectRoute(route, airports, endDate) {
     const page = await postJson('/query', body);
     pagesScanned++;
     const flights = Array.isArray(page.flights) ? page.flights : [];
+    const expectedRouteKey = routeKey(route.from, route.to);
     const candidates = flights.filter(flight => {
       if (!flight.flight_id || seen.has(flight.flight_id)) return false;
       seen.add(flight.flight_id);
+      const observedFrom = flight.start_airport_ident;
+      const observedTo = flight.end_airport_ident;
+      if (!observedFrom || !observedTo ||
+          routeKey(observedFrom, observedTo) !== expectedRouteKey) {
+        counters.routeIdentifierMismatch = (counters.routeIdentifierMismatch || 0) + 1;
+        return false;
+      }
       return true;
     }).slice(0, Math.max(0, MAX_DETAILS_PER_ROUTE - detailsTried));
     candidatesSeen += candidates.length;
