@@ -31,8 +31,8 @@ The browser loads only the selected country-quality file, the small capital JSON
 
 ## U.S. county-equivalent label points
 
-`us-counties.json` contains 3,222 five-digit GEOID records from the U.S. Census Bureau's 2026 National Counties Gazetteer. Each row stores GEOID, USPS state/territory code, Census name, and Gazetteer internal-point latitude/longitude. These are label/search locations, not boundary geometries. The source is a U.S. government public-domain dataset.
+`us-counties.json` contains 3,222 five-digit GEOID records from the U.S. Census Bureau's 2026 National Counties Gazetteer. Each row stores GEOID, USPS state/territory code, Census name, and Gazetteer internal-point latitude/longitude. These are label/search locations, not boundary geometries. The 2026 national file covers the 50 states, the District of Columbia, and Puerto Rico; the separately published Island Areas are not included. The source is a U.S. government public-domain dataset.
 
-Source ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2026_Gaz_counties_national.zip
+Source ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_counties_national.zip
 
 To regenerate the compact file from the extracted Census text file, run `node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.txt`.

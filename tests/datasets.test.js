@@ -52,7 +52,10 @@ test('bundled metadata checksums match the compressed country assets', async () 
 test('bundled Census county-equivalent labels contain complete, unique internal points', async () => {
   assert.ok(COUNTY_DATA_FILE.pathname.endsWith('/data/us-counties.json'));
   const data = JSON.parse(await readFile(COUNTY_DATA_FILE, 'utf8'));
+  const metadata = JSON.parse(await readFile(new URL('../data/metadata.json', import.meta.url), 'utf8'));
   const counties = validateCountyDataset(data);
+  assert.equal(data.inputSha256, metadata.sources.usCounties.extractedFileSha256);
+  assert.equal(data.archiveSha256, metadata.sources.usCounties.archiveSha256);
   assert.equal(data.sourceYear, 2026);
   assert.equal(counties.length, 3222);
   assert.deepEqual(counties.find(county => county.geoid === '06037'), {

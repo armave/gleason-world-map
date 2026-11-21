@@ -113,6 +113,7 @@ src/
     calibration.js          radial table and distortion panel
 scripts/
   vendor-geodata.mjs        reproducible pinned-source data import
+  vendor-county-labels.mjs  reproducible Census county-label data import
 tests/
   wgs84.test.js             WGS84 geometry regressions
   registration.test.js      registration transform regressions
@@ -171,7 +172,7 @@ Capital markers remain available at every zoom level. Their names appear from 12
 
 The optional “U.S. county names” layer uses the U.S. Census Bureau's 2024 National Counties Gazetteer internal points. It covers U.S. counties and county-equivalents in the 50 states, the District of Columbia, and Puerto Rico, including Alaska boroughs/census areas and Puerto Rico municipios. The 2026 Census national file does not include the separately published Island Areas (American Samoa, Guam, the Northern Mariana Islands, and the U.S. Virgin Islands). Names appear from 270% zoom, after which labels are collision-filtered against capital labels and one another. This is a label-point layer, not county boundary geometry; the app does not imply that county polygons are available worldwide.
 
-The compact data file is generated from the Census Bureau's public-domain 2026 Gazetteer. Download and extract `2026_Gaz_counties_national.zip` from [the Census Gazetteer archive](https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2026_Gaz_counties_national.zip), then run:
+The compact data file is generated from the Census Bureau's public-domain 2026 Gazetteer. Download and extract `2026_Gaz_counties_national.zip` from [the Census Gazetteer archive](https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_counties_national.zip), then run:
 
 ```bash
 node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.txt
