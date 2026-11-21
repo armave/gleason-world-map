@@ -143,8 +143,9 @@ test('GeoJSON surface area subtracts holes and sums multipart geometry', () => {
     [[[0,0],[40,0],[40,40],[0,40],[0,0]]],
     [[[100,0],[140,0],[140,40],[100,40],[100,0]]]
   ]}};
-  const one = sphericalFeatureAreaM2({geometry:{type:'Polygon',coordinates:[multi.geometry.coordinates[0][0]]}}, identity, DISK_RADIUS_KM);
-  close(sphericalFeatureAreaM2(multi, identity, DISK_RADIUS_KM), 2*one, 1e-5);
+  const first = sphericalFeatureAreaM2({geometry:{type:'Polygon',coordinates:[multi.geometry.coordinates[0][0]]}}, identity, DISK_RADIUS_KM);
+  const second = sphericalFeatureAreaM2({geometry:{type:'Polygon',coordinates:[multi.geometry.coordinates[1][0]]}}, identity, DISK_RADIUS_KM);
+  close(sphericalFeatureAreaM2(multi, identity, DISK_RADIUS_KM), first + second, 1e-5);
 });
 
 test('canvas radius normalization keeps physical measurements stable after resizing', () => {
