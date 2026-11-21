@@ -117,10 +117,6 @@ function drawRestrictedParallel(){
  const angle=rad(135),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
  const label='60°S · NO CROSSING';
  ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
- const boxWidth=ctx.measureText(label).width+14/zoom,boxHeight=20/zoom;
- ctx.fillStyle='rgba(255,250,238,.97)';ctx.strokeStyle='#a63f38';ctx.lineWidth=1/zoom;
- ctx.fillRect(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight);
- ctx.strokeRect(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight);
  drawMeasurementLabelAtMap(x,y,label,'restricted');
  ctx.restore();
 }
