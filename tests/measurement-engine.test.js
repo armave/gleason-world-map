@@ -32,17 +32,23 @@ test('measurements wholly within the ice-wall band use flat-disk distance', () =
   assert.notEqual(result.distanceMeters, geodesicDistanceMeters(a, b));
 });
 
-test('a connector crossing 60°S is blocked', () => {
-  const result = measureDirectDistance(point(-55, 20), point(-65, 20));
-  assert.equal(result.metric, 'restricted');
-  assert.equal(result.restricted, true);
-  assert.equal(result.distanceMeters, null);
-  assert.equal(segmentCrossesRestrictedParallel(point(-55, 20), point(-65, 20)), true);
+test('a direct connector crossing 60°S remains measurable with the flat-disk metric', () => {
+  const a = point(-55, 20), b = point(-65, 20);
+  const result = measureDirectDistance(a, b);
+  assert.equal(segmentCrossesRestrictedParallel(a, b), true);
+  assert.equal(result.metric, 'flat-disk');
+  assert.equal(result.restricted, false);
+  assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
 });
 
-test('a chord through the inner disk is blocked even if both points are south of 60°S', () => {
-  assert.equal(segmentCrossesRestrictedParallel(point(-70, 0), point(-70, 180)), true);
-  assert.equal(measureDirectDistance(point(-70, 0), point(-70, 180)).restricted, true);
+test('a chord through the inner disk remains measurable when both points are south of 60°S', () => {
+  const a = point(-70, 0), b = point(-70, 180);
+  assert.equal(segmentCrossesRestrictedParallel(a, b), true);
+  const result = measureDirectDistance(a, b);
+  assert.equal(result.metric, 'flat-disk');
+  assert.equal(result.restricted, false);
+  assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
+  assert.ok(result.distanceMeters > 0);
 });
 
 test('local ice-wall segments and a single boundary touch are allowed', () => {
@@ -51,8 +57,13 @@ test('local ice-wall segments and a single boundary touch are allowed', () => {
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric, 'flat-disk');
 });
 
-test('a chord joining two points on 60°S through the inner disk is blocked', () => {
-  assert.equal(segmentCrossesRestrictedParallel(point(-60, 0), point(-60, 180)), true);
+test('a chord joining opposite points on 60°S is measurable', () => {
+  const a = point(-60, 0), b = point(-60, 180);
+  assert.equal(segmentCrossesRestrictedParallel(a, b), true);
+  const result = measureDirectDistance(a, b);
+  assert.equal(result.metric, 'flat-disk');
+  assert.equal(result.restricted, false);
+  assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
 });
 
 test('polygon edges including closure are checked for crossings', () => {
