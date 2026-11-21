@@ -77,6 +77,9 @@ const MAX_CALIBRATION_FACTOR = 2.5;
 const MIN_MEAN_COLATITUDE = 0.5615596868291755;
 const MAX_MEAN_COLATITUDE = 2.180352568053916;
 const MAX_COLATITUDE_SPAN = 1.7709855919986461;
+// Observed wrapped longitude-span interval across the 15 fitted city pairs.
+const MIN_LONGITUDE_SPAN = 0.09721483933608416;
+const MAX_LONGITUDE_SPAN = 2.6563911215353695;
 
 /**
  * Explain the empirical calibration applied to a straight projected chord.
@@ -114,7 +117,9 @@ export function directLineCalibrationDiagnostics(first, second) {
   const outsideTrainingRange =
     rawMeanTheta < MIN_MEAN_COLATITUDE ||
     rawMeanTheta > MAX_MEAN_COLATITUDE ||
-    rawThetaSpan > MAX_COLATITUDE_SPAN;
+    rawThetaSpan > MAX_COLATITUDE_SPAN ||
+    longitudeSpan < MIN_LONGITUDE_SPAN ||
+    longitudeSpan > MAX_LONGITUDE_SPAN;
   const nearSouthRim = first.lat <= -85 || second.lat <= -85;
   const factorWasClamped = !Number.isFinite(unclampedFactor) ||
     unclampedFactor < MIN_CALIBRATION_FACTOR ||
