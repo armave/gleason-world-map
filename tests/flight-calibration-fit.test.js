@@ -4,7 +4,8 @@ import {
   unitDiskChord,
   flightCalibrationFeatures,
   fitFlightCalibration,
-  predictFlightCalibratedKm
+  predictFlightCalibratedKm,
+  summarizeFlightCalibrationCoverage
 } from '../src/core/flight-calibration-fit.js';
 import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from '../src/core/radial-warp.js';
 
@@ -111,6 +112,19 @@ test('route targets exclude low-coverage and long-gap observations before fittin
   assert.ok(result.model.trainingExamples.every(example => example.medianTelemetryCoverage >= 0.35));
   assert.ok(result.model.trainingExamples.every(example => example.medianMaxGapMinutes <= 300));
   assert.ok(result.model.trainingExamples.some(example => example.qualityWeight < 0.5));
+});
+
+test('coverage summary reports southern training and independent polar holdout routes', () => {
+  const dataset = syntheticDataset();
+  dataset.routes[0].airportA = { lat: -53, lon: -70 };
+  dataset.routes[12].airportB = { lat: -77, lon: 167 };
+  const coverage = summarizeFlightCalibrationCoverage(dataset);
+  assert.equal(coverage.trainingRouteCount, 12);
+  assert.equal(coverage.holdoutRouteCount, 4);
+  assert.equal(coverage.trainingRoutesSouthOf45S, 1);
+  assert.equal(coverage.trainingRoutesSouthOf60S, 0);
+  assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
+  assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
 });
 
 test('calibration refuses to emit coefficients without enough independent route pairs', () => {
