@@ -139,3 +139,11 @@ test('invalid coordinates or projection callbacks fail safely', () => {
   assert.deepEqual(geodesicLinePath(point(0, 0), point(91, 1), (lon, lat) => [lon, lat]), []);
   assert.deepEqual(geodesicLinePath(point(0, 0), point(0, 1), () => [NaN, 0]), []);
 });
+
+
+test('southern rim benchmark distances match the shortest WGS84 surface paths',()=>{
+ const nearRimA=point(-85.07,-2.74),nearRimB=point(-88.52,-179.66);
+ close(geodesicDistanceMeters(nearRimA,nearRimB)/1000,715.760507,0.01);
+ const antarcticA=point(-65.59,-5.78),antarcticB=point(-74.88,-176.24);
+ close(geodesicDistanceMeters(antarcticA,antarcticB)/1000,4398.260680,0.01);
+});
