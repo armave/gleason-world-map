@@ -71,7 +71,7 @@ function drawCapitals(){
   if(labelOn){
    const sx=width/2+panX+x*zoom,sy=height/2+panY+y*zoom;
    if(sx<-12||sx>width+12||sy<-12||sy>height+12)continue;
-   ctx.font=`${8.4/zoom}px ui-sans-serif,system-ui`;
+   ctx.font=`600 ${8.4/zoom}px ui-sans-serif,system-ui`;
    const text=p.city,tw=ctx.measureText(text).width*zoom;
    candidates.push({point:p,x,y,text,selected:!!active,centerDistance:Math.hypot(sx-width/2,sy-height/2),
     box:{left:sx+4,top:sy-7,right:sx+4+tw,bottom:sy+5}});
@@ -80,7 +80,7 @@ function drawCapitals(){
  if(labelOn){
   candidates.sort((a,b)=>Number(b.selected)-Number(a.selected)||a.centerDistance-b.centerDistance||a.text.length-b.text.length);
   const visible=selectNonOverlappingLabels(candidates);labelCollisionBoxes=visible.map(item=>item.box);
-  ctx.font=`${8.4/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.font=`600 ${8.4/zoom}px ui-sans-serif,system-ui`;ctx.textAlign='left';ctx.textBaseline='middle';
   for(const item of visible){ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,item.x+4/zoom,item.y-3/zoom);ctx.fillStyle='#243a43';ctx.fillText(item.text,item.x+4/zoom,item.y-3/zoom);}
  }else labelCollisionBoxes=[];
 }
@@ -368,7 +368,6 @@ async function load(){
    if(countyRecords.length>=3000)counties=countyRecords;
    else console.warn('Census county polygons loaded, but too few contain a valid internal label point.');
   }
-  if(!countyPathRecords.length&&counties.some(county=>county.feature))countyPathRecords=counties.filter(county=>county.feature).map(county=>({county,path:makePath(county.feature)}));
   if(!countries.length||!capitals.length)throw new Error('One or more bundled geographic datasets did not contain usable records.');
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   const countyLayerStatus=$('countyLayerStatus');
