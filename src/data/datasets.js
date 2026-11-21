@@ -64,3 +64,28 @@ export async function loadCapitalDataset() {
   catch (error) { throw new Error(`The bundled capital coordinates are not valid JSON: ${error.message}`); }
   return validateCapitalDataset(data);
 }
+
+export const COUNTY_DATA_FILE = new URL('../../data/us-counties.json', import.meta.url);
+export function validateCountyDataset(data) {
+  if (!data || data.schemaVersion !== 1 || data.sourceYear !== 2024 || !Array.isArray(data.counties) || data.counties.length < 3000) {
+    throw new Error('The bundled 2024 U.S. county-label dataset is invalid or incomplete.');
+  }
+  const seen = new Set();
+  for (const row of data.counties) {
+    if (!Array.isArray(row) || row.length !== 5 || !/^\d{5}$/.test(String(row[0])) ||
+        !/^[A-Z]{2}$/.test(String(row[1])) || !String(row[2] || '').trim() ||
+        !Number.isFinite(row[3]) || !Number.isFinite(row[4]) || row[3] < -90 || row[3] > 90 ||
+        row[4] < -180 || row[4] > 180 || seen.has(row[0])) {
+      throw new Error('The bundled county-label dataset contains an invalid or duplicate row.');
+    }
+    seen.add(row[0]);
+  }
+  return data.counties.map(([geoid,stateCode,name,lat,lon])=>({geoid,stateCode,name,lat,lon}));
+}
+export async function loadCountyDataset() {
+  const response=await fetch(COUNTY_DATA_FILE);
+  if(!response.ok)throw new Error(`Unable to load the bundled U.S. county labels (HTTP ${response.status}).`);
+  let data;
+  try{data=await response.json();}catch(error){throw new Error(`The bundled county-label data is not valid JSON: ${error.message}`);}
+  return validateCountyDataset(data);
+}

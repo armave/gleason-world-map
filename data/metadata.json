@@ -14,6 +14,13 @@
       "file": "data/country-capital.csv",
       "upstreamLicense": "MIT",
       "underlyingDataSource": "REST Countries v3.1"
+    },
+    "usCounties": {
+      "repository": "https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.2024.html",
+      "sourceFile": "2024_Gaz_counties_national.txt",
+      "dataset": "U.S. counties and county equivalents with internal-point coordinates",
+      "records": 3222,
+      "license": "Public domain (U.S. federal government work)"
     }
   },
   "boundaryDatasets": {
@@ -42,5 +49,10 @@
   "capitals": {
     "records": 197,
     "file": "capitals.json"
+  },
+  "countyLabels": {
+    "file": "us-counties.json",
+    "records": 3222,
+    "sourceYear": 2024
   }
 }

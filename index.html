@@ -17,7 +17,7 @@
 <div class="app">
   <main class="map-card" id="mapCard">
     <div class="map-top">
-      <div class="status" id="status">Loading geographic data…</div>
+      <div class="map-status-group"><div class="status" id="status">Loading geographic data…</div><span id="zoomReadout" class="zoom-readout" title="Map zoom level">100%</span></div>
       <div class="map-actions">
         <button id="fullscreenMap" aria-label="Enter full screen map">Full screen</button>
         <button id="resetView">Reset view</button>
@@ -28,16 +28,16 @@
       </div>
     </div>
     <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
-    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Hover countries/capitals for names</span><span>Natural Earth outlines · WGS84 local ground scale · continuous Antarctic rim</span></div>
+    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Labels appear as you zoom in</span><span>Country outlines · WGS84 local ground scale · continuous Antarctic rim</span></div>
   </main>
   <aside>
     <section class="panel">
-      <h2>Find a country or capital</h2>
+      <h2>Find a country, capital or county</h2>
       <div class="search-wrap">
-        <input id="search" type="search" autocomplete="off" placeholder="Search e.g. Armenia, Yerevan, Tokyo…" aria-label="Search countries and capitals">
+        <input id="search" type="search" autocomplete="off" placeholder="Search e.g. Armenia, Yerevan, Tokyo, Los Angeles County…" aria-label="Search countries and capitals">
         <div id="suggestions" class="suggestions"></div>
       </div>
-      <div class="small" style="margin-top:7px">Select a country to inspect it, or a capital to use it as a measurement point.</div>
+      <div class="small" style="margin-top:7px">Search countries, national capitals and U.S. county-equivalents. County names appear at closer zoom; labels are collision-filtered to keep the map legible.</div>
     </section>
     <section class="panel">
       <h2>Map layers</h2>
@@ -45,7 +45,8 @@
         <label><input type="checkbox" id="layerCountries" checked> Country outlines</label>
         <label><input type="checkbox" id="layerGrid" checked> Grid & coordinates</label>
         <label><input type="checkbox" id="layerCapitals" checked> Capital markers</label>
-        <label><input type="checkbox" id="layerCapitalNames" checked> Capital names (zoomed)</label>
+        <label><input type="checkbox" id="layerCapitalNames" checked> Capital names (from 125%)</label>
+        <label><input type="checkbox" id="layerCountyNames" checked> U.S. county names (from 270%)</label>
         <label><input type="checkbox" id="layerAntarctica" checked> Antarctica / ice wall</label>
       </div>
       <div class="range-control">
@@ -85,10 +86,10 @@
       <div class="info-title" id="selectionName">No selection</div>
       <div class="info-meta" id="selectionKind">Click a country or capital on the map.</div>
       <div class="info-grid">
-        <div class="info-box"><span>Capital</span><strong id="selectionCapital">—</strong></div>
+        <div class="info-box"><span id="selectionMetaTitle">Capital</span><strong id="selectionCapital">—</strong></div>
         <div class="info-box"><span>Coordinates</span><strong id="selectionCoords">—</strong></div>
       </div>
-      <div class="info-box" style="margin-top:8px"><span>WGS84 area from boundary geometry</span><strong id="selectionArea">—</strong></div>
+      <div class="info-box" style="margin-top:8px"><span id="selectionFactTitle">WGS84 area from boundary geometry</span><strong id="selectionFactValue">—</strong></div>
       <div class="endpoint-actions" id="selectionButtons" style="display:none">
         <button id="setA">Set as A</button><button id="setB">Set as B</button>
       </div>
@@ -154,7 +155,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines and capital coordinates use Natural Earth and country-data. Ground distances and areas use the WGS84 reference ellipsoid. The radial scale is true from the North Pole along meridians; arbitrary point-to-point distances are shortest WGS84 geodesics, and polygon areas use ellipsoidal polygon area. The scale bar is a local ground scale near the current view centre and changes with pan and zoom. The map is a flat projection, not a flat-earth physical model; local distortion is shown explicitly. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent label points use the 2024 U.S. Census Gazetteer (public domain). Ground distances and areas use the WGS84 reference ellipsoid. The radial scale is true from the North Pole along meridians; arbitrary point-to-point distances are shortest WGS84 geodesics, and polygon areas use ellipsoidal polygon area. The scale bar is a local ground scale near the current view centre and changes with pan and zoom. The map is a flat projection, not a flat-earth physical model; local distortion is shown explicitly. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.” The digital map remains a 2D disk projection and does not preserve all distances or areas everywhere.</div>
 <script src="https://cdn.jsdelivr.net/npm/geographiclib-geodesic@2.2.0/geographiclib-geodesic.min.js" integrity="sha256-BuNRKQSzRldfR18U0LJ+oJedvNKw7d6/Xx7u/SNDlbU=" crossorigin="anonymous"></script>
 <script type="module" src="./src/app.js"></script>
 </body>

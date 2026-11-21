@@ -4,8 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import {
-  COUNTRY_DATA_FILES, CAPITAL_DATA_FILE, MAP_QUALITY_OPTIONS,
-  validateCountryDataset, validateCapitalDataset
+  COUNTRY_DATA_FILES, CAPITAL_DATA_FILE, COUNTY_DATA_FILE, MAP_QUALITY_OPTIONS,
+  validateCountryDataset, validateCapitalDataset, validateCountyDataset
 } from '../src/data/datasets.js';
 import { isoFor, nameFor } from '../src/data/geojson.js';
 
@@ -46,4 +46,17 @@ test('bundled metadata checksums match the compressed country assets', async () 
     assert.equal(sha256, metadata.boundaryDatasets[quality].sha256);
     assert.equal(bytes.length, metadata.boundaryDatasets[quality].compressedBytes);
   }
+});
+
+
+test('bundled Census county-equivalent labels contain complete, unique internal points', async () => {
+  assert.ok(COUNTY_DATA_FILE.pathname.endsWith('/data/us-counties.json'));
+  const data = JSON.parse(await readFile(COUNTY_DATA_FILE, 'utf8'));
+  const counties = validateCountyDataset(data);
+  assert.equal(counties.length, 3222);
+  assert.deepEqual(counties.find(county => county.geoid === '06037'), {
+    geoid: '06037', stateCode: 'CA', name: 'Los Angeles County', lat: 34.196398, lon: -118.261862
+  });
+  assert.ok(counties.some(county => county.stateCode === 'AK' && county.name.endsWith('Borough')));
+  assert.ok(counties.some(county => county.stateCode === 'PR' && county.name.endsWith('Municipio')));
 });

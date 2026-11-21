@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "vendor:data": "node scripts/vendor-geodata.mjs"
+    "vendor:data": "node scripts/vendor-geodata.mjs",
+    "vendor:counties": "node scripts/vendor-county-labels.mjs"
   }
 }
