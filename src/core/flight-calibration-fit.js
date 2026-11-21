@@ -148,6 +148,28 @@ function featureStatistics(examples) {
   return { means, scales, ranges };
 }
 
+/**
+ * Count only route pairs whose individual flight observations meet the
+ * telemetry-quality rules used by the fitter. This is also used when a
+ * candidate fails before model fitting, so the latest summary never inherits
+ * an older run's accepted status.
+ */
+export function summarizeFlightCalibrationCoverage(dataset) {
+  const training = routeObservations(dataset, 'train', DEFAULT_RADIAL_WARP);
+  const holdout = routeObservations(dataset, 'holdout', DEFAULT_RADIAL_WARP);
+  const southernCount = (routes, latitude) => routes.filter(route =>
+    Math.min(route.airportA.lat, route.airportB.lat) <= latitude
+  ).length;
+  return {
+    trainingRouteCount: training.length,
+    holdoutRouteCount: holdout.length,
+    trainingRoutesSouthOf45S: southernCount(training, -45),
+    trainingRoutesSouthOf60S: southernCount(training, -60),
+    holdoutRoutesSouthOf45S: southernCount(holdout, -45),
+    holdoutRoutesSouthOf60S: southernCount(holdout, -60)
+  };
+}
+
 function makeTrainingExamples(routes, radialWarp) {
   return routes.map(route => {
     const chord = unitDiskChord(route.airportA, route.airportB, radialWarp);
@@ -340,17 +362,7 @@ export function fitFlightCalibration(dataset) {
   const model = modelFromExamples(examples, dataset.schemaVersion, radialWarp);
   model.holdoutRouteCount = holdout.length;
   const holdoutErrors = holdout.map(route => routeError(route, model));
-  const southernCount = (routes, latitude) => routes.filter(route =>
-    Math.min(route.airportA.lat, route.airportB.lat) <= latitude
-  ).length;
-  const spatialCoverage = {
-    trainingRouteCount: training.length,
-    holdoutRouteCount: holdout.length,
-    trainingRoutesSouthOf45S: southernCount(training, -45),
-    trainingRoutesSouthOf60S: southernCount(training, -60),
-    holdoutRoutesSouthOf45S: southernCount(holdout, -45),
-    holdoutRoutesSouthOf60S: southernCount(holdout, -60)
-  };
+  const spatialCoverage = summarizeFlightCalibrationCoverage(dataset);
   const leaveOneOutErrors = training.map(route => {
     const subset = examples.filter(example => example.routeId !== route.routeId);
     const looModel = modelFromExamples(subset, dataset.schemaVersion, radialWarp);
