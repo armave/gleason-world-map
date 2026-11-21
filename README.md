@@ -56,7 +56,7 @@ The scale bar is locally calibrated at the current view-centre anchor in the dis
 
 ## Separate WGS84 geodesic utility validation
 
-The repository retains a standalone WGS84 geodesic utility in `src/core/geodesic.js`, with separate tests against published shortest airport-to-airport great-circle references and recorded aircraft-track ranges. This utility is not used by the map's A–B measurement tool. The examples span a southern Pacific route whose shortest path reaches about 61.8°S through to a New York–Singapore shortest path that approaches about 87.5°N. The engine column reports WGS84 inverse-geodesic distances from airport coordinates; published shortest-distance figures are rounded cross-checks, while recorded flight tracks are expected to be longer.
+The repository retains a standalone WGS84 geodesic utility in `src/core/geodesic.js`, with separate tests against published shortest airport-to-airport great-circle references and recorded aircraft-track ranges. This utility is not used by the map's A–B measurement tool. The examples span a southern Pacific route whose shortest path reaches about 61.8°S through to a New York–Singapore shortest path that approaches about 87.5°N. The utility column reports WGS84 inverse-geodesic distances from airport coordinates; published shortest-distance figures are rounded cross-checks, while recorded flight tracks are expected to be longer.
 
 | Route | Published shortest-distance reference | Recorded aircraft-track range | Utility (WGS84) |
 |---|---:|---:|---:|
