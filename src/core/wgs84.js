@@ -28,8 +28,8 @@ export function latitudeFromMeridionalDistanceKm(distanceKm) {
 // p=1 makes radial distance equal WGS84 meridional ground distance from 90°N.
 export const radialFraction = lat => clamp(meridionalDistanceFromNorthKm(lat)/POLE_TO_POLE_KM,0,1);
 
-export function project(lon,lat){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.cos(l),-rho*Math.sin(l)];}
-export function unproject(x,y){
+export function project(lon,lat,baseR){const rho=baseR*clamp(radialFraction(lat),0,1);const l=rad(lon);return [rho*Math.cos(l),-rho*Math.sin(l)];}
+export function unproject(x,y,baseR){
  const rho=Math.hypot(x,y),fraction=clamp(rho/baseR,0,1);
  const lat=latitudeFromMeridionalDistanceKm(fraction*POLE_TO_POLE_KM);
  const lon=rho<1e-7?0:Math.atan2(-y,x)*180/Math.PI;
@@ -71,7 +71,7 @@ export function vincentyInverse(a,b){
 // GeographicLib's Karney direct/inverse solution is preferred for robust convergence.// Prefer GeographicLib's Karney solution for convergence across all point pairs.
 // Vincenty remains a local fallback if the external library cannot be loaded.
 export function geodesicInverse(a,b){
- const engine=window.geodesic?.Geodesic?.WGS84;
+ const engine=globalThis.geodesic?.Geodesic?.WGS84;
  if(engine){const r=engine.Inverse(a.lat,a.lon,b.lat,b.lon);return {distanceMeters:r.s12,initialBearing:rad(r.azi1),approximate:false};}
  return vincentyInverse(a,b);
 }
@@ -103,7 +103,7 @@ export function vincentyDirect(origin,bearing,distanceMeters){
  return {lat:phi2*180/Math.PI,lon:wrapRadians(lambda1+L)*180/Math.PI};
 }
 export function geodesicDirect(origin,bearing,distanceMeters){
- const engine=window.geodesic?.Geodesic?.WGS84;
+ const engine=globalThis.geodesic?.Geodesic?.WGS84;
  if(engine){const r=engine.Direct(origin.lat,origin.lon,bearing*180/Math.PI,distanceMeters);return {lat:r.lat2,lon:r.lon2};}
  return vincentyDirect(origin,bearing,distanceMeters);
 }
@@ -130,7 +130,7 @@ function formatArea(areaM2){
  return `${(areaM2/1e6).toLocaleString('en-US',{maximumFractionDigits:2})} km²`;
 }
 export function wgs84PolygonMetrics(vertices){
- const geod=window.geodesic?.Geodesic?.WGS84;
+ const geod=globalThis.geodesic?.Geodesic?.WGS84;
  if(!geod||typeof geod.Polygon!=='function'||vertices.length<3)return null;
  const polygon=geod.Polygon(false);
  vertices.forEach(p=>polygon.AddPoint(p.lat,p.lon));
@@ -138,7 +138,7 @@ export function wgs84PolygonMetrics(vertices){
  return {areaM2:Math.abs(result.area),perimeterM:result.perimeter};
 }
 export function featureGeodesicAreaM2(feature){
- const g=feature?.geometry,geod=window.geodesic?.Geodesic?.WGS84;
+ const g=feature?.geometry,geod=globalThis.geodesic?.Geodesic?.WGS84;
  if(!g||!geod||typeof geod.Polygon!=='function')return null;
  const polygons=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
  let total=0;
