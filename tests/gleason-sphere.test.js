@@ -90,9 +90,13 @@ test('area correction m(theta) and stretch k(theta) match the quick-reference ta
   for (const [lat, decoder, stretch] of expected) {
     const actual = getLocalScaleFactors(lat);
     close(actual.eastWestDecoder, decoder, 5e-10);
-    if (stretch === Infinity) assert.equal(actual.eastWestStretch, Infinity);
-    else close(actual.eastWestStretch, stretch, 5e-9);
-    close(actual.areaStretch, actual.eastWestStretch === Infinity ? Infinity : stretch, 1e-9);
+    if (stretch === Infinity) {
+      assert.equal(actual.eastWestStretch, Infinity);
+      assert.equal(actual.areaStretch, Infinity);
+    } else {
+      close(actual.eastWestStretch, stretch, 5e-9);
+      close(actual.areaStretch, stretch, 5e-9);
+    }
     close(areaDecodeFactorFromRadiusKm(radialDistanceFromNorthKm(lat)), decoder, 5e-10);
   }
 });
