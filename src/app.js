@@ -682,7 +682,7 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
  const measurement=measureDirectDistance(first,second);
- // measureDirectDistance applies the empirical flat-map factor to the same straight projected chord.
+ // measureDirectDistance applies the ADS-B flight-mileage model to the same straight projected chord.
  return Number.isFinite(measurement.distanceMeters)?measurement.distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
