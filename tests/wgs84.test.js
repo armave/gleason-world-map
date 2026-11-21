@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {rad,POLE_TO_POLE_KM,meridionalDistanceFromNorthKm,latitudeFromMeridionalDistanceKm,radialFraction,project,unproject,geodesicInverse,geodesicDirect,getLocalWgs84ScaleFactors} from '../src/core/wgs84.js';
+test('WGS84 pole-to-pole meridian distance',()=>{assert.ok(Math.abs(POLE_TO_POLE_KM-20003.93146)<.01);assert.equal(meridionalDistanceFromNorthKm(90),0);assert.ok(Math.abs(meridionalDistanceFromNorthKm(-90)-POLE_TO_POLE_KM)<1e-9);});
+test('latitude and meridional radius invert',()=>{for(const lat of [90,60,30,0,-30,-60,-90])assert.ok(Math.abs(latitudeFromMeridionalDistanceKm(radialFraction(lat)*POLE_TO_POLE_KM)-lat)<1e-9);});
+test('disk projection round trip and longitude orientation',()=>{const R=400;assert.ok(Math.hypot(...project(0,90,R))<1e-10);assert.ok(project(90,0,R)[1]<0);const p={lat:41.7151,lon:44.8271},xy=project(p.lon,p.lat,R),q=unproject(xy[0],xy[1],R);assert.ok(Math.abs(q.lat-p.lat)<1e-9);assert.ok(Math.abs(q.lon-p.lon)<1e-9);});
+test('equatorial one-degree WGS84 distance',()=>{assert.ok(Math.abs(geodesicInverse({lat:0,lon:0},{lat:0,lon:1}).distanceMeters-111319.490793)<.01);});
+test('WGS84 direct/inverse long route round trip',()=>{const a={lat:40.17,lon:44.5},b={lat:40.7,lon:-74},i=geodesicInverse(a,b),p=geodesicDirect(a,i.initialBearing,i.distanceMeters);assert.ok(geodesicInverse(p,b).distanceMeters<.01);});
+test('radial/tangential scale diagnostics',()=>{const f=getLocalWgs84ScaleFactors(0);assert.equal(f.northSouthScale,1);assert.ok(Math.abs(f.eastWestStretch-1.56816)<.0001);assert.ok(Math.abs(f.eastWestStretch*f.eastWestDecoder-1)<1e-12);assert.equal(getLocalWgs84ScaleFactors(-90).eastWestStretch,Infinity);});
