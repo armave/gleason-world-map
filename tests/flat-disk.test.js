@@ -28,9 +28,12 @@ test('Canberra–Santiago straight projected distance is calibrated to 11,300 km
 
 test('radial calibration is r = R times colatitude', () => {
   for (const [lat, radius] of [
-    [90, 0], [60, 6371 * Math.PI / 6], [30, 6371 * Math.PI / 3],
-    [0, 6371 * Math.PI / 2], [-30, 6371 * 2 * Math.PI / 3],
-    [-60, 6371 * 5 * Math.PI / 6], [-90, DISK_RADIUS_KM]
+    [90, 0], [60, DISK_RADIAL_SCALE_KM * Math.PI / 6],
+    [30, DISK_RADIAL_SCALE_KM * Math.PI / 3],
+    [0, DISK_RADIAL_SCALE_KM * Math.PI / 2],
+    [-30, DISK_RADIAL_SCALE_KM * 2 * Math.PI / 3],
+    [-60, DISK_RADIAL_SCALE_KM * 5 * Math.PI / 6],
+    [-90, DISK_RADIUS_KM]
   ]) close(radialDistanceFromNorthKm(lat), radius, 1e-9);
   for (const lat of [90, 60, 30, 0, -30, -60, -90]) {
     close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-10);
