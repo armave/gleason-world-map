@@ -8,7 +8,7 @@ export const FLIGHT_CALIBRATION = Object.freeze({
     "epsilon": 0.005
   },
   "target": "median observed ADS-B flight-track mileage from ground-speed × time integration",
-  "radialScaleKm": 5385.14498173373,
+  "radialScaleKm": 5385.144981733761,
   "featureNames": [
     "meanRadialFraction",
     "radialShareOfChord",
@@ -17,12 +17,12 @@ export const FLIGHT_CALIBRATION = Object.freeze({
   "featureMeans": [
     0.42958622419107584,
     0.369759301017099,
-    0.8610964712458565
+    0.8610964712458562
   ],
   "featureScales": [
     0.17315699475882926,
-    0.2833477357996396,
-    0.20372772795203378
+    0.28334773579963984,
+    0.20372772795203478
   ],
   "featureRanges": [
     [
@@ -30,11 +30,11 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       0.7260841750835506
     ],
     [
-      0.004875494241298286,
-      0.9706596936616373
+      0.004875494241298341,
+      0.9706596936616381
     ],
     [
-      0.2404573956040786,
+      0.2404573956040756,
       0.9999881147073215
     ]
   ],
@@ -50,10 +50,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EGLL--KJFK",
       "features": [
         0.2786941783604105,
-        0.18581098923260447,
+        0.18581098923260456,
         0.9825855058367192
       ],
-      "mileagePerUnitChord": 5096.900634637558,
+      "mileagePerUnitChord": 5096.900634637561,
       "medianTrackKm": 5388.912100520121,
       "sampleCount": 5
     },
@@ -64,7 +64,7 @@ export const FLIGHT_CALIBRATION = Object.freeze({
         0.439933494500822,
         0.8980303560661494
       ],
-      "mileagePerUnitChord": 5716.372889068364,
+      "mileagePerUnitChord": 5716.372889068365,
       "medianTrackKm": 11417.051980470182,
       "sampleCount": 5
     },
@@ -83,10 +83,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EGLL--OMDB",
       "features": [
         0.32196509225019243,
-        0.4531603514731637,
-        0.8914290189648971
+        0.4531603514731633,
+        0.8914290189648972
       ],
-      "mileagePerUnitChord": 5345.087119749749,
+      "mileagePerUnitChord": 5345.0871197497445,
       "medianTrackKm": 5524.081645162508,
       "sampleCount": 5
     },
@@ -105,10 +105,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EGLL--KDFW",
       "features": [
         0.300611801736772,
-        0.23410786816985255,
+        0.2341078681698525,
         0.972210628444766
       ],
-      "mileagePerUnitChord": 5377.602105180183,
+      "mileagePerUnitChord": 5377.602105180181,
       "medianTrackKm": 7676.066989984072,
       "sampleCount": 5
     },
@@ -116,10 +116,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EGLL--EHAM",
       "features": [
         0.24499797587461458,
-        0.21254546740188546,
-        0.9771511778056219
+        0.21254546740188646,
+        0.9771511778056217
       ],
-      "mileagePerUnitChord": 5891.183346292812,
+      "mileagePerUnitChord": 5891.183346292839,
       "medianTrackKm": 423.0494225223254,
       "sampleCount": 5
     },
@@ -127,10 +127,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EGLL--LFPG",
       "features": [
         0.25461510321571323,
-        0.7323752575142861,
-        0.6809012279184721
+        0.7323752575142866,
+        0.6809012279184716
       ],
-      "mileagePerUnitChord": 7193.454425292037,
+      "mileagePerUnitChord": 7193.454425292042,
       "medianTrackKm": 443.59669374027925,
       "sampleCount": 5
     },
@@ -138,10 +138,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EDDF--EGLL",
       "features": [
         0.25162354669008746,
-        0.20747757056647181,
-        0.9782397751634485
+        0.20747757056647098,
+        0.9782397751634488
       ],
-      "mileagePerUnitChord": 5717.270515654953,
+      "mileagePerUnitChord": 5717.27051565493,
       "medianTrackKm": 726.5623538894399,
       "sampleCount": 5
     },
@@ -149,10 +149,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EGLL--LTFM",
       "features": [
         0.27688128736668677,
-        0.39054661542218816,
-        0.9205831527799504
+        0.39054661542218844,
+        0.9205831527799502
       ],
-      "mileagePerUnitChord": 5524.936832994907,
+      "mileagePerUnitChord": 5524.93683299491,
       "medianTrackKm": 2618.0652011651887,
       "sampleCount": 5
     },
@@ -171,10 +171,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "KJFK--KMIA",
       "features": [
         0.3517251126725902,
-        0.9033101464997961,
-        0.4289880875158619
+        0.9033101464997976,
+        0.4289880875158589
       ],
-      "mileagePerUnitChord": 6723.070179856329,
+      "mileagePerUnitChord": 6723.070179856339,
       "medianTrackKm": 1953.0431754087242,
       "sampleCount": 5
     },
@@ -182,10 +182,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "KJFK--KORD",
       "features": [
         0.30614349870216484,
-        0.10088279295304316,
+        0.10088279295304275,
         0.9948983174606304
       ],
-      "mileagePerUnitChord": 5555.934255198552,
+      "mileagePerUnitChord": 5555.93425519853,
       "medianTrackKm": 1321.0564322334458,
       "sampleCount": 5
     },
@@ -193,10 +193,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EDDF--KJFK",
       "features": [
         0.282890564420401,
-        0.14450444394494638,
+        0.14450444394494635,
         0.9895041514213881
       ],
-      "mileagePerUnitChord": 5244.95803005131,
+      "mileagePerUnitChord": 5244.958030051309,
       "medianTrackKm": 6173.608317063589,
       "sampleCount": 5
     },
@@ -204,10 +204,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EHAM--LFPG",
       "features": [
         0.25218591846023086,
-        0.8919925815634552,
-        0.4520500353232623
+        0.8919925815634571,
+        0.45205003532325877
       ],
-      "mileagePerUnitChord": 6265.372683311991,
+      "mileagePerUnitChord": 6265.372683312004,
       "medianTrackKm": 424.43471851665856,
       "sampleCount": 5
     },
@@ -215,10 +215,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "EDDF--EHAM",
       "features": [
         0.2491943619346051,
-        0.6261902716167801,
-        0.779670278856712
+        0.626190271616774,
+        0.7796702788567169
       ],
-      "mileagePerUnitChord": 7269.228879483652,
+      "mileagePerUnitChord": 7269.228879483581,
       "medianTrackKm": 483.26483608774225,
       "sampleCount": 5
     },
@@ -226,10 +226,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "HECA--LTFM",
       "features": [
         0.33787841780090594,
-        0.9706596936616373,
-        0.2404573956040786
+        0.9706596936616381,
+        0.2404573956040756
       ],
-      "mileagePerUnitChord": 6786.72978870123,
+      "mileagePerUnitChord": 6786.7297887012355,
       "medianTrackKm": 1385.7231660489715,
       "sampleCount": 5
     },
@@ -237,10 +237,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "LTFM--OLBA",
       "features": [
         0.3274674226984232,
-        0.7401385565663255,
-        0.6724543977727532
+        0.7401385565663231,
+        0.6724543977727561
       ],
-      "mileagePerUnitChord": 6379.843849478719,
+      "mileagePerUnitChord": 6379.843849478698,
       "medianTrackKm": 1144.504929161942,
       "sampleCount": 5
     },
@@ -248,10 +248,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "OMDB--VABB",
       "features": [
         0.41353939121549343,
-        0.2615527241716626,
-        0.965189189992502
+        0.2615527241716629,
+        0.9651891899925019
       ],
-      "mileagePerUnitChord": 4283.570511063319,
+      "mileagePerUnitChord": 4283.570511063324,
       "medianTrackKm": 1753.0872722922177,
       "sampleCount": 5
     },
@@ -259,10 +259,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "OMDB--OOMS",
       "features": [
         0.401104708463741,
-        0.4105941111663437,
-        0.9118182252376403
+        0.41059411116633954,
+        0.9118182252376422
       ],
-      "mileagePerUnitChord": 5544.560374514219,
+      "mileagePerUnitChord": 5544.560374514163,
       "medianTrackKm": 390.4371347585377,
       "sampleCount": 5
     },
@@ -270,10 +270,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "OBBI--OMDB",
       "features": [
         0.39367443291527804,
-        0.1715148872389024,
-        0.9851815281740857
+        0.1715148872389039,
+        0.9851815281740854
       ],
-      "mileagePerUnitChord": 6002.983847349512,
+      "mileagePerUnitChord": 6002.983847349564,
       "medianTrackKm": 622.0357841710157,
       "sampleCount": 5
     },
@@ -281,10 +281,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "OMDB--OTHH",
       "features": [
         0.3964398439884179,
-        0.004875494241298286,
+        0.004875494241298341,
         0.9999881147073215
       ],
-      "mileagePerUnitChord": 5135.013633770959,
+      "mileagePerUnitChord": 5135.013633771017,
       "medianTrackKm": 418.1014089931347,
       "sampleCount": 5
     },
@@ -292,10 +292,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "OOMS--OTHH",
       "features": [
         0.40104152858187103,
-        0.19618515956483096,
-        0.9805668682790185
+        0.19618515956483112,
+        0.9805668682790181
       ],
-      "mileagePerUnitChord": 5195.319732825598,
+      "mileagePerUnitChord": 5195.319732825602,
       "medianTrackKm": 776.1846103785482,
       "sampleCount": 5
     },
@@ -303,10 +303,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "VTBS--WSSS",
       "features": [
         0.4936565298968757,
-        0.9231087836338921,
-        0.38453891035622906
+        0.9231087836338938,
+        0.38453891035622473
       ],
-      "mileagePerUnitChord": 6389.642558559826,
+      "mileagePerUnitChord": 6389.642558559838,
       "medianTrackKm": 1455.0721998940382,
       "sampleCount": 5
     },
@@ -325,10 +325,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YBBN--YMML",
       "features": [
         0.7063565687502122,
-        0.46509734172662354,
-        0.8852595453983131
+        0.4650973417266261,
+        0.8852595453983121
       ],
-      "mileagePerUnitChord": 4084.0797248496347,
+      "mileagePerUnitChord": 4084.0797248496574,
       "medianTrackKm": 1478.549910350456,
       "sampleCount": 5
     },
@@ -347,10 +347,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YMML--YPAD",
       "features": [
         0.7260841750835506,
-        0.17431799363413192,
-        0.984689411487384
+        0.1743179936341312,
+        0.9846894114873843
       ],
-      "mileagePerUnitChord": 2679.91498056607,
+      "mileagePerUnitChord": 2679.9149805660586,
       "medianTrackKm": 682.991167841442,
       "sampleCount": 5
     },
@@ -358,10 +358,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YPAD--YSSY",
       "features": [
         0.7164052701401888,
-        0.03304306873871585,
+        0.03304306873871577,
         0.9994539287072357
       ],
-      "mileagePerUnitChord": 2506.4581729757215,
+      "mileagePerUnitChord": 2506.458172975716,
       "medianTrackKm": 1243.1338923411472,
       "sampleCount": 5
     },
@@ -369,10 +369,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YPAD--YPPH",
       "features": [
         0.7111852599615911,
-        0.05617152283627876,
-        0.9984211336015746
+        0.05617152283627871,
+        0.9984211336015748
       ],
-      "mileagePerUnitChord": 2242.0340738612445,
+      "mileagePerUnitChord": 2242.034073861242,
       "medianTrackKm": 1963.242923372012,
       "sampleCount": 5
     },
@@ -380,10 +380,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YPDN--YSSY",
       "features": [
         0.6572186642826243,
-        0.44030487220682163,
-        0.8978483276761919
+        0.4403048722068211,
+        0.897848327676192
       ],
-      "mileagePerUnitChord": 3528.7077474640723,
+      "mileagePerUnitChord": 3528.707747464068,
       "medianTrackKm": 2848.996976602242,
       "sampleCount": 5
     },
@@ -391,10 +391,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YBBN--YPDN",
       "features": [
         0.6400993604088203,
-        0.3048962523627108,
-        0.952385570709245
+        0.3048962523627111,
+        0.9523855707092448
       ],
-      "mileagePerUnitChord": 3292.020949069392,
+      "mileagePerUnitChord": 3292.0209490693956,
       "medianTrackKm": 2676.9264687442783,
       "sampleCount": 5
     },
@@ -402,10 +402,10 @@ export const FLIGHT_CALIBRATION = Object.freeze({
       "routeId": "YBCG--YSSY",
       "features": [
         0.6987122170183844,
-        0.7279506229553211,
-        0.6856295578072462
+        0.7279506229553253,
+        0.6856295578072419
       ],
-      "mileagePerUnitChord": 5385.14498173373,
+      "mileagePerUnitChord": 5385.144981733761,
       "medianTrackKm": 701.1541073892322,
       "sampleCount": 5
     }
