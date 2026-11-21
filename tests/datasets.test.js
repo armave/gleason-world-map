@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { gunzipSync } from 'node:zlib';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import {
   COUNTRY_DATA_FILES, CAPITAL_DATA_FILE, COUNTY_DATA_FILE, MAP_QUALITY_OPTIONS,
-  validateCountryDataset, validateCapitalDataset, validateCountyDataset, COASTLINE_DATA_FILE, validateCoastlineDataset, loadCapitalDataset
+  validateCountryDataset, validateCapitalDataset, validateCountyDataset, COASTLINE_DATA_FILE, validateCoastlineDataset, loadCapitalDataset, readGzipAwareText
 } from '../src/data/datasets.js';
 import { isoFor, nameFor } from '../src/data/geojson.js';
 
@@ -100,4 +100,14 @@ test('runtime dataset loading deduplicates concurrent requests and permits retry
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test('gzip-aware dataset reader handles both raw gzip bytes and host-decoded responses', async () => {
+  const json = '{"kind":"dataset","records":[1,2,3]}';
+  const rawGzip = new Response(gzipSync(Buffer.from(json)));
+  const alreadyDecoded = new Response(json);
+
+  assert.equal(await readGzipAwareText(rawGzip,'test dataset'),json);
+  assert.equal(await readGzipAwareText(alreadyDecoded,'test dataset'),json);
 });

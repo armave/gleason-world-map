@@ -4,7 +4,21 @@ import {createIceWallTexturePaths,ICE_RIDGE_COUNT,ICE_CREVASSE_COUNT} from '../s
 import {createCompassRoseLayout} from '../src/map/compass.js';
 import { readFile } from 'node:fs/promises';
 
-const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+const htmlSource = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+const templateMarkup = id => {
+ const tag = '<template id="'+id+'">', start = htmlSource.indexOf(tag);
+ const end = htmlSource.indexOf('</template>',start);
+ return start<0||end<0?'':htmlSource.slice(start+tag.length,end);
+};
+const html = [
+ ['<map-find-panel data-lit-panel></map-find-panel>','find-panel-template'],
+ ['<map-measure-panel data-lit-panel></map-measure-panel>','measure-panel-template'],
+ ['<map-layers-panel data-lit-panel></map-layers-panel>','layers-panel-template'],
+ ['<map-selection-panel data-lit-panel></map-selection-panel>','selection-panel-template'],
+ ['<map-calibration-panel data-lit-panel></map-calibration-panel>','calibration-panel-template'],
+ ['<map-geometry-panel data-lit-panel></map-geometry-panel>','geometry-panel-template'],
+ ['<map-historical-panel data-lit-panel></map-historical-panel>','historical-panel-template']
+].reduce((source,[placeholder,id])=>source.replace(placeholder,templateMarkup(id)),htmlSource);
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 const featurePaths = await readFile(new URL('../src/map/feature-paths.js', import.meta.url), 'utf8');
@@ -406,4 +420,16 @@ test('compass labels remain upright and independent of needle rotation',()=>{
  assert.match(app,/function drawCompassRose\(\)/);
  assert.match(app,/ctx\.save\(\);ctx\.rotate\(rose\.needleRotation\)/);
  assert.match(app,/for\(const mark of rose\.cardinalLabels\)ctx\.fillText\(mark\.label,mark\.x,mark\.y\)/);
+});
+
+
+test('Lit panels mount from templates into light DOM and preserve selectors',()=>{
+ assert.ok(htmlSource.includes('<map-find-panel data-lit-panel></map-find-panel>'));
+ assert.ok(htmlSource.includes('<map-measure-panel data-lit-panel></map-measure-panel>'));
+ assert.ok(htmlSource.includes('<template id="find-panel-template">'));
+ assert.ok(htmlSource.includes('<template id="historical-panel-template">'));
+ assert.ok(app.includes('await Promise.all(PANEL_TAGS.map'));
+ assert.ok(app.includes('map-panel-event'));
+ assert.ok(app.includes('createAppState'));
+ assert.ok(app.includes('new MapController'));
 });

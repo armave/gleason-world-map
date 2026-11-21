@@ -2,6 +2,28 @@ import { validateAntarcticAddDataset } from '../map/antarctic-surfaces.js';
 
 const DATASET_PROMISES = new Map();
 
+/**
+ * Read gzip-backed data assets safely across static hosts.
+ * Some hosts transparently decode Content-Encoding:gzip responses before
+ * JavaScript sees the body; others return the raw .gz bytes. The gzip magic
+ * bytes distinguish those cases so we never decompress a payload twice.
+ */
+export async function readGzipAwareText(response, label = 'The compressed dataset') {
+  const bytes = await response.arrayBuffer();
+  const view = new Uint8Array(bytes);
+  const isGzip = view.length >= 2 && view[0] === 0x1f && view[1] === 0x8b;
+  if (!isGzip) return new TextDecoder('utf-8').decode(bytes);
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('This browser does not support local gzip decompression. Please use a current browser version.');
+  }
+  try {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).text();
+  } catch (error) {
+    throw new Error(`${label} could not be decompressed: ${error.message}`);
+  }
+}
+
 function loadOnce(key, loader) {
   const cached = DATASET_PROMISES.get(key);
   if (cached) return cached;
@@ -63,14 +85,9 @@ export function loadCountryDataset(quality = 'medium') {
     return Promise.reject(new Error(`Unknown map quality: ${quality}`));
   }
   return loadOnce(`countries:${quality}`, async () => {
-    if (typeof DecompressionStream !== 'function') {
-      throw new Error('This browser does not support local gzip decompression. Please use a current browser version.');
-    }
     const response = await fetch(COUNTRY_DATA_FILES[quality]);
     if (!response.ok) throw new Error(`Unable to load the bundled ${quality} country boundaries (HTTP ${response.status}).`);
-    if (!response.body) throw new Error('The bundled country-boundary response has no data stream.');
-    const decompressed = response.body.pipeThrough(new DecompressionStream('gzip'));
-    const text = await new Response(decompressed).text();
+    const text = await readGzipAwareText(response, `The bundled ${quality} country boundaries`);
     let data;
     try { data = JSON.parse(text); }
     catch (error) { throw new Error(`The bundled ${quality} country boundaries are not valid JSON: ${error.message}`); }
@@ -110,15 +127,10 @@ export function loadCoastlineDataset(){
 
 export function loadAntarcticAddDataset(){
  return loadOnce('antarctic-add-v7.13',async()=>{
-  if(typeof DecompressionStream!=='function'){
-   throw new Error('This browser does not support local gzip decompression for the Antarctic Digital Database.');
-  }
   const response=await fetch(ANTARCTIC_ADD_DATA_FILE);
   if(!response.ok)throw new Error(`Unable to load bundled Antarctic Digital Database surfaces (HTTP ${response.status}).`);
-  if(!response.body)throw new Error('The Antarctic Digital Database response has no data stream.');
-  const decompressed=response.body.pipeThrough(new DecompressionStream('gzip'));
   let data;
-  try{data=JSON.parse(await new Response(decompressed).text());}
+  try{data=JSON.parse(await readGzipAwareText(response,'The Antarctic Digital Database surface data'));}
   catch(error){throw new Error(`The Antarctic Digital Database surface data is not valid JSON: ${error.message}`);}
   return validateAntarcticAddDataset(data,{minimumFeatures:100});
  });

@@ -270,3 +270,9 @@ canvas.rotating{cursor:crosshair}
 @media(max-width:360px){
  .map-tools-stack{width:min(232px,calc(100% - 14px))}
 }
+
+
+/* Lit panel hosts preserve current light-DOM selectors and layout. */
+map-find-panel,map-measure-panel,map-layers-panel,map-selection-panel,
+map-calibration-panel,map-geometry-panel,map-historical-panel{display:block;width:100%;min-width:0}
+.lit-panel-content{display:block;width:100%;min-width:0}

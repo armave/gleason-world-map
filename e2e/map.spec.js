@@ -37,7 +37,11 @@ test('zooms and rotates the map using the visible controls', async ({ page }) =>
 test('searches for a capital and shows its geographic details', async ({ page }) => {
   await openLoadedMap(page);
 
-  await page.locator('#search').fill('Yerevan');
+  const search = page.locator('#search');
+  await search.evaluate(element => { element.dataset.listenerProbe = 'attached'; });
+  await search.fill('Yerevan');
+  // State-store notifications must preserve the live control and its DOM listeners.
+  await expect(search).toHaveAttribute('data-listener-probe', 'attached');
   const result = page.locator('#suggestions .suggestion').filter({ hasText: 'Yerevan' }).first();
   await expect(result).toBeVisible();
   await result.click();

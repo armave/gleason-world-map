@@ -16,9 +16,13 @@ import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabe
 import {createProjectedMeasurementSegments,createProjectedSegmentLabels,measurementStrokeStyle} from './map/measurements.js';
 import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint,normalizeRotationDegrees,shortestRotationDelta,screenUprightRotation} from './map/view-transform.js';
 import {buildSearchIndex,findSearchMatches} from './data/search-index.js';
+import {PANEL_TAGS} from './components/panels.js';
+import {createAppState} from './app/state.js';
+import {MapController} from './app/map-controller.js';
 
-(() => {
+(async () => {
 'use strict';
+await Promise.all(PANEL_TAGS.map(tag=>{const panel=document.querySelector(tag);return panel?panel.updateComplete:Promise.resolve();}));
 
 let historicalImage = null, historicalLoading = false, historicalFailed = false;
 // The BPL scan is 4,773 × 6,794 px; the printed disk is about 3,610 px wide.
@@ -32,7 +36,7 @@ let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
 let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
-let pointerDown = null, didDrag = false, searchResults = [], scheduledDrawFrame = null, hoverFrame = null, pendingHoverPoint = null;
+let pointerDown = null, didDrag = false, searchResults = [], hoverFrame = null, pendingHoverPoint = null;
 let wheelZoomActive = false, wheelZoomResetTimer = null;
 let frameScaleBarReadingKm = Infinity;
 let boundaryScaleLabel='Natural Earth 1:50m';
@@ -48,19 +52,43 @@ let mapQuality=readMapQuality(),visualStyle=readVisualStyle(),visualPalette=VISU
 document.documentElement.dataset.mapStyle=visualStyle;
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
+const appState=createAppState({
+ mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
+ selection:null,measurement:{distancePointCount:0,areaPointCount:0},
+ historical:{...historical},searchQuery:''
+});
+function publishAppState(reason='map-interaction'){
+ appState.update({
+  mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
+  selection:selected?{type:selected.type||'unknown'}:null,
+  measurement:{distancePointCount:points.length,areaPointCount:areaPoints.length,areaFinished},
+  historical:{...historical}
+ },{source:'map',reason});
+}
+for(const tag of PANEL_TAGS){const panel=document.querySelector(tag);if(panel)panel.stateStore=appState;}
+document.addEventListener('map-panel-event',event=>{
+ const {id,type,value,checked}=event.detail||{},patch={};
+ if(!id)return;
+ if(id==='mapQuality'&&type==='change')patch.mapQuality=value;
+ if(id==='mapStyle'&&type==='change')patch.visualStyle=value;
+ if(id==='search'&&type==='input')patch.searchQuery=value;
+ const layerIds={layerCountries:'countries',layerCountryNames:'countryNames',layerGrid:'grid',layerCapitals:'capitals',layerCapitalNames:'capitalNames',layerAntarctica:'antarctica',layerOceanLabels:'oceanLabels',layerCoastlines:'coastlines'};
+ if(layerIds[id]&&type==='change')patch.layers={[layerIds[id]]:checked};
+ if(['exploreMode','measureMode','areaMode'].includes(id)&&type==='click')patch.mode=mode;
+ if(id.startsWith('historical')&&type==='input')patch.historical={...historical};
+ if(Object.keys(patch).length)appState.update(patch,{source:'panel',controlId:id});
+});
+const mapController=new MapController(()=>draw());
 let colors=visualPalette.countryColors;
 const hashColor=key=>hashColorForPalette(key,colors);
 function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}buildCountryLayerCache();}
 function rotationRadians(){return rad(rotationDegrees);}
 function normalizeRotation(value){return normalizeRotationDegrees(value);}
-function scheduleDraw(){
- if(scheduledDrawFrame!==null)return;
- scheduledDrawFrame=requestAnimationFrame(()=>{scheduledDrawFrame=null;draw();});
-}
+function scheduleDraw(){mapController.scheduleDraw();}
 function syncRotationReadout(){const output=$('mapRotationValue');if(output)output.textContent=Math.round(rotationDegrees)+'°';}
 function syncRotationControls(sliderValue=rotationDegrees){const input=$('mapRotation');if(input)input.value=String(Math.round(sliderValue));syncRotationReadout();}
 function cancelRotationAnimation(){if(rotationAnimationFrame!==null){cancelAnimationFrame(rotationAnimationFrame);rotationAnimationFrame=null;}}
-function setRotation(value,redraw=true){if(!Number.isFinite(value))return;cancelRotationAnimation();rotationDegrees=normalizeRotation(value);rotationAnimationTarget=rotationDegrees;syncRotationControls();if(redraw)draw();}
+function setRotation(value,redraw=true){if(!Number.isFinite(value))return;cancelRotationAnimation();rotationDegrees=normalizeRotation(value);rotationAnimationTarget=rotationDegrees;syncRotationControls();if(redraw){publishAppState('rotation');draw();}}
 function animateRotation(value){
  if(!Number.isFinite(value))return;
  rotationAnimationTarget=normalizeRotation(value);
@@ -74,7 +102,7 @@ function animateRotation(value){
   lastFrameTime=now;
   const delta=shortestRotationDelta(rotationDegrees,rotationAnimationTarget);
   if(Math.abs(delta)<.08){
-   rotationDegrees=rotationAnimationTarget;rotationAnimationFrame=null;syncRotationControls();draw();return;
+   rotationDegrees=rotationAnimationTarget;rotationAnimationFrame=null;syncRotationControls();publishAppState('rotation');draw();return;
   }
   const progress=1-Math.exp(-elapsed/95);
   rotationDegrees=normalizeRotation(rotationDegrees+delta*progress);
@@ -825,7 +853,7 @@ function clampZoom(value,anchor=scaleAnchorWorld()){
 function setZoomAtViewCenter(nextZoom){
  const center=unrotatePoint(-panX/zoom,-panY/zoom,rotationRadians());
  zoom=clampZoom(nextZoom,center);
- const offset=rotatePoint(center.x,center.y,rotationRadians());panX=-offset.x*zoom;panY=-offset.y*zoom;draw();
+ const offset=rotatePoint(center.x,center.y,rotationRadians());panX=-offset.x*zoom;panY=-offset.y*zoom;publishAppState('zoom');draw();
 }
 function calculateScaleBarLayout(){
  if(!baseR||!zoom)return null;
@@ -947,7 +975,7 @@ async function load(){
   countryByIso.clear();capitalByIso.clear();countries.forEach(c=>countryByIso.set(c.iso,c));
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   boundaryScaleLabel=geoData.fallback?'Natural Earth '+MAP_QUALITY_OPTIONS.low.scale+' fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
-  restoreSharedState();resize();draw();
+  restoreSharedState();publishAppState('share-link-restore');resize();draw();
   updateStatus();$('status').textContent+=' · base map ready';
   setMapLoading(false);
 
@@ -986,7 +1014,7 @@ async function load(){
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }
 
-$('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
+$('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;publishAppState('map-quality');try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
 $('mapStyle').addEventListener('change',e=>{applyVisualStyle(e.target.value);draw();});$('mapRotation').addEventListener('input',e=>animateRotation(Number(e.target.value)));$('rotateLeft').addEventListener('click',()=>animateRotation(rotationAnimationTarget-15));$('rotateRight').addEventListener('click',()=>animateRotation(rotationAnimationTarget+15));$('resetRotation').addEventListener('click',()=>animateRotation(0));
 const mobileToolsToggle=$('mobileToolsToggle');
 const toolsPanel=$('toolsPanel');
@@ -1027,7 +1055,7 @@ $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;animateRotatio
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
 async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
 $('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});
-canvas.addEventListener('wheel',e=>{e.preventDefault();wheelZoomActive=true;if(wheelZoomResetTimer!==null)window.clearTimeout(wheelZoomResetTimer);wheelZoomResetTimer=window.setTimeout(()=>{wheelZoomActive=false;wheelZoomResetTimer=null;scheduleDraw();},140);const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=screenToWorld(sx,sy),lx=p.x,ly=p.y;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const offset=unrotatePoint(width/2-sx,height/2-sy,rotationRadians()),anchor={x:lx+offset.x/nz,y:ly+offset.y/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}const rpoint=rotatePoint(lx,ly,rotationRadians());panX=sx-width/2-rpoint.x*nz;panY=sy-height/2-rpoint.y*nz;zoom=nz;scheduleDraw();},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();wheelZoomActive=true;if(wheelZoomResetTimer!==null)window.clearTimeout(wheelZoomResetTimer);wheelZoomResetTimer=window.setTimeout(()=>{wheelZoomActive=false;wheelZoomResetTimer=null;publishAppState('wheel-zoom');scheduleDraw();},140);const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top,p=screenToWorld(sx,sy),lx=p.x,ly=p.y;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const offset=unrotatePoint(width/2-sx,height/2-sy,rotationRadians()),anchor={x:lx+offset.x/nz,y:ly+offset.y/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}const rpoint=rotatePoint(lx,ly,rotationRadians());panX=sx-width/2-rpoint.x*nz;panY=sy-height/2-rpoint.y*nz;zoom=nz;scheduleDraw();},{passive:false});
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointerDown={x:e.clientX,y:e.clientY,px:panX,py:panY,rotation:rotationDegrees,rotate:e.shiftKey};didDrag=false;});
 canvas.addEventListener('pointermove',e=>{
  if(pointerDown){
@@ -1048,10 +1076,10 @@ canvas.addEventListener('pointermove',e=>{
   if(latest&&!pointerDown)updateHoverAt(latest.clientX,latest.clientY);
  });
 });
-canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging','rotating');scheduleDraw();});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging','rotating');scheduleDraw();});
+canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging','rotating');publishAppState('pointer-up');scheduleDraw();});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging','rotating');publishAppState('pointer-cancel');scheduleDraw();});
 $('retryMapLoading').addEventListener('click',load);
 window.addEventListener('resize',resize);
-syncRotationControls();resize();draw();
+syncRotationControls();publishAppState('startup');resize();draw();
 setMapLoading(true,'Loading local country boundaries, coastlines, capital coordinates and county search data…');
 load();
 })();

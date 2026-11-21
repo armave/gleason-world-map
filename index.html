@@ -38,14 +38,43 @@
     <div class="map-viewport" id="mapViewport" aria-busy="true">
       <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
       <div class="map-tools-stack" id="mapToolsStack">
-        <section class="map-find-tools" id="findTools" aria-label="Find a country, capital or county">
+        <map-find-panel data-lit-panel></map-find-panel>
+        <map-measure-panel data-lit-panel></map-measure-panel>
+      </div>
+      <div class="map-loading" id="mapLoading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="false">
+        <div class="map-loading-card">
+          <div class="map-loading-spinner" id="mapLoadingSpinner" aria-hidden="true"></div>
+          <strong id="mapLoadingTitle">Preparing map</strong>
+          <p id="mapLoadingMessage">Loading local country boundaries, capital coordinates and county search data…</p>
+          <button class="primary" id="retryMapLoading" type="button" hidden>Retry loading</button>
+        </div>
+      </div>
+    </div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall (BAS surface shading when bundled) · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+  </main>
+  <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
+  <aside id="toolsPanel">
+    <map-layers-panel data-lit-panel></map-layers-panel>
+    <map-selection-panel data-lit-panel></map-selection-panel>
+    <map-calibration-panel data-lit-panel></map-calibration-panel>
+    <map-geometry-panel data-lit-panel></map-geometry-panel>
+<map-historical-panel data-lit-panel></map-historical-panel>
+  </aside>
+</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. A–B displays the ADS-B empirical flight-mileage estimate as primary, with the raw straight projected chord as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same local ADS-B route-neighbour correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+
+<!-- Lit templates retained as light-DOM-compatible sources during the incremental migration. -->
+<template id="find-panel-template">
+<section class="map-find-tools" id="findTools" aria-label="Find a country, capital or county">
           <div class="map-find-head"><strong>Find</strong></div>
           <div class="search-wrap">
             <input id="search" type="search" autocomplete="off" placeholder="Country, capital or county…" aria-label="Search countries, capitals and U.S. county-equivalents">
             <div id="suggestions" class="suggestions"></div>
           </div>
         </section>
-        <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
+</template>
+<template id="measure-panel-template">
+<section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
           <span class="map-measure-restriction">60°S · Restricted Line</span>
@@ -109,21 +138,9 @@
           </div>
         </div>
         </section>
-      </div>
-      <div class="map-loading" id="mapLoading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="false">
-        <div class="map-loading-card">
-          <div class="map-loading-spinner" id="mapLoadingSpinner" aria-hidden="true"></div>
-          <strong id="mapLoadingTitle">Preparing map</strong>
-          <p id="mapLoadingMessage">Loading local country boundaries, capital coordinates and county search data…</p>
-          <button class="primary" id="retryMapLoading" type="button" hidden>Retry loading</button>
-        </div>
-      </div>
-    </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall (BAS surface shading when bundled) · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
-  </main>
-  <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
-  <aside id="toolsPanel">
-    <section class="panel">
+</template>
+<template id="layers-panel-template">
+<section class="panel">
       <h2>Map layers</h2>
       <div class="range-control"><label for="mapStyle"><span>Map appearance</span><span>Saved on this device</span></label>
         <select id="mapStyle" class="control-select" aria-describedby="mapStyleHelp"><option value="vintage">1892 Vintage</option><option value="atlas" selected>Classic Atlas</option><option value="clean">Clean Explorer</option></select>
@@ -149,7 +166,9 @@
         <div class="small" id="mapQualityHelp">Higher quality uses more data and may take longer to load.</div>
       </div>
     </section>
-    <section class="panel" id="selectionPanel">
+</template>
+<template id="selection-panel-template">
+<section class="panel" id="selectionPanel">
       <h2>Selection details</h2>
       <div class="info-title" id="selectionName">No selection</div>
       <div class="info-meta" id="selectionKind">Click a country, capital or U.S. county label on the map.</div>
@@ -162,7 +181,9 @@
         <button id="setA">Set as A</button><button id="setB">Set as B</button>
       </div>
     </section>
-    <section class="panel">
+</template>
+<template id="calibration-panel-template">
+<section class="panel">
       <h2>Flat-disk radial calibration</h2>
       <div class="formula">R = fitted ADS-B flight-mileage scale<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>t = θ / π<br>q = ((t + ε)^p − ε^p) / ((1 + ε)^p − ε^p)<br>p = 0.9 · ε = 0.005<br>r = πR · q<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR</div>
       <p class="note" style="margin:8px 0 0">The radial scale R is generated from median observed airport-pair flight mileage, estimated by integrating ADS-B ground speed over recorded time. It is not anchored to a published shortest-distance table. The flight-empirical estimate is typical observed flown mileage, not a shortest point-to-point path.</p>
@@ -172,7 +193,9 @@
       </table>
       <p class="note" style="margin:9px 0 0">The disk uses a smooth, monotonic radial warp of latitude-ring spacing. It preserves the North Pole at the centre and 90°S at the circular outer rim. The A–B connector is one straight projected segment; its primary label is the ADS-B flight-mileage estimate, with the raw disk chord shown as a secondary reference. The estimate is fitted from ground-speed/time observations, with polar extrapolation status and nearest supporting routes available in the measurement details. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
     </section>
-    <section class="panel">
+</template>
+<template id="geometry-panel-template">
+<section class="panel">
       <h2>Flat-disk geometry</h2>
       <div class="info-grid">
         <div class="info-box"><span>Coordinate units</span><strong>Kilometres</strong></div>
@@ -182,6 +205,8 @@
       </div>
       <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment and displays the ADS-B empirical mileage estimate as primary, with the raw Euclidean chord as a secondary reference. The estimate is not a shortest path or guaranteed flight track. Calibration support and nearest reference routes are available in the measurement details; polar extrapolation is identified there without a warning panel. The 60°S Restricted Line does not alter the estimate. Polygon area and perimeter remain planar.</p>
     </section>
+</template>
+<template id="historical-panel-template">
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
       <label class="small"><input type="checkbox" id="historicalEnabled"> Show original Boston Public Library scan</label>
@@ -221,9 +246,7 @@
       </div>
       <p class="note" style="margin:9px 0 0">Source: <a href="https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z" target="_blank" rel="noopener">Gleason's 1892 map · Boston Public Library</a>. Adjust crop centre and diameter to register the printed circular map. Scan pixels may include paper, labels and print imperfections. Registered scan control points target the current ADS-B-calibrated flat-disk coordinates.</p>
     </section>
-  </aside>
-</div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. A–B displays the ADS-B empirical flight-mileage estimate as primary, with the raw straight projected chord as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same local ADS-B route-neighbour correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
-<script type="module" src="./src/app.js"></script>
+</template>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>
