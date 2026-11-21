@@ -1,7 +1,12 @@
 import { projectGeoJSONRing } from '../core/flat-disk.js';
 
-export function createFeaturePath(feature, project, preserveAntarcticRim = false) {
-  const path = new Path2D();
+export function createFeaturePath(
+  feature, project, preserveAntarcticRim = false, PathConstructor = globalThis.Path2D
+) {
+  if (typeof PathConstructor !== 'function') {
+    throw new Error('Path2D is required to build feature geometry.');
+  }
+  const path = new PathConstructor();
   const geometry = feature?.geometry;
   if (!geometry) return path;
 
