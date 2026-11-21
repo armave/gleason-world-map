@@ -1,0 +1,882 @@
+{
+  "schemaVersion": 2,
+  "dataset": "Flight-track distance benchmarks for the Gleason flat-disk map",
+  "source": {
+    "provider": "adsb.lol historical ADS-B archive",
+    "accessApi": "https://adsb.aero/api/docs",
+    "apiRoot": "https://adsb.aero/api/v1",
+    "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
+    "license": "Open Database License 1.0 (ODbL-1.0)",
+    "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
+    "retrievedAt": "2026-11-21T10:01:41.543Z",
+    "availableRange": {
+      "first_date": "2025-05-19",
+      "last_date": "2026-11-21"
+    }
+  },
+  "measurement": {
+    "target": "Observed flown-path length estimated by integrating measured ADS-B ground speed over elapsed time",
+    "method": "Integrate step-interpolated path_gs values within each contiguous time-series sequence; do not bridge missing-data gaps.",
+    "formula": "track_km = sum(speed_knots * delta_seconds / 3600) * 1.852",
+    "units": "ground speed in knots; elapsed time in seconds; nautical miles converted to kilometres using 1.852",
+    "filters": {
+      "minSpeedKnots": 40,
+      "maxSpeedKnots": 750,
+      "minFlightMinutes": 35,
+      "minTelemetryCoverage": 0.6,
+      "minSpeedIntervals": 3
+    },
+    "explicitlyNotUsed": [
+      "API path_length_m",
+      "latitude/longitude-derived distances",
+      "great-circle, spherical, ellipsoidal, or geodesic calculations",
+      "scheduled flight times or estimated cruise-speed averages"
+    ],
+    "airportBoundaryUse": "Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. No airport or trajectory coordinates enter the track-distance integration."
+  },
+  "collection": {
+    "endDate": "2026-11-21T23:59:59Z",
+    "maxPagesPerRoute": 16,
+    "samplesPerRouteTarget": 5,
+    "routesWithAtLeastThreeTrainFlights": 2,
+    "routesWithAtLeastThreeHoldoutFlights": 1,
+    "airportLookupErrors": {}
+  },
+  "routes": [
+    {
+      "routeId": "EGLL--KJFK",
+      "directionListed": "KJFK-EGLL",
+      "split": "train",
+      "airportA": {
+        "ident": "KJFK",
+        "iataCode": "JFK",
+        "name": "JOHN F KENNEDY INTL",
+        "lat": 40.63992805,
+        "lon": -73.77869222,
+        "country": "US"
+      },
+      "airportB": {
+        "ident": "EGLL",
+        "iataCode": "LHR",
+        "name": "LONDON HEATHROW",
+        "lat": 51.4775,
+        "lon": -0.46138888888889,
+        "country": "GB"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 1,
+        "low-telemetry-coverage": 40
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": []
+    },
+    {
+      "routeId": "EGLL--WSSS",
+      "directionListed": "EGLL-WSSS",
+      "split": "train",
+      "airportA": {
+        "ident": "EGLL",
+        "iataCode": "LHR",
+        "name": "LONDON HEATHROW",
+        "lat": 51.4775,
+        "lon": -0.46138888888889,
+        "country": "GB"
+      },
+      "airportB": {
+        "ident": "WSSS",
+        "iataCode": "SIN",
+        "name": "SINGAPORE CHANGI",
+        "lat": 1.3451159576023457,
+        "lon": 103.99194013366014,
+        "country": "SG"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 4,
+        "low-telemetry-coverage": 40
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": []
+    },
+    {
+      "routeId": "KORD--VHHH",
+      "directionListed": "KORD-VHHH",
+      "split": "train",
+      "airportA": {
+        "ident": "KORD",
+        "iataCode": "ORD",
+        "name": "CHICAGO O'HARE INTL",
+        "lat": 41.97694027,
+        "lon": -87.90814972,
+        "country": "US"
+      },
+      "airportB": {
+        "ident": "VHHH",
+        "iataCode": "HKG",
+        "name": "HONG KONG",
+        "lat": 22.30889,
+        "lon": 113.91472,
+        "country": "CN"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "low-telemetry-coverage": 40
+      },
+      "pagesScanned": 5,
+      "candidatesSeen": 40,
+      "observations": []
+    },
+    {
+      "routeId": "EFHK--RJAA",
+      "directionListed": "EFHK-RJAA",
+      "split": "train",
+      "airportA": {
+        "ident": "EFHK",
+        "iataCode": "HEL",
+        "name": "HELSINKI-VANTAA",
+        "lat": 60.32,
+        "lon": 24.955833333333,
+        "country": "FI"
+      },
+      "airportB": {
+        "ident": "RJAA",
+        "iataCode": "NRT",
+        "name": "NARITA INTERNATIONAL AIRPORT",
+        "lat": 35.7647,
+        "lon": 140.386,
+        "country": "JP"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 1,
+        "low-telemetry-coverage": 3
+      },
+      "pagesScanned": 16,
+      "candidatesSeen": 3,
+      "observations": []
+    },
+    {
+      "routeId": "EGLL--OMDB",
+      "directionListed": "EGLL-OMDB",
+      "split": "train",
+      "airportA": {
+        "ident": "EGLL",
+        "iataCode": "LHR",
+        "name": "LONDON HEATHROW",
+        "lat": 51.4775,
+        "lon": -0.46138888888889,
+        "country": "GB"
+      },
+      "airportB": {
+        "ident": "OMDB",
+        "iataCode": "DXB",
+        "name": "DUBAI",
+        "lat": 25.2528,
+        "lon": 55.3644,
+        "country": "AE"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 3582.7463910012043,
+      "p10TrackKm": 3523.7012079144156,
+      "p90TrackKm": 4117.7146110225185,
+      "medianDurationMinutes": 384.26433333555855,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 1,
+        "low-telemetry-coverage": 29
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "8960f1:2026-11-19T16:43:03Z",
+          "callsign": "UAE79Y",
+          "icaoType": "A388",
+          "operator": null,
+          "startTs": "2026-11-19T16:43:03.380000Z",
+          "endTs": "2026-11-19T22:44:58.470000Z",
+          "startAirportIdent": "EGLL",
+          "endAirportIdent": "OMDB",
+          "startPoint": {
+            "lat": 51.477604,
+            "lon": -0.445557
+          },
+          "endPoint": {
+            "lat": 25.244068,
+            "lon": 55.380214
+          },
+          "rawPointCount": 1514,
+          "pointCount": 388,
+          "accepted": true,
+          "trackKm": 4473.785991548172,
+          "durationMinutes": 361.91816666523613,
+          "coveredMinutes": 278.5418333331744,
+          "coverage": 0.7696265592293894,
+          "meanGroundSpeedKnots": 520.3493825902756,
+          "speedIntervals": 70
+        },
+        {
+          "flightId": "8963ea:2026-11-19T20:57:22Z",
+          "callsign": "UAE4",
+          "icaoType": "A388",
+          "operator": null,
+          "startTs": "2026-11-19T20:57:22.620000Z",
+          "endTs": "2026-11-20T03:02:06.510000Z",
+          "startAirportIdent": "EGLL",
+          "endAirportIdent": "OMDB",
+          "startPoint": {
+            "lat": 51.477651,
+            "lon": -0.444794
+          },
+          "endPoint": {
+            "lat": 25.24351,
+            "lon": 55.381251
+          },
+          "rawPointCount": 1521,
+          "pointCount": 311,
+          "accepted": true,
+          "trackKm": 3583.6075402340384,
+          "durationMinutes": 364.73150000174843,
+          "coveredMinutes": 235.33566667238873,
+          "coverage": 0.6452298928698524,
+          "meanGroundSpeedKnots": 493.33616947021665,
+          "speedIntervals": 78
+        },
+        {
+          "flightId": "89618e:2026-11-20T08:39:19Z",
+          "callsign": "UAE4PY",
+          "icaoType": "A388",
+          "operator": null,
+          "startTs": "2026-11-20T08:39:19.700000Z",
+          "endTs": "2026-11-20T15:59:59.910000Z",
+          "startAirportIdent": "OMDB",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 25.265296,
+            "lon": 55.349587
+          },
+          "endPoint": {
+            "lat": 51.477558,
+            "lon": -0.463181
+          },
+          "rawPointCount": 1702,
+          "pointCount": 332,
+          "accepted": true,
+          "trackKm": 3494.264935522127,
+          "durationMinutes": 440.67016666730245,
+          "coveredMinutes": 270.1096666693687,
+          "coverage": 0.612952015136746,
+          "meanGroundSpeedKnots": 419.10801970403776,
+          "speedIntervals": 53
+        },
+        {
+          "flightId": "896457:2026-11-20T11:00:00Z",
+          "callsign": "UAE70M",
+          "icaoType": "A388",
+          "operator": null,
+          "startTs": "2026-11-20T11:00:00.500000Z",
+          "endTs": "2026-11-20T18:19:56.880000Z",
+          "startAirportIdent": "OMDB",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 25.263155,
+            "lon": 55.347463
+          },
+          "endPoint": {
+            "lat": 51.460752,
+            "lon": -0.440903
+          },
+          "rawPointCount": 1697,
+          "pointCount": 442,
+          "accepted": true,
+          "trackKm": 3567.855616502848,
+          "durationMinutes": 439.93966666857403,
+          "coveredMinutes": 271.0875,
+          "coverage": 0.616192447598098,
+          "meanGroundSpeedKnots": 426.39101704322644,
+          "speedIntervals": 66
+        },
+        {
+          "flightId": "89618d:2026-11-20T16:13:27Z",
+          "callsign": "UAE79Y",
+          "icaoType": "A388",
+          "operator": null,
+          "startTs": "2026-11-20T16:13:27.360000Z",
+          "endTs": "2026-11-20T22:37:43.220000Z",
+          "startAirportIdent": "EGLL",
+          "endAirportIdent": "OMDB",
+          "startPoint": {
+            "lat": 51.464859,
+            "lon": -0.473451
+          },
+          "endPoint": {
+            "lat": 25.244339,
+            "lon": 55.380096
+          },
+          "rawPointCount": 1603,
+          "pointCount": 450,
+          "accepted": true,
+          "trackKm": 3582.7463910012043,
+          "durationMinutes": 384.26433333555855,
+          "coveredMinutes": 240.07900000015894,
+          "coverage": 0.6247756535616594,
+          "meanGroundSpeedKnots": 483.472929046587,
+          "speedIntervals": 86
+        }
+      ]
+    },
+    {
+      "routeId": "EHAM--KLAX",
+      "directionListed": "EHAM-KLAX",
+      "split": "train",
+      "airportA": {
+        "ident": "EHAM",
+        "iataCode": "AMS",
+        "name": "AMSTERDAM/SCHIPHOL",
+        "lat": 52.308055555556,
+        "lon": 4.7641666666667,
+        "country": "NL"
+      },
+      "airportB": {
+        "ident": "KLAX",
+        "iataCode": "LAX",
+        "name": "LOS ANGELES INTL",
+        "lat": 33.94249638,
+        "lon": -118.40804861,
+        "country": "US"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 13,
+        "low-telemetry-coverage": 40
+      },
+      "pagesScanned": 4,
+      "candidatesSeen": 40,
+      "observations": []
+    },
+    {
+      "routeId": "LFPG--VIDP",
+      "directionListed": "LFPG-VIDP",
+      "split": "train",
+      "airportA": {
+        "ident": "LFPG",
+        "iataCode": "CDG",
+        "name": "PARIS CHARLES DE GAULLE",
+        "lat": 49.00973,
+        "lon": 2.54778,
+        "country": "FR"
+      },
+      "airportB": {
+        "ident": "VIDP",
+        "iataCode": "DEL",
+        "name": "INDIRA GANDHI INTERNATIONAL AIRPORT",
+        "lat": 28.5665,
+        "lon": 77.1031,
+        "country": "IN"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 113
+      },
+      "pagesScanned": 16,
+      "candidatesSeen": 0,
+      "observations": []
+    },
+    {
+      "routeId": "EGLL--WMKK",
+      "directionListed": "WMKK-EGLL",
+      "split": "train",
+      "airportA": {
+        "ident": "WMKK",
+        "iataCode": "KUL",
+        "name": "KUALA LUMPUR/SEPANG",
+        "lat": 2.7456,
+        "lon": 101.71,
+        "country": "MY"
+      },
+      "airportB": {
+        "ident": "EGLL",
+        "iataCode": "LHR",
+        "name": "LONDON HEATHROW",
+        "lat": 51.4775,
+        "lon": -0.46138888888889,
+        "country": "GB"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 481
+      },
+      "pagesScanned": 16,
+      "candidatesSeen": 0,
+      "observations": []
+    },
+    {
+      "routeId": "EGLL--KDFW",
+      "directionListed": "EGLL-KDFW",
+      "split": "train",
+      "airportA": {
+        "ident": "EGLL",
+        "iataCode": "LHR",
+        "name": "LONDON HEATHROW",
+        "lat": 51.4775,
+        "lon": -0.46138888888889,
+        "country": "GB"
+      },
+      "airportB": {
+        "ident": "KDFW",
+        "iataCode": "DFW",
+        "name": "DALLAS-FORT WORTH INTL",
+        "lat": 32.89723305,
+        "lon": -97.03769472,
+        "country": "US"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 4860.736780542306,
+      "p10TrackKm": 4666.968182514894,
+      "p90TrackKm": 4995.086892917897,
+      "medianDurationMinutes": 544.9254999995231,
+      "telemetryDiagnostics": {
+        "low-telemetry-coverage": 34,
+        "too-few-speed-intervals": 1
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "ab9630:2026-11-17T01:15:12Z",
+          "callsign": "AAL80",
+          "icaoType": "B789",
+          "operator": "WILMINGTON TRUST CO TRUSTEE, ATTN CORPORATE TRUST ADMINISTRATION",
+          "startTs": "2026-11-17T01:15:12.590000Z",
+          "endTs": "2026-11-17T10:21:26.190000Z",
+          "startAirportIdent": "KDFW",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 32.891968,
+            "lon": -97.030042
+          },
+          "endPoint": {
+            "lat": 51.477604,
+            "lon": -0.454559
+          },
+          "rawPointCount": 2861,
+          "pointCount": 382,
+          "accepted": true,
+          "trackKm": 5053.830544752269,
+          "durationMinutes": 546.2266666690508,
+          "coveredMinutes": 360.92350000540415,
+          "coverage": 0.6607577440448936,
+          "meanGroundSpeedKnots": 453.6446398381607,
+          "speedIntervals": 90
+        },
+        {
+          "flightId": "ab8748:2026-11-18T01:13:01Z",
+          "callsign": "AAL80",
+          "icaoType": "B789",
+          "operator": "WILMINGTON TRUST COMPANY TRUSTEE",
+          "startTs": "2026-11-18T01:13:01.960000Z",
+          "endTs": "2026-11-18T10:22:51.720000Z",
+          "startAirportIdent": "KDFW",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 32.907394,
+            "lon": -97.054706
+          },
+          "endPoint": {
+            "lat": 51.477604,
+            "lon": -0.453491
+          },
+          "rawPointCount": 2580,
+          "pointCount": 382,
+          "accepted": true,
+          "trackKm": 4906.971415166339,
+          "durationMinutes": 549.8293333331744,
+          "coveredMinutes": 341.76166666348774,
+          "coverage": 0.6215777259311736,
+          "meanGroundSpeedKnots": 465.1579492542703,
+          "speedIntervals": 85
+        },
+        {
+          "flightId": "407943:2026-11-18T04:33:57Z",
+          "callsign": "BAW8K",
+          "icaoType": "A35K",
+          "operator": null,
+          "startTs": "2026-11-18T04:33:57.530000Z",
+          "endTs": "2026-11-18T13:38:53.060000Z",
+          "startAirportIdent": "KDFW",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 32.908801,
+            "lon": -97.029905
+          },
+          "endPoint": {
+            "lat": 51.477604,
+            "lon": -0.450897
+          },
+          "rawPointCount": 1957,
+          "pointCount": 356,
+          "accepted": true,
+          "trackKm": 4672.787481395512,
+          "durationMinutes": 544.9254999995231,
+          "coveredMinutes": 335.6740000009537,
+          "coverage": 0.6159998018100592,
+          "meanGroundSpeedKnots": 450.991746457886,
+          "speedIntervals": 93
+        },
+        {
+          "flightId": "a9c508:2026-11-20T03:42:24Z",
+          "callsign": "AAL78",
+          "icaoType": "B77W",
+          "operator": "AMERICAN AIRLINES INC",
+          "startTs": "2026-11-20T03:42:24.530000Z",
+          "endTs": "2026-11-20T12:17:51.870000Z",
+          "startAirportIdent": "KDFW",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 32.906939,
+            "lon": -97.029961
+          },
+          "endPoint": {
+            "lat": 51.477585,
+            "lon": -0.462094
+          },
+          "rawPointCount": 1621,
+          "pointCount": 319,
+          "accepted": true,
+          "trackKm": 4663.088649927815,
+          "durationMinutes": 515.4556666652362,
+          "coveredMinutes": 312.28349999586743,
+          "coverage": 0.6058396874675949,
+          "meanGroundSpeedKnots": 483.765509547384,
+          "speedIntervals": 51
+        },
+        {
+          "flightId": "407799:2026-11-20T03:54:10Z",
+          "callsign": "BAW8K",
+          "icaoType": "A35K",
+          "operator": null,
+          "startTs": "2026-11-20T03:54:10.860000Z",
+          "endTs": "2026-11-20T12:09:23.340000Z",
+          "startAirportIdent": "KDFW",
+          "endAirportIdent": "EGLL",
+          "startPoint": {
+            "lat": 32.903448,
+            "lon": -97.029961
+          },
+          "endPoint": {
+            "lat": 51.477585,
+            "lon": -0.46588
+          },
+          "rawPointCount": 1697,
+          "pointCount": 267,
+          "accepted": true,
+          "trackKm": 4860.736780542306,
+          "durationMinutes": 495.2080000003179,
+          "coveredMinutes": 310.9986666679382,
+          "coverage": 0.6280162409891169,
+          "meanGroundSpeedKnots": 506.35353313529777,
+          "speedIntervals": 59
+        }
+      ]
+    },
+    {
+      "routeId": "SCEL--YSSY",
+      "directionListed": "SCEL-YSSY",
+      "split": "train",
+      "airportA": {
+        "ident": "SCEL",
+        "iataCode": "SCL",
+        "name": "SANTIAGO INTERNACIONAL",
+        "lat": -33.3941,
+        "lon": -70.7935,
+        "country": "CL"
+      },
+      "airportB": {
+        "ident": "YSSY",
+        "iataCode": "SYD",
+        "name": "SYDNEY KINGSFORD SMITH",
+        "lat": -33.946666666667,
+        "lon": 151.17611111111,
+        "country": "AU"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 55
+      },
+      "pagesScanned": 16,
+      "candidatesSeen": 0,
+      "observations": []
+    },
+    {
+      "routeId": "OMDB--WSSS",
+      "directionListed": "OMDB-WSSS",
+      "split": "holdout",
+      "airportA": {
+        "ident": "OMDB",
+        "iataCode": "DXB",
+        "name": "DUBAI",
+        "lat": 25.2528,
+        "lon": 55.3644,
+        "country": "AE"
+      },
+      "airportB": {
+        "ident": "WSSS",
+        "iataCode": "SIN",
+        "name": "SINGAPORE CHANGI",
+        "lat": 1.3451159576023457,
+        "lon": 103.99194013366014,
+        "country": "SG"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 6,
+        "low-telemetry-coverage": 38,
+        "too-few-speed-intervals": 2
+      },
+      "pagesScanned": 2,
+      "candidatesSeen": 40,
+      "observations": []
+    },
+    {
+      "routeId": "OTHH--RJAA",
+      "directionListed": "OTHH-RJAA",
+      "split": "holdout",
+      "airportA": {
+        "ident": "OTHH",
+        "iataCode": "DOH",
+        "name": "HAMAD",
+        "lat": 25.275555555556,
+        "lon": 51.618055555556,
+        "country": "QA"
+      },
+      "airportB": {
+        "ident": "RJAA",
+        "iataCode": "NRT",
+        "name": "NARITA INTERNATIONAL AIRPORT",
+        "lat": 35.7647,
+        "lon": 140.386,
+        "country": "JP"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 50,
+        "low-telemetry-coverage": 40
+      },
+      "pagesScanned": 8,
+      "candidatesSeen": 40,
+      "observations": []
+    },
+    {
+      "routeId": "LTFM--OJAI",
+      "directionListed": "LTFM-OJAI",
+      "split": "holdout",
+      "airportA": {
+        "ident": "LTFM",
+        "iataCode": "IST",
+        "name": "ISTANBUL",
+        "lat": 41.275277777778,
+        "lon": 28.751944444444,
+        "country": "TR"
+      },
+      "airportB": {
+        "ident": "OJAI",
+        "iataCode": "AMM",
+        "name": "AMMAN/QUEEN ALIA",
+        "lat": 31.7226,
+        "lon": 35.9932,
+        "country": "JO"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 1154.3397781088493,
+      "p10TrackKm": 1062.8533867165286,
+      "p90TrackKm": 1331.9882727641366,
+      "medianDurationMinutes": 125.20533333619436,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 118,
+        "low-telemetry-coverage": 16,
+        "too-few-speed-intervals": 1
+      },
+      "pagesScanned": 2,
+      "candidatesSeen": 29,
+      "observations": [
+        {
+          "flightId": "4baacf:2026-11-14T08:27:43Z",
+          "callsign": "THY9MV",
+          "icaoType": "B738",
+          "operator": null,
+          "startTs": "2026-11-14T08:27:43.690000Z",
+          "endTs": "2026-11-14T10:56:18.310000Z",
+          "startAirportIdent": "OJAI",
+          "endAirportIdent": "LTFM",
+          "startPoint": {
+            "lat": 31.720648,
+            "lon": 36.024609
+          },
+          "endPoint": {
+            "lat": 41.255198,
+            "lon": 28.727875
+          },
+          "rawPointCount": 753,
+          "pointCount": 236,
+          "accepted": true,
+          "trackKm": 1260.6669101292257,
+          "durationMinutes": 148.57699999809265,
+          "coveredMinutes": 111.31866666873296,
+          "coverage": 0.7492321602277742,
+          "meanGroundSpeedKnots": 366.895703327882,
+          "speedIntervals": 63
+        },
+        {
+          "flightId": "744829:2026-11-14T15:37:37Z",
+          "callsign": "RJA163",
+          "icaoType": "A20N",
+          "operator": null,
+          "startTs": "2026-11-14T15:37:37.030000Z",
+          "endTs": "2026-11-14T17:37:11.570000Z",
+          "startAirportIdent": "OJAI",
+          "endAirportIdent": "LTFM",
+          "startPoint": {
+            "lat": 31.719452,
+            "lon": 36.016846
+          },
+          "endPoint": {
+            "lat": 41.240069,
+            "lon": 28.757151
+          },
+          "rawPointCount": 657,
+          "pointCount": 185,
+          "accepted": true,
+          "trackKm": 1051.4739208636313,
+          "durationMinutes": 119.57566666603088,
+          "coveredMinutes": 89.97433333396911,
+          "coverage": 0.7524468467758003,
+          "meanGroundSpeedKnots": 378.608304961277,
+          "speedIntervals": 41
+        },
+        {
+          "flightId": "74482e:2026-11-15T07:35:12Z",
+          "callsign": "RJA165",
+          "icaoType": "A20N",
+          "operator": null,
+          "startTs": "2026-11-15T07:35:12.290000Z",
+          "endTs": "2026-11-15T09:37:40.600000Z",
+          "startAirportIdent": "OJAI",
+          "endAirportIdent": "LTFM",
+          "startPoint": {
+            "lat": 31.713945,
+            "lon": 35.977808
+          },
+          "endPoint": {
+            "lat": 41.240488,
+            "lon": 28.757088
+          },
+          "rawPointCount": 701,
+          "pointCount": 153,
+          "accepted": true,
+          "trackKm": 1379.5358478540772,
+          "durationMinutes": 122.47183333237966,
+          "coveredMinutes": 122.47183333237966,
+          "coverage": 1,
+          "meanGroundSpeedKnots": 364.92787593288926,
+          "speedIntervals": 34
+        },
+        {
+          "flightId": "742824:2026-11-15T10:10:26Z",
+          "callsign": "JAV271",
+          "icaoType": "B733",
+          "operator": null,
+          "startTs": "2026-11-15T10:10:26.570000Z",
+          "endTs": "2026-11-15T12:15:38.890000Z",
+          "startAirportIdent": "OJAI",
+          "endAirportIdent": "LTFM",
+          "startPoint": {
+            "lat": 31.712315,
+            "lon": 35.970831
+          },
+          "endPoint": {
+            "lat": 41.239929,
+            "lon": 28.757151
+          },
+          "rawPointCount": 649,
+          "pointCount": 154,
+          "accepted": true,
+          "trackKm": 1079.9225854958743,
+          "durationMinutes": 125.20533333619436,
+          "coveredMinutes": 97.9356666723887,
+          "coverage": 0.7822004387737809,
+          "meanGroundSpeedKnots": 357.2415854550307,
+          "speedIntervals": 41
+        },
+        {
+          "flightId": "74482f:2026-11-16T07:42:51Z",
+          "callsign": "RJA165",
+          "icaoType": null,
+          "operator": null,
+          "startTs": "2026-11-16T07:42:51.820000Z",
+          "endTs": "2026-11-16T09:50:37.610000Z",
+          "startAirportIdent": "OJAI",
+          "endAirportIdent": "LTFM",
+          "startPoint": {
+            "lat": 31.714597,
+            "lon": 35.982312
+          },
+          "endPoint": {
+            "lat": 41.238346,
+            "lon": 28.757151
+          },
+          "rawPointCount": 698,
+          "pointCount": 183,
+          "accepted": true,
+          "trackKm": 1154.3397781088493,
+          "durationMinutes": 127.76316666603088,
+          "coveredMinutes": 103.5343333363533,
+          "coverage": 0.8103613587395573,
+          "meanGroundSpeedKnots": 361.20981124080345,
+          "speedIntervals": 44
+        }
+      ]
+    }
+  ]
+}
