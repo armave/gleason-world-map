@@ -415,7 +415,7 @@ function showLoadError(err){
 }
 async function load(){
  const generation=++loadGeneration;
- setMapLoading(true,'Loading local country boundaries, capital coordinates and county search data…');
+ setMapLoading(true,'Loading local country boundaries, coastlines, capital coordinates and county search data…');
  try{
   mapQuality=readMapQuality();$('mapQuality').value=mapQuality;
   $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and geographic labels…';
@@ -481,6 +481,6 @@ canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=ma
 $('retryMapLoading').addEventListener('click',load);
 window.addEventListener('resize',resize);
 resize();draw();
-setMapLoading(true,'Loading local country boundaries, capital coordinates and county search data…');
+setMapLoading(true,'Loading local country boundaries, coastlines, capital coordinates and county search data…');
 load();
 })();
