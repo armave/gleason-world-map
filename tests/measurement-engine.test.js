@@ -22,6 +22,15 @@ test('ordinary northern A–B measurements use WGS84', () => {
   assert.equal(result.distanceMeters, geodesicDistanceMeters(a, b));
 });
 
+test('Santiago–Sydney A–B distance stays near the 11,341 km WGS84 benchmark', () => {
+  const a = point(-33.3929, -70.7858), b = point(-33.9461, 151.1772);
+  const result = measureDirectDistance(a, b);
+  assert.equal(result.metric, 'wgs84');
+  assert.equal(result.distanceMeters, geodesicDistanceMeters(a, b));
+  assert.ok(result.distanceMeters / 1000 > 11300);
+  assert.ok(result.distanceMeters / 1000 < 11400);
+});
+
 test('A–B distances remain WGS84 when both endpoints are in the Antarctic band', () => {
   const a = point(-70, 10), b = point(-70, 20);
   const result = measureDirectDistance(a, b);
