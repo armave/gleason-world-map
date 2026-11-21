@@ -4,12 +4,16 @@
  * flight telemetry dataset. Target distances are ground-speed × elapsed-time
  * integrations, never coordinate-derived route lengths.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, unlink } from 'node:fs/promises';
 import { fitFlightCalibration } from '../src/core/flight-calibration-fit.js';
 
 const DATA_PATH = 'data/flight-calibration.json';
 const PARAMETERS_PATH = 'src/core/flight-calibration-parameters.js';
 const SUMMARY_PATH = 'data/flight-calibration-summary.json';
+const MAX_TRAINING_MAPE = 5;
+const MAX_HOLDOUT_MAPE = 10;
+const MAX_HOLDOUT_ROUTE_ERROR = 20;
+const MAX_LEAVE_ONE_OUT_MAPE = 10;
 
 function asJavaScript(model) {
   return [
@@ -39,8 +43,29 @@ async function main() {
     throw error;
   }
 
+  const qualityGate = {
+    trainingMapePercent: fitted.metrics.training.meanAbsolutePercent,
+    holdoutMapePercent: fitted.metrics.holdout.meanAbsolutePercent,
+    holdoutMaxErrorPercent: fitted.metrics.holdout.maxAbsolutePercent,
+    leaveOneOutMapePercent: fitted.metrics.leaveOneOut?.meanAbsolutePercent ?? null,
+    limits: {
+      maxTrainingMapePercent: MAX_TRAINING_MAPE,
+      maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
+      maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
+      maxLeaveOneOutMapePercent: MAX_LEAVE_ONE_OUT_MAPE
+    }
+  };
+  const accepted =
+    qualityGate.trainingMapePercent <= MAX_TRAINING_MAPE &&
+    qualityGate.holdoutMapePercent <= MAX_HOLDOUT_MAPE &&
+    qualityGate.holdoutMaxErrorPercent <= MAX_HOLDOUT_ROUTE_ERROR &&
+    Number.isFinite(qualityGate.leaveOneOutMapePercent) &&
+    qualityGate.leaveOneOutMapePercent <= MAX_LEAVE_ONE_OUT_MAPE;
+
   const summary = {
     schemaVersion: 1,
+    accepted,
+    qualityGate,
     generatedAt: new Date().toISOString(),
     sourceDataset: DATA_PATH,
     sourceRetrievedAt: dataset.source && dataset.source.retrievedAt,
@@ -62,13 +87,25 @@ async function main() {
     }
   };
 
-  await writeFile(PARAMETERS_PATH, asJavaScript(fitted.model), 'utf8');
   await writeFile(SUMMARY_PATH, JSON.stringify(summary, null, 2) + '\n', 'utf8');
+
+  if (!accepted) {
+    try {
+      await unlink(PARAMETERS_PATH);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    console.warn('Calibration rejected by the independent validation gate.');
+    console.warn('No production parameters were written. Improve route coverage or telemetry quality.');
+  } else {
+    await writeFile(PARAMETERS_PATH, asJavaScript(fitted.model), 'utf8');
+    console.log('Accepted calibration parameters written to ' + PARAMETERS_PATH);
+  }
 
   console.log('FLIGHT_CALIBRATION_FIT_BEGIN');
   console.log(JSON.stringify(summary, null, 2));
   console.log('FLIGHT_CALIBRATION_FIT_END');
-  console.log('Wrote ' + PARAMETERS_PATH + ' and ' + SUMMARY_PATH);
+  console.log('Wrote ' + SUMMARY_PATH);
 }
 
 main().catch(error => {
