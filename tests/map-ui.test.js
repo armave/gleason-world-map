@@ -34,7 +34,7 @@ test('loading veil is shown during startup/reload and replaced with an actionabl
 test('zoom stays at 100% or above and supports close-up scale', () => {
   assert.match(app, /const MIN_ZOOM=1,MAX_ZOOM=20000/);
   assert.match(app, /zoom=clamp\(z,MIN_ZOOM,MAX_ZOOM\)/);
-  assert.match(app, /zoom=clamp\(zoom\*\(e\.deltaY<0\?1\.12:\.89\),MIN_ZOOM,MAX_ZOOM\)/);
+  assert.match(app, /const nz=clamp\(zoom\*\(e\.deltaY<0\?1\.12:\.89\),MIN_ZOOM,MAX_ZOOM\)/);
   assert.match(app, /clamp\(zoom\/1\.25,MIN_ZOOM,MAX_ZOOM\)/);
 });
 
