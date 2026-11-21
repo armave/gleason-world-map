@@ -1,19 +1,18 @@
 /**
- * Fit the flat-disk distance scale to empirical ADS-B flight telemetry.
+ * Fit the flat-disk distance scale to observed ADS-B flight mileage.
  *
- * Target distances are route-level medians of ground-speed × elapsed-time
- * integrations. Coordinate values are used only in the app's radial disk
- * geometry; no globe, sphere, ellipsoid, or geodesic calculation appears here.
+ * Each training airport pair contributes its median ground-speed × time
+ * mileage and its flat-disk endpoint features. At runtime a small local
+ * inverse-distance-weighted neighbour model predicts the mileage-per-unit-
+ * chord ratio. This is deliberately empirical and contains no globe-distance
+ * equations, coordinate-derived route lengths, or external math libraries.
  */
 const DEG = Math.PI / 180;
 const FACTOR_BOUNDS = [0.5, 2.5];
-const RIDGE_LAMBDA = 1.0;
+const NEIGHBOR_COUNT = 3;
+const INVERSE_DISTANCE_POWER = 2;
 const MIN_TRAIN_ROUTES = 10;
 const MIN_HOLDOUT_ROUTES = 4;
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
 
 function median(values) {
   if (!values.length) return NaN;
@@ -24,13 +23,17 @@ function median(values) {
     : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function validAirport(airport) {
   return !!airport &&
     Number.isFinite(airport.lat) && airport.lat >= -90 && airport.lat <= 90 &&
     Number.isFinite(airport.lon);
 }
 
-/** Flat radial disk chord for R=1; this is not a globe-distance formula. */
+/** Euclidean chord in the flat radial disk when R=1. */
 export function unitDiskChord(first, second) {
   if (!validAirport(first) || !validAirport(second)) return NaN;
   const thetaA = (90 - first.lat) * DEG;
@@ -44,7 +47,7 @@ export function unitDiskChord(first, second) {
   return Math.hypot(bx - ax, by - ay);
 }
 
-/** Symmetric endpoint features expressed in the app's flat-disk coordinates. */
+/** Symmetric endpoint features expressed only in flat-disk angular coordinates. */
 export function flightCalibrationFeatures(first, second) {
   if (!validAirport(first) || !validAirport(second)) return null;
   const thetaA = (90 - first.lat) * DEG;
@@ -59,34 +62,6 @@ export function flightCalibrationFeatures(first, second) {
   ];
 }
 
-function solveLinearSystem(matrix, vector) {
-  const n = vector.length;
-  const rows = matrix.map((row, i) => [...row, vector[i]]);
-
-  for (let column = 0; column < n; column++) {
-    let pivot = column;
-    for (let row = column + 1; row < n; row++) {
-      if (Math.abs(rows[row][column]) > Math.abs(rows[pivot][column])) pivot = row;
-    }
-    if (Math.abs(rows[pivot][column]) < 1e-12) {
-      throw new Error('Flight calibration regression is rank deficient.');
-    }
-    [rows[column], rows[pivot]] = [rows[pivot], rows[column]];
-
-    const divisor = rows[column][column];
-    for (let j = column; j <= n; j++) rows[column][j] /= divisor;
-
-    for (let row = 0; row < n; row++) {
-      if (row === column) continue;
-      const multiplier = rows[row][column];
-      for (let j = column; j <= n; j++) {
-        rows[row][j] -= multiplier * rows[column][j];
-      }
-    }
-  }
-  return rows.map(row => row[n]);
-}
-
 function routeObservations(dataset, split) {
   return (dataset?.routes || []).filter(route =>
     route.split === split &&
@@ -99,63 +74,114 @@ function routeObservations(dataset, split) {
   );
 }
 
-function computeRadialScale(routes) {
-  return median(routes.map(route =>
-    route.medianTrackKm / unitDiskChord(route.airportA, route.airportB)
-  ));
-}
-
-function featureStats(routes) {
+function featureStatistics(examples) {
   const columns = [0, 1, 2].map(index =>
-    routes.map(route => flightCalibrationFeatures(route.airportA, route.airportB)[index])
+    examples.map(example => example.features[index])
   );
   const means = columns.map(column =>
     column.reduce((sum, value) => sum + value, 0) / column.length
   );
   const scales = columns.map((column, index) => {
-    const variance = column.reduce((sum, value) => sum + (value - means[index]) ** 2, 0) /
-      column.length;
+    const variance = column.reduce(
+      (sum, value) => sum + (value - means[index]) ** 2, 0
+    ) / column.length;
     return Math.sqrt(variance) || 1;
   });
-  const ranges = columns.map(column => [
-    Math.min(...column),
-    Math.max(...column)
-  ]);
+  const ranges = columns.map(column => [Math.min(...column), Math.max(...column)]);
   return { means, scales, ranges };
 }
 
-function fitRegression(routes, radialScaleKm) {
-  const { means, scales } = featureStats(routes);
-  const dimension = 4;
-  const normal = Array.from({ length: dimension }, () => Array(dimension).fill(0));
-  const rhs = Array(dimension).fill(0);
+function makeTrainingExamples(routes) {
+  return routes.map(route => {
+    const chord = unitDiskChord(route.airportA, route.airportB);
+    return {
+      routeId: route.routeId,
+      features: flightCalibrationFeatures(route.airportA, route.airportB),
+      mileagePerUnitChord: route.medianTrackKm / chord,
+      medianTrackKm: route.medianTrackKm,
+      sampleCount: route.sampleCount
+    };
+  });
+}
 
-  for (const route of routes) {
-    const features = flightCalibrationFeatures(route.airportA, route.airportB);
-    const design = [
-      1,
-      (features[0] - means[0]) / scales[0],
-      (features[1] - means[1]) / scales[1],
-      (features[2] - means[2]) / scales[2]
-    ];
-    const chordKm = unitDiskChord(route.airportA, route.airportB) * radialScaleKm;
-    const targetLogFactor = Math.log(route.medianTrackKm / chordKm);
+function radialScale(examples) {
+  return median(examples.map(example => example.mileagePerUnitChord));
+}
 
-    for (let row = 0; row < dimension; row++) {
-      rhs[row] += design[row] * targetLogFactor;
-      for (let column = 0; column < dimension; column++) {
-        normal[row][column] += design[row] * design[column];
-      }
-    }
+function modelFromExamples(examples, sourceDatasetVersion) {
+  const stats = featureStatistics(examples);
+  return {
+    schemaVersion: 2,
+    sourceDatasetVersion,
+    target: 'median observed ADS-B flight-track mileage from ground-speed × time integration',
+    radialScaleKm: radialScale(examples),
+    featureNames: ['meanColatitude', 'colatitudeSpan', 'wrappedLongitudeSpan'],
+    featureMeans: stats.means,
+    featureScales: stats.scales,
+    featureRanges: stats.ranges,
+    factorBounds: FACTOR_BOUNDS,
+    neighborCount: Math.min(NEIGHBOR_COUNT, examples.length),
+    inverseDistancePower: INVERSE_DISTANCE_POWER,
+    trainingRouteCount: examples.length,
+    trainingExamples: examples
+  };
+}
+
+function featureDistance(firstFeatures, secondFeatures, model) {
+  let sum = 0;
+  for (let index = 0; index < 3; index++) {
+    const delta =
+      (firstFeatures[index] - secondFeatures[index]) / model.featureScales[index];
+    sum += delta * delta;
+  }
+  return Math.sqrt(sum);
+}
+
+/**
+ * Predict the mileage-per-unit-chord ratio from the nearest training routes.
+ * Ratios are averaged geometrically so positive scale factors remain positive.
+ */
+export function predictFlightScaleRatio(features, model, { excludeRouteId = null } = {}) {
+  if (!Array.isArray(features) || features.length !== 3 || !model ||
+      !Array.isArray(model.trainingExamples) || !model.trainingExamples.length) return null;
+
+  const neighbors = model.trainingExamples
+    .filter(example => example.routeId !== excludeRouteId)
+    .map(example => ({
+      routeId: example.routeId,
+      mileagePerUnitChord: example.mileagePerUnitChord,
+      distance: featureDistance(features, example.features, model)
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, Math.min(model.neighborCount, model.trainingExamples.length));
+
+  if (!neighbors.length) return null;
+  const exact = neighbors.find(neighbor => neighbor.distance < 1e-12);
+  if (exact) {
+    return {
+      mileagePerUnitChord: exact.mileagePerUnitChord,
+      neighborRouteIds: [exact.routeId],
+      nearestFeatureDistance: exact.distance,
+      weights: [1]
+    };
   }
 
-  // Ridge penalty applies to endpoint-feature slopes, not the intercept.
-  for (let index = 1; index < dimension; index++) {
-    normal[index][index] += RIDGE_LAMBDA;
-  }
-  const coefficients = solveLinearSystem(normal, rhs);
+  const weights = neighbors.map(neighbor =>
+    1 / Math.max(neighbor.distance, 1e-9) ** model.inverseDistancePower
+  );
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+  const weightedLogRatio = neighbors.reduce(
+    (sum, neighbor, index) =>
+      sum + weights[index] * Math.log(neighbor.mileagePerUnitChord),
+    0
+  ) / totalWeight;
 
-  return { featureMeans: means, featureScales: scales, featureRanges: featureStats(routes).ranges, coefficients };
+  return {
+    mileagePerUnitChord: Math.exp(weightedLogRatio),
+    neighborRouteIds: neighbors.map(neighbor => neighbor.routeId),
+    nearestFeatureDistance: neighbors[0].distance,
+    weights: weights.map(weight => weight / totalWeight)
+  };
 }
 
 export function predictFlightCalibratedKm(first, second, model) {
@@ -163,38 +189,46 @@ export function predictFlightCalibratedKm(first, second, model) {
   const chord = unitDiskChord(first, second);
   if (!Number.isFinite(chord)) return null;
   const features = flightCalibrationFeatures(first, second);
-  const design = [
-    1,
-    (features[0] - model.featureMeans[0]) / model.featureScales[0],
-    (features[1] - model.featureMeans[1]) / model.featureScales[1],
-    (features[2] - model.featureMeans[2]) / model.featureScales[2]
-  ];
-  const logFactor = design.reduce(
-    (sum, value, index) => sum + value * model.coefficients[index], 0
-  );
-  const factor = clamp(
-    Math.exp(logFactor),
+  const prediction = predictFlightScaleRatio(features, model);
+  if (!prediction) return null;
+
+  const correctionFactor = clamp(
+    prediction.mileagePerUnitChord / model.radialScaleKm,
     model.factorBounds[0],
     model.factorBounds[1]
   );
-  return chord * model.radialScaleKm * factor;
+  return chord * model.radialScaleKm * correctionFactor;
 }
 
-function errorMetrics(routes, model) {
-  if (!routes.length) return { routeCount: 0, meanAbsolutePercent: null, rmsPercent: null, maxAbsolutePercent: null };
-  const errors = routes.map(route => {
-    const predicted = predictFlightCalibratedKm(route.airportA, route.airportB, model);
-    return (predicted / route.medianTrackKm - 1) * 100;
-  });
+function routeError(route, model, excludeRouteId = null) {
+  const chord = unitDiskChord(route.airportA, route.airportB);
+  const features = flightCalibrationFeatures(route.airportA, route.airportB);
+  const scale = predictFlightScaleRatio(features, model, { excludeRouteId });
+  if (!scale) return NaN;
+  const predicted = chord * clamp(
+    scale.mileagePerUnitChord,
+    model.radialScaleKm * model.factorBounds[0],
+    model.radialScaleKm * model.factorBounds[1]
+  );
+  return (predicted / route.medianTrackKm - 1) * 100;
+}
+
+function summarizeErrors(routes, errors) {
+  const usable = errors.filter(Number.isFinite);
   return {
-    routeCount: routes.length,
-    meanAbsolutePercent: errors.reduce((sum, value) => sum + Math.abs(value), 0) / errors.length,
-    rmsPercent: Math.sqrt(errors.reduce((sum, value) => sum + value ** 2, 0) / errors.length),
-    maxAbsolutePercent: Math.max(...errors.map(Math.abs)),
+    routeCount: usable.length,
+    meanAbsolutePercent: usable.length
+      ? usable.reduce((sum, value) => sum + Math.abs(value), 0) / usable.length
+      : null,
+    rmsPercent: usable.length
+      ? Math.sqrt(usable.reduce((sum, value) => sum + value * value, 0) / usable.length)
+      : null,
+    maxAbsolutePercent: usable.length
+      ? Math.max(...usable.map(Math.abs))
+      : null,
     routeErrors: routes.map((route, index) => ({
       routeId: route.routeId,
       referenceMedianTrackKm: route.medianTrackKm,
-      predictedKm: predictFlightCalibratedKm(route.airportA, route.airportB, model),
       errorPercent: errors[index]
     }))
   };
@@ -211,54 +245,26 @@ export function fitFlightCalibration(dataset) {
     );
   }
 
-  const radialScaleKm = computeRadialScale(training);
-  const fitted = fitRegression(training, radialScaleKm);
-  const model = {
-    schemaVersion: 1,
-    sourceDatasetVersion: dataset.schemaVersion,
-    target: 'median observed ADS-B flight-track mileage from ground-speed × time integration',
-    radialScaleKm,
-    featureNames: ['meanColatitude', 'colatitudeSpan', 'wrappedLongitudeSpan'],
-    featureMeans: fitted.featureMeans,
-    featureScales: fitted.featureScales,
-    featureRanges: fitted.featureRanges,
-    coefficients: fitted.coefficients,
-    factorBounds: FACTOR_BOUNDS,
-    ridgeLambda: RIDGE_LAMBDA,
-    trainingRouteCount: training.length,
-    holdoutRouteCount: holdout.length
-  };
+  const examples = makeTrainingExamples(training);
+  const model = modelFromExamples(examples, dataset.schemaVersion);
+  const holdoutErrors = holdout.map(route => routeError(route, model));
+  const leaveOneOutErrors = training.map(route => {
+    const subset = examples.filter(example => example.routeId !== route.routeId);
+    const looModel = modelFromExamples(subset, dataset.schemaVersion);
+    return routeError(route, looModel);
+  });
 
-  const trainingMetrics = errorMetrics(training, model);
-  const holdoutMetrics = errorMetrics(holdout, model);
+  // The independent training score is leave-one-route-out; an in-sample nearest
+  // neighbour score would be trivially zero and would misrepresent generalization.
+  const trainingMetrics = summarizeErrors(training, leaveOneOutErrors);
+  const holdoutMetrics = summarizeErrors(holdout, holdoutErrors);
 
-  const looErrors = [];
-  if (training.length > MIN_TRAIN_ROUTES) {
-    for (let omitted = 0; omitted < training.length; omitted++) {
-      const subset = training.filter((_, index) => index !== omitted);
-      const leaveOneOutScale = computeRadialScale(subset);
-      const leaveOneOutFit = fitRegression(subset, leaveOneOutScale);
-      const leaveOneOutModel = {
-        ...model,
-        radialScaleKm: leaveOneOutScale,
-        featureMeans: leaveOneOutFit.featureMeans,
-        featureScales: leaveOneOutFit.featureScales,
-        coefficients: leaveOneOutFit.coefficients
-      };
-      const route = training[omitted];
-      const prediction = predictFlightCalibratedKm(
-        route.airportA, route.airportB, leaveOneOutModel
-      );
-      looErrors.push((prediction / route.medianTrackKm - 1) * 100);
+  return {
+    model,
+    metrics: {
+      training: trainingMetrics,
+      holdout: holdoutMetrics,
+      leaveOneOut: trainingMetrics
     }
-  }
-
-  const leaveOneOutMetrics = looErrors.length ? {
-    routeCount: looErrors.length,
-    meanAbsolutePercent: looErrors.reduce((sum, value) => sum + Math.abs(value), 0) / looErrors.length,
-    rmsPercent: Math.sqrt(looErrors.reduce((sum, value) => sum + value ** 2, 0) / looErrors.length),
-    maxAbsolutePercent: Math.max(...looErrors.map(Math.abs))
-  } : null;
-
-  return { model, metrics: { training: trainingMetrics, holdout: holdoutMetrics, leaveOneOut: leaveOneOutMetrics } };
+  };
 }
