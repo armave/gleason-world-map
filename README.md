@@ -2,6 +2,16 @@
 
 An interactive Gleason-style north-polar circular map with WGS84 ellipsoidal ground-distance and area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
+### Local geographic data
+
+Country boundaries, capital coordinates, and the 2026 county label Gazetteer are bundled in `data/`. The Census county polygons can also be bundled for offline/static hosting:
+
+```sh
+npm run vendor:county-boundaries
+```
+
+This downloads the public-domain Census TIGERweb ACS2026 Counties layer, validates and compresses it to `data/us-counties-boundaries.geojson.gz`. Commit that generated file with the app to serve county boundaries locally; the map prefers the local bundle and uses Census TIGERweb only as a fallback when the bundle is absent. The map’s core country and capital layers already load from local files.
+
 ## Map layout and calibration
 
 The app draws a two-dimensional circular disk. Its geographic layout follows the north-polar azimuthal-equidistant arrangement used by Gleason's 1892 sheet: the North Pole is at the centre, the meridians radiate outward, and parallels form circles.
