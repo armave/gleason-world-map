@@ -4,8 +4,12 @@ import { integrateGroundSpeedSeries } from '../src/core/flight-telemetry.js';
 
 test('integrates ground speed and expands the observed mean over telemetry-span gaps', () => {
   const pathGs = [
-    [[0, 360], [900, 420], [1800, 400], [2700, 500]],
-    [[3000, 480], [3600, 500]]
+    [
+      [0, 360], [300, 360], [600, 360],
+      [900, 420], [1200, 420], [1500, 420],
+      [1800, 400], [2100, 400], [2400, 400], [2700, 500]
+    ],
+    [[3000, 480], [3300, 480], [3600, 500]]
   ];
   const result = integrateGroundSpeedSeries(pathGs, 0, 3600);
   assert.equal(result.accepted, true);
@@ -15,7 +19,7 @@ test('integrates ground speed and expands the observed mean over telemetry-span 
   assert.equal(result.trackKm, result.estimatedTrackKm);
   assert.equal(result.telemetrySpanMinutes, 60);
   assert.equal(result.coveredMinutes, 55);
-  assert.equal(result.speedIntervals, 4);
+  assert.equal(result.speedIntervals, 11);
   assert.equal(result.distanceMethod, 'observed-ground-speed-integral-expanded-by-measured-coverage');
 });
 
@@ -68,7 +72,7 @@ test('rejects missing series and invalid observation windows', () => {
 
 test('rejects short telemetry spans even when their speed samples are complete', () => {
   const result = integrateGroundSpeedSeries(
-    [[[0, 400], [450, 400], [900, 400], [1350, 400], [1800, 400]]],
+    [[[0, 400], [225, 400], [450, 400], [675, 400], [900, 400], [1125, 400], [1350, 400], [1575, 400], [1800, 400]]],
     0,
     1800
   );
