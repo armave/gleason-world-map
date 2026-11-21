@@ -11,7 +11,7 @@ import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangula
 import {renderRadialCalibration} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
 import {createProjectedMeasurementSegments,createProjectedSegmentLabels,measurementStrokeStyle} from './map/measurements.js';
-import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint,normalizeRotationDegrees,shortestRotationDelta} from './map/view-transform.js';
+import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint,normalizeRotationDegrees,shortestRotationDelta,screenUprightRotation} from './map/view-transform.js';
 
 (() => {
 'use strict';
@@ -72,6 +72,7 @@ function animateRotation(value){
  rotationAnimationFrame=requestAnimationFrame(animateFrame);
 }
 function worldToScreen(x,y){return worldToScreenPoint(x,y,zoom,panX,panY,width,height,rotationRadians());}
+function drawUprightMapText(text,x,y){ctx.save();ctx.translate(x,y);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.fillText(text,0,0);ctx.restore();}
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
 const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
 const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
@@ -84,12 +85,12 @@ function drawCompassRose(){
  for(let i=0;i<16;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.34,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
  ctx.closePath();ctx.fillStyle='rgba(255,253,246,.9)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1.25/zoom;ctx.stroke();
  ctx.beginPath();ctx.moveTo(0,-r*.82);ctx.lineTo(0,r*.82);ctx.moveTo(-r*.82,0);ctx.lineTo(r*.82,0);ctx.stroke();
- ctx.fillStyle=visualPalette.labels;ctx.font=`700 ${Math.max(7,8.5/zoom)}px Georgia,serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('N',0,-r*1.34);ctx.fillText('S',0,r*1.34);ctx.fillText('W',-r*1.34,0);ctx.fillText('E',r*1.34,0);ctx.restore();
+ ctx.fillStyle=visualPalette.labels;ctx.font=`700 ${Math.max(7,8.5/zoom)}px Georgia,serif`;ctx.textAlign='center';ctx.textBaseline='middle';for(const [label,x,y] of [['N',0,-r*1.34],['S',0,r*1.34],['W',-r*1.34,0],['E',r*1.34,0]]){ctx.save();ctx.translate(x,y);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.fillText(label,0,0);ctx.restore();}ctx.restore();
 }
 function drawAnnotations(){
  ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75],labelAngle=rad(225);
- for(const lat of ringLabels){const r=baseR*radialFraction(lat),x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;ctx.fillText(label,x,y);}
- for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;ctx.fillText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a));}}
+ for(const lat of ringLabels){const r=baseR*radialFraction(lat),x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y);}
+ for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a));}}
  drawCompassRose();ctx.restore();
 }
 function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
@@ -97,7 +98,7 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
  if(selected&&selected.type==='country'){const rec=pathRecords.find(x=>x.country===selected.country);if(rec){ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(rec.path);}}
 }
 function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;const localScale=scaleBarReadingKm();if(mapQuality==='high'&&localScale<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
-function drawIceWall(){renderIceWall(ctx,antarcticaPath,baseR,zoom);}
+function drawIceWall(){renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians());}
 function drawRestrictedParallel(){
  const radius=baseR*radialFraction(RESTRICTED_PARALLEL_LATITUDE);
  if(!Number.isFinite(radius)||radius<=0)return;
@@ -120,8 +121,7 @@ function drawRestrictedParallel(){
  ctx.fillStyle='rgba(255,250,238,.97)';ctx.strokeStyle='#a63f38';ctx.lineWidth=1/zoom;
  ctx.fillRect(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight);
  ctx.strokeRect(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight);
- ctx.fillStyle='#8d342e';ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText(label,x,y+.4/zoom);
+ drawMeasurementLabelAtMap(x,y,label,'restricted');
  ctx.restore();
 }
 function drawCapitals(){
@@ -136,16 +136,16 @@ function drawCapitals(){
    if(sx<-12||sx>width+12||sy<-12||sy>height+12)continue;
    const labelFontSize=Math.min(16,10+2*Math.log2(Math.max(1,zoom)));
    ctx.font=`600 ${labelFontSize/zoom}px ui-sans-serif,system-ui`;
-   const text=p.city,tw=ctx.measureText(text).width*zoom;
-   candidates.push({point:p,x,y,text,selected:!!active,labelFontSize,centerDistance:Math.hypot(sx-width/2,sy-height/2),
-    box:(()=>{const a=rotationRadians(),center=worldToScreen(x+(4+tw/2)/zoom,y-3/zoom),bw=Math.abs(tw*Math.cos(a))+Math.abs(labelFontSize*Math.sin(a)),bh=Math.abs(tw*Math.sin(a))+Math.abs(labelFontSize*Math.cos(a));return {left:center.x-bw/2,top:center.y-bh/2,right:center.x+bw/2,bottom:center.y+bh/2};})()});
+   const text=p.city,tw=ctx.measureText(text).width*zoom,labelX=x+4/zoom,labelY=y-3/zoom,labelScreen=worldToScreen(labelX,labelY);
+   candidates.push({point:p,x,y,labelX,labelY,text,selected:!!active,labelFontSize,centerDistance:Math.hypot(sx-width/2,sy-height/2),
+    box:{left:labelScreen.x-2,top:labelScreen.y-labelFontSize/2-2,right:labelScreen.x+tw+2,bottom:labelScreen.y+labelFontSize/2+2}});
   }
  }
  if(labelOn){
   candidates.sort((a,b)=>Number(b.selected)-Number(a.selected)||a.centerDistance-b.centerDistance||a.text.length-b.text.length);
   const visible=selectNonOverlappingLabels(candidates);labelCollisionBoxes=visible.map(item=>item.box);
   ctx.textAlign='left';ctx.textBaseline='middle';
-  for(const item of visible){ctx.font=`600 ${item.labelFontSize/zoom}px ui-sans-serif,system-ui`;ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,item.x+4/zoom,item.y-3/zoom);ctx.fillStyle='#243a43';ctx.fillText(item.text,item.x+4/zoom,item.y-3/zoom);}
+  for(const item of visible){ctx.save();ctx.translate(item.labelX,item.labelY);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.font=`600 ${item.labelFontSize/zoom}px ui-sans-serif,system-ui`;ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,0,0);ctx.fillStyle='#243a43';ctx.fillText(item.text,0,0);ctx.restore();}
  }else labelCollisionBoxes=[];
 }
 function drawCountryLabels(){
@@ -172,17 +172,19 @@ function drawCountryLabels(){
   const population=Number(country.feature?.properties?.POP_EST)||0;
   candidates.push({country,x,y,text,selected:!!active,screenFontSize,population,
    centerDistance:Math.hypot(sx-width/2,sy-height/2),
-   box:(()=>{const a=rotationRadians(),bw=Math.abs(widthPx*Math.cos(a))+Math.abs(heightPx*Math.sin(a)),bh=Math.abs(widthPx*Math.sin(a))+Math.abs(heightPx*Math.cos(a));return {left:sx-bw/2,top:sy-bh/2,right:sx+bw/2,bottom:sy+bh/2};})()});
+   box:{left:sx-widthPx/2,top:sy-heightPx/2,right:sx+widthPx/2,bottom:sy+heightPx/2}});
  }
  candidates.sort((a,b)=>Number(b.selected)-Number(a.selected)||b.population-a.population||a.centerDistance-b.centerDistance);
  const visible=selectNonOverlappingLabels(candidates,labelCollisionBoxes,5);
  labelCollisionBoxes.push(...visible.map(item=>item.box));
  ctx.textAlign='center';ctx.textBaseline='middle';
  for(const item of visible){
+  ctx.save();ctx.translate(item.x,item.y);ctx.rotate(screenUprightRotation(0,rotationRadians()));
   ctx.font=`600 ${item.screenFontSize/zoom}px Georgia,serif`;
   ctx.lineJoin='round';ctx.lineWidth=3.2/zoom;
-  ctx.strokeStyle='rgba(255,250,238,.96)';ctx.strokeText(item.text,item.x,item.y);
-  ctx.fillStyle=item.selected?'#994d30':'#6e563b';ctx.fillText(item.text,item.x,item.y);
+  ctx.strokeStyle='rgba(255,250,238,.96)';ctx.strokeText(item.text,0,0);
+  ctx.fillStyle=item.selected?'#994d30':'#6e563b';ctx.fillText(item.text,0,0);
+  ctx.restore();
  }
 }
 function strokeMeasurementConnector(tool){
@@ -208,33 +210,29 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  const screen=worldToScreen(x,y);
  if(!Number.isFinite(screen.x)||!Number.isFinite(screen.y))return;
  ctx.save();
- // Measurement tags rotate with the map while remaining zoom-invariant.
+ // Measurement tags follow their map anchor but stay screen-upright and zoom-invariant.
  ctx.setTransform(dpr,0,0,dpr,0,0);
  ctx.font='700 11px ui-sans-serif,system-ui,sans-serif';
  const paddingX=8,boxHeight=20,boxWidth=ctx.measureText(text).width+paddingX*2;
- const angle=rotationRadians(),cosine=Math.cos(angle),sine=Math.sin(angle);
- const rotatedWidth=Math.abs(boxWidth*cosine)+Math.abs(boxHeight*sine);
- const rotatedHeight=Math.abs(boxWidth*sine)+Math.abs(boxHeight*cosine);
  let labelX=screen.x,labelY=screen.y;
  const mapCenterX=width/2+panX,mapCenterY=height/2+panY;
  const dx=labelX-mapCenterX,dy=labelY-mapCenterY,radialDistance=Math.hypot(dx,dy);
- const radialLimit=Math.max(0,baseR*zoom-Math.hypot(rotatedWidth/2,rotatedHeight/2)-3);
+ const radialLimit=Math.max(0,baseR*zoom-Math.hypot(boxWidth/2,boxHeight/2)-3);
  if(radialDistance>radialLimit&&radialDistance>0){
   const factor=radialLimit/radialDistance;
   labelX=mapCenterX+dx*factor;labelY=mapCenterY+dy*factor;
  }
- if(labelX+rotatedWidth/2<0||labelX-rotatedWidth/2>width||
-    labelY+rotatedHeight/2<0||labelY-rotatedHeight/2>height){ctx.restore();return;}
+ if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
+    labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
  const isArea=kind==='area';
- ctx.translate(labelX,labelY);ctx.rotate(angle);
  ctx.fillStyle='rgba(255,250,238,.96)';
  ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
  ctx.lineWidth=1;
- ctx.fillRect(-boxWidth/2,-boxHeight/2,boxWidth,boxHeight);
- ctx.strokeRect(-boxWidth/2,-boxHeight/2,boxWidth,boxHeight);
+ ctx.fillRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
+ ctx.strokeRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
  ctx.fillStyle=isArea?'#315d6c':'#87452e';
  ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText(text,0,.5);
+ ctx.fillText(text,labelX,labelY+.5);
  ctx.restore();
 }
 function projectedPolygonLabelAnchor(vertices){
@@ -267,7 +265,7 @@ function drawMeasure(){
    );
   }
  }
- points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});
+ points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';drawUprightMapText(i===0?'A':'B',x,y+.3/zoom);});
 }
 function drawArea(){
  if(!areaPoints.length)return;
@@ -281,7 +279,7 @@ function drawArea(){
   if(closed){ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
   strokeMeasurementConnector('area');
  }
- areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x,y);});
+ areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';drawUprightMapText(String(i+1),x,y);});
  // Each edge label uses the same projected-plane kilometres as the polygon perimeter.
  const edgeLabels=createProjectedSegmentLabels(areaPoints,project,flatDiskDistanceMeters,closed);
  edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
