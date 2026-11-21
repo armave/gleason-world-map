@@ -65,7 +65,8 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   assert.ok(Math.abs(features[2] - tangential / chord) < 1e-12);
   assert.ok(Math.abs(features[1] ** 2 + features[2] ** 2 - 1) < 1e-12);
   assert.equal(unitDiskChord(a, a), 0);
-  assert.deepEqual(flightCalibrationFeatures(a, a), [(qA + qB) / 2, 0, 0]);
+  const samePointQ = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
+  assert.deepEqual(flightCalibrationFeatures(a, a), [samePointQ, 0, 0]);
 });
 
 test('flight telemetry calibration fits a radial scale and direction-aware route model', () => {
