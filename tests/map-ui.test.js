@@ -116,8 +116,8 @@ test('measurement mode buttons expose a strong pressed state and actions reflect
  assert.match(styles,/\.map-measure-tools \.map-measure-modes button\[aria-pressed="true"\]/);
  assert.match(styles,/button\[aria-pressed="false"\]:hover/);
  assert.match(app,/function syncMeasurementActionButtons\(\)/);
- assert.match(app,/\$('finishArea'\)\.disabled=areaPoints\.length<3\|\|areaFinished/);
- assert.match(app,/\$('undoArea'\)\.disabled=areaPoints\.length===0/);
+ assert.match(app,/\$\('finishArea'\)\.disabled=areaPoints\.length<3\|\|areaFinished/);
+ assert.match(app,/\$\('undoArea'\)\.disabled=areaPoints\.length===0/);
 });
 test('water label land detection uses one prebuilt land mask including Antarctica',()=>{
  assert.match(app,/landMaskPath=new Path2D\(\)/);
