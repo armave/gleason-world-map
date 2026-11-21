@@ -26,12 +26,12 @@ npm run vendor:data
 
 The script downloads from pinned Git commits, validates all three boundary sets and the capital list, writes compressed files, and records source commits and SHA-256 checksums in `metadata.json`.
 
-The browser loads only the selected country-quality file, the small capital JSON, the compact U.S. county-equivalent label index, and the local compressed county-boundary file. It decompresses the selected boundaries with the native browser `DecompressionStream` API. Normal HTTP caching is used for repeat visits.
+The browser loads only the selected country-quality file, the small capital JSON, and the compact U.S. county-equivalent search index. It decompresses the selected boundaries with the native browser `DecompressionStream` API. Normal HTTP caching is used for repeat visits.
 
 
 ## U.S. county-equivalent label points
 
-`us-counties.json` contains 3,222 five-digit GEOID records from the U.S. Census Bureau's 2026 National Counties Gazetteer. Each row stores GEOID, USPS state/territory code, Census name, and Gazetteer internal-point latitude/longitude. These are local county search records. They are not used to position map labels. The map uses the separate local polygon bundle described below. The Gazetteer file covers the 50 states, the District of Columbia, and Puerto Rico; the separately published Island Areas are not included. The source is a U.S. government public-domain dataset.
+`us-counties.json` contains 3,222 five-digit GEOID records from the U.S. Census Bureau's 2026 National Counties Gazetteer. Each row stores GEOID, USPS state/territory code, Census name, and Gazetteer internal-point latitude/longitude. These are local county search records used only for search results. They are not rendered as county boundaries on the map. The Gazetteer file covers the 50 states, the District of Columbia, and Puerto Rico; the separately published Island Areas are not included. The source is a U.S. government public-domain dataset.
 
 Source ZIP: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_counties_national.zip
 
