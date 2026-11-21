@@ -303,7 +303,7 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/measureDirectDistance applies the ADS-B flight-mileage model to the same straight projected chord/);
+ assert.match(app,/The scale bar uses the same uncorrected map-plane chord metric as A–B/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
