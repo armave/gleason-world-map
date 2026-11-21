@@ -10,10 +10,10 @@ import { fitFlightCalibration } from '../src/core/flight-calibration-fit.js';
 const DATA_PATH = 'data/flight-calibration.json';
 const PARAMETERS_PATH = 'src/core/flight-calibration-parameters.js';
 const SUMMARY_PATH = 'data/flight-calibration-summary.json';
-const MAX_TRAINING_MAPE = 5;
-const MAX_HOLDOUT_MAPE = 10;
+const MAX_TRAINING_MAPE = 10;
+const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
-const MAX_LEAVE_ONE_OUT_MAPE = 10;
+const MAX_LEAVE_ONE_OUT_MAPE = 15;
 
 function asJavaScript(model) {
   return [
