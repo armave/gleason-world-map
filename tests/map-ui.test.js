@@ -175,6 +175,8 @@ test('direct A/B coordinate entry and calibration route support are available',(
  assert.match(html,/id="calibrationRoutes"/);
  assert.match(app,/function applyCoordinateEndpoint\(index\)/);
  assert.match(app,/calibration\?\.neighbourRouteIds/);
+ assert.match(app,/loadAntarcticAddDataset\(\)\.catch\(error=>\{/);
+ assert.match(app,/Natural Earth outline remains active/);
 });
 
 test('PNG exports include date, measurement and model/source metadata',()=>{
