@@ -357,7 +357,7 @@ function showLoadError(err){
  console.error(err);$('status').textContent='Could not load geographic data';
  document.querySelector('.load-error')?.remove();
  const box=document.createElement('div');box.className='error load-error';
- const msg=document.createElement('div');msg.textContent='Could not load the geographic datasets. The app will use a previously cached copy when available. Check your connection or retry.';
+ const msg=document.createElement('div');msg.textContent='Could not load the required world map data. '+(err?.message||'The request failed without a detailed error.')+' You can retry loading.';
  const retry=document.createElement('button');retry.type='button';retry.className='primary';retry.textContent='Retry loading';retry.style.marginTop='9px';retry.addEventListener('click',load);
  box.append(msg,retry);document.querySelector('.map-card').append(box);
 }
@@ -368,7 +368,7 @@ async function load(){
   const [geoData,capRaw,countyRaw,countyBoundaryResult]=await Promise.all([
    (async()=>{try{return {data:await loadCountryDataset(mapQuality),fallback:false};}catch(boundaryError){if(mapQuality==='low')throw boundaryError;console.warn('Requested bundled boundary quality unavailable; falling back to low:',boundaryError);return {data:await loadCountryDataset('low'),fallback:true};}})(),
    loadCapitalDataset(),
-   loadCountyDataset(),
+   loadCountyDataset().catch(error=>{console.warn('County search data unavailable:',error);return []; }),
    loadCountyBoundaryDataset().then(data=>({data,error:null})).catch(error=>({data:null,error}))
   ]);
   if(generation!==loadGeneration)return;
@@ -379,6 +379,7 @@ async function load(){
   countries=usable.map(f=>({feature:f,iso:isoFor(f),name:nameFor(f),center:centroidOfFeature(f)})).filter(c=>c.iso&&c.name);
   countryByIso.clear();capitalByIso.clear();countries.forEach(c=>countryByIso.set(c.iso,c));
   capitals=capRaw.map(p=>{const c=countryByIso.get(p.iso);return {...p,countryName:c?c.name:'',country:c||null};});
+  counties=countyRaw.map(county=>({...county,feature:null}));
   const gazetteerByGeoid=new Map(countyRaw.map(county=>[county.geoid,county]));
   countyPathRecords=[];
   if(countyBoundaryResult.data){
@@ -395,7 +396,7 @@ async function load(){
   capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
   const countyLayerStatus=$('countyLayerStatus');
   if(counties.some(county=>county.feature))countyLayerStatus.textContent='2026 Census county polygons loaded. Names stay inside their own county outlines; crowded or too-small labels are suppressed.';
-  else countyLayerStatus.textContent='2026 Census county polygons could not be loaded. County search remains available, but map labels are hidden rather than plotted at unverified positions.';
+  else countyLayerStatus.textContent=countyRaw.length?'2026 Census county polygons could not be loaded. County search remains available; map labels are hidden rather than plotted at unverified positions.':'County data could not be loaded. Check your connection and retry.';
   restoreSharedState();resize();draw();
   boundaryScaleLabel=geoData.fallback?'Natural Earth '+MAP_QUALITY_OPTIONS.low.scale+' fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
   updateStatus();$('status').textContent+=' · bundled country data';
