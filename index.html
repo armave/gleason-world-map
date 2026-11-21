@@ -56,12 +56,17 @@
           <button id="areaMode" type="button" aria-pressed="false"><span class="tool-icon" aria-hidden="true">⬡</span> Area</button>
         </div>
         <div class="map-measure-readings" aria-live="polite">
-          <div class="map-measure-reading">
-            <span>Distance</span>
-            <div class="measure-value" id="distanceValue">—</div>
-            <div class="measure-sub" id="distanceSub">Empirically calibrated straight-line distance</div>
+          <div class="map-measure-reading distance-reading">
+            <span>Raw flat-disk chord</span>
+            <div class="measure-value" id="rawDistanceValue">—</div>
+            <div class="measure-sub" id="rawDistanceSub">Uncorrected Euclidean chord</div>
           </div>
-          <div class="map-measure-reading">
+          <div class="map-measure-reading distance-reading">
+            <span>Empirical flat-map estimate</span>
+            <div class="measure-value" id="distanceValue">—</div>
+            <div class="measure-sub" id="distanceSub">Raw chord × empirical factor</div>
+          </div>
+          <div class="map-measure-reading area-reading">
             <span>Area</span>
             <div class="measure-value" id="areaValue">—</div>
             <div class="measure-sub" id="areaPerimeter">Area not calculated</div>
@@ -70,6 +75,7 @@
         <div class="map-measure-details" id="measurementDetails" hidden>
           <div id="distanceDetails">
             <p class="small" id="measureHelp">Choose two places anywhere on the disk to measure distance.</p>
+            <div class="calibration-diagnostics" id="calibrationDiagnostics" role="status" hidden></div>
             <div id="endpointRows" class="measurement-endpoints">
               <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
               <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
@@ -148,7 +154,7 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ. The A–B connector is always one straight projected segment. Its displayed length applies a bounded empirical correction fitted to 15 city-distance references using endpoint colatitudes and longitude separation. The running measurement engine does not calculate globe or geodesic distances. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates are positioned using r = Rθ. The A–B connector is always one straight projected segment. The distance tool shows both its raw Euclidean disk chord and a separate bounded empirical estimate. The correction is fitted to 15 city-distance references using endpoint colatitudes and longitude separation. The running measurement engine does not calculate globe or geodesic distances. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
@@ -158,7 +164,7 @@
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment. The displayed length is the flat-disk chord multiplied by a bounded empirical factor derived from endpoint colatitudes and longitude separation; it is not a WGS84 surface or flight-path calculation. The 60°S Restricted Line does not alter the correction. Polygon area and perimeter remain planar.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment and displays both the raw Euclidean chord and a separately corrected empirical estimate. The correction factor and calibration warnings are shown with the readings. Neither value is a route track or a guaranteed geographic distance. The 60°S Restricted Line does not alter the correction. Polygon area and perimeter remain planar.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
