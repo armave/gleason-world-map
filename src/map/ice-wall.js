@@ -5,9 +5,9 @@ export const ICE_CREVASSE_COUNT=42;
 export const ICE_WALL_LABEL_COUNT=8;
 export const ICE_SURFACE_STYLES=Object.freeze({
  land:{fill:'#f2eee2',stroke:'rgba(130,139,127,.42)',lineWidth:.55},
- 'ice shelf':{fill:'#cfe5ec',stroke:'rgba(85,137,157,.7)',lineWidth:.9},
- 'ice tongue':{fill:'#bddde8',stroke:'rgba(65,121,145,.78)',lineWidth:1.1},
- rumple:{fill:'#a8cbd8',stroke:'rgba(57,111,135,.8)',lineWidth:1.05}
+ 'ice shelf':{fill:'#ffffff',stroke:'rgba(203,218,222,.82)',lineWidth:.9},
+ 'ice tongue':{fill:'#fbfdff',stroke:'rgba(196,215,221,.86)',lineWidth:1.1},
+ rumple:{fill:'#f5f9fb',stroke:'rgba(187,208,216,.88)',lineWidth:1.05}
 });
 
 function pointOnDisk(radius,angle){
@@ -86,29 +86,29 @@ export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0,surfaceP
  // Prefer the current SCAR Antarctic Digital Database land/ice-shelf polygons
  // where available, while preserving Natural Earth as the robust base shape.
  drawAntarcticSurfaceOverlays(ctx,surfacePaths,zoom);
- ctx.lineJoin='round';ctx.strokeStyle='rgba(87,139,158,.28)';ctx.lineWidth=5.4/zoom;ctx.stroke(antarcticaPath);
- ctx.strokeStyle='#5a899b';ctx.lineWidth=2.0/zoom;ctx.stroke(antarcticaPath);
- ctx.strokeStyle='#f7ffff';ctx.lineWidth=.78/zoom;ctx.stroke(antarcticaPath);
+ ctx.lineJoin='round';ctx.strokeStyle='rgba(214,228,232,.62)';ctx.lineWidth=5.4/zoom;ctx.stroke(antarcticaPath);
+ ctx.strokeStyle='#d9e8ed';ctx.lineWidth=2.0/zoom;ctx.stroke(antarcticaPath);
+ ctx.strokeStyle='#ffffff';ctx.lineWidth=.78/zoom;ctx.stroke(antarcticaPath);
 
  ctx.save();ctx.clip(antarcticaPath,'evenodd');
  for(const [radius,color,width] of [
-  [.925,'rgba(154,190,203,.34)',.72],
-  [.962,'rgba(129,174,190,.42)',.86],
-  [.988,'rgba(255,255,255,.78)',.62]
+  [.925,'rgba(221,234,238,.58)',.72],
+  [.962,'rgba(210,228,234,.62)',.86],
+  [.988,'rgba(255,255,255,.92)',.62]
  ]){
   ctx.beginPath();ctx.arc(0,0,baseR*radius,0,Math.PI*2);
   ctx.strokeStyle=color;ctx.lineWidth=width/zoom;ctx.stroke();
  }
  if(texturePaths){
-  ctx.lineWidth=.58/zoom;ctx.strokeStyle='rgba(157,194,207,.46)';ctx.stroke(texturePaths.ridges);
-  ctx.lineWidth=.9/zoom;ctx.strokeStyle='rgba(113,165,183,.38)';ctx.stroke(texturePaths.accentRidges);
-  ctx.lineWidth=.7/zoom;ctx.strokeStyle='rgba(91,145,163,.34)';ctx.stroke(texturePaths.crevasses);
+  ctx.lineWidth=.58/zoom;ctx.strokeStyle='rgba(218,233,238,.72)';ctx.stroke(texturePaths.ridges);
+  ctx.lineWidth=.9/zoom;ctx.strokeStyle='rgba(203,222,229,.68)';ctx.stroke(texturePaths.accentRidges);
+  ctx.lineWidth=.7/zoom;ctx.strokeStyle='rgba(194,216,224,.62)';ctx.stroke(texturePaths.crevasses);
  }
  ctx.restore();
 
  ctx.beginPath();ctx.arc(0,0,baseR*.999,0,Math.PI*2);
- ctx.strokeStyle='rgba(54,108,128,.34)';ctx.lineWidth=4.2/zoom;ctx.stroke();
- ctx.strokeStyle='#426f82';ctx.lineWidth=1.65/zoom;ctx.stroke();
+ ctx.strokeStyle='rgba(198,219,226,.72)';ctx.lineWidth=4.2/zoom;ctx.stroke();
+ ctx.strokeStyle='#d4e6ec';ctx.lineWidth=1.65/zoom;ctx.stroke();
  drawRimLabels(ctx,baseR,zoom,mapRotation);
  ctx.restore();
 }
