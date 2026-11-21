@@ -62,6 +62,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Fixed WGS84 meridional radial calibration from the North Pole
 - Greenwich-right, 90°E-up longitude orientation
 - WGS84 ellipsoidal surface-distance measurements in metres and kilometres
+- Distance A–B routes and successive area vertices are joined by high-contrast dashed geodesic connectors; finished area outlines close back to the first point
 - WGS84 ellipsoidal custom polygon area and perimeter
 - WGS84 ellipsoidal area for selected country boundaries
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
