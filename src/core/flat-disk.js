@@ -6,13 +6,14 @@
  *   r = R * theta
  *   x = r cos(longitude), y = -r sin(longitude)
  *
- * R is a uniform flat-map scale calibrated so the straight projected segment
- * from Canberra (-35.27, 149.13) to Santiago (-33.45, -70.67) measures
- * 11,340 km, matching the city-to-city reference distance. This is a user-selected map-plane reference, not a globe radius
- * or geodesic parameter. The same linear scale applies to every disk length;
+ * R is fitted from independent airport-pair medians of observed ADS-B
+ * ground-speed × elapsed-time mileage. It is a flat-map empirical scale,
+ * not a globe radius. The same linear scale applies to disk lengths; planar
  * area values consequently scale by its square.
  */
-export const DISK_RADIAL_SCALE_KM = 2778.193571010486;
+import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
+
+export const DISK_RADIAL_SCALE_KM = FLIGHT_CALIBRATION.radialScaleKm;
 export const DISK_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
 
