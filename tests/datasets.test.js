@@ -80,15 +80,3 @@ test('Natural Earth 1:50m coastlines include global shorelines and island chains
  assert.equal(bytes.length,metadata.coastlines.bytes);
  assert.ok(points>=50000);
 });
-
-test('Natural Earth 1:50m coastlines include global shorelines and island chains',async()=>{
- assert.ok(COASTLINE_DATA_FILE.pathname.endsWith('/data/coastlines-50m.json'));
- const bytes=await readFile(COASTLINE_DATA_FILE);
- const data=validateCoastlineDataset(JSON.parse(bytes.toString('utf8')));
- const metadata=JSON.parse(await readFile(new URL('../data/metadata.json',import.meta.url),'utf8'));
- const points=data.coordinates.reduce((sum,line)=>sum+line.length,0);
- assert.equal(data.coordinates.length,metadata.coastlines.lines);
- assert.equal(points,metadata.coastlines.points);
- assert.equal(bytes.length,metadata.coastlines.bytes);
- assert.ok(points>=50000);
-});
