@@ -26,7 +26,7 @@ npm run vendor:data
 
 The script downloads from pinned Git commits, validates all three boundary sets and the capital list, writes compressed files, and records source commits and SHA-256 checksums in `metadata.json`.
 
-The browser loads only the selected country-quality file and the small capital JSON. It decompresses the selected boundaries with the native browser `DecompressionStream` API. Normal HTTP caching is used for repeat visits.
+The browser loads only the selected country-quality file, the small capital JSON, and the compact U.S. county-equivalent label index. It decompresses the selected boundaries with the native browser `DecompressionStream` API. Normal HTTP caching is used for repeat visits.
 
 
 ## U.S. county-equivalent label points

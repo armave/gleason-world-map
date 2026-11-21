@@ -10,6 +10,7 @@ test('county-equivalent suffixes are removed for compact map labels',()=>{
  assert.equal(countyLabelText('Los Angeles County'),'Los Angeles');
  assert.equal(countyLabelText('Orleans Parish'),'Orleans');
  assert.equal(countyLabelText('Anchorage Municipality'),'Anchorage');
+ assert.equal(countyLabelText('Juneau City and Borough'),'Juneau');
 });
 test('screen-space label collisions are filtered and selected/reserved labels remain clear',()=>{
  const candidate=(text,left,top,width=24)=>({text,box:{left,top,right:left+width,bottom:top+10}});

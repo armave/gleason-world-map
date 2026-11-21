@@ -2,7 +2,7 @@
 export const CAPITAL_LABEL_MIN_ZOOM=1.25;
 export const COUNTY_LABEL_MIN_ZOOM=2.7;
 export function countyLabelText(name){
- return String(name||'').replace(/\s+(?:County|Parish|Borough|Census Area|Municipality|Municipio|City and Borough|City)$/i,'');
+ return String(name||'').replace(/\s+(?:City and Borough|County|Parish|Borough|Census Area|Municipality|Municipio|City)$/i,'');
 }
 function overlaps(a,b,gap){return a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;}
 function cellKeys(box){
