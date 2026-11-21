@@ -1,4 +1,6 @@
 export function screenUprightRotation(localAngleRadians=0,mapAngleRadians=0){return localAngleRadians-mapAngleRadians;}
+export function uprightTextAngle(angleRadians=0){const halfPi=Math.PI/2,period=Math.PI;return ((angleRadians+halfPi)%period+period)%period-halfPi;}
+export function screenReadingDirection(longitudeRadians,mapAngleRadians=0){const rightward=-Math.sin(longitudeRadians-mapAngleRadians);if(Math.abs(rightward)>1e-9)return Math.sign(rightward);return Math.cos(longitudeRadians-mapAngleRadians)>=0?-1:1;}
 export function normalizeRotationDegrees(value){const normalized=((value%360)+360)%360;return normalized>180?normalized-360:normalized;}
 export function shortestRotationDelta(from,to){return normalizeRotationDegrees(normalizeRotationDegrees(to)-normalizeRotationDegrees(from));}
 export function rotatePoint(x,y,angleRadians=0){const c=Math.cos(angleRadians),s=Math.sin(angleRadians);return {x:x*c-y*s,y:x*s+y*c};}
