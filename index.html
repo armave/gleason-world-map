@@ -27,6 +27,13 @@
         <button id="shareMap">Share link</button>
       </div>
     </div>
+    <div class="map-orientation" aria-label="Map rotation controls">
+      <button id="rotateLeft" type="button" title="Rotate counter-clockwise 15 degrees" aria-label="Rotate counter-clockwise 15 degrees">↶ 15°</button>
+      <label for="mapRotation">Orientation <output id="mapRotationValue" for="mapRotation">0°</output></label>
+      <input id="mapRotation" type="range" min="-180" max="180" step="1" value="0" aria-label="Map rotation in degrees">
+      <button id="rotateRight" type="button" title="Rotate clockwise 15 degrees" aria-label="Rotate clockwise 15 degrees">↷ 15°</button>
+      <button id="resetRotation" type="button">North-up</button>
+    </div>
     <div class="map-viewport" id="mapViewport" aria-busy="true">
       <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
       <div class="map-loading" id="mapLoading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="false">
@@ -38,7 +45,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -49,6 +56,13 @@
         <div id="suggestions" class="suggestions"></div>
       </div>
       <div class="small" style="margin-top:7px">Search countries, national capitals, cities, and U.S. county-equivalents.</div>
+    </section>
+    <section class="panel">
+      <h2>Visual style</h2>
+      <div class="range-control"><label for="mapStyle"><span>Map appearance</span><span>Saved on this device</span></label>
+        <select id="mapStyle" class="control-select" aria-describedby="mapStyleHelp"><option value="vintage">1892 Vintage</option><option value="atlas">Classic Atlas</option><option value="clean">Clean Explorer</option></select>
+        <div class="small" id="mapStyleHelp">Changes the map palette and interface theme without changing projection or measurement calculations.</div>
+      </div>
     </section>
     <section class="panel">
       <h2>Map layers</h2>
