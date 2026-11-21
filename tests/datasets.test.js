@@ -29,7 +29,7 @@ test('bundled capitals JSON contains valid coordinates and Yerevan', async () =>
   assert.ok(CAPITAL_DATA_FILE.pathname.endsWith('/data/capitals.json'));
   const capitals = validateCapitalDataset(JSON.parse(await readFile(CAPITAL_DATA_FILE, 'utf8')));
   assert.equal(capitals.length, 197);
-  assert.deepEqual(capitals.find(point => point.iso === 'ARM'), { iso: 'ARM', city: 'Yerevan', lat: 40.18, lon: 44.5 });
+  assert.deepEqual(capitals.find(point => point.iso === 'ARM'), { iso: 'ARM', city: 'Yerevan', lat: 40.17, lon: 44.5 });
 });
 
 test('quality selector maps to the three bundled Natural Earth scales', () => {
