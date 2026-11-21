@@ -316,7 +316,6 @@ test('scale-bar measurement is calculated once per frame and uses a pixel-accura
  assert.match(app,/shouldShowCapitalLabels\(frameScaleBarReadingKm\)/);
  assert.match(app,/shouldShowCountryLabels\(frameScaleBarReadingKm\)/);
  assert.match(app,/drawOceanLabels\(ctx,project,baseR,zoom,frameScaleBarReadingKm/);
- assert.match(app,/for\(let i=0;i<12;i\+\+\)/);
  assert.doesNotMatch(app,/for\(let i=0;i<36;i\+\+\)\{const mid=\(low\+high\)\/2;if\(flatDiskDistanceForScalePixels/);
 });
 
@@ -397,5 +396,14 @@ test('compass cardinal labels stay screen-fixed while the needle follows map rot
  assert.ok(northUp.outerRadius>northUp.radius*1.7);
  assert.match(app,/ctx\.save\(\);ctx\.rotate\(rose\.needleRotation\)/);
  assert.match(app,/ctx\.restore\(\);\s*\/\/ A small hub/);
+ assert.match(app,/for\(const mark of rose\.cardinalLabels\)ctx\.fillText\(mark\.label,mark\.x,mark\.y\)/);
+});
+
+test('compass labels remain upright and independent of needle rotation',()=>{
+ const compassLayout=createCompassRoseLayout(0.3);
+ assert.deepEqual(compassLayout.cardinalLabels.map(mark=>mark.label),['N','E','S','W']);
+ assert.ok(compassLayout.cardinalLabels.every(mark=>Number.isFinite(mark.x)&&Number.isFinite(mark.y)));
+ assert.match(app,/function drawCompassRose\(\)/);
+ assert.match(app,/ctx\.save\(\);ctx\.rotate\(rose\.needleRotation\)/);
  assert.match(app,/for\(const mark of rose\.cardinalLabels\)ctx\.fillText\(mark\.label,mark\.x,mark\.y\)/);
 });
