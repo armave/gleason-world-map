@@ -106,7 +106,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /flat-disk planar chord · ice-wall zone/);
+  assert.match(app, /Flat-disk planar chord · ice-wall zone/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
