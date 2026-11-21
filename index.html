@@ -62,9 +62,9 @@
             <div class="measure-sub" id="rawDistanceSub">Uncorrected Euclidean chord</div>
           </div>
           <div class="map-measure-reading distance-reading">
-            <span>Empirical flat-map estimate</span>
+            <span>ADS-B flight-mileage estimate</span>
             <div class="measure-value" id="distanceValue">—</div>
-            <div class="measure-sub" id="distanceSub">Raw chord × empirical factor</div>
+            <div class="measure-sub" id="distanceSub">Raw chord × local flight-mileage factor</div>
           </div>
           <div class="map-measure-reading area-reading">
             <span>Area</span>
@@ -154,7 +154,7 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk coordinates use the planar radial relation r = Rθ. The A–B connector is always one straight projected segment. The distance tool displays its raw Euclidean disk chord and a separate ADS-B flight-empirical estimate fitted from ground-speed/time observations. Aircraft mileage is estimated from speed integrated over timestamps; map coordinates are not used to calculate those target mileages. The active distance engine has no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
+      <p class="note" style="margin:9px 0 0">The disk coordinates use the planar radial relation r = Rθ. The A–B connector is always one straight projected segment. The distance tool displays its raw Euclidean disk chord and a separate ADS-B flight-mileage estimate fitted from ground-speed/time observations. Aircraft mileage is estimated from speed integrated over timestamps; map coordinates are not used to calculate those target mileages. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
