@@ -35,7 +35,7 @@ const VISUAL_STYLES=Object.freeze({
  clean:{canvas:'#f4f7f8',water:'#e4f0f6',rim:'#a1bdca',grid:'#b3c4cb',gridMinor:'#d3dfe3',equator:'#638795',labels:'#3f6170',outline:'#8b9ea7',coastline:'#6c8997',coastHalo:'rgba(255,255,255,.98)',oceanLabel:'#496a78',seaLabel:'#6a8792',labelHalo:'rgba(248,252,253,.98)',countryColors:['#d7e0d9','#e4e8d7','#d8e3e9','#eee1d0','#d6e0e8','#dce6d8','#e7ddd0']}
 });
 function readMapQuality(){try{const value=localStorage.getItem(QUALITY_STORAGE_KEY);return Object.hasOwn(MAP_QUALITY_OPTIONS,value)?value:'medium';}catch{return 'medium';}}
-function readVisualStyle(){try{const value=localStorage.getItem(STYLE_STORAGE_KEY);return Object.hasOwn(VISUAL_STYLES,value)?value:'vintage';}catch{return 'vintage';}}
+function readVisualStyle(){try{const value=localStorage.getItem(STYLE_STORAGE_KEY);return Object.hasOwn(VISUAL_STYLES,value)?value:'atlas';}catch{return 'atlas';}}
 let mapQuality=readMapQuality(),visualStyle=readVisualStyle(),visualPalette=VISUAL_STYLES[visualStyle],loadGeneration=0;
 document.documentElement.dataset.mapStyle=visualStyle;
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
