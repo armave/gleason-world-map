@@ -9,7 +9,7 @@ An interactive Gleason-style north-polar circular map with straight projected-li
 
 The app draws a two-dimensional circular disk. Its geographic layout follows the north-polar azimuthal-equidistant arrangement used by Gleason's 1892 sheet: the North Pole is at the centre, the meridians radiate outward, and parallels form circles.
 
-The disk uses a fixed planar radial calibration with **R = 2,778.193571 km** as its uniform flat-map scale constant. This value is calibrated so that the straight projected segment between the bundled capital coordinates for Canberra (-35.27°, 149.13°) and Santiago (-33.45°, -70.67°) measures **11,340 km**. Two independent city-distance references quote 11,340–11,345 km. It is an empirical map-plane scale, not a globe radius or geodesic parameter. For latitude phi in radians and longitude lambda in radians:
+The disk uses a fixed planar radial coordinate scale with **R = 2,778.193571 km**. At this base scale, the straight projected chord between the bundled capital coordinates for Canberra (-35.27°, 149.13°) and Santiago (-33.45°, -70.67°) is 11,340 km. The active A–B readout then applies the separate empirical endpoint correction described below, so its final reading is not simply the raw chord. This R value defines the base flat-disk coordinate system; it is not a globe radius or geodesic parameter. For latitude phi in radians and longitude lambda in radians:
 
 theta = pi/2 - phi
 r = R * theta
@@ -146,7 +146,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar calibrated to the local flat-disk coordinate scale
+- View-centred scale bar calibrated with the same local empirical endpoint correction as A–B
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
