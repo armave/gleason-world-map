@@ -1,11 +1,11 @@
 /**
  * Flight-mileage estimation from ADS-B ground-speed telemetry.
  *
- * Observed distance is the integral of recorded ground speed over recorded
- * intervals. If there are telemetry gaps inside the airborne time-series span,
- * the measured mean ground speed is applied to that span and the observed
- * integral is expanded by 1/coverage. This is explicitly an estimate, and the
- * coverage ratio is retained with every observation.
+ * Observed distance is the integral of recorded ground speed over short,
+ * measured intervals. Intervals longer than 15 minutes are left uncovered,
+ * rather than forward-filling a stale speed. The observed integral is still
+ * expanded by 1/coverage for the telemetry-span estimate, with coverage and
+ * largest gaps retained on every observation.
  *
  * Geographic coordinates and route geometry are absent from this module.
  */
