@@ -112,3 +112,47 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 .map-orientation button{padding:6px 9px}
 canvas.rotating{cursor:crosshair}
 @media(max-width:760px){.map-orientation{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px;padding:7px}.map-orientation label{grid-column:1/3}.map-orientation input[type="range"]{grid-column:1/3;grid-row:2;width:100%}.map-orientation #rotateLeft{grid-column:3;grid-row:1}.map-orientation #rotateRight{grid-column:4;grid-row:1}.map-orientation #resetRotation{grid-column:3/5;grid-row:2}}
+
+/* Compact measurement dock anchored inside the map frame. */
+.map-measure-tools{
+ position:absolute;z-index:3;top:10px;right:10px;width:min(276px,calc(100% - 20px));
+ max-height:calc(100% - 20px);overflow:auto;padding:9px;
+ border:1px solid rgba(173,157,132,.9);border-radius:11px;
+ background:rgba(255,253,246,.95);box-shadow:0 7px 22px rgba(44,49,46,.18);
+ color:var(--ink);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+ scrollbar-width:thin;scrollbar-color:#c9c0ad transparent
+}
+.map-measure-head{display:flex;align-items:center;gap:6px;min-width:0}
+.map-measure-head>strong{font:700 13px/1.1 Georgia,serif;white-space:nowrap}
+.map-measure-restriction{margin-left:auto;padding:3px 6px;border-radius:5px;background:#f7e8e3;color:#913c33;border:1px solid #d9a49a;font-size:9px;font-weight:800;letter-spacing:.035em;white-space:nowrap}
+.map-measure-head button{padding:4px 7px;font-size:10px;min-height:27px;white-space:nowrap}
+.map-measure-modes{gap:4px;margin-top:7px}
+.map-measure-modes button{min-width:0;min-height:30px;padding:5px 6px;font-size:10px}
+.map-measure-readings{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.map-measure-reading{min-width:0;padding:6px 7px;border:1px solid #e0d7c7;border-radius:7px;background:rgba(248,245,236,.92)}
+.map-measure-reading>span{display:block;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.map-measure-reading .measure-value{margin:4px 0 3px;font-size:18px;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-measure-reading .measure-sub{font-size:9px;line-height:1.25;min-height:22px}
+.map-measure-details{margin-top:7px;padding-top:7px;border-top:1px solid #e4dccd}
+.map-measure-details[hidden]{display:none!important}
+.map-measure-details p{margin:0 0 6px;font-size:10px;line-height:1.35}
+.map-measure-tools .point-row{grid-template-columns:22px minmax(0,1fr) auto;gap:5px;padding:5px 0;font-size:10px}
+.map-measure-tools .point-badge{width:19px;height:19px;font-size:9px}
+.map-measure-tools .endpoint-actions{gap:5px;margin-top:7px}
+.map-measure-tools .endpoint-actions button{flex:1;min-width:0;min-height:29px;padding:5px 6px;font-size:10px}
+.map-measure-tools .divider{margin:8px 0}
+.map-measure-tools .small{font-size:10px;line-height:1.35}
+@media(max-width:760px){
+ .map-measure-tools{top:7px;right:7px;width:min(244px,calc(100% - 14px));max-height:calc(100% - 14px);padding:7px}
+ .map-measure-head>strong{font-size:12px}
+ .map-measure-restriction{font-size:8px;padding:3px 5px}
+ .map-measure-readings{gap:5px;margin-top:6px}
+ .map-measure-reading{padding:5px 6px}
+ .map-measure-reading .measure-value{font-size:16px}
+ .map-measure-tools .endpoint-actions button{min-height:34px}
+}
+@media(max-width:360px){
+ .map-measure-tools{width:min(226px,calc(100% - 14px))}
+ .map-measure-restriction{font-size:7px}
+ .map-measure-reading .measure-value{font-size:15px}
+}
