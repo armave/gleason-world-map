@@ -85,7 +85,6 @@ function inverseWgs84(first, second) {
   const sinU1 = Math.sin(reducedPhi1), cosU1 = Math.cos(reducedPhi1);
   const sinU2 = Math.sin(reducedPhi2), cosU2 = Math.cos(reducedPhi2);
   let lambda = longitudeDifference;
-  let state = null;
   let converged = false;
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
@@ -95,10 +94,11 @@ function inverseWgs84(first, second) {
       cosU1 * sinU2 - sinU1 * cosU2 * cosLambda
     );
     if (sinSigma < 1e-16) {
-      if (Math.abs(phi1 - phi2) < 1e-14) {
+      const fallback = sphericalInverse(first, second);
+      if (fallback.distanceMeters < 1e-7) {
         return { distanceMeters: 0, initialBearingRadians: 0, sphericalFallback: false };
       }
-      return sphericalInverse(first, second);
+      return fallback;
     }
 
     const cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
@@ -114,10 +114,6 @@ function inverseWgs84(first, second) {
         (cosTwoSigmaM + C * cosSigma *
           (-1 + 2 * cosTwoSigmaM ** 2)));
 
-    state = {
-      sinLambda, cosLambda, sinSigma, cosSigma, sigma,
-      sinAlpha, cosSqAlpha, cosTwoSigmaM
-    };
     if (Math.abs(nextLambda - lambda) <= CONVERGENCE) {
       lambda = nextLambda;
       converged = true;
