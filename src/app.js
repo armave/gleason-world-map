@@ -321,7 +321,7 @@ function drawMeasure(){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
-   const label=formatMeasurementKilometres(measurement.chordDistanceMeters);
+   const label=formatMeasurementKilometres(measurement.distanceMeters);
    drawMeasurementLabelAtMap(
     (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
    );
@@ -485,7 +485,7 @@ function updateMeasurement(){
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The connector and its map label show the raw Euclidean chord in the Gleason disk. The second value estimates typical flown mileage from ADS-B ground-speed and timestamp samples; it is not a shortest-path distance.';
+  $('measureHelp').textContent='The connector and its map label show the ADS-B flight-mileage estimate. The raw Euclidean chord is retained as a secondary flat-disk reference; the estimate is based on historical ground-speed and timestamp samples and is not a shortest-path distance.';
  }else{
   $('rawDistanceValue').textContent='—';
   $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
