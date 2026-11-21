@@ -85,12 +85,15 @@ test('ocean labels are curved, scale-aware, water-aware and collision-filtered',
  assert.match(app,/labelCollisionBoxes\.push\(\.\.\.visible\.map/);
 });
 
-test('Antarctic ice wall has layered edges, strata, crevasses and repeated rim labels',()=>{
+test('Antarctic ice wall uses ADD surface classes plus layered rim texture',()=>{
  assert.match(iceWall,/fillStyle='#ffffff'/);
  assert.match(iceWall,/ICE_RIDGE_COUNT=180/);
  assert.match(iceWall,/ICE_CREVASSE_COUNT=42/);
  assert.match(iceWall,/ICE_WALL_LABEL_COUNT=8/);
+ assert.match(iceWall,/drawAntarcticSurfaceOverlays/);
+ assert.match(iceWall,/surfacePaths/);
  assert.match(iceWall,/ctx\.clip\(antarcticaPath,'evenodd'\)/);
+ assert.match(html,/SCAR Antarctic Digital Database/);
 });
 
 test('ocean and Antarctic rim labels keep left-to-right reading direction through map rotation',()=>{
@@ -160,6 +163,29 @@ test('latitude grid includes intermediate parallels, an emphasized equator, long
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
 
+
+test('direct A/B coordinate entry and calibration route support are available',()=>{
+ assert.match(html,/id="coordALat"/);
+ assert.match(html,/id="coordALon"/);
+ assert.match(html,/id="coordBLat"/);
+ assert.match(html,/id="coordBLon"/);
+ assert.match(html,/id="applyCoordsA"/);
+ assert.match(html,/id="applyCoordsB"/);
+ assert.match(html,/id="calibrationSupport"/);
+ assert.match(html,/id="calibrationRoutes"/);
+ assert.match(app,/function applyCoordinateEndpoint\(index\)/);
+ assert.match(app,/calibration\?\.neighbourRouteIds/);
+ assert.match(app,/loadAntarcticAddDataset\(\)\.catch\(error=>\{/);
+ assert.match(app,/Natural Earth outline remains active/);
+});
+
+test('PNG exports include date, measurement and model/source metadata',()=>{
+ assert.match(app,/function exportPNG\(\)/);
+ assert.match(app,/outputCtx\.fillText\('GLEASON-STYLE FLAT-DISK MAP/);
+ assert.match(app,/ADS-B ground-speed × time estimate/);
+ assert.match(app,/SCAR Antarctic Digital Database v7\.13/);
+ assert.match(app,/FLIGHT_CALIBRATION\.schemaVersion/);
+});
 
 test('distance connector is one straight projected segment measured in the map plane',()=>{
  assert.match(app,/const path=flatDiskLinePath\(points\[0\],points\[1\],project\)/);

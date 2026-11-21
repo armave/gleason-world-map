@@ -1,3 +1,5 @@
+import { validateAntarcticAddDataset } from '../map/antarctic-surfaces.js';
+
 const DATASET_PROMISES = new Map();
 
 function loadOnce(key, loader) {
@@ -27,6 +29,7 @@ export const COUNTRY_DATA_FILES = Object.freeze({
 });
 export const CAPITAL_DATA_FILE = new URL('../../data/capitals.json', import.meta.url);
 export const COASTLINE_DATA_FILE = new URL('../../data/coastlines-50m.json', import.meta.url);
+export const ANTARCTIC_ADD_DATA_FILE = new URL('../../data/antarctic-add-v7.13.geojson.gz', import.meta.url);
 
 export function validateCountryDataset(data) {
   if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length < 150) {
@@ -103,6 +106,23 @@ export function loadCoastlineDataset(){
  });
 }
 
+
+
+export function loadAntarcticAddDataset(){
+ return loadOnce('antarctic-add-v7.13',async()=>{
+  if(typeof DecompressionStream!=='function'){
+   throw new Error('This browser does not support local gzip decompression for the Antarctic Digital Database.');
+  }
+  const response=await fetch(ANTARCTIC_ADD_DATA_FILE);
+  if(!response.ok)throw new Error(`Unable to load bundled Antarctic Digital Database surfaces (HTTP ${response.status}).`);
+  if(!response.body)throw new Error('The Antarctic Digital Database response has no data stream.');
+  const decompressed=response.body.pipeThrough(new DecompressionStream('gzip'));
+  let data;
+  try{data=JSON.parse(await new Response(decompressed).text());}
+  catch(error){throw new Error(`The Antarctic Digital Database surface data is not valid JSON: ${error.message}`);}
+  return validateAntarcticAddDataset(data,{minimumFeatures:100});
+ });
+}
 
 export function loadCapitalDataset() {
   return loadOnce('capitals',async()=>{

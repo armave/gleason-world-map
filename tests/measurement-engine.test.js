@@ -153,7 +153,7 @@ test('calibration diagnostics identify endpoint features outside the sampled rou
   assert.ok(diagnostics);
   assert.equal(diagnostics.outsideTrainingRange, true);
   assert.ok(diagnostics.warnings.includes('outside-training-range'));
-  assert.equal(diagnostics.status, 'caution');
+  assert.notEqual(diagnostics.status, 'within-fit-range');
 });
 
 test('near-south-rim endpoints warn about longitude sensitivity without changing the chord', () => {
@@ -163,6 +163,7 @@ test('near-south-rim endpoints warn about longitude sensitivity without changing
   assert.equal(result.rawDistanceMeters, flatDiskDistanceMeters(first, second));
   assert.equal(result.calibration.nearSouthRim, true);
   assert.ok(result.warnings.includes('near-south-rim'));
+  assert.equal(result.calibration.status, 'bounded-extrapolation');
   assert.ok(Number.isFinite(result.calibratedDistanceMeters));
   assert.ok(result.calibrationFactor >= 0.5 && result.calibrationFactor <= 2.5);
 });
@@ -206,6 +207,7 @@ test('the correction-bound diagnostic reports when the local factor falls below 
   );
   assert.equal(result.calibration.factorWasClamped, true);
   assert.ok(result.warnings.includes('factor-clamped'));
+  assert.equal(result.calibration.status, 'bounded-extrapolation');
   assert.equal(result.calibrationFactor, 0.5);
 });
 

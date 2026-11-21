@@ -15,6 +15,8 @@ const NEIGHBOR_COUNT = 2;
 const INVERSE_DISTANCE_POWER = 1;
 const MIN_TRAIN_ROUTES = 10;
 const MIN_HOLDOUT_ROUTES = 4;
+const MIN_ROUTE_TELEMETRY_COVERAGE = 0.35;
+const MAX_ROUTE_TELEMETRY_GAP_MINUTES = 300;
 
 function median(values) {
   if (!values.length) return NaN;
@@ -86,15 +88,47 @@ export function flightCalibrationFeatures(
 }
 
 function routeObservations(dataset, split, radialWarp) {
-  return (dataset?.routes || []).filter(route =>
-    route.split === split &&
-    route.sampleCount >= 3 &&
-    Number.isFinite(route.medianTrackKm) &&
-    route.medianTrackKm > 0 &&
-    validAirport(route.airportA) &&
-    validAirport(route.airportB) &&
-    unitDiskChord(route.airportA, route.airportB, radialWarp) > 1e-9
-  );
+  return (dataset?.routes || []).flatMap(route => {
+    if (route.split !== split || !validAirport(route.airportA) ||
+        !validAirport(route.airportB) ||
+        unitDiskChord(route.airportA, route.airportB, radialWarp) <= 1e-9) return [];
+
+    // Rebuild each route target from individual observations, rather than
+    // trusting a precomputed median that may include low-coverage flights.
+    const hasObservationRecords = Array.isArray(route.observations);
+    const observations = hasObservationRecords
+      ? route.observations.filter(observation =>
+          observation?.accepted !== false &&
+          Number.isFinite(observation?.trackKm ?? observation?.estimatedTrackKm) &&
+          (observation.trackKm ?? observation.estimatedTrackKm) > 0 &&
+          Number.isFinite(observation.coverage) &&
+          observation.coverage >= MIN_ROUTE_TELEMETRY_COVERAGE &&
+          Number.isFinite(observation.maxGapMinutes) &&
+          observation.maxGapMinutes <= MAX_ROUTE_TELEMETRY_GAP_MINUTES
+        )
+      : [];
+
+    if (hasObservationRecords && observations.length < 3) return [];
+    if (!hasObservationRecords && (
+      route.sampleCount < 3 || !Number.isFinite(route.medianTrackKm) ||
+      route.medianTrackKm <= 0
+    )) return [];
+
+    const trackValues = observations.map(observation =>
+      observation.trackKm ?? observation.estimatedTrackKm
+    );
+    return [{
+      ...route,
+      sampleCount: hasObservationRecords ? observations.length : route.sampleCount,
+      medianTrackKm: hasObservationRecords ? median(trackValues) : route.medianTrackKm,
+      medianTelemetryCoverage: hasObservationRecords
+        ? median(observations.map(observation => observation.coverage))
+        : route.medianTelemetryCoverage,
+      medianMaxGapMinutes: hasObservationRecords
+        ? median(observations.map(observation => observation.maxGapMinutes))
+        : route.medianMaxGapMinutes
+    }];
+  });
 }
 
 function featureStatistics(examples) {
@@ -114,21 +148,68 @@ function featureStatistics(examples) {
   return { means, scales, ranges };
 }
 
+/**
+ * Count only route pairs whose individual flight observations meet the
+ * telemetry-quality rules used by the fitter. This is also used when a
+ * candidate fails before model fitting, so the latest summary never inherits
+ * an older run's accepted status.
+ */
+export function summarizeFlightCalibrationCoverage(dataset) {
+  const training = routeObservations(dataset, 'train', DEFAULT_RADIAL_WARP);
+  const holdout = routeObservations(dataset, 'holdout', DEFAULT_RADIAL_WARP);
+  const southernCount = (routes, latitude) => routes.filter(route =>
+    Math.min(route.airportA.lat, route.airportB.lat) <= latitude
+  ).length;
+  return {
+    trainingRouteCount: training.length,
+    holdoutRouteCount: holdout.length,
+    trainingRoutesSouthOf45S: southernCount(training, -45),
+    trainingRoutesSouthOf60S: southernCount(training, -60),
+    holdoutRoutesSouthOf45S: southernCount(holdout, -45),
+    holdoutRoutesSouthOf60S: southernCount(holdout, -60)
+  };
+}
+
 function makeTrainingExamples(routes, radialWarp) {
   return routes.map(route => {
     const chord = unitDiskChord(route.airportA, route.airportB, radialWarp);
+    const coverage = Number.isFinite(route.medianTelemetryCoverage)
+      ? clamp((route.medianTelemetryCoverage - MIN_ROUTE_TELEMETRY_COVERAGE) /
+          (1 - MIN_ROUTE_TELEMETRY_COVERAGE), 0.15, 1)
+      : 1;
+    const gap = Number.isFinite(route.medianMaxGapMinutes)
+      ? clamp(1 / (1 + Math.max(0, route.medianMaxGapMinutes - 15) / 180), 0.2, 1)
+      : 1;
+    const sampleSupport = Number.isFinite(route.sampleCount)
+      ? clamp(Math.sqrt(route.sampleCount / 8), 0.5, 1)
+      : 1;
     return {
       routeId: route.routeId,
       features: flightCalibrationFeatures(route.airportA, route.airportB, radialWarp),
       mileagePerUnitChord: route.medianTrackKm / chord,
       medianTrackKm: route.medianTrackKm,
-      sampleCount: route.sampleCount
+      sampleCount: route.sampleCount,
+      medianTelemetryCoverage: route.medianTelemetryCoverage ?? null,
+      medianMaxGapMinutes: route.medianMaxGapMinutes ?? null,
+      qualityWeight: coverage * gap * sampleSupport
     };
   });
 }
 
 function radialScale(examples) {
-  return median(examples.map(example => example.mileagePerUnitChord));
+  const ordered = examples.map(example => ({
+    ratio: example.mileagePerUnitChord,
+    weight: Number.isFinite(example.qualityWeight)
+      ? Math.max(0.1, example.qualityWeight)
+      : 1
+  })).sort((a, b) => a.ratio - b.ratio);
+  const totalWeight = ordered.reduce((sum, item) => sum + item.weight, 0);
+  let cumulativeWeight = 0;
+  for (const item of ordered) {
+    cumulativeWeight += item.weight;
+    if (cumulativeWeight >= totalWeight / 2) return item.ratio;
+  }
+  return median(ordered.map(item => item.ratio));
 }
 
 function modelFromExamples(examples, sourceDatasetVersion, radialWarp) {
@@ -174,6 +255,7 @@ export function predictFlightScaleRatio(features, model, { excludeRouteId = null
     .map(example => ({
       routeId: example.routeId,
       mileagePerUnitChord: example.mileagePerUnitChord,
+      qualityWeight: example.qualityWeight,
       distance: featureDistance(features, example.features, model)
     }))
     .sort((a, b) => a.distance - b.distance)
@@ -190,9 +272,13 @@ export function predictFlightScaleRatio(features, model, { excludeRouteId = null
     };
   }
 
-  const weights = neighbors.map(neighbor =>
-    1 / Math.max(neighbor.distance, 1e-9) ** model.inverseDistancePower
-  );
+  const weights = neighbors.map(neighbor => {
+    const spatialWeight = 1 / Math.max(neighbor.distance, 1e-9) ** model.inverseDistancePower;
+    const qualityWeight = Number.isFinite(neighbor.qualityWeight)
+      ? clamp(neighbor.qualityWeight, 0.1, 1)
+      : 1;
+    return spatialWeight * qualityWeight;
+  });
   const totalWeight = weights.reduce((sum, value) => sum + value, 0);
   const weightedLogRatio = neighbors.reduce(
     (sum, neighbor, index) =>
@@ -276,6 +362,7 @@ export function fitFlightCalibration(dataset) {
   const model = modelFromExamples(examples, dataset.schemaVersion, radialWarp);
   model.holdoutRouteCount = holdout.length;
   const holdoutErrors = holdout.map(route => routeError(route, model));
+  const spatialCoverage = summarizeFlightCalibrationCoverage(dataset);
   const leaveOneOutErrors = training.map(route => {
     const subset = examples.filter(example => example.routeId !== route.routeId);
     const looModel = modelFromExamples(subset, dataset.schemaVersion, radialWarp);
@@ -292,7 +379,8 @@ export function fitFlightCalibration(dataset) {
     metrics: {
       training: trainingMetrics,
       holdout: holdoutMetrics,
-      leaveOneOut: trainingMetrics
+      leaveOneOut: trainingMetrics,
+      spatialCoverage
     }
   };
 }

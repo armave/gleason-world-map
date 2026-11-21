@@ -10,6 +10,7 @@
     "vendor:data": "node scripts/vendor-geodata.mjs",
     "vendor:counties": "node scripts/vendor-county-labels.mjs",
     "collect:flight-calibration": "node scripts/collect-flight-calibration.mjs",
-    "fit:flight-calibration": "node scripts/fit-flight-calibration.mjs"
+    "fit:flight-calibration": "node scripts/fit-flight-calibration.mjs",
+    "vendor:antarctica": "node scripts/vendor-antarctic-add.mjs"
   }
 }

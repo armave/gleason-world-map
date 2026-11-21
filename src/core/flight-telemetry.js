@@ -1,11 +1,11 @@
 /**
  * Flight-mileage estimation from ADS-B ground-speed telemetry.
  *
- * Observed distance is the integral of recorded ground speed over recorded
- * intervals. If there are telemetry gaps inside the airborne time-series span,
- * the measured mean ground speed is applied to that span and the observed
- * integral is expanded by 1/coverage. This is explicitly an estimate, and the
- * coverage ratio is retained with every observation.
+ * Observed distance is the integral of recorded ground speed over short,
+ * measured intervals. Intervals longer than 15 minutes are left uncovered,
+ * rather than forward-filling a stale speed. The observed integral is still
+ * expanded by 1/coverage for the telemetry-span estimate, with coverage and
+ * largest gaps retained on every observation.
  *
  * Geographic coordinates and route geometry are absent from this module.
  */
@@ -14,7 +14,8 @@ export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
   minSpeedKnots: 40,
   maxSpeedKnots: 750,
   minFlightMinutes: 35,
-  minCoverage: 0.30,
+  minCoverage: 0.35,
+  maxSpeedSampleIntervalSeconds: 900,
   minSpeedIntervals: 8
 });
 
@@ -86,13 +87,22 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       const intervalEnd = Math.min(telemetryEnd, nextTimestamp);
       const deltaSeconds = intervalEnd - intervalStart;
       if (!(deltaSeconds > 0)) continue;
+      if (deltaSeconds > FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds) {
+        // A single speed sample must not be treated as representative across
+        // a long blind interval. Leave it uncovered and report the gap.
+        maxGapSeconds = Math.max(maxGapSeconds, deltaSeconds);
+        continue;
+      }
+
+      if (!Number.isFinite(speedKnots) ||
+          speedKnots < MIN_AIRBORNE_SPEED_KT ||
+          speedKnots > MAX_AIRBORNE_SPEED_KT) {
+        maxGapSeconds = Math.max(maxGapSeconds, deltaSeconds);
+        continue;
+      }
 
       sequenceStart = Math.min(sequenceStart, intervalStart);
       sequenceEnd = Math.max(sequenceEnd, intervalEnd);
-      if (!Number.isFinite(speedKnots) ||
-          speedKnots < MIN_AIRBORNE_SPEED_KT ||
-          speedKnots > MAX_AIRBORNE_SPEED_KT) continue;
-
       observedNauticalMiles += speedKnots * (deltaSeconds / 3600);
       coveredSeconds += deltaSeconds;
       intervalCount++;

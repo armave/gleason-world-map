@@ -25,7 +25,7 @@ The current fitted warp uses exponent 0.9 and epsilon 0.005. It has a finite pos
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays both the raw Euclidean flat-disk chord and a separate ADS-B flight-mileage estimate. The second reading applies a fitted radial scale and a local nearest-route correction using mean warped radial fraction and the radial/tangential shares of the unit-disk chord. It estimates typical flown mileage for sampled airport pairs, not a shortest path or the track of a particular flight. The app shows the multiplier and calibration-domain warnings alongside both readings. The active distance engine contains no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only.
+The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays the ADS-B flight-mileage estimate as the primary A–B value and the raw Euclidean flat-disk chord as a secondary reference. The empirical estimate applies a fitted radial scale and a quality-weighted local nearest-route correction using mean warped radial fraction and the radial/tangential shares of the unit-disk chord. It estimates typical flown mileage for sampled airport pairs, not a shortest path or the track of a particular flight. Polar/out-of-range support and nearest reference routes are available in the expanded measurement details. The active distance engine contains no globe-distance formula or geodesic library. The 60°S Restricted Line is a visual reference only.
 
 ## Flat-map direct-line distance and planar area measurements
 
@@ -207,15 +207,18 @@ Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and
 
 Capital coordinates are stored locally in `data/capitals.json` and were generated from the pinned `country-capital.csv` source in `iliyaj/country-data`. The source identifies REST Countries v3.1 as the underlying data source; its MIT license is included in `data/capital-data-LICENSE.txt`.
 
-To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
+To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. To rebuild the Antarctic Digital Database surface bundle, run `npm run vendor:antarctica`; the application itself does not contact those upstream data hosts. Until that bundle is present, the map uses its Natural Earth Antarctica outline and the existing white rim treatment.
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
-- A–B distance: raw flat-disk chord plus a separate ADS-B flight-telemetry calibration estimate. The calibration data are generated from ground-speed/time observations, not coordinate-derived distances.
+- Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
+- A–B distance: primary ADS-B flight-mileage estimate plus secondary raw flat-disk chord. Calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
 
 ## Important limitations
 
 - The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp, plus a local nearest-route correction. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well it generalizes to new route pairs.
 - The raw A–B result is a Euclidean chord in the displayed disk plane. The second result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight and is not a shortest-path distance. The running measurement engine uses no globe-distance formula or geodesic library; performance outside the sampled airport-pair domain is not guaranteed.
+- The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
+- Latest ADS-B collection (21 November 2026, 12:17 UTC): 61 candidate airport pairs, 253 flight records, 32 qualifying training routes and 2 qualifying holdouts. The eight southern/polar candidate pairs returned no matching flight records, so no polar calibration is promoted.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
 - Country, coastline, airport and capital coordinates remain as location data for rendering and endpoint selection. They are not used to calculate the calibration's distance targets.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth.

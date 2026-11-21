@@ -3,6 +3,12 @@ import {screenReadingDirection,uprightTextAngle} from './view-transform.js';
 export const ICE_RIDGE_COUNT=180;
 export const ICE_CREVASSE_COUNT=42;
 export const ICE_WALL_LABEL_COUNT=8;
+export const ICE_SURFACE_STYLES=Object.freeze({
+ land:{fill:'#f2eee2',stroke:'rgba(130,139,127,.42)',lineWidth:.55},
+ 'ice shelf':{fill:'#cfe5ec',stroke:'rgba(85,137,157,.7)',lineWidth:.9},
+ 'ice tongue':{fill:'#bddde8',stroke:'rgba(65,121,145,.78)',lineWidth:1.1},
+ rumple:{fill:'#a8cbd8',stroke:'rgba(57,111,135,.8)',lineWidth:1.05}
+});
 
 function pointOnDisk(radius,angle){
  return [radius*Math.cos(angle),-radius*Math.sin(angle)];
@@ -51,11 +57,27 @@ function drawRimLabels(ctx,baseR,zoom,mapRotation=0){
  }
 }
 
-export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0){
+function drawAntarcticSurfaceOverlays(ctx,surfacePaths,zoom){
+ if(!surfacePaths)return;
+ for(const [surface,style] of Object.entries(ICE_SURFACE_STYLES)){
+  const path=surfacePaths[surface];
+  if(!path)continue;
+  ctx.fillStyle=style.fill;ctx.fill(path,'evenodd');
+  if(surface!=='land'){
+   ctx.strokeStyle=style.stroke;ctx.lineWidth=style.lineWidth/zoom;
+   ctx.lineJoin='round';ctx.stroke(path);
+  }
+ }
+}
+
+export function drawIceWall(ctx,antarcticaPath,baseR,zoom,mapRotation=0,surfacePaths=null){
  if(!ctx||!antarcticaPath||!Number.isFinite(baseR)||baseR<=0||!Number.isFinite(zoom)||zoom<=0)return;
  ctx.save();
  ctx.shadowColor='rgba(78,130,151,.2)';ctx.shadowBlur=3/zoom;
  ctx.fillStyle='#ffffff';ctx.fill(antarcticaPath,'evenodd');ctx.shadowBlur=0;
+ // Prefer the current SCAR Antarctic Digital Database land/ice-shelf polygons
+ // where available, while preserving Natural Earth as the robust base shape.
+ drawAntarcticSurfaceOverlays(ctx,surfacePaths,zoom);
  ctx.lineJoin='round';ctx.strokeStyle='rgba(87,139,158,.28)';ctx.lineWidth=5.4/zoom;ctx.stroke(antarcticaPath);
  ctx.strokeStyle='#5a899b';ctx.lineWidth=2.0/zoom;ctx.stroke(antarcticaPath);
  ctx.strokeStyle='#f7ffff';ctx.lineWidth=.78/zoom;ctx.stroke(antarcticaPath);

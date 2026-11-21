@@ -5,7 +5,7 @@
  * integrations, never coordinate-derived route lengths.
  */
 import { readFile, writeFile } from 'node:fs/promises';
-import { fitFlightCalibration } from '../src/core/flight-calibration-fit.js';
+import { fitFlightCalibration, summarizeFlightCalibrationCoverage } from '../src/core/flight-calibration-fit.js';
 
 const DATA_PATH = 'data/flight-calibration.json';
 const PARAMETERS_PATH = 'src/core/flight-calibration-parameters.js';
@@ -15,6 +15,12 @@ const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_LEAVE_ONE_OUT_MAPE = 15;
 const MAX_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
+const MIN_TRAINING_ROUTES = 30;
+const MIN_HOLDOUT_ROUTES = 4;
+const MIN_SOUTHERN_TRAINING_ROUTES = 4;
+const MIN_POLAR_TRAINING_ROUTES = 1;
+const MIN_SOUTHERN_HOLDOUT_ROUTES = 1;
+const MIN_POLAR_HOLDOUT_ROUTES = 1;
 
 function asJavaScript(model) {
   return [
@@ -37,8 +43,57 @@ async function main() {
     fitted = fitFlightCalibration(dataset);
   } catch (error) {
     if (String(error.message).includes('Insufficient empirical route coverage')) {
+      const spatialCoverage = summarizeFlightCalibrationCoverage(dataset);
+      const southernCandidates = (dataset.routes || []).filter(route =>
+        Number.isFinite(route.airportA?.lat) &&
+        Number.isFinite(route.airportB?.lat) &&
+        Math.min(route.airportA.lat, route.airportB.lat) <= -45
+      ).map(route => ({
+        routeId: route.routeId,
+        split: route.split,
+        airportA: route.airportA?.ident || null,
+        airportB: route.airportB?.ident || null,
+        minEndpointLatitude: Math.min(route.airportA.lat, route.airportB.lat),
+        candidateFlightsSeen: route.candidatesSeen || 0,
+        pagesScanned: route.pagesScanned || 0,
+        acceptedFlights: route.sampleCount || 0
+      }));
+      const rejectedSummary = {
+        schemaVersion: 1,
+        accepted: false,
+        status: 'insufficient-route-coverage',
+        generatedAt: new Date().toISOString(),
+        sourceDataset: DATA_PATH,
+        sourceRetrievedAt: dataset.source && dataset.source.retrievedAt,
+        rejectionReason: error.message,
+        qualityGate: {
+          ...spatialCoverage,
+          limits: {
+            minimumTrainingRoutes: MIN_TRAINING_ROUTES,
+            minimumHoldoutRoutes: MIN_HOLDOUT_ROUTES,
+            minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
+            minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
+            minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
+            minimumPolarHoldoutRoutes: MIN_POLAR_HOLDOUT_ROUTES
+          }
+        },
+        model: null,
+        metrics: null,
+        routeCoverage: {
+          ...spatialCoverage,
+          candidateRoutes: (dataset.routes || []).length,
+          totalObservedFlights: (dataset.routes || []).reduce(
+            (sum, route) => sum + (route.sampleCount || 0), 0
+          ),
+          routesWithAtLeastThreeFlights: (dataset.routes || []).filter(
+            route => (route.sampleCount || 0) >= 3
+          ).length,
+          southernRouteCandidates: southernCandidates
+        }
+      };
+      await writeFile(SUMMARY_PATH, JSON.stringify(rejectedSummary, null, 2) + '\n', 'utf8');
       console.warn(error.message);
-      console.warn('No production coefficients were written; keep collecting flight telemetry.');
+      console.warn('Candidate summary recorded as rejected; production coefficients were preserved.');
       return;
     }
     throw error;
@@ -50,7 +105,19 @@ async function main() {
     holdoutMaxErrorPercent: fitted.metrics.holdout.maxAbsolutePercent,
     leaveOneOutMapePercent: fitted.metrics.leaveOneOut?.meanAbsolutePercent ?? null,
     leaveOneOutMaxRouteErrorPercent: fitted.metrics.leaveOneOut?.maxAbsolutePercent ?? null,
+    trainingRouteCount: fitted.metrics.spatialCoverage.trainingRouteCount,
+    holdoutRouteCount: fitted.metrics.spatialCoverage.holdoutRouteCount,
+    trainingRoutesSouthOf45S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf45S,
+    trainingRoutesSouthOf60S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf60S,
+    holdoutRoutesSouthOf45S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf45S,
+    holdoutRoutesSouthOf60S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf60S,
     limits: {
+      minimumTrainingRoutes: MIN_TRAINING_ROUTES,
+      minimumHoldoutRoutes: MIN_HOLDOUT_ROUTES,
+      minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
+      minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
+      minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
+      minimumPolarHoldoutRoutes: MIN_POLAR_HOLDOUT_ROUTES,
       maxTrainingMapePercent: MAX_TRAINING_MAPE,
       maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
@@ -64,7 +131,13 @@ async function main() {
     qualityGate.holdoutMaxErrorPercent <= MAX_HOLDOUT_ROUTE_ERROR &&
     Number.isFinite(qualityGate.leaveOneOutMapePercent) &&
     qualityGate.leaveOneOutMapePercent <= MAX_LEAVE_ONE_OUT_MAPE &&
-    qualityGate.leaveOneOutMaxRouteErrorPercent <= MAX_LEAVE_ONE_OUT_ROUTE_ERROR;
+    qualityGate.leaveOneOutMaxRouteErrorPercent <= MAX_LEAVE_ONE_OUT_ROUTE_ERROR &&
+    qualityGate.trainingRouteCount >= MIN_TRAINING_ROUTES &&
+    qualityGate.holdoutRouteCount >= MIN_HOLDOUT_ROUTES &&
+    qualityGate.trainingRoutesSouthOf45S >= MIN_SOUTHERN_TRAINING_ROUTES &&
+    qualityGate.trainingRoutesSouthOf60S >= MIN_POLAR_TRAINING_ROUTES &&
+    qualityGate.holdoutRoutesSouthOf45S >= MIN_SOUTHERN_HOLDOUT_ROUTES &&
+    qualityGate.holdoutRoutesSouthOf60S >= MIN_POLAR_HOLDOUT_ROUTES;
 
   const summary = {
     schemaVersion: 1,
@@ -87,8 +160,11 @@ async function main() {
     model: fitted.model,
     metrics: fitted.metrics,
     routeCoverage: {
-      trainingRoutes: fitted.model.trainingRouteCount,
-      holdoutRoutes: fitted.model.holdoutRouteCount,
+      ...fitted.metrics.spatialCoverage,
+      candidateRoutes: (dataset.routes || []).length,
+      totalObservedFlights: (dataset.routes || []).reduce(
+        (sum, route) => sum + (route.sampleCount || 0), 0
+      ),
       totalRoutes: (dataset.routes || []).filter(route => route.sampleCount >= 3).length
     }
   };

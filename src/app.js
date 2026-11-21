@@ -2,8 +2,10 @@ import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unproje
 import {measureDirectDistance,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
-import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
+import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
+import {createAntarcticSurfacePaths} from './map/antarctic-surfaces.js';
+import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
 import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coastlines.js';
@@ -22,7 +24,7 @@ let historicalImage = null, historicalLoading = false, historicalFailed = false;
 const historical = {enabled:false,opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0};
 const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
-let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
+let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
@@ -114,6 +116,7 @@ function resize(){
   baseR=nextBaseR;
   pathRecords=countries.map(country=>({country,path:makePath(country.feature)}));
   antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;
+  antarcticSurfacePaths=antarcticAddData?createAntarcticSurfacePaths(antarcticAddData,project):null;
   landMaskPath=new Path2D();
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
@@ -151,7 +154,7 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
 }
 function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;const localScale=scaleBarReadingKm();if(mapQuality==='high'&&localScale<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
 function drawIceWall(){
- renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians());
+ renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),antarcticSurfacePaths);
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
@@ -455,15 +458,38 @@ function showCounty(county){
  $('selectionFactTitle').textContent='Census GEOID';$('selectionFactValue').textContent=county.geoid;
  $('selectionButtons').style.display='none';draw();
 }
+function syncCoordinateInputs(){
+ const fields=[['coordALat',0,'lat'],['coordALon',0,'lon'],['coordBLat',1,'lat'],['coordBLon',1,'lon']];
+ for(const [id,index,key] of fields){
+  const field=$(id);if(!field)continue;
+  const point=points[index];field.value=point?Number(point[key]).toFixed(5):'';
+ }
+}
+function applyCoordinateEndpoint(index){
+ const prefix=index===0?'coordA':'coordB';
+ const latText=$(prefix+'Lat').value.trim(),lonText=$(prefix+'Lon').value.trim();
+ const lat=Number(latText),lon=Number(lonText);
+ if(!latText||!lonText||!Number.isFinite(lat)||!Number.isFinite(lon)||lat < -90||lat > 90||lon < -180||lon > 180){
+  $('status').textContent='Enter a valid latitude (−90 to 90) and longitude (−180 to 180).';
+  return false;
+ }
+ if(index===1&&points.length===0){
+  $('status').textContent='Set endpoint A before setting endpoint B.';
+  return false;
+ }
+ return setPoint(index,{lat,lon,name:index===0?'A · manual coordinates':'B · manual coordinates'});
+}
 function setPoint(index,p){
  const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};
  if(index===0||points.length===0){points=[obj];}
  else if(points.length===1){points.push(obj);}
  else{points[1]=obj;}
- mode='measure';setModeUI();updateMeasurement();draw();updateStatus();return true;
+ mode='measure';setModeUI();syncCoordinateInputs();updateMeasurement();draw();updateStatus();return true;
 }
 function updateMeasurement(){
  $('setB').disabled=!(selected&&selected.capital&&points.length>0);
+ $('applyCoordsB').disabled=points.length===0;
+ syncCoordinateInputs();
  const box=$('endpointRows');box.innerHTML='';
  for(let i=0;i<2;i++){
   const p=points[i],row=document.createElement('div');row.className='point-row';
@@ -486,7 +512,24 @@ function updateMeasurement(){
    :'Flight-mileage model unavailable';
 
   $('measureHelp').textContent='The connector and its map label show the ADS-B flight-mileage estimate. The raw Euclidean chord is retained as a secondary flat-disk reference; the estimate is based on historical ground-speed and timestamp samples and is not a shortest-path distance.';
+  const calibration=measurement.calibration;
+  const support=$('calibrationSupport'),routes=$('calibrationRoutes');
+  const status=calibration?.status;
+  support.textContent=calibration?.factorWasClamped
+   ?'Bounded extrapolation · correction limited to '+factor.toFixed(2)+'×; this endpoint geometry is outside the sampled route range.'
+   :status==='bounded-extrapolation'
+    ?'Polar extrapolation · endpoint is near the southern rim and is not validated by nearby routes.'
+    :status==='extrapolated'
+     ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
+     :'Within sampled route-feature range.';
+  const routeIds=calibration?.neighbourRouteIds||[];
+  const routeWeights=calibration?.neighbourWeights||[];
+  routes.textContent='Nearest reference routes: '+(routeIds.length
+   ?routeIds.map((route,index)=>route+' '+Math.round((routeWeights[index]||0)*100)+'%').join(' · ')
+   :'not available');
  }else{
+  $('calibrationSupport').textContent='Calibration support appears after both endpoints are set.';
+  $('calibrationRoutes').textContent='Nearest reference routes: —';
   $('rawDistanceValue').textContent='—';
   $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
   $('distanceValue').textContent='—';
@@ -714,8 +757,39 @@ function drawScaleBar(){
  ctx.fillStyle='#294653';ctx.fillText(label,x,y-14);ctx.restore();
 }
 function exportPNG(){
- draw();if(!canvas.toBlob){$('status').textContent='PNG export is not supported in this browser.';return;}
- canvas.toBlob(blob=>{if(!blob){$('status').textContent='Could not create PNG.';return;}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='gleason-world-map.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported.';},'image/png');
+ draw();
+ const generatedAt=new Date().toISOString();
+ const footerHeight=84*dpr;
+ const output=document.createElement('canvas');
+ output.width=canvas.width;output.height=canvas.height+footerHeight;
+ const outputCtx=output.getContext('2d');
+ if(!outputCtx||!output.toBlob){$('status').textContent='PNG export is not supported in this browser.';return;}
+ outputCtx.drawImage(canvas,0,0);
+ outputCtx.fillStyle='#f7f3e9';outputCtx.fillRect(0,canvas.height,output.width,footerHeight);
+ outputCtx.strokeStyle='#c9c0ad';outputCtx.lineWidth=Math.max(1,dpr);
+ outputCtx.beginPath();outputCtx.moveTo(0,canvas.height);outputCtx.lineTo(output.width,canvas.height);outputCtx.stroke();
+ outputCtx.fillStyle='#304a55';outputCtx.textAlign='left';outputCtx.textBaseline='middle';
+ outputCtx.font='700 '+(11*dpr)+'px ui-sans-serif,system-ui';
+ outputCtx.fillText('GLEASON-STYLE FLAT-DISK MAP · GENERATED '+generatedAt.slice(0,10),14*dpr,canvas.height+16*dpr);
+ let measurementText='A–B measurement: not set';
+ if(points.length===2){
+  const measurement=measureDirectDistance(points[0],points[1]);
+  measurementText='ADS-B estimate '+formatDistance(measurement.distanceMeters)+' · raw disk chord '+formatDistance(measurement.chordDistanceMeters);
+ }
+ outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
+ outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
+ outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
+ outputCtx.fillText('ADS-B ground-speed × time estimate · not a shortest-path measurement · model v'+FLIGHT_CALIBRATION.schemaVersion+
+  ' · '+FLIGHT_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_CALIBRATION.holdoutRouteCount+' holdout route pairs',14*dpr,canvas.height+53*dpr);
+ const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
+ outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
+ output.toBlob(blob=>{
+  if(!blob){$('status').textContent='Could not create PNG.';return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='gleason-world-map-'+generatedAt.slice(0,10)+'.png';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with calibration and source metadata.';
+ },'image/png');
 }
 async function copyShareLink(){
  const url=new URL(window.location.href);url.search='';
@@ -749,19 +823,21 @@ function showLoadError(err){
 }
 async function load(){
  const generation=++loadGeneration;
- setMapLoading(true,'Loading local country boundaries, coastlines, capital coordinates and county search data…');
+ setMapLoading(true,'Loading country boundaries, coastlines, Antarctic surface classes and search data…');
  try{
   mapQuality=readMapQuality();$('mapQuality').value=mapQuality;
   $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and geographic labels…';
-  const [geoData,capRaw,countyRaw,coastlineRaw]=await Promise.all([
+  const [geoData,capRaw,countyRaw,coastlineRaw,antarcticAddRaw]=await Promise.all([
    (async()=>{try{return {data:await loadCountryDataset(mapQuality),fallback:false};}
     catch(boundaryError){if(mapQuality==='low')throw boundaryError;console.warn('Requested bundled boundary quality unavailable; falling back to low:',boundaryError);return {data:await loadCountryDataset('low'),fallback:true};}})(),
    loadCapitalDataset(),
    loadCountyDataset().catch(error=>{console.warn('County search data unavailable:',error);return []; }),
-   loadCoastlineDataset().catch(error=>{console.warn('Coastline data unavailable; country outlines remain available:',error);return null;})
+   loadCoastlineDataset().catch(error=>{console.warn('Coastline data unavailable; country outlines remain available:',error);return null;}),
+   loadAntarcticAddDataset().catch(error=>{console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error);return null;})
   ]);
   if(generation!==loadGeneration)return;
   features=geoData.data.features||[];
+  antarcticAddData=antarcticAddRaw;
   if(!features.length)throw new Error('The bundled country boundary dataset contains no features.');
   antarcticaFeature=features.find(f=>isoFor(f)==='ATA'||norm(nameFor(f))==='antarctica')||null;
   const usable=features.filter(f=>isoFor(f)!=='ATA'&&norm(nameFor(f))!=='antarctica');
@@ -803,7 +879,9 @@ mobileToolsToggle.addEventListener('click',()=>setMobileToolsOpen(!document.body
 const mobileToolsQuery=window.matchMedia('(min-width: 761px)');
 mobileToolsQuery.addEventListener?.('change',event=>{if(event.matches)setMobileToolsOpen(false);});
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});$('search').addEventListener('keydown',e=>{if(e.key==='Escape')$('suggestions').classList.remove('open');if(e.key==='Enter'){const first=$('suggestions').querySelector('.suggestion');if(first)first.click();}});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
-$('exploreMode').addEventListener('click',()=>{if(mode!=='explore')clearMeasurementDrawings();mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{if(mode!=='measure')clearMeasurementDrawings();mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{if(mode!=='area')clearMeasurementDrawings();mode='area';setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
+$('exploreMode').addEventListener('click',()=>{if(mode!=='explore')clearMeasurementDrawings();mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{if(mode!=='measure')clearMeasurementDrawings();mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{if(mode!=='area')clearMeasurementDrawings();mode='area';setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));
+$('applyCoordsA').addEventListener('click',()=>applyCoordinateEndpoint(0));$('applyCoordsB').addEventListener('click',()=>applyCoordinateEndpoint(1));
+$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('finishArea').addEventListener('click',finishArea);
 $('undoArea').addEventListener('click',()=>{areaPoints.pop();areaFinished=false;updateAreaMeasurement();draw();updateStatus();});
 $('clearArea').addEventListener('click',()=>{areaPoints=[];areaFinished=false;updateAreaMeasurement();draw();updateStatus();});

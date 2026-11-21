@@ -79,6 +79,22 @@
               <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
               <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
             </div>
+            <div class="coordinate-entry" aria-label="Enter endpoint coordinates">
+              <div class="coordinate-entry-row">
+                <strong>A</strong>
+                <label><span>Lat</span><input id="coordALat" type="number" min="-90" max="90" step="0.000001" inputmode="decimal" placeholder="Latitude" aria-label="A latitude"></label>
+                <label><span>Lon</span><input id="coordALon" type="number" min="-180" max="180" step="0.000001" inputmode="decimal" placeholder="Longitude" aria-label="A longitude"></label>
+                <button id="applyCoordsA" type="button">Set A</button>
+              </div>
+              <div class="coordinate-entry-row">
+                <strong>B</strong>
+                <label><span>Lat</span><input id="coordBLat" type="number" min="-90" max="90" step="0.000001" inputmode="decimal" placeholder="Latitude" aria-label="B latitude"></label>
+                <label><span>Lon</span><input id="coordBLon" type="number" min="-180" max="180" step="0.000001" inputmode="decimal" placeholder="Longitude" aria-label="B longitude"></label>
+                <button id="applyCoordsB" type="button" disabled>Set B</button>
+              </div>
+            </div>
+            <p class="calibration-support" id="calibrationSupport" aria-live="polite">Calibration support appears after both endpoints are set.</p>
+            <p class="calibration-routes" id="calibrationRoutes">Nearest reference routes: —</p>
             <div class="endpoint-actions"><button id="clearMeasure" type="button" disabled><span class="tool-icon" aria-hidden="true">×</span> Clear distance</button></div>
           </div>
           <div id="areaDetails" hidden>
@@ -102,7 +118,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · red 60°S restricted line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall (BAS surface shading when bundled) · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -153,7 +169,7 @@
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk uses a smooth, monotonic radial warp of latitude-ring spacing. It preserves the North Pole at the centre and 90°S at the circular outer rim. The A–B connector is always one straight projected segment. The distance tool displays its raw Euclidean disk chord and a separate ADS-B flight-mileage estimate fitted from ground-speed/time observations. Aircraft mileage is estimated from speed integrated over timestamps; map coordinates are not used to calculate those target mileages. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
+      <p class="note" style="margin:9px 0 0">The disk uses a smooth, monotonic radial warp of latitude-ring spacing. It preserves the North Pole at the centre and 90°S at the circular outer rim. The A–B connector is one straight projected segment; its primary label is the ADS-B flight-mileage estimate, with the raw disk chord shown as a secondary reference. The estimate is fitted from ground-speed/time observations, with polar extrapolation status and nearest supporting routes available in the measurement details. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
     </section>
     <section class="panel">
       <h2>Flat-disk geometry</h2>
@@ -163,7 +179,7 @@
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment and displays both the raw Euclidean chord and a separately corrected empirical estimate. The correction factor and calibration warnings are shown with the readings. Neither value is a route track or a guaranteed geographic distance. The 60°S Restricted Line does not alter the correction. Polygon area and perimeter remain planar.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment and displays the ADS-B empirical mileage estimate as primary, with the raw Euclidean chord as a secondary reference. The estimate is not a shortest path or guaranteed flight track. Calibration support and nearest reference routes are available in the measurement details; polar extrapolation is identified there without a warning panel. The 60°S Restricted Line does not alter the estimate. Polygon area and perimeter remain planar.</p>
     </section>
 <section class="panel">
       <h2>Historical Gleason overlay · 1892</h2>
@@ -206,7 +222,7 @@
     </section>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain). The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. A–B displays a raw straight projected chord and a separate empirical flight-mileage estimate based on measured ground speed and time. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same local ADS-B route-neighbour correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. A–B displays the ADS-B empirical flight-mileage estimate as primary, with the raw straight projected chord as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the active distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the same local ADS-B route-neighbour correction as A–B. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 <script type="module" src="./src/app.js"></script>
 </body>
 </html>

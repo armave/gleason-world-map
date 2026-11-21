@@ -103,7 +103,11 @@ export function directLineCalibrationDiagnostics(first, second) {
     factorWasClamped,
     weakNeighbourSupport,
     warnings,
-    status: warnings.length ? 'caution' : 'within-fit-range'
+    status: factorWasClamped || nearSouthRim
+      ? 'bounded-extrapolation'
+      : outsideTrainingRange || weakNeighbourSupport
+        ? 'extrapolated'
+        : 'within-fit-range'
   };
 }
 
