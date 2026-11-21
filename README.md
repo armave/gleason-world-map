@@ -23,7 +23,7 @@ This is a flat map projection, not a claim that the physical Earth is a flat pla
 
 ## WGS84 distances and areas
 
-Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The dashed line is sampled along the geodesic and projected onto the disk; its displayed length is not measured in screen pixels. Results are shown in metres below 1 km and kilometres for longer distances.
+Two-point measurements use the shortest surface geodesic on the **WGS84 reference ellipsoid**. GeographicLib's JavaScript implementation uses Karney's algorithms for robust inverse/direct geodesic calculations, including near-antipodal pairs. If the external browser library is unavailable, the app falls back to Vincenty's ellipsoidal inverse/direct methods where they converge. If Vincenty's inverse method cannot converge, the distance is marked unavailable rather than substituting a spherical distance. The distance tool draws a straight visual connector between the two projected disk locations. The numeric result remains the shortest WGS84 surface geodesic, calculated independently of that straight connector. The area tool still draws its successive polygon edges as sampled WGS84 geodesics. Results are shown in metres below 1 km and kilometres for longer distances. Results are shown in metres below 1 km and kilometres for longer distances.
 
 The custom area tool calculates ellipsoidal polygon area and perimeter using GeographicLib's WGS84 PolygonArea implementation. Each edge is treated as the shorter WGS84 geodesic between successive vertices. Selected-country areas are calculated from Natural Earth boundary rings with ellipsoidal polygon area, subtracting holes and summing polygon parts. Natural Earth geometry is generalized cartographic data, not cadastral or survey-grade boundary data.
 
@@ -68,7 +68,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
 - WGS84 ellipsoidal surface-distance measurements in metres and kilometres
-- Distance A–B routes and successive area vertices are joined by high-contrast dashed geodesic connectors; finished area outlines close back to the first point
+- Distance A–B is shown as a straight projected disk connector while its numeric value remains the WGS84 shortest surface distance; area boundaries retain dashed WGS84 geodesic edges
 - WGS84 ellipsoidal custom polygon area and perimeter
 - WGS84 ellipsoidal area for selected country boundaries
 - Local radial, tangential, distance-decoder, and area-distortion diagnostics
@@ -82,10 +82,10 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - County labels are placed only when their full label box fits inside their own county polygon; county labels use warm serif styling, while capital labels use blue sans-serif text and point markers
 - County search, selection, and shareable layer visibility
 - View-centred local WGS84 ground scale bar
-- Geodesic measurement path projected onto the disk
+- Straight projected A–B visual connector and separately calculated WGS84 surface distance
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
-- Toggle country outlines, grid, capital markers, capital names, and Antarctica
+- Toggle country outlines, physical coastlines and islands, grid, capital markers and names, country names, ocean/sea labels, and Antarctica
 - Optional 1892 scan overlay with opacity, crop, scale, and rotation controls
 - Export the map as PNG
 - Share URLs preserving zoom, pan, layers, overlay settings, endpoints, area vertices, and historical registration points
