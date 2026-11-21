@@ -1,48 +1,66 @@
-import { norm } from '../core/format.js';
 export const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
 
-export const COUNTRY_URLS={low:'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson',medium:'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson',high:'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson'};
-export const COUNTRY_URL=COUNTRY_URLS.medium;
-export const COUNTRY_FALLBACK_URL=COUNTRY_URLS.low;
-export const MAP_QUALITY_OPTIONS={low:{label:'Low · fastest',scale:'1:110m'},medium:{label:'Medium · balanced',scale:'1:50m'},high:{label:'High · detailed',scale:'1:10m'}};
-export const CAPITAL_URL='https://raw.githubusercontent.com/iliyaj/country-data/main/data/country-capital.csv';
-export function parseCSV(text){
- const rows=[];let row=[],field='',quoted=false;
- for(let i=0;i<text.length;i++){const ch=text[i];
-  if(quoted){if(ch==='"'&&text[i+1]==='"'){field+='"';i++;}else if(ch==='"')quoted=false;else field+=ch;}
-  else if(ch==='"'&&field==='')quoted=true;
-  else if(ch===','){row.push(field);field='';}
-  else if(ch==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field='';}
-  else field+=ch;
- }
- if(field.length||row.length){row.push(field.replace(/\r$/,''));rows.push(row);}
- if(rows.length<2)return [];
- const headers=rows.shift().map(h=>norm(h).replace(/ /g,''));
- const pick=names=>names.map(n=>headers.indexOf(n)).find(i=>i>=0);
- const ix={iso:pick(['iso','isoa3','alpha3code','countrycode','countryiso']),city:pick(['city','capital','capitalcity']),lat:pick(['lat','latitude']),lon:pick(['lon','lng','longitude'])};
- if(Object.values(ix).some(i=>i===undefined))throw new Error('Capital CSV is missing required columns (ISO, city, latitude, longitude).');
- const out=[];
- for(const r of rows){const iso=String(r[ix.iso]||'').trim().toUpperCase(),city=String(r[ix.city]||'').trim(),lat=Number(r[ix.lat]),lon=Number(r[ix.lon]);
-  if(!iso||!city||!Number.isFinite(lat)||!Number.isFinite(lon)||lat< -90||lat>90||lon< -180||lon>180)continue;
-  out.push({iso,city,lat,lon});
- }
- return out;
+export const MAP_QUALITY_OPTIONS = Object.freeze({
+  low: { label: 'Low · fastest', scale: '1:110m' },
+  medium: { label: 'Medium · balanced', scale: '1:50m' },
+  high: { label: 'High · detailed', scale: '1:10m' }
+});
+
+export const COUNTRY_DATA_FILES = Object.freeze({
+  low: new URL('../../data/countries/low.geojson.gz', import.meta.url),
+  medium: new URL('../../data/countries/medium.geojson.gz', import.meta.url),
+  high: new URL('../../data/countries/high.geojson.gz', import.meta.url)
+});
+export const CAPITAL_DATA_FILE = new URL('../../data/capitals.json', import.meta.url);
+
+export function validateCountryDataset(data) {
+  if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length < 150) {
+    throw new Error('The bundled country boundary dataset is invalid or incomplete.');
+  }
+  const hasAntarctica = data.features.some(feature => {
+    const p = feature?.properties || {};
+    return [p.ISO_A3_EH, p.ISO_A3, p.ADM0_A3, p.SOV_A3].includes('ATA') || p.ADMIN === 'Antarctica';
+  });
+  if (!hasAntarctica) throw new Error('The bundled country boundaries do not contain Antarctica.');
+  return data;
 }
-export function validateDatasetText(text,key){
- if(key.startsWith('countries')){const data=JSON.parse(text);if(!Array.isArray(data.features)||!data.features.length)throw new Error('Country boundary data has no GeoJSON features.');}
- else if(key==='capitals'&&!parseCSV(text).length)throw new Error('Capital coordinate data contains no valid rows.');
+
+export function validateCapitalDataset(data) {
+  if (!Array.isArray(data) || data.length < 150 || !data.some(point =>
+    point?.iso === 'ARM' && String(point.city).toLowerCase() === 'yerevan'
+  )) {
+    throw new Error('The bundled capital-coordinate dataset is invalid or incomplete.');
+  }
+  for (const point of data) {
+    if (!point.iso || !point.city || !Number.isFinite(point.lat) || !Number.isFinite(point.lon) ||
+        point.lat < -90 || point.lat > 90 || point.lon < -180 || point.lon > 180) {
+      throw new Error('The bundled capital-coordinate dataset contains an invalid record.');
+    }
+  }
+  return data;
 }
-export async function fetchTextCached(url,key){
- const cacheKey='gleason-map:'+key+':v2';let lastError=null;
- for(let attempt=0;attempt<2;attempt++){
-  try{const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),key==='countries-50m'?30000:15000);let response;try{response=await fetch(url,{signal:controller.signal});}finally{clearTimeout(timeout);}if(!response.ok)throw new Error(`HTTP ${response.status} while loading ${key}`);
-   const text=await response.text();if(!text||text.length<20)throw new Error(`The ${key} dataset was empty.`);
-   validateDatasetText(text,key);
-   // Large boundary files can exceed browser storage quotas; keep them in memory only.
-   if(text.length<=1_500_000){try{localStorage.setItem(cacheKey,text);}catch(storageError){console.info('Dataset loaded without persistent cache:',storageError);}}
-   return {text,stale:false};
-  }catch(err){lastError=err;if(attempt===0)await new Promise(resolve=>setTimeout(resolve,450));}
- }
- try{const cached=localStorage.getItem(cacheKey);if(cached&&cached.length>20){validateDatasetText(cached,key);return {text:cached,stale:true};}}catch(storageError){console.warn('Cached dataset unavailable:',storageError);}
- throw lastError||new Error(`Unable to load ${key}.`);
+
+export async function loadCountryDataset(quality = 'medium') {
+  if (!Object.hasOwn(COUNTRY_DATA_FILES, quality)) throw new Error(`Unknown map quality: ${quality}`);
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('This browser does not support local gzip decompression. Please use a current browser version.');
+  }
+  const response = await fetch(COUNTRY_DATA_FILES[quality]);
+  if (!response.ok) throw new Error(`Unable to load the bundled ${quality} country boundaries (HTTP ${response.status}).`);
+  if (!response.body) throw new Error('The bundled country-boundary response has no data stream.');
+  const decompressed = response.body.pipeThrough(new DecompressionStream('gzip'));
+  const text = await new Response(decompressed).text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch (error) { throw new Error(`The bundled ${quality} country boundaries are not valid JSON: ${error.message}`); }
+  return validateCountryDataset(data);
+}
+
+export async function loadCapitalDataset() {
+  const response = await fetch(CAPITAL_DATA_FILE);
+  if (!response.ok) throw new Error(`Unable to load the bundled capital coordinates (HTTP ${response.status}).`);
+  let data;
+  try { data = await response.json(); }
+  catch (error) { throw new Error(`The bundled capital coordinates are not valid JSON: ${error.message}`); }
+  return validateCapitalDataset(data);
 }

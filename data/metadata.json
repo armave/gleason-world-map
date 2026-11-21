@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/vendor-geodata.mjs",
+  "sources": {
+    "naturalEarth": {
+      "repository": "https://github.com/nvkelso/natural-earth-vector",
+      "commit": "ca96624a56bd078437bca8184e78163e5039ad19",
+      "dataset": "Admin 0 country boundaries at 1:10m, 1:50m and 1:110m",
+      "license": "Public domain"
+    },
+    "capitals": {
+      "repository": "https://github.com/iliyaj/country-data",
+      "commit": "2a34180a6573aaff977589b8b3644266c0a8c24f",
+      "file": "data/country-capital.csv",
+      "upstreamLicense": "MIT",
+      "underlyingDataSource": "REST Countries v3.1"
+    }
+  },
+  "boundaryDatasets": {
+    "low": {
+      "sourceFile": "ne_110m_admin_0_countries.geojson",
+      "features": 177,
+      "uncompressedBytes": 283608,
+      "compressedBytes": 101002,
+      "sha256": "401473fe51ff1481caea9e3d25efdbc81465dab379301c7b6ffbc9af2c7130c1"
+    },
+    "medium": {
+      "sourceFile": "ne_50m_admin_0_countries.geojson",
+      "features": 242,
+      "uncompressedBytes": 2313285,
+      "compressedBytes": 838031,
+      "sha256": "912f917ab9d2c658dbf74ccea41fc426ef9d7f17f119c712c1ff8d81e92ac982"
+    },
+    "high": {
+      "sourceFile": "ne_10m_admin_0_countries.geojson",
+      "features": 258,
+      "uncompressedBytes": 12459241,
+      "compressedBytes": 4393844,
+      "sha256": "401434017d596e2729c0f2a2f686463c56bbba7261c7ded83300fd5108dc5b01"
+    }
+  },
+  "capitals": {
+    "records": 197,
+    "file": "capitals.json"
+  }
+}

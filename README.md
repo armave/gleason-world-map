@@ -75,7 +75,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Optional 1892 scan overlay with opacity, crop, scale, and rotation controls
 - Export the map as PNG
 - Share URLs preserving zoom, pan, layers, overlay settings, endpoints, area vertices, and historical registration points
-- Retriable data loading, browser cache fallback, and explicit retry button
+- Repository-bundled geographic datasets, browser HTTP caching, and explicit retry button
 
 ## Project structure
 
@@ -84,13 +84,21 @@ Static GitHub Pages deployment uses browser-native ES modules; no bundler is req
 ```text
 index.html                  page shell and app entry point
 styles.css                  responsive styling
+data/
+  countries/
+    low.geojson.gz          Natural Earth 1:110m boundaries
+    medium.geojson.gz       Natural Earth 1:50m boundaries
+    high.geojson.gz         Natural Earth 1:10m boundaries
+  capitals.json             vendored ISO/capital coordinates
+  metadata.json             pinned sources, versions, checksums
+  README.md                 data provenance and refresh instructions
 src/
   app.js                    state, UI wiring, and lifecycle
   core/
     wgs84.js                WGS84 radial calibration, projection, geodesics, local scales
     format.js               coordinates, units, and search formatting
   data/
-    datasets.js             sources, CSV parsing, validation, retry, browser cache
+    datasets.js             local asset loading, decompression, and validation
     geojson.js              country identifiers, names, colours, centroids
   map/
     feature-paths.js        projected GeoJSON paths and Antarctic rim handling
@@ -98,12 +106,14 @@ src/
     registration.js         scan control-point triangulation and affine image warp
   ui/
     calibration.js          radial table and distortion panel
+scripts/
+  vendor-geodata.mjs        reproducible pinned-source data import
 tests/
   wgs84.test.js             WGS84 geometry regressions
   registration.test.js      registration transform regressions
-  datasets.test.js          capital CSV parser regressions
+  datasets.test.js          bundled-data integrity and quality tests
 .github/workflows/test.yml automated Node tests
-package.json                dependency-free test command
+package.json                test and data-vendor commands
 ```
 
 Run tests with Node.js 20 or newer:
@@ -118,7 +128,7 @@ Run a static web server from the repository root:
 
     python -m http.server 8000
 
-Then open http://localhost:8000. First load requires internet access for the source datasets; the historical scan is loaded only when its overlay is enabled.
+Then open http://localhost:8000. Country boundaries and capital coordinates are bundled in the repository and load from the same site. Internet access is needed only for the optional historical scan.
 
 ## Deploy with GitHub Pages
 
@@ -131,9 +141,13 @@ Expected URL: https://armave.github.io/gleason-world-map/
 
 ## Geographic data sources
 
-- Country and Antarctica outlines: Natural Earth 1:10m Admin 0, with automatic 1:110m fallback if the detailed file cannot be fetched.
-- Capital coordinates: country-data, data/country-capital.csv.
-- Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867.
+Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and stored locally under `data/countries/`. The browser loads only the selected quality. The datasets are vendored from the pinned Natural Earth source commit listed in `data/metadata.json`; Natural Earth identifies its vector data as public domain.
+
+Capital coordinates are stored locally in `data/capitals.json` and were generated from the pinned `country-capital.csv` source in `iliyaj/country-data`. The source identifies REST Countries v3.1 as the underlying data source; its MIT license is included in `data/capital-data-LICENSE.txt`.
+
+To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
+
+- Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Ellipsoidal geodesic calculations: GeographicLib JavaScript.
 
 ## Important limitations

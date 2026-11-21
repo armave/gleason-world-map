@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "vendor:data": "node scripts/vendor-geodata.mjs"
   }
 }
