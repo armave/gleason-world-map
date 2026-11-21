@@ -1,8 +1,10 @@
 import { norm } from '../core/format.js';
 export const HISTORICAL_SCAN_URL = 'https://iiif.digitalcommonwealth.org/commonwealth:7h149v867/full/,2048/0/default.jpg';
 
-export const COUNTRY_URL='https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson';
-export const COUNTRY_FALLBACK_URL='https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
+export const COUNTRY_URLS={low:'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson',medium:'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson',high:'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson'};
+export const COUNTRY_URL=COUNTRY_URLS.medium;
+export const COUNTRY_FALLBACK_URL=COUNTRY_URLS.low;
+export const MAP_QUALITY_OPTIONS={low:{label:'Low · fastest',scale:'1:110m'},medium:{label:'Medium · balanced',scale:'1:50m'},high:{label:'High · detailed',scale:'1:10m'}};
 export const CAPITAL_URL='https://raw.githubusercontent.com/iliyaj/country-data/main/data/country-capital.csv';
 export function parseCSV(text){
  const rows=[];let row=[],field='',quoted=false;
