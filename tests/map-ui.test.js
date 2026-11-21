@@ -38,20 +38,20 @@ test('zoom is capped at a 50 km local scale-bar reading for every input path', (
   assert.match(app, /function maxZoomForAnchor\(/);
   assert.match(app, /function clampZoom\(/);
   assert.match(app, /setZoomAtViewCenter\(zoom\*1\.25\)/);
-  assert.match(app, /const restoredCenter=\{x:-panX\/zoom,y:-panY\/zoom\},restoredZoom=clampZoom\(zoom,restoredCenter\)/);
+  assert.match(app, /const restoredCenter=unrotatePoint\(-panX\/zoom,-panY\/zoom,rotationRadians\(\)\),restoredZoom=clampZoom\(zoom,restoredCenter\)/);
   assert.match(app, /safe=clampZoom\(nz,anchor\)/);
   assert.doesNotMatch(app, /const MIN_ZOOM=1,MAX_ZOOM=20000/);
 });
 
 test('capital labels grow in close-up views and collision boxes track their size', () => {
   assert.match(app, /labelFontSize=Math\.min\(16,10\+2\*Math\.log2\(Math\.max\(1,zoom\)\)\)/);
-  assert.match(app, /top:sy-labelFontSize\/2,right:sx\+4\+tw,bottom:sy\+labelFontSize\/2/);
+  assert.match(app, /const a=rotationRadians\(\),center=worldToScreen/);
   assert.match(app, /item\.labelFontSize\/zoom/);
   assert.match(html, /Capital names \(from 2,500 km\)/);
 });
 
 test('ocean surface is blue, ocean and sea names are a toggleable shareable layer, and ice wall is white',()=>{
- assert.match(app,/ctx\.fillStyle='#dcecf1'/);
+ assert.match(app,/ctx\.fillStyle=visualPalette\.water/);
  assert.match(app,/if\(layers\.oceanLabels\)\{/);
  assert.match(app,/selectNonOverlappingLabels,\s*isLand:/);
  assert.match(app,/layers\.oceanLabels,layers\.coastlines\].map\(v=>v\?'1':'0'\)/);
@@ -93,4 +93,17 @@ test('water label land detection uses one prebuilt land mask including Antarctic
  assert.match(app,/landMaskPath=new Path2D\(\)/);
  assert.match(app,/landMaskPath\.addPath\(antarcticaPath\)/);
  assert.match(app,/ctx\.isPointInPath\(landMaskPath,x,y,'evenodd'\)/);
+});
+
+test('visual presets are selectable, remembered, and independent from disk projection coordinates',()=>{
+ assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectWgs84\(lon,lat,baseR\)/);
+});
+test('map orientation is display-only, pointer-safe, and included in share links',()=>{
+ assert.match(html,/id="mapRotation"/);assert.match(html,/id="rotateLeft"/);assert.match(html,/id="rotateRight"/);
+ assert.match(app,/ctx\.rotate\(rotationRadians\(\)\)/);assert.match(app,/screenToWorldPoint/);
+ assert.match(app,/url\.searchParams\.set\('r',rotationDegrees\.toFixed\(1\)\)/);assert.match(app,/url\.searchParams\.set\('style',visualStyle\)/);assert.match(app,/pointerDown\.rotate/);
+});
+test('latitude grid includes intermediate parallels, a stronger equator, longitude ticks and compass rose',()=>{
+ assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
