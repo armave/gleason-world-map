@@ -104,7 +104,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
-  assert.match(app, /dashed A–B connector is always a straight line/);
+  assert.match(app, /connector itself is a straight chord between the projected map points/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
