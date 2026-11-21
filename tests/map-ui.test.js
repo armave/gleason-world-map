@@ -98,13 +98,13 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/flatDiskDistanceMeters/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/geodesicDistanceMeters/);assert.match(app,/geodesicLinePath/);
 });
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
-  assert.match(html, /<span>A–B line<\/span><strong>Direct segment<\/strong>/);
-  assert.match(app, /not a travelled route/);
+  assert.match(html, /<span>A–B line<\/span><strong>Projected geodesic<\/strong>/);
+  assert.match(app, /not an actual flight or travelled route/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
