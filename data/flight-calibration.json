@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-21T10:11:58.691Z",
+    "retrievedAt": "2026-11-21T10:23:44.489Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-21"
@@ -38,8 +38,8 @@
     "endDate": "2026-11-21T23:59:59Z",
     "maxPagesPerRoute": 16,
     "samplesPerRouteTarget": 5,
-    "routesWithAtLeastThreeTrainFlights": 26,
-    "routesWithAtLeastThreeHoldoutFlights": 3,
+    "routesWithAtLeastThreeTrainFlights": 33,
+    "routesWithAtLeastThreeHoldoutFlights": 4,
     "airportLookupErrors": {
       "OKBK": "/airports/OKBK: HTTP 404 {\"detail\":\"No airport with ICAO or IATA code 'OKBK'. Search by name with GET /api/v1/waypoints/search?q=...\",\"documentation\":\"https://adsb.aero/llms.txt\",\"hint\":\"No airport with ICAO or IATA code 'OKBK'. Search by name with GET /api/v1/waypoints/search?q=... Full query vocabulary: https://adsb.aero/"
     }
@@ -2399,8 +2399,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 175,
-        "too-few-speed-intervals": 3,
         "missing-ground-speed-or-duration": 2,
+        "too-few-speed-intervals": 3,
         "low-telemetry-coverage": 4
       },
       "pagesScanned": 1,
@@ -5467,9 +5467,1659 @@
       ]
     },
     {
+      "routeId": "YBBN--YMML",
+      "directionListed": "YBBN-YMML",
+      "split": "train",
+      "airportA": {
+        "ident": "YBBN",
+        "iataCode": "BNE",
+        "name": "BRISBANE",
+        "lat": -27.388888888889,
+        "lon": 153.12611111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YMML",
+        "iataCode": "MEL",
+        "name": "MELBOURNE",
+        "lat": -37.669722222222,
+        "lon": 144.83805555556,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 1478.549910350456,
+      "medianObservedTrackKm": 1478.549910350456,
+      "p10TrackKm": 1427.5516878051192,
+      "p90TrackKm": 1487.9936750358547,
+      "medianDurationMinutes": 119.33733333349228,
+      "medianTelemetrySpanMinutes": 119.33733333349228,
+      "medianTelemetryCoverage": 1,
+      "medianMaxGapMinutes": 0,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 5
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "7c4a57:2026-11-20T20:10:14Z",
+          "callsign": "JST561",
+          "icaoType": "A21N",
+          "operator": "JETSTAR AIRWAYS PTY LIMITED",
+          "startTs": "2026-11-20T20:10:14.410000Z",
+          "endTs": "2026-11-20T22:09:34.650000Z",
+          "startAirportIdent": "YBBN",
+          "endAirportIdent": "YMML",
+          "startPoint": {
+            "lat": -27.386673,
+            "lon": 153.127441
+          },
+          "endPoint": {
+            "lat": -37.661552,
+            "lon": 144.836346
+          },
+          "rawPointCount": 1128,
+          "pointCount": 156,
+          "accepted": true,
+          "trackKm": 1446.5939641517007,
+          "estimatedTrackKm": 1446.5939641517007,
+          "observedTrackKm": 1446.5939641517007,
+          "flightDurationMinutes": 119.33733333349228,
+          "telemetrySpanMinutes": 119.33733333349228,
+          "coveredMinutes": 119.33733333349228,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 392.71780136006055,
+          "speedIntervals": 40,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6dbb:2026-11-20T20:10:53Z",
+          "callsign": "QFA604",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T20:10:53.860000Z",
+          "endTs": "2026-11-20T21:58:58.560000Z",
+          "startAirportIdent": "YMML",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -37.66095,
+            "lon": 144.825459
+          },
+          "endPoint": {
+            "lat": -27.380859,
+            "lon": 153.130758
+          },
+          "rawPointCount": 1691,
+          "pointCount": 234,
+          "accepted": true,
+          "trackKm": 1491.3764250609029,
+          "estimatedTrackKm": 1491.3764250609029,
+          "observedTrackKm": 1491.3764250609029,
+          "flightDurationMinutes": 108.07833333412806,
+          "telemetrySpanMinutes": 108.07833333412806,
+          "coveredMinutes": 108.07833333412806,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 447.05288602234134,
+          "speedIntervals": 32,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c29d8:2026-11-20T21:02:56Z",
+          "callsign": "VOZ308",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T21:02:56.910000Z",
+          "endTs": "2026-11-20T23:12:20.210000Z",
+          "startAirportIdent": "YBBN",
+          "endAirportIdent": "YMML",
+          "startPoint": {
+            "lat": -27.396515,
+            "lon": 153.121845
+          },
+          "endPoint": {
+            "lat": -37.680219,
+            "lon": 144.840048
+          },
+          "rawPointCount": 1795,
+          "pointCount": 548,
+          "accepted": true,
+          "trackKm": 1482.9195499982825,
+          "estimatedTrackKm": 1482.9195499982825,
+          "observedTrackKm": 1482.9195499982825,
+          "flightDurationMinutes": 129.3883333325386,
+          "telemetrySpanMinutes": 129.3883333325386,
+          "coveredMinutes": 129.3883333325386,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 371.3066608290761,
+          "speedIntervals": 53,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6dba:2026-11-20T21:12:01Z",
+          "callsign": "QFA613",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T21:12:01.110000Z",
+          "endTs": "2026-11-20T23:18:59.650000Z",
+          "startAirportIdent": "YBBN",
+          "endAirportIdent": "YMML",
+          "startPoint": {
+            "lat": -27.39798,
+            "lon": 153.120964
+          },
+          "endPoint": {
+            "lat": -37.67859,
+            "lon": 144.83963
+          },
+          "rawPointCount": 1905,
+          "pointCount": 179,
+          "accepted": true,
+          "trackKm": 1478.549910350456,
+          "estimatedTrackKm": 1478.549910350456,
+          "observedTrackKm": 1478.549910350456,
+          "flightDurationMinutes": 126.97566667000453,
+          "telemetrySpanMinutes": 126.97566667000453,
+          "coveredMinutes": 126.97566667000453,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 377.24696594855857,
+          "speedIntervals": 44,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7ab1:2026-11-20T21:37:06Z",
+          "callsign": "VOZ313",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA INTERNATIONAL AIRLINES PTY LTD",
+          "startTs": "2026-11-20T21:37:06.810000Z",
+          "endTs": "2026-11-20T23:20:03.460000Z",
+          "startAirportIdent": "YMML",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -37.659302,
+            "lon": 144.836095
+          },
+          "endPoint": {
+            "lat": -27.396551,
+            "lon": 153.12179
+          },
+          "rawPointCount": 1758,
+          "pointCount": 140,
+          "accepted": true,
+          "trackKm": 1414.8568369073982,
+          "estimatedTrackKm": 1414.8568369073982,
+          "observedTrackKm": 1414.8568369073982,
+          "flightDurationMinutes": 102.94416666825613,
+          "telemetrySpanMinutes": 102.94416666825613,
+          "coveredMinutes": 102.94416666825613,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 445.2675268911006,
+          "speedIntervals": 38,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YBBN--YPPH",
+      "directionListed": "YBBN-YPPH",
+      "split": "train",
+      "airportA": {
+        "ident": "YBBN",
+        "iataCode": "BNE",
+        "name": "BRISBANE",
+        "lat": -27.388888888889,
+        "lon": 153.12611111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YPPH",
+        "iataCode": "PER",
+        "name": "PERTH",
+        "lat": -31.943333333333,
+        "lon": 115.96416666667,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 3442.5619607746066,
+      "medianObservedTrackKm": 1229.7948160306437,
+      "p10TrackKm": 3233.0666519148817,
+      "p90TrackKm": 3504.576369173884,
+      "medianDurationMinutes": 236.44800000190736,
+      "medianTelemetrySpanMinutes": 236.44800000190736,
+      "medianTelemetryCoverage": 0.35430716763102266,
+      "medianMaxGapMinutes": 84.42250000238418,
+      "telemetryDiagnostics": {
+        "low-telemetry-coverage": 14,
+        "too-few-speed-intervals": 3
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "7c7802:2026-11-20T04:47:17Z",
+          "callsign": "QFA938",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T04:47:17.050000Z",
+          "endTs": "2026-11-20T08:35:05.220000Z",
+          "startAirportIdent": "YPPH",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -31.931763,
+            "lon": 115.967588
+          },
+          "endPoint": {
+            "lat": -27.376021,
+            "lon": 153.110856
+          },
+          "rawPointCount": 1616,
+          "pointCount": 165,
+          "accepted": true,
+          "trackKm": 3110.6812419268986,
+          "estimatedTrackKm": 3110.6812419268986,
+          "observedTrackKm": 997.4083717210646,
+          "flightDurationMinutes": 227.8028333346049,
+          "telemetrySpanMinutes": 227.8028333346049,
+          "coveredMinutes": 73.04266666968664,
+          "coverage": 0.32063985157901426,
+          "maxGapMinutes": 84.42250000238418,
+          "meanGroundSpeedKnots": 442.3913808376799,
+          "speedIntervals": 34,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6d95:2026-11-20T05:30:24Z",
+          "callsign": "QFA939",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T05:30:24.530000Z",
+          "endTs": "2026-11-20T10:45:22.680000Z",
+          "startAirportIdent": "YBBN",
+          "endAirportIdent": "YPPH",
+          "startPoint": {
+            "lat": -27.378891,
+            "lon": 153.131898
+          },
+          "endPoint": {
+            "lat": -31.950439,
+            "lon": 115.962122
+          },
+          "rawPointCount": 1172,
+          "pointCount": 120,
+          "accepted": true,
+          "trackKm": 3470.984863934106,
+          "estimatedTrackKm": 3470.984863934106,
+          "observedTrackKm": 1229.7948160306437,
+          "flightDurationMinutes": 314.96916666825615,
+          "telemetrySpanMinutes": 314.96916666825615,
+          "coveredMinutes": 111.59583333333333,
+          "coverage": 0.35430716763102266,
+          "maxGapMinutes": 108.59033333460489,
+          "meanGroundSpeedKnots": 357.021973635989,
+          "speedIntervals": 33,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6dd9:2026-11-20T09:22:42Z",
+          "callsign": "QFA940",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T09:22:42.740000Z",
+          "endTs": "2026-11-20T13:16:52.340000Z",
+          "startAirportIdent": "YPPH",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -31.94014,
+            "lon": 115.965143
+          },
+          "endPoint": {
+            "lat": -27.376999,
+            "lon": 153.110275
+          },
+          "rawPointCount": 2012,
+          "pointCount": 192,
+          "accepted": true,
+          "trackKm": 3442.5619607746066,
+          "estimatedTrackKm": 3442.5619607746066,
+          "observedTrackKm": 1465.3284000471015,
+          "flightDurationMinutes": 234.15999999841054,
+          "telemetrySpanMinutes": 234.15999999841054,
+          "coveredMinutes": 99.67033333381018,
+          "coverage": 0.4256505523338176,
+          "maxGapMinutes": 79.72199999888738,
+          "meanGroundSpeedKnots": 476.29862112677034,
+          "speedIntervals": 40,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7bd1:2026-11-20T11:19:36Z",
+          "callsign": "VOZ476",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T11:19:36.540000Z",
+          "endTs": "2026-11-20T16:47:28.020000Z",
+          "startAirportIdent": "YBBN",
+          "endAirportIdent": "YPPH",
+          "startPoint": {
+            "lat": -27.364426,
+            "lon": 153.11744
+          },
+          "endPoint": {
+            "lat": -31.951675,
+            "lon": 115.961737
+          },
+          "rawPointCount": 1537,
+          "pointCount": 181,
+          "accepted": true,
+          "trackKm": 3526.970706000402,
+          "estimatedTrackKm": 3526.970706000402,
+          "observedTrackKm": 1104.0936495899327,
+          "flightDurationMinutes": 327.8580000003179,
+          "telemetrySpanMinutes": 327.8580000003179,
+          "coveredMinutes": 102.63366666237513,
+          "coverage": 0.3130430450447316,
+          "maxGapMinutes": 105.73650000095367,
+          "meanGroundSpeedKnots": 348.51890055306393,
+          "speedIntervals": 32,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6de2:2026-11-20T15:24:42Z",
+          "callsign": "QFA942",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T15:24:42.030000Z",
+          "endTs": "2026-11-20T19:21:08.910000Z",
+          "startAirportIdent": "YPPH",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -31.933206,
+            "lon": 115.967195
+          },
+          "endPoint": {
+            "lat": -27.361636,
+            "lon": 153.119043
+          },
+          "rawPointCount": 1645,
+          "pointCount": 260,
+          "accepted": true,
+          "trackKm": 3416.6447668968563,
+          "estimatedTrackKm": 3416.6447668968563,
+          "observedTrackKm": 1430.0827564789306,
+          "flightDurationMinutes": 236.44800000190736,
+          "telemetrySpanMinutes": 236.44800000190736,
+          "coveredMinutes": 98.9684999982516,
+          "coverage": 0.4185634896360014,
+          "maxGapMinutes": 84.21466666857401,
+          "meanGroundSpeedKnots": 468.1385979655071,
+          "speedIntervals": 37,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YMML--YPAD",
+      "directionListed": "YMML-YPAD",
+      "split": "train",
+      "airportA": {
+        "ident": "YMML",
+        "iataCode": "MEL",
+        "name": "MELBOURNE",
+        "lat": -37.669722222222,
+        "lon": 144.83805555556,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YPAD",
+        "iataCode": "ADL",
+        "name": "ADELAIDE",
+        "lat": -34.948888888889,
+        "lon": 138.53111111111,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 682.991167841442,
+      "medianObservedTrackKm": 682.991167841442,
+      "p10TrackKm": 679.76435211062,
+      "p90TrackKm": 733.0905448217039,
+      "medianDurationMinutes": 62.83683333396912,
+      "medianTelemetrySpanMinutes": 62.83683333396912,
+      "medianTelemetryCoverage": 1,
+      "medianMaxGapMinutes": 0,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 11
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "7c6d9e:2026-11-20T21:17:33Z",
+          "callsign": "QFA674",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T21:17:33.040000Z",
+          "endTs": "2026-11-20T22:19:17.760000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YMML",
+          "startPoint": {
+            "lat": -34.953562,
+            "lon": 138.524437
+          },
+          "endPoint": {
+            "lat": -37.661728,
+            "lon": 144.838841
+          },
+          "rawPointCount": 1014,
+          "pointCount": 120,
+          "accepted": true,
+          "trackKm": 735.4233404817713,
+          "estimatedTrackKm": 735.4233404817713,
+          "observedTrackKm": 735.4233404817713,
+          "flightDurationMinutes": 61.74533333381017,
+          "telemetrySpanMinutes": 61.74533333381017,
+          "coveredMinutes": 61.74533333381017,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 385.8722413560871,
+          "speedIntervals": 33,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6d93:2026-11-20T21:20:10Z",
+          "callsign": "QFA675",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T21:20:10.860000Z",
+          "endTs": "2026-11-20T22:23:01.070000Z",
+          "startAirportIdent": "YMML",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -37.661041,
+            "lon": 144.826686
+          },
+          "endPoint": {
+            "lat": -34.944949,
+            "lon": 138.536911
+          },
+          "rawPointCount": 1062,
+          "pointCount": 98,
+          "accepted": true,
+          "trackKm": 681.119654978103,
+          "estimatedTrackKm": 681.119654978103,
+          "observedTrackKm": 681.119654978103,
+          "flightDurationMinutes": 62.83683333396912,
+          "telemetrySpanMinutes": 62.83683333396912,
+          "coveredMinutes": 62.83683333396912,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 351.17160317564117,
+          "speedIntervals": 33,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7ab2:2026-11-20T21:51:02Z",
+          "callsign": "VOZ9903",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA INTERNATIONAL AIRLINES PTY LTD",
+          "startTs": "2026-11-20T21:51:02.700000Z",
+          "endTs": "2026-11-20T22:54:57.040000Z",
+          "startAirportIdent": "YMML",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -37.661224,
+            "lon": 144.830076
+          },
+          "endPoint": {
+            "lat": -34.94467,
+            "lon": 138.537369
+          },
+          "rawPointCount": 1119,
+          "pointCount": 99,
+          "accepted": true,
+          "trackKm": 678.8608168656315,
+          "estimatedTrackKm": 678.8608168656315,
+          "observedTrackKm": 678.8608168656315,
+          "flightDurationMinutes": 63.905666665236154,
+          "telemetrySpanMinutes": 63.905666665236154,
+          "coveredMinutes": 63.905666665236154,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 344.1530641590278,
+          "speedIntervals": 34,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7aac:2026-11-20T22:24:44Z",
+          "callsign": "VOZ212",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA INTERNATIONAL AIRLINES PTY LTD",
+          "startTs": "2026-11-20T22:24:44.010000Z",
+          "endTs": "2026-11-20T23:21:27.220000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YMML",
+          "startPoint": {
+            "lat": -34.953323,
+            "lon": 138.524706
+          },
+          "endPoint": {
+            "lat": -37.677979,
+            "lon": 144.839542
+          },
+          "rawPointCount": 1079,
+          "pointCount": 120,
+          "accepted": true,
+          "trackKm": 729.5913513316027,
+          "estimatedTrackKm": 729.5913513316027,
+          "observedTrackKm": 729.5913513316027,
+          "flightDurationMinutes": 56.72016666730245,
+          "telemetrySpanMinutes": 56.72016666730245,
+          "coveredMinutes": 56.72016666730245,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 416.72777466049325,
+          "speedIntervals": 31,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c56b7:2026-11-20T22:27:13Z",
+          "callsign": "VOZ217",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T22:27:13.470000Z",
+          "endTs": "2026-11-20T23:33:06.510000Z",
+          "startAirportIdent": "YMML",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -37.659988,
+            "lon": 144.836212
+          },
+          "endPoint": {
+            "lat": -34.945322,
+            "lon": 138.536396
+          },
+          "rawPointCount": 1206,
+          "pointCount": 96,
+          "accepted": true,
+          "trackKm": 682.991167841442,
+          "estimatedTrackKm": 682.991167841442,
+          "observedTrackKm": 682.991167841442,
+          "flightDurationMinutes": 65.88399999936422,
+          "telemetrySpanMinutes": 65.88399999936422,
+          "coveredMinutes": 65.88399999936422,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 335.85003440566635,
+          "speedIntervals": 41,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YPAD--YSSY",
+      "directionListed": "YSSY-YPAD",
+      "split": "train",
+      "airportA": {
+        "ident": "YSSY",
+        "iataCode": "SYD",
+        "name": "SYDNEY KINGSFORD SMITH",
+        "lat": -33.946666666667,
+        "lon": 151.17611111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YPAD",
+        "iataCode": "ADL",
+        "name": "ADELAIDE",
+        "lat": -34.948888888889,
+        "lon": 138.53111111111,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 1243.1338923411472,
+      "medianObservedTrackKm": 1072.679377444003,
+      "p10TrackKm": 1204.7619946094144,
+      "p90TrackKm": 1252.2537282486016,
+      "medianDurationMinutes": 104.56499999761581,
+      "medianTelemetrySpanMinutes": 104.56499999761581,
+      "medianTelemetryCoverage": 0.9075157005631801,
+      "medianMaxGapMinutes": 0,
+      "telemetryDiagnostics": {
+        "low-telemetry-coverage": 1
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "7c6b3b:2026-11-20T20:08:00Z",
+          "callsign": "JST760",
+          "icaoType": "A320",
+          "operator": "JETSTAR AIRWAYS PTY LIMITED",
+          "startTs": "2026-11-20T20:08:00.450000Z",
+          "endTs": "2026-11-20T21:52:34.350000Z",
+          "startAirportIdent": "YSSY",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -33.949951,
+            "lon": 151.17692
+          },
+          "endPoint": {
+            "lat": -34.943134,
+            "lon": 138.539543
+          },
+          "rawPointCount": 1802,
+          "pointCount": 404,
+          "accepted": true,
+          "trackKm": 1245.4493512149036,
+          "estimatedTrackKm": 1245.4493512149036,
+          "observedTrackKm": 465.3080087137814,
+          "flightDurationMinutes": 104.56499999761581,
+          "telemetrySpanMinutes": 104.56499999761581,
+          "coveredMinutes": 39.066166667143506,
+          "coverage": 0.3736065286475805,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 385.87798052694734,
+          "speedIntervals": 25,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7a38:2026-11-20T20:30:34Z",
+          "callsign": "VOZ404",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T20:30:34.040000Z",
+          "endTs": "2026-11-20T22:19:33.420000Z",
+          "startAirportIdent": "YSSY",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -33.942261,
+            "lon": 151.174965
+          },
+          "endPoint": {
+            "lat": -34.945175,
+            "lon": 138.536645
+          },
+          "rawPointCount": 1593,
+          "pointCount": 170,
+          "accepted": true,
+          "trackKm": 1238.9118965224595,
+          "estimatedTrackKm": 1238.9118965224595,
+          "observedTrackKm": 473.13302253477343,
+          "flightDurationMinutes": 108.98966666857402,
+          "telemetrySpanMinutes": 108.98966666857402,
+          "coveredMinutes": 41.622500002384186,
+          "coverage": 0.38189400219888536,
+          "maxGapMinutes": 3.986999996503194,
+          "meanGroundSpeedKnots": 368.2691733210461,
+          "speedIntervals": 20,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c68b8:2026-11-20T21:13:08Z",
+          "callsign": "QLK1993",
+          "icaoType": "E190",
+          "operator": "ALLIANCE AIRLINES PTY LIMITED",
+          "startTs": "2026-11-20T21:13:08.570000Z",
+          "endTs": "2026-11-20T23:04:09.160000Z",
+          "startAirportIdent": "YSSY",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -33.962585,
+            "lon": 151.180227
+          },
+          "endPoint": {
+            "lat": -34.951141,
+            "lon": 138.527927
+          },
+          "rawPointCount": 1259,
+          "pointCount": 137,
+          "accepted": true,
+          "trackKm": 1181.995393334051,
+          "estimatedTrackKm": 1181.995393334051,
+          "observedTrackKm": 1072.679377444003,
+          "flightDurationMinutes": 111.00983333587646,
+          "telemetrySpanMinutes": 111.00983333587646,
+          "coveredMinutes": 100.7431666692098,
+          "coverage": 0.9075157005631801,
+          "maxGapMinutes": 7.166999999682108,
+          "meanGroundSpeedKnots": 344.956713349707,
+          "speedIntervals": 45,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c4a55:2026-11-20T21:21:40Z",
+          "callsign": "JST759",
+          "icaoType": "B190",
+          "operator": "JETSTAR AIRWAYS PTY LIMITED",
+          "startTs": "2026-11-20T21:21:40.370000Z",
+          "endTs": "2026-11-20T22:50:58.420000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -34.943756,
+            "lon": 138.538663
+          },
+          "endPoint": {
+            "lat": -33.953992,
+            "lon": 151.177998
+          },
+          "rawPointCount": 904,
+          "pointCount": 141,
+          "accepted": true,
+          "trackKm": 1256.7899796044005,
+          "estimatedTrackKm": 1256.7899796044005,
+          "observedTrackKm": 1256.7899796044005,
+          "flightDurationMinutes": 89.30083333651224,
+          "telemetrySpanMinutes": 89.30083333651224,
+          "coveredMinutes": 89.30083333651224,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 455.95025800834037,
+          "speedIntervals": 37,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c77f8:2026-11-20T22:28:14Z",
+          "callsign": "QFA736",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T22:28:14.470000Z",
+          "endTs": "2026-11-20T23:57:36.510000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -34.953981,
+            "lon": 138.523865
+          },
+          "endPoint": {
+            "lat": -33.956955,
+            "lon": 151.178769
+          },
+          "rawPointCount": 1249,
+          "pointCount": 160,
+          "accepted": true,
+          "trackKm": 1243.1338923411472,
+          "estimatedTrackKm": 1243.1338923411472,
+          "observedTrackKm": 1243.1338923411472,
+          "flightDurationMinutes": 89.36733333269756,
+          "telemetrySpanMinutes": 89.36733333269756,
+          "coveredMinutes": 89.36733333269756,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 450.6603773956893,
+          "speedIntervals": 35,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YPAD--YPPH",
+      "directionListed": "YPAD-YPPH",
+      "split": "train",
+      "airportA": {
+        "ident": "YPAD",
+        "iataCode": "ADL",
+        "name": "ADELAIDE",
+        "lat": -34.948888888889,
+        "lon": 138.53111111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YPPH",
+        "iataCode": "PER",
+        "name": "PERTH",
+        "lat": -31.943333333333,
+        "lon": 115.96416666667,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 1963.242923372012,
+      "medianObservedTrackKm": 639.9374100071788,
+      "p10TrackKm": 1907.6224095066718,
+      "p90TrackKm": 2062.5653828928635,
+      "medianDurationMinutes": 190.98349999984106,
+      "medianTelemetrySpanMinutes": 190.98349999984106,
+      "medianTelemetryCoverage": 0.326581372173297,
+      "medianMaxGapMinutes": 115.74833333492279,
+      "telemetryDiagnostics": {
+        "low-telemetry-coverage": 5
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "7c6de9:2026-11-20T06:35:06Z",
+          "callsign": "QFA886",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T06:35:06.660000Z",
+          "endTs": "2026-11-20T08:48:35.500000Z",
+          "startAirportIdent": "YPPH",
+          "endAirportIdent": "YPAD",
+          "startPoint": {
+            "lat": -31.932973,
+            "lon": 115.967252
+          },
+          "endPoint": {
+            "lat": -34.944946,
+            "lon": 138.536925
+          },
+          "rawPointCount": 1237,
+          "pointCount": 124,
+          "accepted": true,
+          "trackKm": 1883.2773996308501,
+          "estimatedTrackKm": 1883.2773996308501,
+          "observedTrackKm": 827.0548884928642,
+          "flightDurationMinutes": 133.48066666523616,
+          "telemetrySpanMinutes": 133.48066666523616,
+          "coveredMinutes": 58.61899999777476,
+          "coverage": 0.43915723124749384,
+          "maxGapMinutes": 74.86166666746139,
+          "meanGroundSpeedKnots": 457.0947104761144,
+          "speedIntervals": 37,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7caf17:2026-11-20T07:55:22Z",
+          "callsign": "VOZ721",
+          "icaoType": "B38M",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T07:55:22.840000Z",
+          "endTs": "2026-11-20T11:06:21.850000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YPPH",
+          "startPoint": {
+            "lat": -34.943573,
+            "lon": 138.538943
+          },
+          "endPoint": {
+            "lat": -31.945496,
+            "lon": 115.963552
+          },
+          "rawPointCount": 846,
+          "pointCount": 81,
+          "accepted": true,
+          "trackKm": 1988.2881486490319,
+          "estimatedTrackKm": 1988.2881486490319,
+          "observedTrackKm": 629.8073764402252,
+          "flightDurationMinutes": 190.98349999984106,
+          "telemetrySpanMinutes": 190.98349999984106,
+          "coveredMinutes": 60.49566666682561,
+          "coverage": 0.3167586030566827,
+          "maxGapMinutes": 130.48783333301543,
+          "meanGroundSpeedKnots": 337.28244997949764,
+          "speedIntervals": 31,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6de9:2026-11-20T09:59:54Z",
+          "callsign": "QFA891",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T09:59:54.640000Z",
+          "endTs": "2026-11-20T13:07:03.970000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YPPH",
+          "startPoint": {
+            "lat": -34.954167,
+            "lon": 138.523579
+          },
+          "endPoint": {
+            "lat": -31.95076,
+            "lon": 115.962012
+          },
+          "rawPointCount": 905,
+          "pointCount": 77,
+          "accepted": true,
+          "trackKm": 1944.1399243204044,
+          "estimatedTrackKm": 1944.1399243204044,
+          "observedTrackKm": 634.9198841814475,
+          "flightDurationMinutes": 187.15549999872843,
+          "telemetrySpanMinutes": 187.15549999872843,
+          "coveredMinutes": 61.12149999936422,
+          "coverage": 0.326581372173297,
+          "maxGapMinutes": 126.03399999936421,
+          "meanGroundSpeedKnots": 336.5388393118546,
+          "speedIntervals": 29,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7aab:2026-11-20T12:08:37Z",
+          "callsign": "VOZ723",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA INTERNATIONAL AIRLINES PTY LTD",
+          "startTs": "2026-11-20T12:08:37.760000Z",
+          "endTs": "2026-11-20T15:31:22.620000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YPPH",
+          "startPoint": {
+            "lat": -34.954376,
+            "lon": 138.523192
+          },
+          "endPoint": {
+            "lat": -31.949872,
+            "lon": 115.962263
+          },
+          "rawPointCount": 960,
+          "pointCount": 94,
+          "accepted": true,
+          "trackKm": 1963.242923372012,
+          "estimatedTrackKm": 1963.242923372012,
+          "observedTrackKm": 639.9374100071788,
+          "flightDurationMinutes": 202.74766666491826,
+          "telemetrySpanMinutes": 202.74766666491826,
+          "coveredMinutes": 66.08749999602635,
+          "coverage": 0.3259593616199262,
+          "maxGapMinutes": 115.74833333492279,
+          "meanGroundSpeedKnots": 313.7100586404271,
+          "speedIntervals": 26,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6db1:2026-11-20T20:12:10Z",
+          "callsign": "QFA883",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T20:12:10.680000Z",
+          "endTs": "2026-11-20T23:27:12.390000Z",
+          "startAirportIdent": "YPAD",
+          "endAirportIdent": "YPPH",
+          "startPoint": {
+            "lat": -34.95488,
+            "lon": 138.522463
+          },
+          "endPoint": {
+            "lat": -31.934097,
+            "lon": 115.972559
+          },
+          "rawPointCount": 1068,
+          "pointCount": 132,
+          "accepted": true,
+          "trackKm": 2112.0835390554175,
+          "estimatedTrackKm": 2112.0835390554175,
+          "observedTrackKm": 805.8153963310474,
+          "flightDurationMinutes": 195.02850000063577,
+          "telemetrySpanMinutes": 195.02850000063577,
+          "coveredMinutes": 74.4085000038147,
+          "coverage": 0.38152628976571185,
+          "maxGapMinutes": 104.78133333126704,
+          "meanGroundSpeedKnots": 350.8514529033748,
+          "speedIntervals": 28,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YPDN--YSSY",
+      "directionListed": "YSSY-YPDN",
+      "split": "train",
+      "airportA": {
+        "ident": "YSSY",
+        "iataCode": "SYD",
+        "name": "SYDNEY KINGSFORD SMITH",
+        "lat": -33.946666666667,
+        "lon": 151.17611111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YPDN",
+        "iataCode": "DRW",
+        "name": "DARWIN",
+        "lat": -12.414166666667,
+        "lon": 130.87916666667,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 2848.996976602242,
+      "medianObservedTrackKm": 1037.6751729980265,
+      "p10TrackKm": 2798.414983849149,
+      "p90TrackKm": 3355.354501476144,
+      "medianDurationMinutes": 246.63916666905087,
+      "medianTelemetrySpanMinutes": 246.63916666905087,
+      "medianTelemetryCoverage": 0.3647167813776577,
+      "medianMaxGapMinutes": 158.37099999984105,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 255,
+        "low-telemetry-coverage": 15,
+        "too-few-speed-intervals": 1,
+        "flight-too-short": 1
+      },
+      "pagesScanned": 16,
+      "candidatesSeen": 23,
+      "observations": [
+        {
+          "flightId": "7c6ddd:2026-08-06T06:30:42Z",
+          "callsign": "QFA6036",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-08-06T06:30:42.570000Z",
+          "endTs": "2026-08-06T10:37:20.920000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -12.406264,
+            "lon": 130.85613
+          },
+          "endPoint": {
+            "lat": -33.956955,
+            "lon": 151.178713
+          },
+          "rawPointCount": 899,
+          "pointCount": 148,
+          "accepted": true,
+          "trackKm": 3057.999141620123,
+          "estimatedTrackKm": 3057.999141620123,
+          "observedTrackKm": 1068.168677129239,
+          "flightDurationMinutes": 246.63916666905087,
+          "telemetrySpanMinutes": 246.63916666905087,
+          "coveredMinutes": 86.15183333555858,
+          "coverage": 0.34930313177371436,
+          "maxGapMinutes": 160.48733333349227,
+          "meanGroundSpeedKnots": 401.68497091019674,
+          "speedIntervals": 38,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6ddb:2026-09-14T16:18:11Z",
+          "callsign": "QFA843",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-09-14T16:18:11.910000Z",
+          "endTs": "2026-09-14T20:03:02.610000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -12.42293,
+            "lon": 130.905424
+          },
+          "endPoint": {
+            "lat": -33.959244,
+            "lon": 151.190821
+          },
+          "rawPointCount": 956,
+          "pointCount": 106,
+          "accepted": true,
+          "trackKm": 2848.996976602242,
+          "estimatedTrackKm": 2848.996976602242,
+          "observedTrackKm": 981.2838719473883,
+          "flightDurationMinutes": 224.8449999968211,
+          "telemetrySpanMinutes": 224.8449999968211,
+          "coveredMinutes": 77.44366666475932,
+          "coverage": 0.34443134899977423,
+          "maxGapMinutes": 147.40133333206177,
+          "meanGroundSpeedKnots": 410.5055395217816,
+          "speedIntervals": 40,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6b1b:2026-09-17T16:00:08Z",
+          "callsign": "JST671",
+          "icaoType": "A320",
+          "operator": "JETSTAR AIRWAYS PTY LIMITED",
+          "startTs": "2026-09-17T16:00:08.080000Z",
+          "endTs": "2026-09-17T20:09:58.880000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -12.420975,
+            "lon": 130.899642
+          },
+          "endPoint": {
+            "lat": -33.964792,
+            "lon": 151.192245
+          },
+          "rawPointCount": 1416,
+          "pointCount": 474,
+          "accepted": true,
+          "trackKm": 2767.256071875196,
+          "estimatedTrackKm": 2767.256071875196,
+          "observedTrackKm": 1013.1677856479204,
+          "flightDurationMinutes": 249.84666666984558,
+          "telemetrySpanMinutes": 249.84666666984558,
+          "coveredMinutes": 91.47566667000453,
+          "coverage": 0.3661272247065159,
+          "maxGapMinutes": 158.37099999984105,
+          "meanGroundSpeedKnots": 358.8277793325894,
+          "speedIntervals": 42,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7891:2026-09-24T16:06:30Z",
+          "callsign": "JST671",
+          "icaoType": "A320",
+          "operator": null,
+          "startTs": "2026-09-24T16:06:30.760000Z",
+          "endTs": "2026-09-24T20:04:42.370000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -12.41902,
+            "lon": 130.893763
+          },
+          "endPoint": {
+            "lat": -33.967026,
+            "lon": 151.192839
+          },
+          "rawPointCount": 1424,
+          "pointCount": 483,
+          "accepted": true,
+          "trackKm": 2845.1533518100787,
+          "estimatedTrackKm": 2845.1533518100787,
+          "observedTrackKm": 1037.6751729980265,
+          "flightDurationMinutes": 238.1934999982516,
+          "telemetrySpanMinutes": 238.1934999982516,
+          "coveredMinutes": 86.87316666444143,
+          "coverage": 0.3647167813776577,
+          "maxGapMinutes": 151.32033333381017,
+          "meanGroundSpeedKnots": 386.97779138288433,
+          "speedIntervals": 39,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6d90:2026-10-03T03:39:54Z",
+          "callsign": "QFA841",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-10-03T03:39:54.710000Z",
+          "endTs": "2026-10-03T08:58:48Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -12.406448,
+            "lon": 130.856402
+          },
+          "endPoint": {
+            "lat": -33.956506,
+            "lon": 151.178627
+          },
+          "rawPointCount": 3010,
+          "pointCount": 530,
+          "accepted": true,
+          "trackKm": 3553.5914080468247,
+          "estimatedTrackKm": 3553.5914080468247,
+          "observedTrackKm": 1550.2063779749656,
+          "flightDurationMinutes": 318.8881666660309,
+          "telemetrySpanMinutes": 318.8881666660309,
+          "coveredMinutes": 139.11066666444142,
+          "coverage": 0.4362365280557148,
+          "maxGapMinutes": 179.77750000158946,
+          "meanGroundSpeedKnots": 361.0267281230696,
+          "speedIntervals": 110,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YBBN--YPDN",
+      "directionListed": "YBBN-YPDN",
+      "split": "train",
+      "airportA": {
+        "ident": "YBBN",
+        "iataCode": "BNE",
+        "name": "BRISBANE",
+        "lat": -27.388888888889,
+        "lon": 153.12611111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YPDN",
+        "iataCode": "DRW",
+        "name": "DARWIN",
+        "lat": -12.414166666667,
+        "lon": 130.87916666667,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 2676.9264687442783,
+      "medianObservedTrackKm": 959.244428878586,
+      "p10TrackKm": 2622.8995184196547,
+      "p90TrackKm": 2811.4751094081807,
+      "medianDurationMinutes": 205.78650000095368,
+      "medianTelemetrySpanMinutes": 205.78650000095368,
+      "medianTelemetryCoverage": 0.35984594668034375,
+      "medianMaxGapMinutes": 124.65549999872843,
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 148,
+        "low-telemetry-coverage": 19,
+        "too-few-speed-intervals": 2
+      },
+      "pagesScanned": 11,
+      "candidatesSeen": 26,
+      "observations": [
+        {
+          "flightId": "7c6b0e:2026-09-11T16:05:38Z",
+          "callsign": "JST673",
+          "icaoType": "A320",
+          "operator": "JETSTAR AIRWAYS PTY LIMITED",
+          "startTs": "2026-09-11T16:05:38.050000Z",
+          "endTs": "2026-09-11T19:13:46.800000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -12.421417,
+            "lon": 130.900916
+          },
+          "endPoint": {
+            "lat": -27.357559,
+            "lon": 153.121378
+          },
+          "rawPointCount": 1016,
+          "pointCount": 325,
+          "accepted": true,
+          "trackKm": 2594.3601415602716,
+          "estimatedTrackKm": 2594.3601415602716,
+          "observedTrackKm": 857.7435521978189,
+          "flightDurationMinutes": 188.14583333333334,
+          "telemetrySpanMinutes": 188.14583333333334,
+          "coveredMinutes": 62.20449999570847,
+          "coverage": 0.3306185361304403,
+          "maxGapMinutes": 119.56050000190734,
+          "meanGroundSpeedKnots": 446.73083136568374,
+          "speedIntervals": 31,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6d2f:2026-09-20T05:13:01Z",
+          "callsign": "VOZ454",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-09-20T05:13:01.860000Z",
+          "endTs": "2026-09-20T08:47:02.440000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -12.422974,
+            "lon": 130.905651
+          },
+          "endPoint": {
+            "lat": -27.375275,
+            "lon": 153.111273
+          },
+          "rawPointCount": 872,
+          "pointCount": 100,
+          "accepted": true,
+          "trackKm": 2665.708583708729,
+          "estimatedTrackKm": 2665.708583708729,
+          "observedTrackKm": 959.244428878586,
+          "flightDurationMinutes": 214.00966666936876,
+          "telemetrySpanMinutes": 207.9366666674614,
+          "coveredMinutes": 74.82516666650773,
+          "coverage": 0.35984594668034375,
+          "maxGapMinutes": 1.0706666668256124,
+          "meanGroundSpeedKnots": 415.328621605461,
+          "speedIntervals": 18,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c788b:2026-09-20T15:38:58Z",
+          "callsign": "JST673",
+          "icaoType": "A20N",
+          "operator": null,
+          "startTs": "2026-09-20T15:38:58.210000Z",
+          "endTs": "2026-09-20T19:04:45.400000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -12.420822,
+            "lon": 130.899306
+          },
+          "endPoint": {
+            "lat": -27.3574,
+            "lon": 153.121473
+          },
+          "rawPointCount": 1410,
+          "pointCount": 461,
+          "accepted": true,
+          "trackKm": 2676.9264687442783,
+          "estimatedTrackKm": 2676.9264687442783,
+          "observedTrackKm": 984.9710701946096,
+          "flightDurationMinutes": 205.78650000095368,
+          "telemetrySpanMinutes": 205.78650000095368,
+          "coveredMinutes": 75.71883333524069,
+          "coverage": 0.3679484967910421,
+          "maxGapMinutes": 124.65549999872843,
+          "meanGroundSpeedKnots": 421.43425126793437,
+          "speedIntervals": 28,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c6d95:2026-09-25T15:47:30Z",
+          "callsign": "QFA827",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-09-25T15:47:30Z",
+          "endTs": "2026-09-25T19:11:02.250000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -12.403285,
+            "lon": 130.84765
+          },
+          "endPoint": {
+            "lat": -27.394638,
+            "lon": 153.122881
+          },
+          "rawPointCount": 774,
+          "pointCount": 127,
+          "accepted": true,
+          "trackKm": 2792.13633151726,
+          "estimatedTrackKm": 2792.13633151726,
+          "observedTrackKm": 1068.0960324315502,
+          "flightDurationMinutes": 203.5375,
+          "telemetrySpanMinutes": 203.5375,
+          "coveredMinutes": 77.86066666841506,
+          "coverage": 0.38253720650206996,
+          "maxGapMinutes": 125.67683333158493,
+          "meanGroundSpeedKnots": 444.4290634537567,
+          "speedIntervals": 28,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c2a68:2026-11-04T14:28:44Z",
+          "callsign": "RON356",
+          "icaoType": "B737",
+          "operator": "NAURU AIR CORPORATION",
+          "startTs": "2026-11-04T14:28:44.720000Z",
+          "endTs": "2026-11-04T18:04:36.060000Z",
+          "startAirportIdent": "YPDN",
+          "endAirportIdent": "YBBN",
+          "startPoint": {
+            "lat": -12.408829,
+            "lon": 130.863032
+          },
+          "endPoint": {
+            "lat": -27.363359,
+            "lon": 153.11804
+          },
+          "rawPointCount": 894,
+          "pointCount": 116,
+          "accepted": true,
+          "trackKm": 2824.3676280021277,
+          "estimatedTrackKm": 2824.3676280021277,
+          "observedTrackKm": 867.7718596302204,
+          "flightDurationMinutes": 215.85566666523616,
+          "telemetrySpanMinutes": 215.85566666523616,
+          "coveredMinutes": 66.32050000031789,
+          "coverage": 0.30724465576885823,
+          "maxGapMinutes": 146.32983333269755,
+          "meanGroundSpeedKnots": 423.9045116841852,
+          "speedIntervals": 32,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "YBCG--YSSY",
+      "directionListed": "YSSY-YBCG",
+      "split": "train",
+      "airportA": {
+        "ident": "YSSY",
+        "iataCode": "SYD",
+        "name": "SYDNEY KINGSFORD SMITH",
+        "lat": -33.946666666667,
+        "lon": 151.17611111111,
+        "country": "AU"
+      },
+      "airportB": {
+        "ident": "YBCG",
+        "iataCode": "OOL",
+        "name": "GOLD COAST",
+        "lat": -28.166388888889,
+        "lon": 153.50694444444,
+        "country": "AU"
+      },
+      "sampleCount": 5,
+      "medianTrackKm": 701.1541073892322,
+      "medianObservedTrackKm": 699.1919185435823,
+      "p10TrackKm": 698.1767416499715,
+      "p90TrackKm": 802.2617512069598,
+      "medianDurationMinutes": 60.51983333428701,
+      "medianTelemetrySpanMinutes": 60.51983333428701,
+      "medianTelemetryCoverage": 1,
+      "medianMaxGapMinutes": 0,
+      "telemetryDiagnostics": {
+        "low-telemetry-coverage": 1
+      },
+      "pagesScanned": 1,
+      "candidatesSeen": 40,
+      "observations": [
+        {
+          "flightId": "7c7ab5:2026-11-20T21:24:43Z",
+          "callsign": "VOZ504",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA INTERNATIONAL AIRLINES PTY LTD",
+          "startTs": "2026-11-20T21:24:43.640000Z",
+          "endTs": "2026-11-20T22:34:10.630000Z",
+          "startAirportIdent": "YBCG",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -28.160019,
+            "lon": 153.502984
+          },
+          "endPoint": {
+            "lat": -33.963684,
+            "lon": 151.191942
+          },
+          "rawPointCount": 1447,
+          "pointCount": 135,
+          "accepted": true,
+          "trackKm": 803.9069308632031,
+          "estimatedTrackKm": 803.9069308632031,
+          "observedTrackKm": 803.9069308632031,
+          "flightDurationMinutes": 69.44983333349228,
+          "telemetrySpanMinutes": 69.44983333349228,
+          "coveredMinutes": 69.44983333349228,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 375.01171348855905,
+          "speedIntervals": 37,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c2bc6:2026-11-20T21:34:29Z",
+          "callsign": "VOZ509",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T21:34:29.340000Z",
+          "endTs": "2026-11-20T22:34:40.790000Z",
+          "startAirportIdent": "YSSY",
+          "endAirportIdent": "YBCG",
+          "startPoint": {
+            "lat": -33.956589,
+            "lon": 151.19026
+          },
+          "endPoint": {
+            "lat": -28.173615,
+            "lon": 153.511699
+          },
+          "rawPointCount": 1387,
+          "pointCount": 188,
+          "accepted": true,
+          "trackKm": 697.499957054231,
+          "estimatedTrackKm": 697.499957054231,
+          "observedTrackKm": 697.499957054231,
+          "flightDurationMinutes": 60.190833334128065,
+          "telemetrySpanMinutes": 60.190833334128065,
+          "coveredMinutes": 60.190833334128065,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 375.4257846514623,
+          "speedIntervals": 30,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7a3d:2026-11-20T22:28:39Z",
+          "callsign": "VOZ511",
+          "icaoType": "B738",
+          "operator": "VIRGIN AUSTRALIA AIRLINES PTY LTD",
+          "startTs": "2026-11-20T22:28:39.780000Z",
+          "endTs": "2026-11-20T23:28:26.770000Z",
+          "startAirportIdent": "YSSY",
+          "endAirportIdent": "YBCG",
+          "startPoint": {
+            "lat": -33.955353,
+            "lon": 151.189756
+          },
+          "endPoint": {
+            "lat": -28.167892,
+            "lon": 153.507896
+          },
+          "rawPointCount": 1402,
+          "pointCount": 103,
+          "accepted": true,
+          "trackKm": 701.1541073892322,
+          "estimatedTrackKm": 701.1541073892322,
+          "observedTrackKm": 701.1541073892322,
+          "flightDurationMinutes": 59.783166666825615,
+          "telemetrySpanMinutes": 59.783166666825615,
+          "coveredMinutes": 59.783166666825615,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 379.9660857702541,
+          "speedIntervals": 32,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7805:2026-11-20T22:30:24Z",
+          "callsign": "QFA592",
+          "icaoType": "B738",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T22:30:24.320000Z",
+          "endTs": "2026-11-20T23:30:55.510000Z",
+          "startAirportIdent": "YSSY",
+          "endAirportIdent": "YBCG",
+          "startPoint": {
+            "lat": -33.955109,
+            "lon": 151.189899
+          },
+          "endPoint": {
+            "lat": -28.169318,
+            "lon": 153.508839
+          },
+          "rawPointCount": 1583,
+          "pointCount": 221,
+          "accepted": true,
+          "trackKm": 699.1919185435823,
+          "estimatedTrackKm": 699.1919185435823,
+          "observedTrackKm": 699.1919185435823,
+          "flightDurationMinutes": 60.51983333428701,
+          "telemetrySpanMinutes": 60.51983333428701,
+          "coveredMinutes": 60.51983333428701,
+          "coverage": 1,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 374.2906209805891,
+          "speedIntervals": 35,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        },
+        {
+          "flightId": "7c7807:2026-11-20T22:44:58Z",
+          "callsign": "QFA591",
+          "icaoType": "R22",
+          "operator": "QANTAS AIRWAYS LIMITED",
+          "startTs": "2026-11-20T22:44:58.440000Z",
+          "endTs": "2026-11-20T23:51:09.280000Z",
+          "startAirportIdent": "YBCG",
+          "endAirportIdent": "YSSY",
+          "startPoint": {
+            "lat": -28.164104,
+            "lon": 153.505823
+          },
+          "endPoint": {
+            "lat": -33.966614,
+            "lon": 151.192839
+          },
+          "rawPointCount": 1776,
+          "pointCount": 310,
+          "accepted": true,
+          "trackKm": 799.793981722595,
+          "estimatedTrackKm": 799.793981722595,
+          "observedTrackKm": 291.6858020989463,
+          "flightDurationMinutes": 66.18066666523616,
+          "telemetrySpanMinutes": 66.18066666523616,
+          "coveredMinutes": 24.13616666396459,
+          "coverage": 0.3647011715075848,
+          "maxGapMinutes": 0,
+          "meanGroundSpeedKnots": 391.52298417770874,
+          "speedIntervals": 18,
+          "distanceMethod": "observed-ground-speed-integral-expanded-by-measured-coverage"
+        }
+      ]
+    },
+    {
+      "routeId": "SCEL--SCFA",
+      "directionListed": "SCEL-SCFA",
+      "split": "train",
+      "airportA": {
+        "ident": "SCEL",
+        "iataCode": "SCL",
+        "name": "SANTIAGO INTERNACIONAL",
+        "lat": -33.3941,
+        "lon": -70.7935,
+        "country": "CL"
+      },
+      "airportB": {
+        "ident": "SCFA",
+        "iataCode": "ANF",
+        "name": "CERRO MORENO",
+        "lat": -23.4444,
+        "lon": -70.4449,
+        "country": "CL"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "medianObservedTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "medianTelemetrySpanMinutes": null,
+      "medianTelemetryCoverage": null,
+      "medianMaxGapMinutes": null,
+      "telemetryDiagnostics": {},
+      "pagesScanned": 16,
+      "candidatesSeen": 0,
+      "observations": []
+    },
+    {
+      "routeId": "SAAR--SCEL",
+      "directionListed": "SCEL-SAAR",
+      "split": "train",
+      "airportA": {
+        "ident": "SCEL",
+        "iataCode": "SCL",
+        "name": "SANTIAGO INTERNACIONAL",
+        "lat": -33.3941,
+        "lon": -70.7935,
+        "country": "CL"
+      },
+      "airportB": {
+        "ident": "SAAR",
+        "iataCode": "ROS",
+        "name": "ROSARIO / ISLAS MALVINAS",
+        "lat": -32.90408140080955,
+        "lon": -60.78477563217355,
+        "country": "AR"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "medianObservedTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "medianTelemetrySpanMinutes": null,
+      "medianTelemetryCoverage": null,
+      "medianMaxGapMinutes": null,
+      "telemetryDiagnostics": {},
+      "pagesScanned": 16,
+      "candidatesSeen": 0,
+      "observations": []
+    },
+    {
       "routeId": "YBBN--YSSY",
       "directionListed": "YSSY-YBBN",
-      "split": "train",
+      "split": "holdout",
       "airportA": {
         "ident": "YSSY",
         "iataCode": "SYD",
@@ -5764,8 +7414,8 @@
       "medianMaxGapMinutes": 141.06866666873296,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 2,
-        "too-few-speed-intervals": 2,
-        "low-telemetry-coverage": 21
+        "low-telemetry-coverage": 21,
+        "too-few-speed-intervals": 2
       },
       "pagesScanned": 1,
       "candidatesSeen": 33,
@@ -5963,8 +7613,8 @@
       "medianMaxGapMinutes": 192.96233333349227,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 15,
-        "low-telemetry-coverage": 17,
-        "too-few-speed-intervals": 1
+        "too-few-speed-intervals": 1,
+        "low-telemetry-coverage": 17
       },
       "pagesScanned": 4,
       "candidatesSeen": 23,
