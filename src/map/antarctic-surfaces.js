@@ -56,6 +56,13 @@ export function validateAntarcticAddDataset(data, { minimumFeatures = 1 } = {}) 
  * and antimeridian handling are delegated to the same ring projector used
  * for Natural Earth country boundaries.
  */
+function yieldToMainThread(){
+  return new Promise(resolve=>{
+    if(typeof globalThis.requestIdleCallback==='function')globalThis.requestIdleCallback(()=>resolve(),{timeout:80});
+    else setTimeout(resolve,0);
+  });
+}
+
 export function createAntarcticSurfacePaths(
   data, project, PathConstructor = globalThis.Path2D
 ) {
@@ -72,6 +79,35 @@ export function createAntarcticSurfacePaths(
     if (!SURFACE_SET.has(surface)) continue;
     const featurePath = createFeaturePath(feature, project, false, PathConstructor);
     paths[surface].addPath(featurePath);
+  }
+  return paths;
+}
+
+export async function createAntarcticSurfacePathsAsync(
+  data, project, PathConstructor = globalThis.Path2D,
+  { batchSize = 8, yieldControl = yieldToMainThread } = {}
+) {
+  if (typeof PathConstructor !== 'function') {
+    throw new Error('Path2D is required to build Antarctic surface geometry.');
+  }
+  if (!data || !Array.isArray(data.features) || typeof project !== 'function') return {};
+  if (!Number.isInteger(batchSize) || batchSize < 1) {
+    throw new Error('Antarctic surface batch size must be a positive integer.');
+  }
+
+  const paths = Object.fromEntries(ANTARCTIC_SURFACES.map(surface =>
+    [surface, new PathConstructor()]
+  ));
+  for (let index = 0; index < data.features.length; index++) {
+    const feature = data.features[index];
+    const surface = surfaceName(feature?.properties?.surface);
+    if (SURFACE_SET.has(surface)) {
+      const featurePath = createFeaturePath(feature, project, false, PathConstructor);
+      paths[surface].addPath(featurePath);
+    }
+    if ((index + 1) % batchSize === 0 && index + 1 < data.features.length) {
+      await yieldControl();
+    }
   }
   return paths;
 }
