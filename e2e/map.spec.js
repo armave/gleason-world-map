@@ -51,7 +51,7 @@ test('searches for a capital and shows its geographic details', async ({ page })
   await expect(page.locator('#selectionCoords')).not.toHaveText('—');
 });
 
-test('calculates both the ADS-B estimate and raw flat-disk chord', async ({ page }) => {
+test('shows the projected chord as primary and the ADS-B estimate as a separate reference', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
@@ -64,10 +64,10 @@ test('calculates both the ADS-B estimate and raw flat-disk chord', async ({ page
   await page.locator('#coordBLon').fill('-0.1276');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('.primary-distance-reading')).toContainText('ADS-B flight-mileage estimate');
-  await expect(page.locator('.secondary-distance-reading')).toContainText('Raw flat-disk chord');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Straight projected A–B distance');
+  await expect(page.locator('.secondary-distance-reading')).toContainText('ADS-B flight-mileage estimate');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
-  await expect(page.locator('#rawDistanceValue')).not.toHaveText('—');
+  await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
   await expect(page.locator('#calibrationRoutes')).toContainText('Nearest reference routes:');
 });
 
@@ -103,7 +103,7 @@ test('restores measurement endpoints and map orientation from a share URL', asyn
   await expect(page.locator('#endpointRows')).toContainText('Shared point A');
   await expect(page.locator('#endpointRows')).toContainText('Shared point B');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
-  await expect(page.locator('#rawDistanceValue')).not.toHaveText('—');
+  await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
 });
 
 test('opens the tools drawer on a narrow mobile viewport', async ({ page }) => {
