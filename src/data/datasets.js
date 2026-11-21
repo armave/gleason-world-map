@@ -122,40 +122,17 @@ export function validateCountyBoundaryDataset(data) {
 }
 
 export async function loadCountyBoundaryDataset() {
-  // Prefer the committed, locally served Census boundary bundle. The live service
-  // remains a fallback for developers who have not run the vendor command yet.
-  const localResponse = await fetch(COUNTY_BOUNDARY_DATA_FILE);
-  if (localResponse.ok) {
-    if (typeof DecompressionStream !== 'function') {
-      throw new Error('This browser does not support local county-boundary gzip decompression.');
-    }
-    if (!localResponse.body) throw new Error('The local county-boundary response has no data stream.');
-    const text = await new Response(localResponse.body.pipeThrough(new DecompressionStream('gzip'))).text();
-    let data;
-    try { data = JSON.parse(text); }
-    catch (error) { throw new Error(`The local county-boundary data is not valid JSON: ${error.message}`); }
-    return validateCountyBoundaryDataset(data);
-  }
-
-  const params = new URLSearchParams({
-    where: '1=1',
-    outFields: 'GEOID,STATE,BASENAME,NAME,INTPTLAT,INTPTLON',
-    returnGeometry: 'true',
-    outSR: '4326',
-    geometryPrecision: '5',
-    maxAllowableOffset: '0.002',
-    resultRecordCount: '10000',
-    f: 'geojson'
-  });
-  const response = await fetch(`${COUNTY_BOUNDARY_SERVICE_URL}/query?${params}`, {
-    headers: { Accept: 'application/geo+json, application/json' }
-  });
+  const response = await fetch(COUNTY_BOUNDARY_DATA_FILE);
   if (!response.ok) {
-    throw new Error(`Unable to load 2026 Census county polygons locally or remotely (HTTP ${response.status}).`);
+    throw new Error(`Unable to load the local 2026 Census county boundary bundle (HTTP ${response.status}). Run npm run vendor:county-boundaries and commit the generated asset.`);
   }
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('This browser does not support local county-boundary gzip decompression.');
+  }
+  if (!response.body) throw new Error('The local county-boundary response has no data stream.');
+  const text = await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text();
   let data;
-  try { data = await response.json(); }
-  catch (error) { throw new Error(`The Census county-boundary response is not valid JSON: ${error.message}`); }
-  if (data?.error) throw new Error(data.error.message || 'The Census county-boundary service returned an error.');
+  try { data = JSON.parse(text); }
+  catch (error) { throw new Error(`The local county-boundary data is not valid JSON: ${error.message}`); }
   return validateCountyBoundaryDataset(data);
 }
