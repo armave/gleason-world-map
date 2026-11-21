@@ -94,6 +94,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Curved ocean and sea labels that fade by scale and avoid land and other labels
 - White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
+- Smooth animated map rotation along the shortest angular path; geographic and measurement labels rotate with the disk
 - WGS84 shortest-surface A–B distance in metres and kilometres
 - A–B is always shown with a straight dashed line and a WGS84 km label between the projected endpoints
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
