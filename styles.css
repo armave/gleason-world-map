@@ -25,3 +25,48 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 @media(max-width:620px){header{padding:17px 15px 12px}.app{padding:9px;gap:10px}.app aside{display:flex}.map-top{align-items:flex-start;flex-direction:column}.map-actions{width:100%}.map-actions button{flex:1}canvas{height:66vh;min-height:440px}.map-legend{font-size:10px}}
 
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Narrow-screen layout: keep the map primary and make the control drawer opt-in. */
+.mobile-tools-toggle{display:none}
+@media(max-width:760px){
+  header{padding:14px 13px 10px}
+  .kicker{font-size:10px}
+  h1{font-size:clamp(22px,6vw,30px)}
+  .subtitle{font-size:12px;line-height:1.35}
+  .app{display:flex;flex-direction:column;gap:9px;padding:8px}
+  .map-card{width:100%;border-radius:10px}
+  .map-top{padding:8px;gap:8px}
+  .map-status-group{width:100%;justify-content:space-between}
+  .map-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+  .map-actions button{min-width:0;min-height:42px;padding:8px 5px;font-size:12px;white-space:normal}
+  .status{font-size:11px}
+  canvas{height:clamp(280px,calc(100dvh - 255px),620px);min-height:280px;max-height:72dvh}
+  .map-legend{padding:7px 9px;gap:5px;font-size:10px;line-height:1.35}
+  .mobile-tools-toggle{display:block;width:100%;min-height:44px;background:#294653;color:#fff;border-color:#294653;font-size:13px}
+  .app aside{display:none;position:static;width:100%;max-height:none;overflow:visible;padding:0;gap:9px}
+  body.mobile-tools-open .app aside{display:flex}
+  .panel{padding:12px}
+  .panel h2{font-size:12px}
+  .search-wrap input{min-height:44px;font-size:16px}
+  .suggestions{max-height:min(45dvh,360px)}
+  .suggestion{min-height:44px}
+  .layer-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .layer-list label{min-height:40px;font-size:12px}
+  .range-control input{min-height:24px}
+  .mode-row button,.endpoint-actions button,.history-actions button{min-height:44px}
+  .info-title{font-size:21px}
+  .measure-value{font-size:26px}
+  .footer{padding:0 10px 16px}
+}
+@media(max-width:380px){
+  .map-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .map-actions button{min-height:44px}
+  .map-legend{flex-direction:column}
+  .layer-list{grid-template-columns:1fr}
+}
+@media(max-width:760px) and (orientation:landscape){
+  canvas{height:clamp(220px,calc(100dvh - 200px),460px);min-height:220px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mobile-tools-toggle{transition:none}
+}

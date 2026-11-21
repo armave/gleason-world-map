@@ -326,6 +326,16 @@ async function load(){
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }
 $('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
+const mobileToolsToggle=$('mobileToolsToggle');
+const toolsPanel=$('toolsPanel');
+function setMobileToolsOpen(open){
+ document.body.classList.toggle('mobile-tools-open',open);
+ mobileToolsToggle.setAttribute('aria-expanded',String(open));
+ mobileToolsToggle.textContent=open?'Close map tools':'Open map tools';
+}
+mobileToolsToggle.addEventListener('click',()=>setMobileToolsOpen(!document.body.classList.contains('mobile-tools-open')));
+const mobileToolsQuery=window.matchMedia('(min-width: 761px)');
+mobileToolsQuery.addEventListener?.('change',event=>{if(event.matches)setMobileToolsOpen(false);});
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});$('search').addEventListener('keydown',e=>{if(e.key==='Escape')$('suggestions').classList.remove('open');if(e.key==='Enter'){const first=$('suggestions').querySelector('.suggestion');if(first)first.click();}});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
 $('exploreMode').addEventListener('click',()=>{mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{mode='area';areaFinished=false;setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('finishArea').addEventListener('click',finishArea);
