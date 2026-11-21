@@ -79,6 +79,22 @@
               <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
               <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
             </div>
+            <div class="coordinate-entry" aria-label="Enter endpoint coordinates">
+              <div class="coordinate-entry-row">
+                <strong>A</strong>
+                <label><span>Lat</span><input id="coordALat" type="number" min="-90" max="90" step="0.000001" inputmode="decimal" placeholder="Latitude" aria-label="A latitude"></label>
+                <label><span>Lon</span><input id="coordALon" type="number" min="-180" max="180" step="0.000001" inputmode="decimal" placeholder="Longitude" aria-label="A longitude"></label>
+                <button id="applyCoordsA" type="button">Set A</button>
+              </div>
+              <div class="coordinate-entry-row">
+                <strong>B</strong>
+                <label><span>Lat</span><input id="coordBLat" type="number" min="-90" max="90" step="0.000001" inputmode="decimal" placeholder="Latitude" aria-label="B latitude"></label>
+                <label><span>Lon</span><input id="coordBLon" type="number" min="-180" max="180" step="0.000001" inputmode="decimal" placeholder="Longitude" aria-label="B longitude"></label>
+                <button id="applyCoordsB" type="button">Set B</button>
+              </div>
+            </div>
+            <p class="calibration-support" id="calibrationSupport" aria-live="polite">Calibration support appears after both endpoints are set.</p>
+            <p class="calibration-routes" id="calibrationRoutes">Nearest reference routes: —</p>
             <div class="endpoint-actions"><button id="clearMeasure" type="button" disabled><span class="tool-icon" aria-hidden="true">×</span> Clear distance</button></div>
           </div>
           <div id="areaDetails" hidden>
