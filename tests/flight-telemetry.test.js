@@ -18,15 +18,15 @@ test('integrates ground speed over time and converts nautical miles to kilometre
 
 test('does not bridge gaps between separate telemetry subsequences', () => {
   const pathGs = [
-    [[0, 400], [600, 400]],
-    [[1800, 400], [2400, 400]]
+    [[0, 400], [500, 400], [1000, 400]],
+    [[2500, 400], [3000, 400]]
   ];
   const result = integrateGroundSpeedSeries(pathGs, 0, 3600);
   assert.equal(result.accepted, false);
   assert.equal(result.reason, 'low-telemetry-coverage');
   assert.equal(result.coveredMinutes, undefined);
-  assert.equal(result.intervalCount, 2);
-  assert.ok(Math.abs(result.coverage - 1 / 3) < 1e-12);
+  assert.equal(result.intervalCount, 3);
+  assert.ok(Math.abs(result.coverage - 1500 / 3600) < 1e-12);
 });
 
 test('clips speed intervals to the flight observation window', () => {
@@ -65,9 +65,9 @@ test('rejects missing series and invalid observation windows', () => {
 
 test('rejects short flights even when the telemetry series is complete', () => {
   const result = integrateGroundSpeedSeries(
-    [[[0, 400], [900, 400], [1800, 400], [2700, 400]]],
+    [[[0, 400], [600, 400], [1200, 400], [1800, 400]]],
     0,
-    2700
+    1800
   );
   assert.equal(result.accepted, false);
   assert.equal(result.reason, 'flight-too-short');
