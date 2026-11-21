@@ -54,7 +54,7 @@ test('ocean surface is blue, ocean and sea names are a toggleable shareable laye
  assert.match(app,/ctx\.fillStyle='#dcecf1'/);
  assert.match(app,/if\(layers\.oceanLabels\)\{/);
  assert.match(app,/selectNonOverlappingLabels,\s*isLand:/);
- assert.match(app,/layers\.oceanLabels\].map\(v=>v\?'1':'0'\)/);
+ assert.match(app,/layers\.oceanLabels,layers\.coastlines\].map\(v=>v\?'1':'0'\)/);
  assert.match(html,/id="layerOceanLabels" checked/);
  assert.match(html,/Ocean &amp; sea names|Ocean & sea names/);
  assert.match(oceanLabels,/NORTH PACIFIC OCEAN/);
