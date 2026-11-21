@@ -54,7 +54,9 @@ test('flight telemetry calibration fits a radial scale and endpoint residual mod
   assert.equal(result.model.trainingRouteCount, 12);
   assert.equal(result.model.holdoutRouteCount, 4);
   assert.equal(result.model.featureNames.length, 3);
-  assert.equal(result.model.coefficients.length, 4);
+  assert.equal(result.model.neighborCount, 3);
+  assert.equal(result.model.trainingExamples.length, 12);
+  assert.equal(result.model.inverseDistancePower, 2);
   assert.equal(result.metrics.training.routeCount, 12);
   assert.equal(result.metrics.holdout.routeCount, 4);
   assert.equal(result.metrics.leaveOneOut.routeCount, 12);
@@ -77,4 +79,12 @@ test('invalid endpoint coordinates cannot produce a unit-disk chord or predictio
   assert.equal(predictFlightCalibratedKm(
     { lat: 0, lon: Infinity }, airports[0], result.model
   ), null);
+});
+
+test('local route-neighbour estimate remains symmetric for swapped endpoints', () => {
+  const result = fitFlightCalibration(syntheticDataset());
+  const forward = predictFlightCalibratedKm(airports[0], airports[4], result.model);
+  const reverse = predictFlightCalibratedKm(airports[4], airports[0], result.model);
+  assert.ok(Number.isFinite(forward));
+  assert.equal(forward, reverse);
 });
