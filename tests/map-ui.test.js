@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+const iceWall = await readFile(new URL('../src/map/ice-wall.js', import.meta.url), 'utf8');
+const oceanLabels = await readFile(new URL('../src/map/ocean-labels.js', import.meta.url), 'utf8');
 
 test('map viewport starts with an accessible loading veil and retry control', () => {
   assert.match(html, /class="map-viewport" id="mapViewport" aria-busy="true"/);
@@ -45,4 +47,17 @@ test('capital labels grow in close-up views and collision boxes track their size
   assert.match(app, /top:sy-labelFontSize\/2,right:sx\+4\+tw,bottom:sy\+labelFontSize\/2/);
   assert.match(app, /item\.labelFontSize\/zoom/);
   assert.match(html, /Capital names \(from 2,500 km\)/);
+});
+
+test('ocean surface is blue, ocean and sea names are a toggleable shareable layer, and ice wall is white',()=>{
+ assert.match(app,/ctx\.fillStyle='#dcecf1'/);
+ assert.match(app,/if\(layers\.oceanLabels\)drawOceanLabels/);
+ assert.match(app,/layers\.oceanLabels\].map\(v=>v\?'1':'0'\)/);
+ assert.match(html,/id="layerOceanLabels" checked/);
+ assert.match(html,/Ocean &amp; sea names|Ocean & sea names/);
+ assert.match(oceanLabels,/NORTH PACIFIC OCEAN/);
+ assert.match(oceanLabels,/INDIAN OCEAN/);
+ assert.match(oceanLabels,/MEDITERRANEAN SEA/);
+ assert.match(oceanLabels,/SOUTH CHINA SEA/);
+ assert.match(iceWall,/ctx\.fillStyle='#ffffff'/);
 });
