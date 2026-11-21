@@ -6,7 +6,7 @@ import {createFeaturePath} from './map/feature-paths.js';
 import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration,renderDistortionPanel} from './ui/calibration.js';
-import {selectNonOverlappingLabels,CAPITAL_LABEL_MIN_ZOOM,COUNTRY_LABEL_MIN_ZOOM} from './map/labels.js';
+import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
 import {createMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
 
 (() => {
@@ -20,7 +20,7 @@ const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], pathRecords = [], antarcticaFeature = null, antarcticaPath = null, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
 let baseR = 300, width = 800, height = 650, dpr = 1;
-const MIN_ZOOM=1,MAX_ZOOM=20000;
+const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 let zoom = 1, panX = 0, panY = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [];
 let boundaryScaleLabel='Natural Earth 1:50m';
@@ -65,7 +65,7 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
 function drawIceWall(){renderIceWall(ctx,antarcticaPath,baseR,zoom);}
 function drawCapitals(){
  if(!layers.capitals)return;
- const labelOn=layers.capitalNames&&(zoom>=CAPITAL_LABEL_MIN_ZOOM||(selected&&selected.type==='capital')),candidates=[];
+ const labelOn=layers.capitalNames&&(shouldShowCapitalLabels(scaleBarReadingKm())||(selected&&selected.type==='capital')),candidates=[];
  for(const p of capitals){
   const [x,y]=project(p.lon,p.lat),active=selected&&selected.type==='capital'&&selected.capital===p;
   ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);
@@ -88,11 +88,14 @@ function drawCapitals(){
  }else labelCollisionBoxes=[];
 }
 function drawCountryLabels(){
- if(!layers.countryNames||zoom<COUNTRY_LABEL_MIN_ZOOM||!countries.length)return;
- const screenFontSize=Math.min(13,9.5+Math.max(0,zoom-COUNTRY_LABEL_MIN_ZOOM)*.65);
+ const showCountryLabels=shouldShowCountryLabels(scaleBarReadingKm());
+ const selectedCountry=selected&&selected.type==='country'?selected.country:null;
+ if(!layers.countryNames||(!showCountryLabels&&!selectedCountry)||!countries.length)return;
+ const screenFontSize=Math.min(13,9.5+Math.max(0,zoom-1)*.65);
  ctx.font=`600 ${screenFontSize/zoom}px Georgia,serif`;
  const candidates=[];
  for(const country of countries){
+  if(!showCountryLabels&&country!==selectedCountry)continue;
   const anchor=country.center;
   if(!anchor||!Number.isFinite(anchor.lat)||!Number.isFinite(anchor.lon))continue;
   const [x,y]=project(anchor.lon,anchor.lat);
@@ -191,9 +194,10 @@ function draw(){
 function updateViewReadout(){
  const readout=$('zoomReadout');if(!readout)return;
  readout.textContent=`${Math.round(zoom*100)}%`;
- const cap=layers.capitalNames?(zoom>=CAPITAL_LABEL_MIN_ZOOM?'capital names visible':'capital names at 125%'):'capital names off';
- const countryNames=!layers.countryNames?'country names off':(zoom>=COUNTRY_LABEL_MIN_ZOOM?'country names visible':'country names at 100%');
- readout.title=`Zoom ${Math.round(zoom*100)}% · ${cap} · ${countryNames}`;
+ const localScale=scaleBarReadingKm(),scaleText=Number.isFinite(localScale)?formatDistance(localScale*1000):'unavailable';
+ const cap=layers.capitalNames?(shouldShowCapitalLabels(localScale)?'capital names visible':`capital names at ${CAPITAL_LABEL_MAX_SCALE_KM.toLocaleString()} km`):'capital names off';
+ const countryNames=!layers.countryNames?'country names off':shouldShowCountryLabels(localScale)?'country names visible':localScale>COUNTRY_LABEL_MAX_SCALE_KM?`country names at ${COUNTRY_LABEL_MAX_SCALE_KM.toLocaleString()} km`:`country names hidden below ${COUNTRY_LABEL_MIN_SCALE_KM} km`;
+ readout.title=`Zoom ${Math.round(zoom*100)}% · local scale ${scaleText} · zoom-in limit ${MAX_SCALE_BAR_READING_KM} km · ${cap} · ${countryNames}`;
 }
 function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
@@ -214,13 +218,20 @@ function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
  if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The displayed value is surface distance; the dashed A–B connector is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
-function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
+function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){
  $('suggestions').classList.remove('open');
  $('search').value=item.type==='capital'?item.obj.city+', '+(item.obj.countryName||''):item.type==='county'?item.obj.name+', '+item.obj.stateCode:item.obj.name;
- if(item.type==='capital'){showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,CAPITAL_LABEL_MIN_ZOOM));}
+ if(item.type==='capital'){
+  const anchor=project(item.obj.lon,item.obj.lat),labelZoom=zoomForScaleBarDistance(CAPITAL_LABEL_MAX_SCALE_KM,{x:anchor[0],y:anchor[1]});
+  showCapital(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,labelZoom));
+ }
  else if(item.type==='county'){showCounty(item.obj);focusGeo(item.obj.lat,item.obj.lon,Math.max(zoom,3.2));}
- else{showCountry(item.obj);const center=item.obj.center;focusGeo(center.lat,center.lon,Math.max(zoom,1.25));}
+ else{
+  showCountry(item.obj);const center=item.obj.center,anchor=project(center.lon,center.lat);
+  const labelZoom=zoomForScaleBarDistance(COUNTRY_LABEL_MAX_SCALE_KM,{x:anchor[0],y:anchor[1]});
+  focusGeo(center.lat,center.lon,Math.max(zoom,labelZoom));
+ }
 }
 function assignSelection(idx){if(!selected)return;let p;if(selected.type==='capital')p=selected.capital;else p=selected.capital;if(!p)return;setPoint(idx,{lat:p.lat,lon:p.lon,name:`${p.city} (${selected.country?.name||p.countryName||''})`});}
 function onMapClick(x,y){
@@ -236,12 +247,14 @@ function onMapClick(x,y){
 function drawSearchResults(q){const box=$('suggestions');box.innerHTML='';if(!q){box.classList.remove('open');return;}const n=norm(q);const results=[];for(const c of countries){if(norm(c.name).includes(n)){results.push({type:'country',obj:c,rank:norm(c.name)===n?0:1});}}for(const p of capitals){if(norm(p.city).includes(n)||norm(p.countryName).includes(n)){results.push({type:'capital',obj:p,rank:norm(p.city)===n?0:1});}}for(const county of counties){if(norm(county.name).includes(n)||norm(county.stateCode).includes(n)||norm(US_STATE_NAMES[county.stateCode]||'').includes(n)){results.push({type:'county',obj:county,rank:norm(county.name)===n?0:1});}}const typePriority={capital:0,country:1,county:2};results.sort((a,b)=>a.rank-b.rank||typePriority[a.type]-typePriority[b.type]||(a.obj.stateCode||'').localeCompare(b.obj.stateCode||'')||(a.obj.city||a.obj.name).localeCompare(b.obj.city||b.obj.name));const top=results.slice(0,10);if(!top.length){const d=document.createElement('div');d.className='suggestion';d.textContent='No matching country, capital or U.S. county';box.append(d);}else{top.forEach(item=>{const el=document.createElement('div');el.className='suggestion';const left=document.createElement('b');const right=document.createElement('small');if(item.type==='capital'){left.textContent=item.obj.city;right.textContent=`CAPITAL · ${item.obj.countryName}`;}else if(item.type==='county'){left.textContent=item.obj.name;right.textContent=`COUNTY · ${item.obj.stateCode}`;}else{left.textContent=item.obj.name;right.textContent='COUNTRY';}el.append(left,right);el.addEventListener('click',()=>selectResult(item));box.append(el);});}box.classList.add('open');}
 function restoreSharedState(){
  const q=new URLSearchParams(window.location.search),z=Number(q.get('z'));
- if(q.has('z')&&Number.isFinite(z))zoom=clamp(z,MIN_ZOOM,MAX_ZOOM);
+ if(q.has('z')&&Number.isFinite(z))zoom=clamp(z,MIN_ZOOM,MAX_ZOOM_SEARCH);
 
  const hist=q.get('hist');if(hist){const v=hist.split(',').map(Number);if(v.length===6&&v.every(Number.isFinite)){historical.enabled=v[0]===1;historical.opacity=clamp(v[1],5,90);historical.centerX=clamp(v[2],20,80);historical.centerY=clamp(v[3],15,85);historical.diameter=clamp(v[4],55,90);historical.scale=clamp(v[5],80,120);}}
  const hr=Number(q.get('hr'));if(q.has('hr')&&Number.isFinite(hr))historical.rotation=clamp(hr,-5,5);
  const px=Number(q.get('px')),py=Number(q.get('py'));
  if(q.has('px')&&q.has('py')&&Number.isFinite(px)&&Number.isFinite(py)){panX=clamp(px,-4,4)*baseR;panY=clamp(py,-4,4)*baseR;}
+ const restoredCenter={x:-panX/zoom,y:-panY/zoom},restoredZoom=clampZoom(zoom,restoredCenter),restoredRatio=restoredZoom/zoom;
+ panX*=restoredRatio;panY*=restoredRatio;zoom=restoredZoom;
  const bits=q.get('ly');if(bits&&bits.length>=5){layers.countries=bits[0]==='1';layers.grid=bits[1]==='1';layers.capitals=bits[2]==='1';layers.capitalNames=bits[3]==='1';layers.antarctica=bits[4]==='1';if(bits.length>=6)layers.countryNames=bits[5]==='1';}
  const readPoint=(key,name)=>{const raw=q.get(key);if(!raw)return null;const v=raw.split(',').map(Number);return v.length===2&&v.every(Number.isFinite)&&Math.abs(v[0])<=90&&Math.abs(v[1])<=180?{lat:v[0],lon:v[1],name}:null;};
  const a=readPoint('a','Shared point A'),b=readPoint('b','Shared point B');points=a?(b?[a,b]:[a]):[];
@@ -286,21 +299,61 @@ function niceScaleFloor(value){
  const power=Math.pow(10,Math.floor(Math.log10(value))),fraction=value/power;
  return (fraction>=5?5:fraction>=2?2:1)*power;
 }
-function scaleAnchorWorld(){
- let x=-panX/zoom,y=-panY/zoom;
+function constrainScaleAnchor(anchor){
+ let x=Number.isFinite(anchor?.x)?anchor.x:0,y=Number.isFinite(anchor?.y)?anchor.y:0;
  const rho=Math.hypot(x,y),limit=baseR*.85;
  if(rho>limit&&rho>0){x*=limit/rho;y*=limit/rho;}
  return {x,y};
 }
-function groundDistanceForScalePixels(px,anchor){
- const half=px/(2*zoom);
+function scaleAnchorWorld(){return constrainScaleAnchor({x:-panX/zoom,y:-panY/zoom});}
+function scaleBarReferencePixels(anchor=scaleAnchorWorld(),scaleZoom=zoom){
+ const radius=Math.hypot(anchor.x,anchor.y);
+ const available=Math.max(0,(baseR*.96-radius)*1.8*scaleZoom);
+ return Math.min(SCALE_BAR_MAX_WIDTH_PX,width*.34,available);
+}
+function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
+ if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0)return Infinity;
+ const half=px/(2*scaleZoom);
  const a=unproject(anchor.x-half,anchor.y),b=unproject(anchor.x+half,anchor.y);
- return geodesicInverse(a,b).distanceMeters/1000;
+ const distance=geodesicInverse(a,b).distanceMeters;
+ return Number.isFinite(distance)?distance/1000:Infinity;
+}
+function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
+ const safeAnchor=constrainScaleAnchor(anchor),pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);
+ if(pixels<24)return Infinity;
+ return niceScaleFloor(groundDistanceForScalePixels(pixels,safeAnchor,scaleZoom)*SCALE_BAR_HEADROOM);
+}
+function zoomForScaleBarDistance(targetRawKm,anchor){
+ const safeAnchor=constrainScaleAnchor(anchor);
+ const distanceAt=scaleZoom=>{
+  const pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);
+  return pixels<24?Infinity:groundDistanceForScalePixels(pixels,safeAnchor,scaleZoom);
+ };
+ let low=MIN_ZOOM,high=MAX_ZOOM_SEARCH;
+ if(distanceAt(low)<=targetRawKm)return MIN_ZOOM;
+ if(distanceAt(high)>targetRawKm)return high;
+ for(let i=0;i<48;i++){
+  const mid=(low+high)/2;
+  if(distanceAt(mid)>targetRawKm)low=mid;else high=mid;
+ }
+ return high;
+}
+function maxZoomForAnchor(anchor=scaleAnchorWorld()){
+ // Leave enough headroom for the scale bar's 0.82 rounding factor to still read 50 km.
+ return zoomForScaleBarDistance(MAX_SCALE_BAR_READING_KM/SCALE_BAR_HEADROOM*1.025,anchor);
+}
+function clampZoom(value,anchor=scaleAnchorWorld()){
+ return clamp(value,MIN_ZOOM,maxZoomForAnchor(anchor));
+}
+function setZoomAtViewCenter(nextZoom){
+ const center={x:-panX/zoom,y:-panY/zoom};
+ zoom=clampZoom(nextZoom,center);
+ panX=-center.x*zoom;panY=-center.y*zoom;draw();
 }
 function drawScaleBar(){
  if(!baseR||!zoom)return;
- const anchor=scaleAnchorWorld(),anchorRadius=Math.hypot(anchor.x,anchor.y);
- const maxPx=Math.min(190,width*.34,Math.max(0,(baseR*.96-anchorRadius)*1.8*zoom));
+ const anchor=scaleAnchorWorld();
+ const maxPx=scaleBarReferencePixels(anchor,zoom);
  if(maxPx<24)return;
  const maxKm=groundDistanceForScalePixels(maxPx,anchor),targetKm=niceScaleFloor(maxKm*.82);
  if(!targetKm)return;
@@ -404,11 +457,11 @@ $('historicalEnabled').addEventListener('change',e=>{historical.enabled=e.target
 $('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
 $('retryHistorical').addEventListener('click',()=>loadHistoricalScan(true));
 [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames']].forEach(([id,key])=>$(id).addEventListener('change',e=>{layers[key]=e.target.checked;draw();}));
-$('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;draw();});$('zoomIn').addEventListener('click',()=>{zoom=clamp(zoom*1.25,MIN_ZOOM,MAX_ZOOM);draw();});$('zoomOut').addEventListener('click',()=>{zoom=clamp(zoom/1.25,MIN_ZOOM,MAX_ZOOM);draw();});
+$('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;draw();});$('zoomIn').addEventListener('click',()=>setZoomAtViewCenter(zoom*1.25));$('zoomOut').addEventListener('click',()=>setZoomAtViewCenter(zoom/1.25));
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
 async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
 $('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});
-canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;const lx=(sx-width/2-panX)/zoom,ly=(sy-height/2-panY)/zoom;const nz=clamp(zoom*(e.deltaY<0?1.12:.89),MIN_ZOOM,MAX_ZOOM);panX=sx-width/2-lx*nz;panY=sy-height/2-ly*nz;zoom=nz;draw();},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault();const r=canvas.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;const lx=(sx-width/2-panX)/zoom,ly=(sy-height/2-panY)/zoom;let nz=zoom*(e.deltaY<0?1.12:.89);for(let i=0;i<3;i++){const anchor={x:lx+(width/2-sx)/nz,y:ly+(height/2-sy)/nz},safe=clampZoom(nz,anchor);if(Math.abs(safe-nz)<1e-6)break;nz=safe;}panX=sx-width/2-lx*nz;panY=sy-height/2-ly*nz;zoom=nz;draw();},{passive:false});
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointerDown={x:e.clientX,y:e.clientY,px:panX,py:panY};didDrag=false;});canvas.addEventListener('pointermove',e=>{if(pointerDown){const dx=e.clientX-pointerDown.x,dy=e.clientY-pointerDown.y;if(Math.hypot(dx,dy)>4)didDrag=true;if(didDrag){panX=pointerDown.px+dx;panY=pointerDown.py+dy;canvas.classList.add('dragging');draw();}return;}const {x,y}=mapCoords(e);const cap=findCapitalAt(x,y,9);const country=cap?null:findCountryAt(x,y);if(country!==hoveredCountry||cap!==hoveredCapital){hoveredCountry=country;hoveredCapital=cap;draw();updateStatus();}});
 canvas.addEventListener('pointerup',e=>{if(pointerDown&&!didDrag){const {x,y}=mapCoords(e);onMapClick(x,y);}pointerDown=null;canvas.classList.remove('dragging');});canvas.addEventListener('pointercancel',()=>{pointerDown=null;canvas.classList.remove('dragging');});
 $('retryMapLoading').addEventListener('click',load);

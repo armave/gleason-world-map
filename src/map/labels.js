@@ -1,6 +1,15 @@
-// Screen-space label thresholds and decluttering for the canvas map.
-export const CAPITAL_LABEL_MIN_ZOOM=1.25;
-export const COUNTRY_LABEL_MIN_ZOOM=1.0;
+// Screen-space label thresholds are tied to the local scale-bar reading, not raw zoom.
+export const COUNTRY_LABEL_MAX_SCALE_KM=16000;
+export const COUNTRY_LABEL_MIN_SCALE_KM=500;
+export const CAPITAL_LABEL_MAX_SCALE_KM=2500;
+
+export function shouldShowCountryLabels(localScaleBarKm){
+ return Number.isFinite(localScaleBarKm)&&localScaleBarKm>COUNTRY_LABEL_MIN_SCALE_KM&&localScaleBarKm<=COUNTRY_LABEL_MAX_SCALE_KM;
+}
+export function shouldShowCapitalLabels(localScaleBarKm){
+ return Number.isFinite(localScaleBarKm)&&localScaleBarKm>0&&localScaleBarKm<=CAPITAL_LABEL_MAX_SCALE_KM;
+}
+
 function overlaps(a,b,gap){return a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;}
 function cellKeys(box){
  const size=36,x0=Math.floor(box.left/size),x1=Math.floor(box.right/size),y0=Math.floor(box.top/size),y1=Math.floor(box.bottom/size),keys=[];
@@ -20,5 +29,3 @@ export function selectNonOverlappingLabels(candidates,reserved=[],gap=3){
  }
  return accepted;
 }
-
-
