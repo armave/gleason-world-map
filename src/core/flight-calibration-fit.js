@@ -8,8 +8,8 @@
 const DEG = Math.PI / 180;
 const FACTOR_BOUNDS = [0.5, 2.5];
 const RIDGE_LAMBDA = 1.0;
-const MIN_TRAIN_ROUTES = 6;
-const MIN_HOLDOUT_ROUTES = 2;
+const MIN_TRAIN_ROUTES = 10;
+const MIN_HOLDOUT_ROUTES = 4;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
