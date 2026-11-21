@@ -41,7 +41,7 @@ The intervals are summed and converted using the unit conversion:
 observed_track_km = sum(interval_nautical_miles) * 1.852
 ```
 
-The archive can have gaps in an otherwise valid telemetry span. To estimate mileage over the first-to-last observed speed timestamp, the collector expands the observed integral using the **measured time coverage**:
+The archive can have gaps in an otherwise valid telemetry span. Speed observations are used only when the next timestamp is no more than 15 minutes away; longer intervals are excluded and recorded as gaps rather than carrying a stale speed forward. To estimate mileage over the first-to-last observed speed timestamp, the collector expands the observed integral using the **measured time coverage**:
 
 ```text
 time_coverage = accepted_speed_interval_seconds / telemetry_span_seconds
