@@ -5,7 +5,7 @@ import { gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import {
   COUNTRY_DATA_FILES, CAPITAL_DATA_FILE, COUNTY_DATA_FILE, MAP_QUALITY_OPTIONS,
-  validateCountryDataset, validateCapitalDataset, validateCountyDataset, COASTLINE_DATA_FILE, validateCoastlineDataset
+  validateCountryDataset, validateCapitalDataset, validateCountyDataset, COASTLINE_DATA_FILE, validateCoastlineDataset, loadCapitalDataset
 } from '../src/data/datasets.js';
 import { isoFor, nameFor } from '../src/data/geojson.js';
 
@@ -79,4 +79,25 @@ test('Natural Earth 1:50m coastlines include global shorelines and island chains
  assert.equal(points,metadata.coastlines.points);
  assert.equal(bytes.length,metadata.coastlines.bytes);
  assert.ok(points>=50000);
+});
+
+
+test('runtime dataset loading deduplicates concurrent requests and permits retry after failure', async () => {
+  const originalFetch = globalThis.fetch;
+  const payload = await readFile(CAPITAL_DATA_FILE, 'utf8');
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests++;
+    if (requests === 1) return new Response('', { status: 503 });
+    return new Response(payload, { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    await assert.rejects(loadCapitalDataset(), /HTTP 503/);
+    const [first, second] = await Promise.all([loadCapitalDataset(), loadCapitalDataset()]);
+    assert.equal(requests, 2);
+    assert.strictEqual(first, second);
+    assert.equal(first.length, 197);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
