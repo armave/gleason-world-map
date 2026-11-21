@@ -155,10 +155,11 @@ test('country area uses the same densified projected ring as the rendered bounda
     twiceArea += a[0] * b[1] - b[0] * a[1];
   }
   const scale = DISK_RADIUS_METERS / 600;
+  const expectedArea = Math.abs(twiceArea) / 2 * scale ** 2;
   close(
     flatDiskFeatureAreaM2(feature, projector, 600),
-    Math.abs(twiceArea) / 2 * scale ** 2,
-    1e-4
+    expectedArea,
+    expectedArea * 1e-14
   );
 });
 
