@@ -79,33 +79,25 @@ const MAX_MEAN_COLATITUDE = 2.180352568053916;
 const MAX_COLATITUDE_SPAN = 1.7709855919986461;
 
 /**
- * Return the bounded empirical factor for a straight projected A–B chord.
- * Endpoint reversal and longitude wrap produce the same factor.
+ * Explain the empirical calibration applied to a straight projected chord.
+ *
+ * The model is unchanged: this exposes its unclamped inputs, fit-range checks
+ * and runtime factor bounds so the UI can show when a reading needs care.
  */
-export function directLineCalibrationFactor(first, second) {
+export function directLineCalibrationDiagnostics(first, second) {
   if (!validPoint(first) || !validPoint(second)) return null;
+
   const thetaA = Math.PI / 2 - rad(first.lat);
   const thetaB = Math.PI / 2 - rad(second.lat);
-  const meanTheta = clamp(
-    (thetaA + thetaB) / 2,
-    MIN_MEAN_COLATITUDE,
-    MAX_MEAN_COLATITUDE
-  );
-  const thetaSpan = clamp(
-    Math.abs(thetaA - thetaB),
-    0,
-    MAX_COLATITUDE_SPAN
-  );
+  const rawMeanTheta = (thetaA + thetaB) / 2;
+  const rawThetaSpan = Math.abs(thetaA - thetaB);
+  const meanTheta = clamp(rawMeanTheta, MIN_MEAN_COLATITUDE, MAX_MEAN_COLATITUDE);
+  const thetaSpan = clamp(rawThetaSpan, 0, MAX_COLATITUDE_SPAN);
   const longitudeSpan = Math.abs(rad(wrapLongitude(second.lon - first.lon)));
   const features = [
-    meanTheta,
-    thetaSpan,
-    longitudeSpan,
-    meanTheta ** 2,
-    thetaSpan ** 2,
-    longitudeSpan ** 2,
-    meanTheta * thetaSpan,
-    meanTheta * longitudeSpan,
+    meanTheta, thetaSpan, longitudeSpan,
+    meanTheta ** 2, thetaSpan ** 2, longitudeSpan ** 2,
+    meanTheta * thetaSpan, meanTheta * longitudeSpan,
     thetaSpan * longitudeSpan
   ];
 
@@ -116,7 +108,40 @@ export function directLineCalibrationFactor(first, second) {
       CALIBRATION_FEATURE_SCALES[i];
     logFactor += CALIBRATION_COEFFICIENTS[i] * normalized;
   }
-  return clamp(Math.exp(logFactor), MIN_CALIBRATION_FACTOR, MAX_CALIBRATION_FACTOR);
+
+  const unclampedFactor = Math.exp(logFactor);
+  const calibrationFactor = clamp(unclampedFactor, MIN_CALIBRATION_FACTOR, MAX_CALIBRATION_FACTOR);
+  const outsideTrainingRange =
+    rawMeanTheta < MIN_MEAN_COLATITUDE ||
+    rawMeanTheta > MAX_MEAN_COLATITUDE ||
+    rawThetaSpan > MAX_COLATITUDE_SPAN;
+  const nearSouthRim = first.lat <= -85 || second.lat <= -85;
+  const factorWasClamped = !Number.isFinite(unclampedFactor) ||
+    unclampedFactor < MIN_CALIBRATION_FACTOR ||
+    unclampedFactor > MAX_CALIBRATION_FACTOR;
+  const warnings = [];
+  if (outsideTrainingRange) warnings.push('outside-training-range');
+  if (nearSouthRim) warnings.push('near-south-rim');
+  if (factorWasClamped) warnings.push('factor-clamped');
+
+  return {
+    calibrationFactor,
+    unclampedFactor,
+    correctionPercent: (calibrationFactor - 1) * 100,
+    meanColatitudeRadians: rawMeanTheta,
+    colatitudeSpanRadians: rawThetaSpan,
+    longitudeSpanRadians: longitudeSpan,
+    outsideTrainingRange,
+    nearSouthRim,
+    factorWasClamped,
+    warnings,
+    status: warnings.length ? 'caution' : 'within-fit-range'
+  };
+}
+
+/** Return the bounded empirical factor for a straight projected A–B chord. */
+export function directLineCalibrationFactor(first, second) {
+  return directLineCalibrationDiagnostics(first, second)?.calibrationFactor ?? null;
 }
 
 /**
@@ -128,22 +153,38 @@ export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
+      calibratedDistanceMeters: null,
       chordDistanceMeters: null,
+      rawDistanceMeters: null,
       calibrationFactor: null,
+      correctionPercent: null,
+      calibration: null,
+      warnings: [],
       metric: 'unavailable',
       restricted: false
     };
   }
+
   const chordDistanceMeters = flatDiskDistanceMeters(first, second);
-  const calibrationFactor = directLineCalibrationFactor(first, second);
+  const calibration = directLineCalibrationDiagnostics(first, second);
+  const calibrationFactor = calibration?.calibrationFactor ?? null;
   const distanceMeters = Number.isFinite(chordDistanceMeters) &&
     Number.isFinite(calibrationFactor)
     ? chordDistanceMeters * calibrationFactor
     : null;
+  const safeChordDistance = Number.isFinite(chordDistanceMeters) ? chordDistanceMeters : null;
+  const safeDistance = Number.isFinite(distanceMeters) ? distanceMeters : null;
+
   return {
-    distanceMeters: Number.isFinite(distanceMeters) ? distanceMeters : null,
-    chordDistanceMeters: Number.isFinite(chordDistanceMeters) ? chordDistanceMeters : null,
+    // Backwards-compatible distanceMeters remains the empirical estimate.
+    distanceMeters: safeDistance,
+    calibratedDistanceMeters: safeDistance,
+    chordDistanceMeters: safeChordDistance,
+    rawDistanceMeters: safeChordDistance,
     calibrationFactor,
+    correctionPercent: calibration?.correctionPercent ?? null,
+    calibration,
+    warnings: calibration?.warnings ?? [],
     metric: 'flat-disk-empirical-direct',
     restricted: false
   };
