@@ -37,3 +37,32 @@ export function createProjectedMeasurementSegments(points,projectPoint,closed=fa
  }
  return segments;
 }
+
+/**
+ * Compute label anchors and measurements for straight projected polygon edges.
+ * The supplied metric selects the displayed distance convention (the area tool
+ * passes flatDiskDistanceMeters so labels match its planar perimeter).
+ */
+export function createProjectedSegmentLabels(points,projectPoint,measureDistanceMeters,closed=false){
+ if(!Array.isArray(points)||points.length<2||
+  typeof projectPoint!=='function'||typeof measureDistanceMeters!=='function')return [];
+ const segmentCount=closed&&points.length>=3?points.length:points.length-1;
+ const labels=[];
+ for(let i=0;i<segmentCount;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  if(!a||!b||![a.lon,a.lat,b.lon,b.lat].every(Number.isFinite))continue;
+  const start=projectPoint(a.lon,a.lat),end=projectPoint(b.lon,b.lat);
+  if(!Array.isArray(start)||!Array.isArray(end)||start.length<2||end.length<2||
+   !start.slice(0,2).every(Number.isFinite)||!end.slice(0,2).every(Number.isFinite))continue;
+  const meters=measureDistanceMeters(a,b);
+  if(!Number.isFinite(meters)||meters<0)continue;
+  labels.push({
+   x:(start[0]+end[0])/2,
+   y:(start[1]+end[1])/2,
+   meters,
+   start:start.slice(0,2),
+   end:end.slice(0,2)
+  });
+ }
+ return labels;
+}
