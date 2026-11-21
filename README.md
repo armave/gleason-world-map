@@ -22,7 +22,7 @@ The outer disk radius is **pi * R = 8,697.166084 km**. These values define the X
 
 The Gleason disk is also the measurement plane for the A–B tool. Once the endpoints are projected, the app measures the Euclidean length of the one straight segment between them. This is a flat-disk map-plane distance based on the selected radial calibration, not a WGS84 ground geodesic. The 60°S Restricted Line is a visual reference only and does not change the direct-line calculation.
 
-## Direct geographic distance and planar area measurements
+## Flat-map direct-line distance and planar area measurements
 
 The A–B distance and area tools both use the calibrated flat-disk plane: A–B is one straight Euclidean segment, while polygon area uses the shoelace formula and polygon perimeter sums its straight edges.
 
