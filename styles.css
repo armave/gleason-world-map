@@ -95,3 +95,20 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
  .map-loading-card p{font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.map-loading-spinner{animation:none}}
+
+
+:root[data-map-style="atlas"]{--paper:#e8efe9;--paper2:#f6f8f2;--ink:#22343b;--muted:#607077;--line:#b7c8c6;--panel:#fbfdf8;--blue:#719caf;--blue2:#d0e4eb;--accent:#315f73}
+:root[data-map-style="clean"]{--paper:#eef3f5;--paper2:#fbfcfd;--ink:#263943;--muted:#687b84;--line:#cad7dc;--panel:#fff;--blue:#91b6c8;--blue2:#e4f0f6;--accent:#426f82}
+:root[data-map-style="atlas"] body,:root[data-map-style="clean"] body{background:var(--paper);color:var(--ink)}
+:root[data-map-style="atlas"] header,:root[data-map-style="clean"] header{background:linear-gradient(180deg,var(--paper2),var(--paper));border-color:var(--line)}
+:root[data-map-style="atlas"] .map-card,:root[data-map-style="clean"] .map-card,:root[data-map-style="atlas"] .panel,:root[data-map-style="clean"] .panel{background:var(--paper2);border-color:var(--line)}
+:root[data-map-style="atlas"] .map-top,:root[data-map-style="clean"] .map-top{background:var(--paper2);border-color:var(--line)}
+:root[data-map-style="atlas"] button,:root[data-map-style="clean"] button{background:var(--panel);border-color:var(--line);color:var(--ink)}
+:root[data-map-style="atlas"] button:hover,:root[data-map-style="clean"] button:hover{background:var(--blue2)}
+.map-orientation{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 10px;border-bottom:1px solid #d8cfbd;background:var(--paper2)}
+.map-orientation label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+.map-orientation output{min-width:38px;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.map-orientation input[type="range"]{width:min(190px,24vw);min-width:90px;accent-color:var(--accent)}
+.map-orientation button{padding:6px 9px}
+canvas.rotating{cursor:crosshair}
+@media(max-width:760px){.map-orientation{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px;padding:7px}.map-orientation label{grid-column:1/3}.map-orientation input[type="range"]{grid-column:1/3;grid-row:2;width:100%}.map-orientation #rotateLeft{grid-column:3;grid-row:1}.map-orientation #rotateRight{grid-column:4;grid-row:1}.map-orientation #resetRotation{grid-column:3/5;grid-row:2}}

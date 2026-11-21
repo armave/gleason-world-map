@@ -39,10 +39,10 @@ export function createCoastlinePath(data,project,PathConstructor=globalThis.Path
  return path;
 }
 
-export function drawCoastlines(ctx,path,zoom=1){
+export function drawCoastlines(ctx,path,zoom=1,palette={}){
  if(!ctx||!path||!Number.isFinite(zoom)||zoom<=0)return;
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([]);
- ctx.strokeStyle='rgba(250,253,247,.94)';ctx.lineWidth=2.2/zoom;ctx.stroke(path);
- ctx.strokeStyle='#477486';ctx.lineWidth=.9/zoom;ctx.stroke(path);
+ ctx.strokeStyle=palette.coastHalo||'rgba(250,253,247,.94)';ctx.lineWidth=2.2/zoom;ctx.stroke(path);
+ ctx.strokeStyle=palette.coastline||'#477486';ctx.lineWidth=.9/zoom;ctx.stroke(path);
  ctx.restore();
 }
