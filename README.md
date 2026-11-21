@@ -127,11 +127,11 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 
 ## Project structure
 
-Static GitHub Pages deployment uses browser-native ES modules; no bundler is required.
+The app uses Lit web components for declarative panels and Vite for development, production bundling, and GitHub Pages deployment. The specialized map remains a browser Canvas 2D renderer; projection, measurement, geometry, and calibration stay framework-independent.
 
 ```text
-index.html                  page shell and app entry point
-styles.css                  responsive styling
+index.html                  page shell and light-DOM Lit panel templates
+styles.css                  responsive styling shared by Lit panels
 data/
   us-counties.json          U.S. Census 2026 county-equivalent search points
   countries/
@@ -202,7 +202,7 @@ Run a static web server from the repository root:
 
     python -m http.server 8000
 
-Then open http://localhost:8000. Country boundaries and capital coordinates are bundled in the repository and load from the same site. Internet access is needed only for the optional historical scan.
+Then open the URL printed by Vite (normally http://127.0.0.1:5173). Geographic datasets are bundled into the production build. Internet access is needed only for the optional historical scan.
 
 ## Deploy with GitHub Pages
 
