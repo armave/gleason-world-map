@@ -168,7 +168,6 @@ scripts/
   vendor-county-labels.mjs  reproducible Census county-label data import
 tests/
   gleason-sphere.test.js    spherical projection, distances, scale factors and area regressions
-  wgs84.test.js             standalone legacy ellipsoid regressions
   registration.test.js      registration transform regressions
   datasets.test.js          bundled-data integrity and quality tests
 .github/workflows/test.yml automated Node tests
