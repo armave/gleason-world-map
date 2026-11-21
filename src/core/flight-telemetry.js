@@ -5,12 +5,21 @@
  * coordinates, route geometry, and spherical/ellipsoidal distance methods are
  * deliberately absent from this module.
  */
-const KNOT_TO_KM = 1.852;
-const MIN_AIRBORNE_SPEED_KT = 40;
-const MAX_AIRBORNE_SPEED_KT = 750;
-const MIN_FLIGHT_MINUTES = 35;
-const MIN_TELEMETRY_COVERAGE = 0.60;
-const MIN_SPEED_INTERVALS = 3;
+export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
+  knotsToKm: 1.852,
+  minSpeedKnots: 40,
+  maxSpeedKnots: 750,
+  minFlightMinutes: 35,
+  minCoverage: 0.60,
+  minSpeedIntervals: 3
+});
+
+const KNOT_TO_KM = FLIGHT_TELEMETRY_FILTERS.knotsToKm;
+const MIN_AIRBORNE_SPEED_KT = FLIGHT_TELEMETRY_FILTERS.minSpeedKnots;
+const MAX_AIRBORNE_SPEED_KT = FLIGHT_TELEMETRY_FILTERS.maxSpeedKnots;
+const MIN_FLIGHT_MINUTES = FLIGHT_TELEMETRY_FILTERS.minFlightMinutes;
+const MIN_TELEMETRY_COVERAGE = FLIGHT_TELEMETRY_FILTERS.minCoverage;
+const MIN_SPEED_INTERVALS = FLIGHT_TELEMETRY_FILTERS.minSpeedIntervals;
 
 function epochSeconds(value) {
   if (typeof value === 'number') return value;
