@@ -11,7 +11,7 @@ import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangula
 import {renderRadialCalibration} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
 import {createProjectedMeasurementSegments,createProjectedSegmentLabels,measurementStrokeStyle} from './map/measurements.js';
-import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint} from './map/view-transform.js';
+import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint,normalizeRotationDegrees,shortestRotationDelta} from './map/view-transform.js';
 
 (() => {
 'use strict';
@@ -25,7 +25,7 @@ let features = [], countries = [], capitals = [], counties = [], pathRecords = [
 let labelCollisionBoxes = [];
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
-let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
+let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [];
 let boundaryScaleLabel='Natural Earth 1:50m';
 const QUALITY_STORAGE_KEY='gleason-map:quality:v1',STYLE_STORAGE_KEY='gleason-map:style:v1';
@@ -44,9 +44,34 @@ let colors=visualPalette.countryColors;
 const hashColor=key=>hashColorForPalette(key,colors);
 function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}}
 function rotationRadians(){return rad(rotationDegrees);}
-function normalizeRotation(value){const normalized=((value%360)+360)%360;return normalized>180?normalized-360:normalized;}
-function syncRotationControls(){const input=$('mapRotation'),output=$('mapRotationValue');if(input)input.value=String(Math.round(rotationDegrees));if(output)output.textContent=Math.round(rotationDegrees)+'°';}
-function setRotation(value,redraw=true){if(!Number.isFinite(value))return;rotationDegrees=normalizeRotation(value);syncRotationControls();if(redraw)draw();}
+function normalizeRotation(value){return normalizeRotationDegrees(value);}
+function syncRotationReadout(){const output=$('mapRotationValue');if(output)output.textContent=Math.round(rotationDegrees)+'°';}
+function syncRotationControls(sliderValue=rotationDegrees){const input=$('mapRotation');if(input)input.value=String(Math.round(sliderValue));syncRotationReadout();}
+function cancelRotationAnimation(){if(rotationAnimationFrame!==null){cancelAnimationFrame(rotationAnimationFrame);rotationAnimationFrame=null;}}
+function setRotation(value,redraw=true){if(!Number.isFinite(value))return;cancelRotationAnimation();rotationDegrees=normalizeRotation(value);rotationAnimationTarget=rotationDegrees;syncRotationControls();if(redraw)draw();}
+function animateRotation(value){
+ if(!Number.isFinite(value))return;
+ rotationAnimationTarget=normalizeRotation(value);
+ syncRotationControls(rotationAnimationTarget);
+ if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){setRotation(rotationAnimationTarget);return;}
+ if(rotationAnimationFrame!==null)return;
+ let lastFrameTime=null;
+ const animateFrame=now=>{
+  if(lastFrameTime===null)lastFrameTime=now;
+  const elapsed=Math.min(50,Math.max(0,now-lastFrameTime));
+  lastFrameTime=now;
+  const delta=shortestRotationDelta(rotationDegrees,rotationAnimationTarget);
+  if(Math.abs(delta)<.08){
+   rotationDegrees=rotationAnimationTarget;rotationAnimationFrame=null;syncRotationControls();draw();return;
+  }
+  // Exponential easing stays responsive when the slider target changes mid-animation.
+  const progress=1-Math.exp(-elapsed/95);
+  rotationDegrees=normalizeRotation(rotationDegrees+delta*progress);
+  syncRotationReadout();draw();
+  rotationAnimationFrame=requestAnimationFrame(animateFrame);
+ };
+ rotationAnimationFrame=requestAnimationFrame(animateFrame);
+}
 function worldToScreen(x,y){return worldToScreenPoint(x,y,zoom,panX,panY,width,height,rotationRadians());}
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
 const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
@@ -158,30 +183,34 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  const screen=worldToScreen(x,y);
  if(!Number.isFinite(screen.x)||!Number.isFinite(screen.y))return;
  ctx.save();
- // Draw labels in screen space so they stay upright and readable when the map rotates or zooms.
+ // Measurement tags stay screen-positioned and zoom-invariant, but rotate with the map.
  ctx.setTransform(dpr,0,0,dpr,0,0);
  ctx.font='700 11px ui-sans-serif,system-ui,sans-serif';
  const paddingX=8,boxHeight=20,boxWidth=ctx.measureText(text).width+paddingX*2;
+ const angle=rotationRadians(),cosine=Math.cos(angle),sine=Math.sin(angle);
+ const rotatedWidth=Math.abs(boxWidth*cosine)+Math.abs(boxHeight*sine);
+ const rotatedHeight=Math.abs(boxWidth*sine)+Math.abs(boxHeight*cosine);
  let labelX=screen.x,labelY=screen.y;
- // Keep the complete tag inside the circular map clip near the Antarctic rim.
+ // Keep the complete rotated tag inside the circular map clip near the Antarctic rim.
  const mapCenterX=width/2+panX,mapCenterY=height/2+panY;
  const dx=labelX-mapCenterX,dy=labelY-mapCenterY,radialDistance=Math.hypot(dx,dy);
- const radialLimit=Math.max(0,baseR*zoom-Math.hypot(boxWidth/2,boxHeight/2)-3);
+ const radialLimit=Math.max(0,baseR*zoom-Math.hypot(rotatedWidth/2,rotatedHeight/2)-3);
  if(radialDistance>radialLimit&&radialDistance>0){
   const factor=radialLimit/radialDistance;
   labelX=mapCenterX+dx*factor;labelY=mapCenterY+dy*factor;
  }
- if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
-    labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
+ if(labelX+rotatedWidth/2<0||labelX-rotatedWidth/2>width||
+    labelY+rotatedHeight/2<0||labelY-rotatedHeight/2>height){ctx.restore();return;}
  const isArea=kind==='area';
+ ctx.translate(labelX,labelY);ctx.rotate(angle);
  ctx.fillStyle='rgba(255,250,238,.96)';
  ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
  ctx.lineWidth=1;
- ctx.fillRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
- ctx.strokeRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
+ ctx.fillRect(-boxWidth/2,-boxHeight/2,boxWidth,boxHeight);
+ ctx.strokeRect(-boxWidth/2,-boxHeight/2,boxWidth,boxHeight);
  ctx.fillStyle=isArea?'#315d6c':'#87452e';
  ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.fillText(text,labelX,labelY+.5);
+ ctx.fillText(text,0,.5);
  ctx.restore();
 }
 function projectedPolygonLabelAnchor(vertices){
@@ -348,6 +377,7 @@ function restoreSharedState(){
  const q=new URLSearchParams(window.location.search),z=Number(q.get('z'));
  const requestedStyle=q.get('style');if(requestedStyle&&Object.hasOwn(VISUAL_STYLES,requestedStyle))applyVisualStyle(requestedStyle,false);
  const requestedRotation=Number(q.get('r'));if(q.has('r')&&Number.isFinite(requestedRotation))rotationDegrees=normalizeRotation(requestedRotation);
+ rotationAnimationTarget=rotationDegrees;
  if(q.has('z')&&Number.isFinite(z))zoom=clamp(z,MIN_ZOOM,MAX_ZOOM_SEARCH);
 
  const hist=q.get('hist');if(hist){const v=hist.split(',').map(Number);if(v.length===6&&v.every(Number.isFinite)){historical.enabled=v[0]===1;historical.opacity=clamp(v[1],5,90);historical.centerX=clamp(v[2],20,80);historical.centerY=clamp(v[3],15,85);historical.diameter=clamp(v[4],55,90);historical.scale=clamp(v[5],80,120);}}
@@ -537,7 +567,7 @@ async function load(){
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}
 }
 $('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALITY_OPTIONS,e.target.value)?e.target.value:'medium';mapQuality=next;try{localStorage.setItem(QUALITY_STORAGE_KEY,next);}catch(error){console.info('Map quality preference could not be saved:',error);}load();});
-$('mapStyle').addEventListener('change',e=>{applyVisualStyle(e.target.value);draw();});$('mapRotation').addEventListener('input',e=>setRotation(Number(e.target.value)));$('rotateLeft').addEventListener('click',()=>setRotation(rotationDegrees-15));$('rotateRight').addEventListener('click',()=>setRotation(rotationDegrees+15));$('resetRotation').addEventListener('click',()=>setRotation(0));
+$('mapStyle').addEventListener('change',e=>{applyVisualStyle(e.target.value);draw();});$('mapRotation').addEventListener('input',e=>animateRotation(Number(e.target.value)));$('rotateLeft').addEventListener('click',()=>animateRotation(rotationAnimationTarget-15));$('rotateRight').addEventListener('click',()=>animateRotation(rotationAnimationTarget+15));$('resetRotation').addEventListener('click',()=>animateRotation(0));
 const mobileToolsToggle=$('mobileToolsToggle');
 const toolsPanel=$('toolsPanel');
 function setMobileToolsOpen(open){
@@ -563,7 +593,7 @@ $('historicalEnabled').addEventListener('change',e=>{historical.enabled=e.target
 $('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opacity:45,centerX:50,centerY:50,diameter:75.6,scale:100,rotation:0});syncHistoricalControls();draw();});
 $('retryHistorical').addEventListener('click',()=>loadHistoricalScan(true));
 [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames'],['layerOceanLabels','oceanLabels'],['layerCoastlines','coastlines']].forEach(([id,key])=>$(id).addEventListener('change',e=>{layers[key]=e.target.checked;draw();}));
-$('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;setRotation(0,false);draw();});$('zoomIn').addEventListener('click',()=>setZoomAtViewCenter(zoom*1.25));$('zoomOut').addEventListener('click',()=>setZoomAtViewCenter(zoom/1.25));
+$('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;animateRotation(0);draw();});$('zoomIn').addEventListener('click',()=>setZoomAtViewCenter(zoom*1.25));$('zoomOut').addEventListener('click',()=>setZoomAtViewCenter(zoom/1.25));
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
 async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
 $('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});
