@@ -45,10 +45,14 @@ test('a chord through the inner disk is blocked even if both points are south of
   assert.equal(measureDirectDistance(point(-70, 0), point(-70, 180)).restricted, true);
 });
 
-test('local ice-wall segments and boundary touches are allowed', () => {
+test('local ice-wall segments and a single boundary touch are allowed', () => {
   assert.equal(segmentCrossesRestrictedParallel(point(-70, 0), point(-70, 10)), false);
   assert.equal(segmentCrossesRestrictedParallel(point(-60, 0), point(-70, 0)), false);
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric, 'flat-disk');
+});
+
+test('a chord joining two points on 60°S through the inner disk is blocked', () => {
+  assert.equal(segmentCrossesRestrictedParallel(point(-60, 0), point(-60, 180)), true);
 });
 
 test('polygon edges including closure are checked for crossings', () => {
