@@ -14,10 +14,16 @@ const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
 const point = (lat, lon) => ({lat, lon});
 
-test('radial scale and full disk radius use the selected 6,371 km calibration', () => {
-  assert.equal(DISK_RADIAL_SCALE_KM, 6371);
-  close(DISK_RADIUS_KM, Math.PI * 6371, 1e-10);
-  close(DISK_RADIUS_KM, 20015.086796, 1e-6);
+test('radial scale and full disk radius use the Canberra–Santiago flat-map calibration', () => {
+  close(DISK_RADIAL_SCALE_KM, 2768.393946421384, 1e-12);
+  close(DISK_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM, 1e-10);
+  close(DISK_RADIUS_KM, 8697.166084319875, 1e-9);
+});
+
+test('Canberra–Santiago straight projected distance is calibrated to 11,300 km', () => {
+  const canberra = point(-35.27, 149.13);
+  const santiago = point(-33.45, -70.67);
+  close(flatDiskDistanceMeters(canberra, santiago) / 1000, 11300, 1e-7);
 });
 
 test('radial calibration is r = R times colatitude', () => {
