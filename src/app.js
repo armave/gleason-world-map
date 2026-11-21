@@ -1,5 +1,5 @@
 import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
-import {geodesicDistanceMeters} from './core/geodesic.js';
+import {measureDirectDistance,segmentCrossesRestrictedParallel,polylineCrossesRestrictedParallel,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -54,7 +54,7 @@ const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
 const makePath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,project,preserveAntarcticRim);
 function resize(){const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);baseR=Math.min(width,height)*.405;pathRecords=countries.map(c=>({country:c,path:makePath(c.feature)}));antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;landMaskPath=new Path2D();for(const rec of pathRecords)landMaskPath.addPath(rec.path);if(antarcticaPath)landMaskPath.addPath(antarcticaPath);coastlinePath=coastlineData?createCoastlinePath(coastlineData,project):null;draw();}
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
-function drawGrid(){ctx.save();const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];for(const lat of latitudes){const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;ctx.lineWidth=(lat===0?1.55:.65)/zoom;ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);ctx.stroke();}ctx.setLineDash([]);for(let d=0;d<360;d+=15){const [x,y]=project(d,-90);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.strokeStyle=d%30===0?visualPalette.grid:visualPalette.gridMinor;ctx.lineWidth=(d%30===0?.82:.42)/zoom;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();}
+function drawGrid(){ctx.save();const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];for(const lat of latitudes){if(lat===RESTRICTED_PARALLEL_LATITUDE)continue;const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;ctx.lineWidth=(lat===0?1.55:.65)/zoom;ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);ctx.stroke();}ctx.setLineDash([]);for(let d=0;d<360;d+=15){const [x,y]=project(d,-90);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.strokeStyle=d%30===0?visualPalette.grid:visualPalette.gridMinor;ctx.lineWidth=(d%30===0?.82:.42)/zoom;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();}
 function drawCompassRose(){
  const cx=-baseR*.73,cy=-baseR*.73,r=baseR*.052;ctx.save();ctx.translate(cx,cy);ctx.beginPath();
  for(let i=0;i<16;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.34,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
@@ -74,6 +74,32 @@ function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.f
 }
 function drawCoastlinesLayer(){if(!layers.coastlines||!coastlinePath)return;const localScale=scaleBarReadingKm();if(mapQuality==='high'&&localScale<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
 function drawIceWall(){renderIceWall(ctx,antarcticaPath,baseR,zoom);}
+function drawRestrictedParallel(){
+ const radius=baseR*radialFraction(RESTRICTED_PARALLEL_LATITUDE);
+ if(!Number.isFinite(radius)||radius<=0)return;
+ ctx.save();
+ ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
+ ctx.strokeStyle='rgba(255,250,238,.98)';ctx.lineWidth=4.6/zoom;ctx.setLineDash([]);ctx.stroke();
+ ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
+ ctx.strokeStyle='#a63f38';ctx.lineWidth=2.2/zoom;ctx.setLineDash([8/zoom,5/zoom]);ctx.stroke();
+ ctx.setLineDash([]);
+ for(let degree=0;degree<360;degree+=10){
+  const angle=rad(degree),inner=radius-4/zoom,outer=radius+4/zoom;
+  ctx.beginPath();ctx.moveTo(inner*Math.cos(angle),-inner*Math.sin(angle));
+  ctx.lineTo(outer*Math.cos(angle),-outer*Math.sin(angle));
+  ctx.strokeStyle='rgba(142,53,46,.72)';ctx.lineWidth=1/zoom;ctx.stroke();
+ }
+ const angle=rad(135),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
+ const label='60°S · NO CROSSING';
+ ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
+ const boxWidth=ctx.measureText(label).width+14/zoom,boxHeight=20/zoom;
+ ctx.fillStyle='rgba(255,250,238,.97)';ctx.strokeStyle='#a63f38';ctx.lineWidth=1/zoom;
+ ctx.fillRect(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight);
+ ctx.strokeRect(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight);
+ ctx.fillStyle='#8d342e';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText(label,x,y+.4/zoom);
+ ctx.restore();
+}
 function drawCapitals(){
  if(!layers.capitals)return;
  const labelOn=layers.capitalNames&&(shouldShowCapitalLabels(scaleBarReadingKm())||(selected&&selected.type==='capital')),candidates=[];
@@ -206,10 +232,11 @@ function drawMeasure(){
   if(path.length===2){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
-   const distanceMeters=geodesicDistanceMeters(points[0],points[1]);
+   const measurement=measureDirectDistance(points[0],points[1]);
+   const label=measurement.restricted?'RESTRICTED · 60°S':
+    formatMeasurementKilometres(measurement.distanceMeters);
    drawMeasurementLabelAtMap(
-    (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,
-    formatMeasurementKilometres(distanceMeters),'distance'
+    (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
    );
   }
  }
@@ -241,17 +268,31 @@ function drawArea(){
  ctx.restore();
 }
 function updateAreaMeasurement(){
- $('areaVertexCount').textContent=`${areaPoints.length} vertices`;
+ $('areaVertexCount').textContent=areaPoints.length+' vertices';
+ if(polylineCrossesRestrictedParallel(areaPoints,areaFinished)){
+  $('areaValue').textContent='Restricted';
+  $('areaPerimeter').textContent='Crosses the 60°S boundary';
+  $('areaHelp').textContent='This polygon crosses the restricted 60°S parallel. Remove or reposition vertices so no straight boundary edge crosses the circle.';
+  return;
+ }
  if(areaFinished&&areaPoints.length>=3){
   const result=flatDiskPolygonMetrics(areaPoints,project,baseR);
-  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`Straight-edge perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Planar area uses shoelace on the disk. Each boundary edge is labelled with its projected map length in km; the polygon label shows km².';}
+  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent='Planar perimeter · '+formatDistance(result.perimeterM);$('areaHelp').textContent='Planar shoelace area and straight-edge perimeter on the flat disk. Polygon edges may not cross the restricted 60°S parallel.';}
   else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='Invalid polygon · check for crossing edges';$('areaHelp').textContent='This polygon could not be measured. Check that its edges do not cross and that it has at least three valid vertices.';}
  }else{
   $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
-  $('areaHelp').textContent=areaPoints.length?'Add vertices; each straight edge receives a km label. Finish the polygon to show its planar area in km² and the perimeter.':'Choose Area, then click at least three points. Each straight edge receives a km label; Finish adds the polygon area label in km².';
+  $('areaHelp').textContent=areaPoints.length?'Add vertices; each straight edge receives a km label. Finish the polygon to show planar area and perimeter. Do not cross the restricted 60°S parallel.':'Choose Area, then click at least three points. Polygon edges may not cross the restricted 60°S parallel.';
  }
 }
-function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
+function finishArea(){
+ if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}
+ if(polylineCrossesRestrictedParallel(areaPoints,true)){
+  $('areaValue').textContent='Restricted';$('areaPerimeter').textContent='Closing edge crosses 60°S';
+  $('areaHelp').textContent='The closing edge would cross the restricted 60°S parallel. Reposition the vertices before finishing this polygon.';
+  $('status').textContent='Restricted crossing · polygon cannot cross 60°S';return;
+ }
+ areaFinished=true;updateAreaMeasurement();draw();updateStatus();
+}
 function drawHistoricalOverlay(){
  if(!historical.enabled||!historicalImage||!historicalImage.complete||!historicalImage.naturalWidth)return;
  if(registrationPoints.length>=3&&drawRegisteredHistoricalScan())return;
@@ -273,7 +314,7 @@ function draw(){
  if(layers.countries)drawCountries();
  drawCoastlinesLayer();
  if(layers.antarctica)drawIceWall();
- drawHistoricalOverlay();
+ drawHistoricalOverlay();drawRestrictedParallel();
  drawCapitals();drawCountryLabels();
  if(layers.oceanLabels){
   const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,scaleBarReadingKm(),{
@@ -299,7 +340,7 @@ function updateViewReadout(){
 function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;const point=screenToWorld(sx,sy);return {x:point.x,y:point.y,sx,sy};}
-function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Direct geodesic distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
+function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else{$('status').textContent=measureDirectDistance(points[0],points[1]).metric==='flat-disk'?'Flat-disk ice-wall distance complete':'WGS84 direct distance complete';}}else if(mode==='area'){$('status').textContent='Area mode · '+areaPoints.length+' vertices · '+(areaFinished?'polygon finished':'add boundary points');}else{$('status').textContent=hoveredCountry?'Country: '+hoveredCountry.name:hoveredCapital?'Capital: '+hoveredCapital.city:'Explore mode · '+countries.length+' countries/areas · '+capitals.length+' capital points';}}
 function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'});$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;draw();}
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';const area=c?flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'}):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 const US_STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam',MP:'Northern Mariana Islands',VI:'U.S. Virgin Islands'};
@@ -311,12 +352,49 @@ function showCounty(county){
  $('selectionFactTitle').textContent='Census GEOID';$('selectionFactValue').textContent=county.geoid;
  $('selectionButtons').style.display='none';draw();
 }
-function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
-function updateMeasurement(){
- $('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const distanceMeters=geodesicDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='WGS84 shortest surface distance';$('measureHelp').textContent='The numeric readout and dashed-line label show the shortest WGS84 surface distance. The connector itself is a straight chord between the projected map points, not the geodesic path or an actual flight route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 direct surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
+function setPoint(index,p){
+ const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};
+ if(index===1&&points.length===1&&segmentCrossesRestrictedParallel(points[0],obj)){
+  $('distanceValue').textContent='Restricted';$('distanceSub').textContent='60°S crossing blocked';
+  $('measureHelp').textContent='This A–B segment crosses the restricted 60°S parallel. Choose both points on the same side, or end the measurement at the boundary.';
+  $('status').textContent='Restricted crossing · distance cannot cross 60°S';return false;
+ }
+ if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}
+ mode='measure';setModeUI();updateMeasurement();draw();updateStatus();return true;
 }
-function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
+function updateMeasurement(){
+ $('setB').disabled=!(selected&&selected.capital&&points.length>0);
+ const box=$('endpointRows');box.innerHTML='';
+ for(let i=0;i<2;i++){
+  const p=points[i],row=document.createElement('div');row.className='point-row';
+  const badge=document.createElement('span');badge.className='point-badge '+(i===0?'a':'b');badge.textContent=i?'B':'A';
+  const name=document.createElement('span');name.textContent=p?p.name:'Not set';
+  const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';
+  row.append(badge,name,coord);box.append(row);
+ }
+ if(points.length===2){
+  const measurement=measureDirectDistance(points[0],points[1]);
+  if(measurement.restricted){
+   $('distanceValue').textContent='Restricted';$('distanceSub').textContent='60°S crossing blocked';
+   $('measureHelp').textContent='This segment crosses the restricted 60°S parallel and cannot be measured.';
+  }else{
+   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
+   $('distanceSub').textContent=measurement.metric==='flat-disk'?'Flat-disk planar chord · ice-wall zone':'WGS84 shortest surface distance';
+   $('measureHelp').textContent=measurement.metric==='flat-disk'
+    ?'The ice-wall zone uses a straight flat-disk measurement; globe/ellipsoid calculations are not used. Segments crossing 60°S are blocked.'
+    :'North of 60°S, the numeric readout uses the shortest WGS84 surface distance. Segments crossing the restricted parallel are blocked.';
+  }
+ }else{
+  $('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 north of 60°S · planar in ice-wall zone';
+  $('measureHelp').textContent=points.length===1?'Point A set. Click a second point on the same side of the restricted 60°S parallel.':'Choose two places on the disk, or select a capital and assign it to A or B.';
+ }
+}
+
+function setModeUI(){
+ $('exploreMode').classList.toggle('active',mode==='explore');$('exploreMode').setAttribute('aria-pressed',String(mode==='explore'));
+ $('measureMode').classList.toggle('active',mode==='measure');$('measureMode').setAttribute('aria-pressed',String(mode==='measure'));
+ $('areaMode').classList.toggle('active',mode==='area');$('areaMode').setAttribute('aria-pressed',String(mode==='area'));
+}
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});const offset=panForWorldCenterPoint(x,y,zoom,rotationRadians());panX=offset.panX;panY=offset.panY;draw();}
 function selectResult(item){
  $('suggestions').classList.remove('open');
@@ -339,7 +417,15 @@ function onMapClick(x,y){
  if(registrationPickActive){const snap=findCapitalAt(x,y,10);const p=snap?{lat:snap.lat,lon:snap.lon}:q;registrationPickActive=false;pendingRegistrationGeo=p;$('registrationStatus').textContent=`Map point selected: ${fmtCoord(p.lat,p.lon)}${snap?' · snapped to '+snap.city:''}. Now click the same feature in the scan preview.`;$('pickRegistrationPoint').textContent='Pick another map point';return;}
  const cap=findCapitalAt(x,y,10);
  if(mode==='measure'){if(points.length>=2)points=[];const p=cap?{lat:cap.lat,lon:cap.lon,name:`${cap.city} (${cap.countryName||''})`}:q;setPoint(points.length===0?0:1,{...p,name:p.name||fmtCoord(p.lat,p.lon)});return;}
- if(mode==='area'){if(areaFinished){areaPoints=[];areaFinished=false;}const p=cap?{lat:cap.lat,lon:cap.lon,name:cap.city}:q;areaPoints.push(p);updateAreaMeasurement();draw();updateStatus();return;}
+ if(mode==='area'){
+  if(areaFinished){areaPoints=[];areaFinished=false;}
+  const p=cap?{lat:cap.lat,lon:cap.lon,name:cap.city}:q;
+  if(areaPoints.length&&segmentCrossesRestrictedParallel(areaPoints.at(-1),p)){
+   $('areaHelp').textContent='That edge would cross the restricted 60°S parallel. The vertex was not added.';
+   $('status').textContent='Restricted crossing · polygon edge rejected';return;
+  }
+  areaPoints.push(p);updateAreaMeasurement();draw();updateStatus();return;
+ }
  if(cap){showCapital(cap);return;}const c=findCountryAt(x,y);if(c){showCountry(c);return;}
  $('selectionName').textContent='Map location';$('selectionKind').textContent='Clicked geographic position';$('selectionMetaTitle').textContent='Location';$('selectionCapital').textContent='—';$('selectionCoords').textContent=fmtCoord(q.lat,q.lon);$('selectionFactTitle').textContent='Details';$('selectionFactValue').textContent='—';$('selectionButtons').style.display='none';selected={type:'coordinate',position:q};
 }
@@ -358,8 +444,10 @@ function restoreSharedState(){
  panX*=restoredRatio;panY*=restoredRatio;zoom=restoredZoom;
  const bits=q.get('ly');if(bits&&bits.length>=5){layers.countries=bits[0]==='1';layers.grid=bits[1]==='1';layers.capitals=bits[2]==='1';layers.capitalNames=bits[3]==='1';layers.antarctica=bits[4]==='1';if(bits.length>=6)layers.countryNames=bits[5]==='1';if(bits.length>=7)layers.oceanLabels=bits[6]==='1';if(bits.length>=8)layers.coastlines=bits[7]==='1';}
  const readPoint=(key,name)=>{const raw=q.get(key);if(!raw)return null;const v=raw.split(',').map(Number);return v.length===2&&v.every(Number.isFinite)&&Math.abs(v[0])<=90&&Math.abs(v[1])<=180?{lat:v[0],lon:v[1],name}:null;};
- const a=readPoint('a','Shared point A'),b=readPoint('b','Shared point B');points=a?(b?[a,b]:[a]):[];
+ const a=readPoint('a','Shared point A'),b=readPoint('b','Shared point B');
+ points=a?(b&&!segmentCrossesRestrictedParallel(a,b)?[a,b]:[a]):[];
  const poly=q.get('ap');if(poly){areaPoints=poly.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===2&&v.every(Number.isFinite)&&Math.abs(v[0])<=90&&Math.abs(v[1])<=180).map(v=>({lat:v[0],lon:v[1]}));areaFinished=areaPoints.length>=3;}
+ if(polylineCrossesRestrictedParallel(areaPoints,false)||(areaFinished&&polylineCrossesRestrictedParallel(areaPoints,true))){areaPoints=[];areaFinished=false;}
  const tie=q.get('gc');if(tie){registrationPoints=tie.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===4&&v.every(Number.isFinite)&&v[0]>=0&&v[0]<=1&&v[1]>=0&&v[1]<=1&&Math.abs(v[2])<=90&&Math.abs(v[3])<=180).map(v=>({u:v[0],v:v[1],lat:v[2],lon:v[3]})).slice(0,30);}
  if(areaPoints.length)mode='area';else if(points.length)mode='measure';
  for(const [id,key] of [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames'],['layerOceanLabels','oceanLabels'],['layerCoastlines','coastlines']])$(id).checked=layers[key];
@@ -419,7 +507,9 @@ function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
- const distance=geodesicDistanceMeters(first,second);
+ const measurement=measureDirectDistance(first,second);
+ // If a local scale-bar sample spans the restricted circle, fall back to planar.
+ const distance=measurement.restricted?flatDiskDistanceMeters(first,second):measurement.distanceMeters;
  return Number.isFinite(distance)?distance/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
@@ -540,6 +630,14 @@ $('mapQuality').addEventListener('change',e=>{const next=Object.hasOwn(MAP_QUALI
 $('mapStyle').addEventListener('change',e=>{applyVisualStyle(e.target.value);draw();});$('mapRotation').addEventListener('input',e=>setRotation(Number(e.target.value)));$('rotateLeft').addEventListener('click',()=>setRotation(rotationDegrees-15));$('rotateRight').addEventListener('click',()=>setRotation(rotationDegrees+15));$('resetRotation').addEventListener('click',()=>setRotation(0));
 const mobileToolsToggle=$('mobileToolsToggle');
 const toolsPanel=$('toolsPanel');
+const measurementDetails=$('measurementDetails');
+const measurementDetailsToggle=$('toggleMeasurementDetails');
+measurementDetailsToggle.addEventListener('click',()=>{
+ const expanded=measurementDetails.hidden;
+ measurementDetails.hidden=!expanded;
+ measurementDetailsToggle.setAttribute('aria-expanded',String(expanded));
+ measurementDetailsToggle.textContent=expanded?'Less':'Details';
+});
 function setMobileToolsOpen(open){
  document.body.classList.toggle('mobile-tools-open',open);
  mobileToolsToggle.setAttribute('aria-expanded',String(open));
