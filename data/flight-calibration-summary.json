@@ -6,21 +6,23 @@
     "holdoutMapePercent": 5.581047853570055,
     "holdoutMaxErrorPercent": 15.19928193190122,
     "leaveOneOutMapePercent": 9.772698695450957,
+    "leaveOneOutMaxRouteErrorPercent": 39.711127061672805,
     "limits": {
       "maxTrainingMapePercent": 10,
       "maxHoldoutMapePercent": 12,
       "maxHoldoutRouteErrorPercent": 20,
-      "maxLeaveOneOutMapePercent": 15
+      "maxLeaveOneOutMapePercent": 15,
+      "maxLeaveOneOutRouteErrorPercent": 45
     }
   },
-  "generatedAt": "2026-11-21T10:27:57.631Z",
+  "generatedAt": "2026-11-21T10:33:37.437Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-21T10:27:57.350Z",
+  "sourceRetrievedAt": "2026-11-21T10:33:37.159Z",
   "method": {
-    "target": "Median observed flown-path length per airport pair",
-    "targetSource": "ADS-B ground-speed telemetry integrated over timestamps",
-    "formula": "sum(ground_speed_knots * elapsed_seconds / 3600) * 1.852",
-    "inputGeometry": "Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route empirical mileage-per-chord ratios over three flat-disk endpoint features",
+    "target": "Median telemetry-span flown-mileage estimate per airport pair",
+    "targetSource": "ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate",
+    "formula": "observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; estimated_span_km = observed_km / time_coverage",
+    "inputGeometry": "Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route mileage-per-chord ratios over three flat-disk endpoint features",
     "features": [
       "meanColatitude",
       "colatitudeSpan",
