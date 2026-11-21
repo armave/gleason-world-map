@@ -486,7 +486,6 @@ function updateMeasurement(){
    :'Flight-mileage model unavailable';
 
   $('measureHelp').textContent='The connector and its map label show the raw Euclidean chord in the Gleason disk. The second value estimates typical flown mileage from ADS-B ground-speed and timestamp samples; it is not a shortest-path distance.';
-  $('measureHelp').textContent='The connector remains one straight segment in the Gleason disk. The first value is its raw Euclidean chord; the second estimates typical flown mileage from ADS-B ground-speed and timestamp samples. It is not a shortest-path distance.';
  }else{
   $('rawDistanceValue').textContent='—';
   $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
