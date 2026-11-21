@@ -13,7 +13,7 @@ export function formatArea(areaM2){
  if(areaM2<1e6)return `${areaM2.toLocaleString('en-US',{maximumFractionDigits:0})} m²`;
  return `${(areaM2/1e6).toLocaleString('en-US',{maximumFractionDigits:2})} km²`;
 }
-export export function scaleFactorText(value){
+export function scaleFactorText(value){
  if(!Number.isFinite(value))return '∞';
  if(value===0)return '0.000×';
  return `${value.toFixed(value>=10?2:3)}×`;
