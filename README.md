@@ -9,20 +9,20 @@ An interactive Gleason-style north-polar circular map with straight projected-li
 
 The app draws a two-dimensional circular disk. Its geographic layout follows the north-polar azimuthal-equidistant arrangement used by Gleason's 1892 sheet: the North Pole is at the centre, the meridians radiate outward, and parallels form circles.
 
-The disk uses a fixed planar radial calibration with **R = 6,371 km** as its chosen radial scale constant. For latitude phi in radians and longitude lambda in radians:
+The disk uses a fixed planar radial calibration with **R = 2,778.193571 km** as its uniform flat-map scale constant. This value is calibrated so that the straight projected segment between the bundled capital coordinates for Canberra (-35.27°, 149.13°) and Santiago (-33.45°, -70.67°) measures **11,340 km**. Two independent city-distance references quote 11,340–11,345 km. It is an empirical map-plane scale, not a globe radius or geodesic parameter. For latitude phi in radians and longitude lambda in radians:
 
 theta = pi/2 - phi
 r = R * theta
 x = r cos(lambda)
 y = -r sin(lambda)
 
-The outer disk radius is **pi * R = 20,015.09 km**. These values define the X/Y coordinate scale on the flat disk; the south-pole rim corresponds to theta = pi.
+The outer disk radius is **pi * R = 8,727.952513 km**. These values define the X/Y coordinate scale on the flat disk; the south-pole rim corresponds to theta = pi. The same linear scale applies to every direct-line and perimeter measurement, and area values scale by its square. Canberra–Santiago is the calibration anchor, not a universal route fit. Cross-checks against other real-distance pairs show that the current polar disk's straight chords can differ substantially by route; the table below reports that limitation rather than applying route-specific corrections.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
 The Gleason disk is also the measurement plane for the A–B tool. Once the endpoints are projected, the app measures the Euclidean length of the one straight segment between them. This is a flat-disk map-plane distance based on the selected radial calibration, not a WGS84 ground geodesic. The 60°S Restricted Line is a visual reference only and does not change the direct-line calculation.
 
-## Direct geographic distance and planar area measurements
+## Flat-map direct-line distance and planar area measurements
 
 The A–B distance and area tools both use the calibrated flat-disk plane: A–B is one straight Euclidean segment, while polygon area uses the shoelace formula and polygon perimeter sums its straight edges.
 
@@ -33,6 +33,21 @@ The engine projects A and B into the calibrated disk plane and calculates the Eu
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
 The distance tool always uses the straight projected A–B segment, including when either endpoint lies in the Antarctic band. There is no latitude-triggered metric change.
+
+**Real-distance cross-checks**
+
+The following comparison keeps the straight flat-disk chord and one global scale. The reference column uses published city/airport-pair distances; the map column is the corresponding straight-line readout under this calibration. It demonstrates that matching one pair does not remove the projection's route-dependent distortion.
+
+| Pair | Independent distance reference | Calibrated straight-line map readout | Difference |
+|---|---:|---:|---:|
+| Canberra–Santiago (capital coordinates) | 11,340 km | 11,340 km | 0.0% |
+| Santiago–Sydney (SCL–SYD) | 11,341 km | 11,198 km | −1.3% |
+| London–Singapore (LHR–SIN) | 10,882 km | 5,096 km | −53.2% |
+| Chicago–Hong Kong (ORD–HKG) | 12,522 km | 5,513 km | −56.0% |
+| Helsinki–Tokyo (HEL–NRT) | 7,828 km | 3,498 km | −55.3% |
+| New York–Singapore (JFK–SIN) | 15,339 km | 6,690 km | −56.4% |
+
+Reference sources: [Canberra–Santiago city distance (Rome2Rio)](https://www.rome2rio.com/s/Santiago/Canberra), [Canberra–Santiago city distance (Travelmath)](https://www.travelmath.com/distance/from/Santiago,+Chile/to/Canberra,+Australia), and shortest-airport-pair distances from [SCL–SYD](https://www.flightpaths.com/SCL-SYD), [LHR–SIN](https://www.flightpaths.com/LHR-SIN), [ORD–HKG](https://www.flightpaths.com/ORD-HKG), [HEL–NRT](https://www.flightpaths.com/HEL-NRT), and [JFK–SIN](https://www.flightpaths.com/JFK-SIN). Map readouts are calculations from the repository's bundled coordinates and current radial formula; they are not external measurements.
 
 **Polygon area and perimeter**
 
@@ -52,7 +67,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same straight projected map-plane metric as A–B. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the underlying geographic distance or planar area results.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same straight projected map-plane metric as A–B. Because map scale varies by position and direction in an azimuthal projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results.
 
 ## Separate WGS84 geodesic utility validation
 
@@ -82,7 +97,7 @@ The optional overlay loads the Boston Public Library scan of Alexander Gleason's
 - Adjust opacity, crop centre X/Y, crop diameter, overlay scale, and fine rotation for fallback alignment.
 - For control-point registration, pick a geographic location on the vector map and then the same point in the scan preview.
 - At least three non-collinear points are required; 8–12 or more well-distributed points around the disk are recommended.
-- With control points present, the image is warped using piecewise-affine triangles into the same R = 6,371 km flat-disk coordinate projection.
+- With control points present, the image is warped using piecewise-affine triangles into the same R = 2,778.193571 km flat-disk coordinate projection.
 
 The historical scan is a printed sheet, not a surveyed or automatically georeferenced overlay. Manual registration improves the fit but cannot remove cartographic generalization, compilation error, plate distortion, or print deformation. Treat it as a historical comparison layer, not ground truth.
 
@@ -91,7 +106,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 ## Features
 
 - Gleason-style 2D north-polar circular disk layout
-- Fixed flat-disk radial calibration r = R * theta with R = 6,371 km and disk radius pi * R
+- Fixed flat-disk radial calibration r = R * theta with R = 2,778.193571 km and disk radius pi * R, anchored to a straight Canberra–Santiago city-centre reference of 11,340 km
 - Separate Natural Earth physical coastlines and island shorelines, with dateline-safe projection
 - Curved ocean and sea labels that fade by scale and avoid land and other labels
 - Curved ocean and Antarctic rim labels keep their reading direction left-to-right at every map rotation, with glyph-level collision bounds
@@ -202,7 +217,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 ## Important limitations
 
-- The radial disk calibration controls map placement; it is not a globally uniform conversion from projected X/Y coordinates to ground distance.
+- The radial disk calibration is one uniform flat-map scale fitted to the Canberra–Santiago 11,340 km city-centre reference. It is not a universal conversion for other routes; a single straight-line scale cannot make every projected chord equal every independent real-distance reference.
 - A–B distance is a planar map measurement, not an ellipsoidal Earth-surface distance or an actual flight, road, rail, or other travelled route. Projection scale varies across the disk, so interpret it as the length of the straight line in this map's calibrated coordinate plane.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
 - The separate WGS84 utility uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge; this fallback does not affect the active direct-line map measurement.
