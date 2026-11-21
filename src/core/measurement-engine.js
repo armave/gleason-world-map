@@ -64,9 +64,9 @@ export function directLineCalibrationDiagnostics(first, second) {
   const prediction = predictFlightScaleRatio(features, FLIGHT_CALIBRATION);
   if (!prediction) return null;
 
-  const rawMeanTheta = features[0];
-  const rawThetaSpan = features[1];
-  const longitudeSpan = features[2];
+  const meanColatitude = features[0];
+  const radialShareOfChord = features[1];
+  const tangentialShareOfChord = features[2];
   const radialScaleKm = FLIGHT_CALIBRATION.radialScaleKm;
   const unclampedFactor = prediction.mileagePerUnitChord / radialScaleKm;
   const calibrationFactor = clamp(
@@ -91,9 +91,9 @@ export function directLineCalibrationDiagnostics(first, second) {
     calibrationFactor,
     unclampedFactor,
     correctionPercent: (calibrationFactor - 1) * 100,
-    meanColatitudeRadians: rawMeanTheta,
-    colatitudeSpanRadians: rawThetaSpan,
-    longitudeSpanRadians: longitudeSpan,
+    meanColatitudeRadians: meanColatitude,
+    radialShareOfChord,
+    tangentialShareOfChord,
     radialScaleKm,
     nearestFeatureDistance: prediction.nearestFeatureDistance,
     neighbourRouteIds: prediction.neighborRouteIds,

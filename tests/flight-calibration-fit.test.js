@@ -40,23 +40,40 @@ function syntheticDataset() {
   return { schemaVersion: 2, routes };
 }
 
-test('unit disk chord and endpoint features are symmetric', () => {
+test('unit disk chord and radial/tangential endpoint features are symmetric', () => {
   const a = airports[0], b = airports[4];
   assert.equal(unitDiskChord(a, b), unitDiskChord(b, a));
   assert.deepEqual(flightCalibrationFeatures(a, b), flightCalibrationFeatures(b, a));
-  assert.ok(unitDiskChord(a, b) > 0);
+  const features = flightCalibrationFeatures(a, b);
+  const thetaA = (90 - a.lat) * Math.PI / 180;
+  const thetaB = (90 - b.lat) * Math.PI / 180;
+  const longitudeSpan = Math.abs(
+    ((((b.lon - a.lon) + 180) % 360 + 360) % 360 - 180) * Math.PI / 180
+  );
+  const radial = Math.abs(thetaA - thetaB);
+  const tangential = 2 * Math.sqrt(thetaA * thetaB) * Math.sin(longitudeSpan / 2);
+  const chord = unitDiskChord(a, b);
+  assert.ok(chord > 0);
+  assert.ok(Math.abs(features[1] - radial / chord) < 1e-12);
+  assert.ok(Math.abs(features[2] - tangential / chord) < 1e-12);
+  assert.ok(Math.abs(features[1] ** 2 + features[2] ** 2 - 1) < 1e-12);
   assert.equal(unitDiskChord(a, a), 0);
+  assert.deepEqual(flightCalibrationFeatures(a, a), [thetaA, 0, 0]);
 });
 
-test('flight telemetry calibration fits a radial scale and endpoint residual model', () => {
+test('flight telemetry calibration fits a radial scale and direction-aware route model', () => {
   const result = fitFlightCalibration(syntheticDataset());
   assert.ok(result.model.radialScaleKm > 0);
   assert.equal(result.model.trainingRouteCount, 12);
   assert.equal(result.model.holdoutRouteCount, 4);
-  assert.equal(result.model.featureNames.length, 3);
-  assert.equal(result.model.neighborCount, 3);
+  assert.deepEqual(result.model.featureNames, [
+    'meanColatitude',
+    'radialShareOfChord',
+    'tangentialShareOfChord'
+  ]);
+  assert.equal(result.model.neighborCount, 2);
   assert.equal(result.model.trainingExamples.length, 12);
-  assert.equal(result.model.inverseDistancePower, 2);
+  assert.equal(result.model.inverseDistancePower, 1);
   assert.equal(result.metrics.training.routeCount, 12);
   assert.equal(result.metrics.holdout.routeCount, 4);
   assert.equal(result.metrics.leaveOneOut.routeCount, 12);

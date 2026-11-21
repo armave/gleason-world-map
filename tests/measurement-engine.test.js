@@ -24,7 +24,7 @@ const heldOutFlightMileageRoutes = [
     second: point(-27.388888888889, 153.126111111111),
     medianTrackKm: 814.925394574103,
     telemetryCoverage: 1,
-    expectedErrorPercent: -15.2
+    expectedErrorPercent: -7.6
   },
   {
     route: 'Dubai–Singapore (OMDB–WSSS)',
@@ -32,7 +32,7 @@ const heldOutFlightMileageRoutes = [
     second: point(1.3451159576023457, 103.99194013366014),
     medianTrackKm: 5699.2843254262025,
     telemetryCoverage: 0.3516,
-    expectedErrorPercent: -2.0
+    expectedErrorPercent: 6.6
   },
   {
     route: 'Doha–Tokyo (OTHH–RJAA)',
@@ -40,7 +40,7 @@ const heldOutFlightMileageRoutes = [
     second: point(35.7647, 140.386),
     medianTrackKm: 8965.419707357165,
     telemetryCoverage: 0.3071,
-    expectedErrorPercent: -3.5
+    expectedErrorPercent: 1.9
   },
   {
     route: 'Istanbul–Amman (LTFM–OJAI)',
@@ -48,7 +48,7 @@ const heldOutFlightMileageRoutes = [
     second: point(31.7226, 35.9932),
     medianTrackKm: 1424.4753475218993,
     telemetryCoverage: 0.5355,
-    expectedErrorPercent: -1.6
+    expectedErrorPercent: 2.5
   }
 ];
 
@@ -173,10 +173,16 @@ test('ordinary training-domain endpoints are not flagged as out of range', () =>
   assert.ok(diagnostics);
   assert.equal(diagnostics.outsideTrainingRange, false);
   assert.equal(diagnostics.nearSouthRim, false);
+  assert.ok(Number.isFinite(diagnostics.radialShareOfChord));
+  assert.ok(Number.isFinite(diagnostics.tangentialShareOfChord));
+  assert.ok(Math.abs(
+    diagnostics.radialShareOfChord ** 2 +
+    diagnostics.tangentialShareOfChord ** 2 - 1
+  ) < 1e-9);
   assert.equal(diagnostics.status, 'within-fit-range');
 });
 
-test('opposite-side longitude separation is flagged as outside the sampled angular range', () => {
+test('opposite-side chord orientation is flagged outside the sampled radial-share range', () => {
   const diagnostics = directLineCalibrationDiagnostics(
     point(0, 0), point(0, 180)
   );

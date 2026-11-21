@@ -90,22 +90,36 @@ route_reference_i = median estimated ADS-B flight mileage for route i
 R = median(route_reference_i / unit_chord_i) across training routes
 ```
 
-The model then predicts the mileage-per-unit-chord ratio from three symmetric flat-disk endpoint features:
+The model predicts the mileage-per-unit-chord ratio from three symmetric flat-disk endpoint features:
 
 1. Mean endpoint colatitude.
-2. Absolute colatitude separation.
-3. Absolute wrapped longitude separation.
+2. The radial component's share of the unit-disk chord.
+3. The tangential component's share of the unit-disk chord.
 
-For a new pair, it finds the three nearest training route examples in standardized feature space and takes an inverse-square-distance-weighted geometric mean of their observed mileage-per-unit-chord ratios:
+The chord is decomposed exactly in the flat radial disk. For endpoint colatitudes `thetaA` and `thetaB`, and wrapped longitude span `deltaLambda`:
 
 ```text
-features = [mean_colatitude, colatitude_span, wrapped_longitude_span]
+radial_component = abs(thetaA - thetaB)
+tangential_component = 2 * sqrt(thetaA * thetaB) * sin(abs(deltaLambda) / 2)
+unit_chord = sqrt(radial_component^2 + tangential_component^2)
+features = [
+  (thetaA + thetaB) / 2,
+  radial_component / unit_chord,
+  tangential_component / unit_chord
+]
+```
+
+For a new pair, it finds the **two nearest** training route examples in standardized feature space and takes an inverse-distance-weighted geometric mean of their observed mileage-per-unit-chord ratios. The weight is `1 / standardized_feature_distance`:
+
+```text
 route_ratio_i = route_median_flight_km_i / unit_chord_i
-predicted_ratio = weighted_geometric_mean(three_nearest_route_ratios)
+predicted_ratio = weighted_geometric_mean(two_nearest_route_ratios)
 flight_empirical_estimate = unit_chord * clamp(predicted_ratio, 0.5 * R, 2.5 * R)
 ```
 
-This local neighbour method was chosen over a linear residual model after route-level holdout tests showed that the linear model could over-correct some regional routes. The generated parameter file records the fitted radial scale, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, number of training and holdout routes, and source dataset version. The code is plain JavaScript; no external math or geodesic package is used.
+The radial/tangential split captures whether a route's disk chord is driven mostly by movement across concentric rings or around a ring. It resolves a weakness in the previous feature set, which supplied angular spans separately but did not describe their relative contribution to the actual chord. On the current 33-route training / 4-route holdout snapshot, this candidate reduced leave-one-route-out MAPE from 9.77% to approximately 8.61% and independent holdout MAPE from 5.58% to approximately 4.66%; the worst holdout error fell from 15.20% to approximately 7.59%. These are route-sample results, not a universal accuracy guarantee.
+
+The generated parameter file records the fitted radial scale, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, number of training and holdout routes, and source dataset version. The code is plain JavaScript; no external math or geodesic package is used.
 
 ## Validation gate and interpretation
 

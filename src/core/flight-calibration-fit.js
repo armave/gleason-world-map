@@ -9,8 +9,8 @@
  */
 const DEG = Math.PI / 180;
 const FACTOR_BOUNDS = [0.5, 2.5];
-const NEIGHBOR_COUNT = 3;
-const INVERSE_DISTANCE_POWER = 2;
+const NEIGHBOR_COUNT = 2;
+const INVERSE_DISTANCE_POWER = 1;
 const MIN_TRAIN_ROUTES = 10;
 const MIN_HOLDOUT_ROUTES = 4;
 
@@ -33,32 +33,51 @@ function validAirport(airport) {
     Number.isFinite(airport.lon);
 }
 
+function wrappedLongitudeSpanRadians(first, second) {
+  const wrappedDegrees =
+    ((((second.lon - first.lon) + 180) % 360 + 360) % 360 - 180);
+  return Math.abs(wrappedDegrees) * DEG;
+}
+
+/**
+ * Exact polar-disk chord components with R=1. The tangential component is
+ * the chord between two points on circles at radii thetaA and thetaB.
+ */
+function diskChordComponents(first, second) {
+  const thetaA = (90 - first.lat) * DEG;
+  const thetaB = (90 - second.lat) * DEG;
+  const radialComponent = Math.abs(thetaA - thetaB);
+  const longitudeSpan = wrappedLongitudeSpanRadians(first, second);
+  const tangentialComponent =
+    2 * Math.sqrt(thetaA * thetaB) * Math.sin(longitudeSpan / 2);
+  return {
+    meanColatitude: (thetaA + thetaB) / 2,
+    radialComponent,
+    tangentialComponent,
+    chord: Math.hypot(radialComponent, tangentialComponent)
+  };
+}
+
 /** Euclidean chord in the flat radial disk when R=1. */
 export function unitDiskChord(first, second) {
   if (!validAirport(first) || !validAirport(second)) return NaN;
-  const thetaA = (90 - first.lat) * DEG;
-  const thetaB = (90 - second.lat) * DEG;
-  const lambdaA = first.lon * DEG;
-  const lambdaB = second.lon * DEG;
-  const ax = thetaA * Math.cos(lambdaA);
-  const ay = -thetaA * Math.sin(lambdaA);
-  const bx = thetaB * Math.cos(lambdaB);
-  const by = -thetaB * Math.sin(lambdaB);
-  return Math.hypot(bx - ax, by - ay);
+  return diskChordComponents(first, second).chord;
 }
 
-/** Symmetric endpoint features expressed only in flat-disk angular coordinates. */
+/**
+ * Symmetric flat-disk features: mean colatitude and the normalized radial and
+ * tangential contributions to the exact unit-disk chord.
+ */
 export function flightCalibrationFeatures(first, second) {
   if (!validAirport(first) || !validAirport(second)) return null;
-  const thetaA = (90 - first.lat) * DEG;
-  const thetaB = (90 - second.lat) * DEG;
-  const longitudeSpan = Math.abs(
-    ((((second.lon - first.lon) + 180) % 360 + 360) % 360 - 180) * DEG
-  );
+  const components = diskChordComponents(first, second);
+  if (components.chord <= 1e-9) {
+    return [components.meanColatitude, 0, 0];
+  }
   return [
-    (thetaA + thetaB) / 2,
-    Math.abs(thetaA - thetaB),
-    longitudeSpan
+    components.meanColatitude,
+    components.radialComponent / components.chord,
+    components.tangentialComponent / components.chord
   ];
 }
 
@@ -111,11 +130,11 @@ function radialScale(examples) {
 function modelFromExamples(examples, sourceDatasetVersion) {
   const stats = featureStatistics(examples);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     sourceDatasetVersion,
     target: 'median observed ADS-B flight-track mileage from ground-speed × time integration',
     radialScaleKm: radialScale(examples),
-    featureNames: ['meanColatitude', 'colatitudeSpan', 'wrappedLongitudeSpan'],
+    featureNames: ['meanColatitude', 'radialShareOfChord', 'tangentialShareOfChord'],
     featureMeans: stats.means,
     featureScales: stats.scales,
     featureRanges: stats.ranges,
