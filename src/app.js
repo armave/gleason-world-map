@@ -26,6 +26,7 @@ const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
+let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null;
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
@@ -48,7 +49,7 @@ let registrationPoints = [], registrationPickActive = false, pendingRegistration
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
 let colors=visualPalette.countryColors;
 const hashColor=key=>hashColorForPalette(key,colors);
-function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}}
+function applyVisualStyle(value,save=true){if(!Object.hasOwn(VISUAL_STYLES,value))value='vintage';visualStyle=value;visualPalette=VISUAL_STYLES[value];colors=visualPalette.countryColors;document.documentElement.dataset.mapStyle=value;const control=$('mapStyle');if(control)control.value=value;if(save){try{localStorage.setItem(STYLE_STORAGE_KEY,value);}catch(error){console.info('Map style preference could not be saved:',error);}}buildCountryLayerCache();}
 function rotationRadians(){return rad(rotationDegrees);}
 function normalizeRotation(value){return normalizeRotationDegrees(value);}
 function scheduleDraw(){
@@ -131,6 +132,7 @@ function resize(){
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
   geometryBaseR=projectionBaseR;
+  buildCountryLayerCache();
   if(antarcticAddData){
    const source=antarcticAddData;
    createAntarcticSurfacePathsAsync(source,fixedProject).then(paths=>{
@@ -171,7 +173,27 @@ function drawAnnotations(){
  for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a),{avoidReserved:true});}}
  ctx.restore();
 }
-function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
+function buildCountryLayerCache(){
+ countryLayerCanvas=null;countryLayerBaseR=NaN;countryLayerStyle=null;
+ if(!pathRecords.length||!Number.isFinite(baseR)||baseR<=0)return;
+ const pixelRatio=dpr||1,size=Math.max(1,Math.ceil(baseR*2*pixelRatio));
+ const layer=document.createElement('canvas');layer.width=size;layer.height=size;
+ const layerCtx=layer.getContext('2d');
+ if(!layerCtx)return;
+ layerCtx.setTransform(pixelRatio,0,0,pixelRatio,baseR,baseR);
+ for(const rec of pathRecords){
+  layerCtx.fillStyle=hashColorForPalette(rec.country.iso,visualPalette.countryColors);
+  layerCtx.globalAlpha=.93;layerCtx.fill(rec.path,'evenodd');layerCtx.globalAlpha=1;
+  layerCtx.strokeStyle=visualPalette.outline;layerCtx.lineWidth=.62;layerCtx.stroke(rec.path);
+ }
+ countryLayerCanvas=layer;countryLayerBaseR=baseR;countryLayerStyle=visualStyle;
+}
+function drawCountries(){
+ if(countryLayerCanvas&&countryLayerBaseR===baseR&&countryLayerStyle===visualStyle){
+  ctx.drawImage(countryLayerCanvas,-baseR,-baseR,baseR*2,baseR*2);
+ }else{
+  for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
+ }
  if(hoveredCountry){const rec=pathRecords.find(x=>x.country===hoveredCountry);if(rec){ctx.fillStyle='#d18b57';ctx.globalAlpha=.30;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle='#8c482b';ctx.lineWidth=2/zoom;ctx.stroke(rec.path);}}
  if(selected&&selected.type==='country'){const rec=pathRecords.find(x=>x.country===selected.country);if(rec){ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(rec.path);}}
 }
