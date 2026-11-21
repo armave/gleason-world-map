@@ -11,7 +11,7 @@
  */
 import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { integrateGroundSpeedSeries } from '../src/core/flight-telemetry.js';
+import { integrateGroundSpeedSeries, FLIGHT_TELEMETRY_FILTERS } from '../src/core/flight-telemetry.js';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
 const OUTPUT_PATH = 'data/flight-calibration.json';
@@ -314,11 +314,11 @@ async function collect() {
       formula: 'track_km = sum(speed_knots * delta_seconds / 3600) * 1.852',
       units: 'ground speed in knots; elapsed time in seconds; nautical miles converted to kilometres using 1.852',
       filters: {
-        minSpeedKnots: MIN_AIRBORNE_SPEED_KT,
-        maxSpeedKnots: MAX_AIRBORNE_SPEED_KT,
-        minFlightMinutes: MIN_FLIGHT_MINUTES,
-        minTelemetryCoverage: MIN_TELEMETRY_COVERAGE,
-        minSpeedIntervals: MIN_SPEED_INTERVALS
+        minSpeedKnots: FLIGHT_TELEMETRY_FILTERS.minSpeedKnots,
+        maxSpeedKnots: FLIGHT_TELEMETRY_FILTERS.maxSpeedKnots,
+        minFlightMinutes: FLIGHT_TELEMETRY_FILTERS.minFlightMinutes,
+        minTelemetryCoverage: FLIGHT_TELEMETRY_FILTERS.minCoverage,
+        minSpeedIntervals: FLIGHT_TELEMETRY_FILTERS.minSpeedIntervals
       },
       explicitlyNotUsed: [
         'API path_length_m',
