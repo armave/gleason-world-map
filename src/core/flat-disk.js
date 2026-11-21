@@ -259,11 +259,7 @@ function ringPlanarMetrics(points, validateSimple = false) {
 const clickPointCoordinate = point =>
   point && Number.isFinite(point.lon) && Number.isFinite(point.lat) &&
   point.lat >= -90 && point.lat <= 90
-    ? [point.lon, wrapLongitude(point.lon)] : null;
-const geoJsonCoordinate = coordinate =>
-  Array.isArray(coordinate) && coordinate.length >= 2 &&
-  Number.isFinite(+coordinate[0]) && Number.isFinite(+coordinate[1])
-    ? [+coordinate[0], +coordinate[1]] : null;
+    ? [point.lon, point.lat] : null;
 
 /** Planar shoelace area and straight-edge perimeter for a user polygon. */
 export function flatDiskPolygonMetrics(vertices, projectPoint, baseRadius) {
