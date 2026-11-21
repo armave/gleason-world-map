@@ -33,8 +33,8 @@ For example, Flightpaths describes its SCL–SYD data as recorded flights and se
 It is not accurate to say that commercial aircraft never fly through the North Polar region. The FAA defines the North Polar Area for operations as the region north of 78°N and specifies additional operational requirements for flights entering it. Transport Canada's Aeronautical Information Manual describes long-range routes via the North Pole as routine. This does **not** mean every airline route crosses the exact geographic point at 90°N; it means polar-area operations do occur and are governed by specific operational considerations.
 
 Sources:
-- [FAA Advisory Circular 120-42B, Polar Operations](https://www.faa.gov/documentlibrary/media/advisory_circular/120-42b.pdf)
-- [Transport Canada Aeronautical Information Manual, Polar Routes](https://tc.canada.ca/sites/default/files/2023-10/aim-2023-2_rac-e.pdf)
+- [FAA Advisory Circular 120-42B, Polar Operations](https://www.faa.gov/documentlibrary/media/advisory_circular/120-42b.pdf) — listed as active by the FAA.
+- [Transport Canada Aeronautical Information Manual, AIM 2026-1, section 11.4.7 Polar Routes](https://tc.canada.ca/sites/default/files/2026-03/aim-2026-1_rac-e.pdf) — the current edition available when this note was prepared.
 
 The current calibration does not use an actual polar flight track. Its HEL–NRT airport-pair holdout is a straight-line Travelmath reference, not evidence of the route any airline flew.
 
@@ -113,7 +113,7 @@ D_chord = hypot(x_B - x_A, y_B - y_A)
 
 ## 5. Empirical correction model
 
-The correction estimates a positive multiplier from the two endpoints. All angle inputs below are in radians.
+The correction estimates a positive multiplier from the two endpoints. Latitude and longitude endpoints enter the app in degrees. Colatitudes and feature values are in radians; longitude difference is wrapped in degrees and then converted to radians.
 
 ```text
 thetaA = pi/2 - latitudeA
