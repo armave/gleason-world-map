@@ -140,7 +140,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Direct dashed line<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /Flat-disk chord · Antarctic band involved/);
+  assert.match(app, /WGS84 shortest surface distance/);
+  assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
 
 test('map orientation is display-only, pointer-safe and included in share links',()=>{
@@ -209,14 +210,14 @@ test('compact measurement dock is embedded in the map viewport',()=>{
  assert.match(app,/\$\('areaDetails'\)\.hidden=mode!=='area'/);
 });
 
-test('60°S callouts identify the metric transition and rotate with the map',()=>{
- assert.match(html,/60°S · metric transition/);
- assert.doesNotMatch(html,/forbidden line/i);
+test('60°S callouts identify the restricted line and rotate with the map',()=>{
+ assert.match(html,/60°S · Restricted Line/);
+ assert.doesNotMatch(html,/metric transition/i);
  assert.match(app,/function drawRestrictedParallel\(\)/);
  assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
  assert.match(app,/for\(const degree of \[45,225\]\)/);
- assert.match(app,/60°S · METRIC TRANSITION/);
- assert.doesNotMatch(app,/60°S · FORBIDDEN LINE/);
+ assert.match(app,/60°S · RESTRICTED LINE/);
+ assert.doesNotMatch(app,/60°S · METRIC TRANSITION/);
  assert.match(app,/let readableAngle=\(\(angle\+Math\.PI\/2\)%Math\.PI\+Math\.PI\)%Math\.PI-Math\.PI\/2/);
  assert.match(app,/ctx\.translate\(labelX,labelY\);ctx\.rotate\(readableAngle\)/);
  assert.doesNotMatch(app,/segmentCrossesRestrictedParallel/);
@@ -245,8 +246,9 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
  assert.match(app,/geometryBaseR=baseR/);
 });
 
-test('scale-bar calculations use the same hybrid metric as A-B distance',()=>{
- assert.match(app,/measureDirectDistance applies the same WGS84 \/ flat-disk transition/);
+test('scale-bar calculations use the WGS84 metric at every latitude',()=>{
+ assert.match(app,/measureDirectDistance uses WGS84 at every latitude, matching A–B measurements/);
+ assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
 
