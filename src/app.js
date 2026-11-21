@@ -473,6 +473,10 @@ function applyCoordinateEndpoint(index){
   $('status').textContent='Enter a valid latitude (−90 to 90) and longitude (−180 to 180).';
   return false;
  }
+ if(index===1&&points.length===0){
+  $('status').textContent='Set endpoint A before setting endpoint B.';
+  return false;
+ }
  return setPoint(index,{lat,lon,name:index===0?'A · manual coordinates':'B · manual coordinates'});
 }
 function setPoint(index,p){
@@ -484,6 +488,7 @@ function setPoint(index,p){
 }
 function updateMeasurement(){
  $('setB').disabled=!(selected&&selected.capital&&points.length>0);
+ $('applyCoordsB').disabled=points.length===0;
  syncCoordinateInputs();
  const box=$('endpointRows');box.innerHTML='';
  for(let i=0;i<2;i++){
@@ -773,10 +778,11 @@ function exportPNG(){
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
- outputCtx.font='9px ui-sans-serif,system-ui';
+ outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText('ADS-B ground-speed × time estimate · not a shortest-path measurement · model v'+FLIGHT_CALIBRATION.schemaVersion+
   ' · '+FLIGHT_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_CALIBRATION.holdoutRouteCount+' holdout route pairs',14*dpr,canvas.height+53*dpr);
- outputCtx.fillText('Natural Earth boundaries · Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)',14*dpr,canvas.height+70*dpr);
+ const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
+ outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
  output.toBlob(blob=>{
   if(!blob){$('status').textContent='Could not create PNG.';return;}
   const url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -817,7 +823,7 @@ function showLoadError(err){
 }
 async function load(){
  const generation=++loadGeneration;
- setMapLoading(true,'Loading local country boundaries, coastlines, capital coordinates and county search data…');
+ setMapLoading(true,'Loading country boundaries, coastlines, Antarctic surface classes and search data…');
  try{
   mapQuality=readMapQuality();$('mapQuality').value=mapQuality;
   $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries and geographic labels…';
