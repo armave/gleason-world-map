@@ -36,22 +36,30 @@
     </div>
     <div class="map-viewport" id="mapViewport" aria-busy="true">
       <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
-      <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
+      <div class="map-tools-stack" id="mapToolsStack">
+        <section class="map-find-tools" id="findTools" aria-label="Find a country, capital or county">
+          <div class="map-find-head"><strong>Find</strong></div>
+          <div class="search-wrap">
+            <input id="search" type="search" autocomplete="off" placeholder="Country, capital or county…" aria-label="Search countries, capitals and U.S. county-equivalents">
+            <div id="suggestions" class="suggestions"></div>
+          </div>
+        </section>
+        <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
           <span class="map-measure-restriction">60°S · restricted</span>
-          <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails">Details</button>
+          <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails" hidden>Details</button>
         </div>
         <div class="mode-row map-measure-modes" role="group" aria-label="Map mode">
-          <button id="exploreMode" class="active" type="button" aria-pressed="true">Explore</button>
-          <button id="measureMode" type="button" aria-pressed="false">Distance</button>
-          <button id="areaMode" type="button" aria-pressed="false">Area</button>
+          <button id="exploreMode" class="active" type="button" aria-pressed="true"><span class="tool-icon" aria-hidden="true">⌖</span> Explore</button>
+          <button id="measureMode" type="button" aria-pressed="false"><span class="tool-icon" aria-hidden="true">↔</span> Distance</button>
+          <button id="areaMode" type="button" aria-pressed="false"><span class="tool-icon" aria-hidden="true">⬡</span> Area</button>
         </div>
         <div class="map-measure-readings" aria-live="polite">
           <div class="map-measure-reading">
             <span>Distance</span>
             <div class="measure-value" id="distanceValue">—</div>
-            <div class="measure-sub" id="distanceSub">WGS84 north of 60°S · planar in ice-wall zone</div>
+            <div class="measure-sub" id="distanceSub">WGS84 · flat-disk if Antarctic band involved</div>
           </div>
           <div class="map-measure-reading">
             <span>Area</span>
@@ -60,22 +68,26 @@
           </div>
         </div>
         <div class="map-measure-details" id="measurementDetails" hidden>
-          <p class="small" id="measureHelp">Choose two locations. Measurements cannot cross the restricted 60°S parallel.</p>
-          <div id="endpointRows" style="margin-top:8px">
-            <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
-            <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
+          <div id="distanceDetails">
+            <p class="small" id="measureHelp">Choose two places anywhere on the disk to measure distance.</p>
+            <div id="endpointRows" class="measurement-endpoints">
+              <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
+              <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
+            </div>
+            <div class="endpoint-actions"><button id="clearMeasure" type="button" disabled><span class="tool-icon" aria-hidden="true">×</span> Clear distance</button></div>
           </div>
-          <div class="endpoint-actions"><button id="clearMeasure" type="button" disabled>Clear distance</button></div>
-          <div class="divider"></div>
-          <p class="small" id="areaHelp">Choose Area and click at least three points. Polygon edges may not cross the restricted 60°S parallel.</p>
-          <div class="small" id="areaVertexCount">0 vertices</div>
-          <div class="endpoint-actions">
-            <button id="finishArea" type="button" disabled>Finish polygon</button>
-            <button id="undoArea" type="button" disabled>Undo vertex</button>
-            <button id="clearArea" type="button" disabled>Clear area</button>
+          <div id="areaDetails" hidden>
+            <div class="area-progress"><span id="areaVertexCount">0 vertices</span><span class="small">Planar area</span></div>
+            <p class="small" id="areaHelp">Click at least three points, then finish to calculate area and perimeter.</p>
+            <div class="endpoint-actions area-actions">
+              <button id="finishArea" type="button" disabled><span class="tool-icon" aria-hidden="true">✓</span> Finish</button>
+              <button id="undoArea" type="button" disabled><span class="tool-icon" aria-hidden="true">↶</span> Undo</button>
+              <button id="clearArea" type="button" disabled><span class="tool-icon" aria-hidden="true">×</span> Clear</button>
+            </div>
           </div>
         </div>
-      </section>
+        </section>
+      </div>
       <div class="map-loading" id="mapLoading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="false">
         <div class="map-loading-card">
           <div class="map-loading-spinner" id="mapLoadingSpinner" aria-hidden="true"></div>
@@ -85,18 +97,10 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · red 60°S restricted line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · red 60°S metric-transition line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
-    <section class="panel">
-      <h2>Find a country, capital or county</h2>
-      <div class="search-wrap">
-        <input id="search" type="search" autocomplete="off" placeholder="Search e.g. Armenia, Yerevan, Tokyo, Los Angeles County…" aria-label="Search countries, capitals and U.S. county-equivalents">
-        <div id="suggestions" class="suggestions"></div>
-      </div>
-      <div class="small" style="margin-top:7px">Search countries, national capitals, cities, and U.S. county-equivalents.</div>
-    </section>
     <section class="panel">
       <h2>Visual style</h2>
       <div class="range-control"><label for="mapStyle"><span>Map appearance</span><span>Saved on this device</span></label>
