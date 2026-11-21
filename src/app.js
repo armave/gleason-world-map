@@ -72,7 +72,19 @@ function animateRotation(value){
  rotationAnimationFrame=requestAnimationFrame(animateFrame);
 }
 function worldToScreen(x,y){return worldToScreenPoint(x,y,zoom,panX,panY,width,height,rotationRadians());}
-function drawUprightMapText(text,x,y){ctx.save();ctx.translate(x,y);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.fillText(text,0,0);ctx.restore();}
+function boxesOverlap(a,b,gap=0){return a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;}
+function drawUprightMapText(text,x,y,{reserve=true,avoidReserved=false}={}){
+ const screen=worldToScreen(x,y);
+ if(!Number.isFinite(screen.x)||!Number.isFinite(screen.y))return false;
+ const metrics=ctx.measureText(text),fontSize=Number.parseFloat(ctx.font)||9;
+ const widthPx=metrics.width*zoom,heightPx=fontSize*zoom;
+ const box={left:screen.x-widthPx/2-3,top:screen.y-heightPx/2-2,right:screen.x+widthPx/2+3,bottom:screen.y+heightPx/2+2};
+ if(box.left<1||box.top<1||box.right>width-1||box.bottom>height-1)return false;
+ if(avoidReserved&&labelCollisionBoxes.some(other=>boxesOverlap(box,other,3)))return false;
+ if(reserve)labelCollisionBoxes.push(box);
+ ctx.save();ctx.translate(x,y);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.fillText(text,0,0);ctx.restore();
+ return true;
+}
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
 const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
 const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
@@ -81,17 +93,25 @@ function resize(){const rect=canvas.getBoundingClientRect();width=rect.width;hei
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
 function drawGrid(){ctx.save();const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];for(const lat of latitudes){if(lat===RESTRICTED_PARALLEL_LATITUDE)continue;const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;ctx.lineWidth=(lat===0?1.55:.65)/zoom;ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);ctx.stroke();}ctx.setLineDash([]);for(let d=0;d<360;d+=15){const [x,y]=project(d,-90);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.strokeStyle=d%30===0?visualPalette.grid:visualPalette.gridMinor;ctx.lineWidth=(d%30===0?.82:.42)/zoom;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();}
 function drawCompassRose(){
- const cx=-baseR*.73,cy=-baseR*.73,r=baseR*.052;ctx.save();ctx.translate(cx,cy);ctx.beginPath();
- for(let i=0;i<16;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.34,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
- ctx.closePath();ctx.fillStyle='rgba(255,253,246,.9)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1.25/zoom;ctx.stroke();
- ctx.beginPath();ctx.moveTo(0,-r*.82);ctx.lineTo(0,r*.82);ctx.moveTo(-r*.82,0);ctx.lineTo(r*.82,0);ctx.stroke();
- ctx.fillStyle=visualPalette.labels;ctx.font=`700 ${Math.max(7,8.5/zoom)}px Georgia,serif`;ctx.textAlign='center';ctx.textBaseline='middle';for(const [label,x,y] of [['N',0,-r*1.34],['S',0,r*1.34],['W',-r*1.34,0],['E',r*1.34,0]]){ctx.save();ctx.translate(x,y);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.fillText(label,0,0);ctx.restore();}ctx.restore();
+ const cx=31,cy=31,r=14,angle=rotationRadians();
+ ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.translate(cx,cy);
+ ctx.beginPath();ctx.arc(0,0,r*1.72,0,Math.PI*2);ctx.fillStyle='rgba(255,253,246,.92)';ctx.fill();
+ ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1;ctx.stroke();
+ ctx.rotate(angle);ctx.beginPath();
+ for(let i=0;i<16;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.32,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+ ctx.closePath();ctx.fillStyle='rgba(255,253,246,.78)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1.15;ctx.stroke();
+ ctx.beginPath();ctx.moveTo(0,-r*.9);ctx.lineTo(0,r*.9);ctx.moveTo(-r*.9,0);ctx.lineTo(r*.9,0);ctx.stroke();
+ ctx.fillStyle=visualPalette.labels;ctx.font='700 8px Georgia,serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const [label,x,y] of [['N',0,-r*1.38],['S',0,r*1.38],['W',-r*1.38,0],['E',r*1.38,0]]){
+  ctx.save();ctx.translate(x,y);ctx.rotate(-angle);ctx.fillText(label,0,0);ctx.restore();
+ }
+ ctx.restore();
 }
 function drawAnnotations(){
  ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75],labelAngle=rad(225);
  for(const lat of ringLabels){const r=baseR*radialFraction(lat),x=r*Math.sin(labelAngle),y=-r*Math.cos(labelAngle),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y);}
  for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a));}}
- drawCompassRose();ctx.restore();
+ ctx.restore();
 }
 function drawCountries(){for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
  if(hoveredCountry){const rec=pathRecords.find(x=>x.country===hoveredCountry);if(rec){ctx.fillStyle='#d18b57';ctx.globalAlpha=.30;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle='#8c482b';ctx.lineWidth=2/zoom;ctx.stroke(rec.path);}}
@@ -139,7 +159,7 @@ function drawCapitals(){
  }
  if(labelOn){
   candidates.sort((a,b)=>Number(b.selected)-Number(a.selected)||a.centerDistance-b.centerDistance||a.text.length-b.text.length);
-  const visible=selectNonOverlappingLabels(candidates);labelCollisionBoxes=visible.map(item=>item.box);
+  const visible=selectNonOverlappingLabels(candidates,labelCollisionBoxes,4);labelCollisionBoxes.push(...visible.map(item=>item.box));
   ctx.textAlign='left';ctx.textBaseline='middle';
   for(const item of visible){ctx.save();ctx.translate(item.labelX,item.labelY);ctx.rotate(screenUprightRotation(0,rotationRadians()));ctx.font=`600 ${item.labelFontSize/zoom}px ui-sans-serif,system-ui`;ctx.lineWidth=2.4/zoom;ctx.strokeStyle='rgba(255,250,238,.92)';ctx.strokeText(item.text,0,0);ctx.fillStyle='#243a43';ctx.fillText(item.text,0,0);ctx.restore();}
  }else labelCollisionBoxes=[];
@@ -288,6 +308,14 @@ function drawArea(){
  }
  ctx.restore();
 }
+function syncMeasurementActionButtons(){
+ $('clearMeasure').disabled=points.length===0;
+ $('finishArea').disabled=areaPoints.length<3||areaFinished;
+ $('undoArea').disabled=areaPoints.length===0;
+ $('clearArea').disabled=areaPoints.length===0;
+ $('finishArea').classList.toggle('is-complete',areaFinished);
+ $('finishArea').textContent=areaFinished?'Polygon finished':'Finish polygon';
+}
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=areaPoints.length+' vertices';
  if(polylineCrossesRestrictedParallel(areaPoints,areaFinished)){
@@ -304,6 +332,7 @@ function updateAreaMeasurement(){
   $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
   $('areaHelp').textContent=areaPoints.length?'Add vertices; each straight edge receives a km label. Finish the polygon to show planar area and perimeter. Do not cross the restricted 60°S parallel.':'Choose Area, then click at least three points. Polygon edges may not cross the restricted 60°S parallel.';
  }
+ syncMeasurementActionButtons();
 }
 function finishArea(){
  if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}
@@ -329,13 +358,18 @@ function draw(){
  if(!width||!height)return;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle=visualPalette.canvas;ctx.fillRect(0,0,width,height);
  labelCollisionBoxes=[];ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
- // Clip every geographic layer to the circular map boundary.
+ // Keep the compass inside the visible canvas instead of tying it to a clipped map coordinate.
+ labelCollisionBoxes.push({left:2,top:2,right:62,bottom:62});
+ // Draw geographic geometry first; labels are placed afterward against a shared collision map.
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  if(layers.grid)drawGrid();
  if(layers.countries)drawCountries();
  drawCoastlinesLayer();
  if(layers.antarctica)drawIceWall();
  drawHistoricalOverlay();drawRestrictedParallel();
+ ctx.restore();
+ if(layers.grid)drawAnnotations();
+ ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  drawCapitals();drawCountryLabels();
  if(layers.oceanLabels){
   const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,scaleBarReadingKm(),{
@@ -346,8 +380,8 @@ function draw(){
  }
  drawMeasure();drawArea();
  ctx.restore();
- if(layers.grid)drawAnnotations();
  ctx.restore();
+ drawCompassRose();
  drawScaleBar();updateViewReadout();
 }
 function updateViewReadout(){
@@ -409,12 +443,18 @@ function updateMeasurement(){
   $('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 north of 60°S · planar in ice-wall zone';
   $('measureHelp').textContent=points.length===1?'Point A set. Click a second point on the same side of the restricted 60°S parallel.':'Choose two places on the disk, or select a capital and assign it to A or B.';
  }
+ syncMeasurementActionButtons();
 }
 
 function setModeUI(){
- $('exploreMode').classList.toggle('active',mode==='explore');$('exploreMode').setAttribute('aria-pressed',String(mode==='explore'));
- $('measureMode').classList.toggle('active',mode==='measure');$('measureMode').setAttribute('aria-pressed',String(mode==='measure'));
- $('areaMode').classList.toggle('active',mode==='area');$('areaMode').setAttribute('aria-pressed',String(mode==='area'));
+ const buttons=[['exploreMode','explore'],['measureMode','measure'],['areaMode','area']];
+ for(const [id,value] of buttons){
+  const active=mode===value,button=$(id);
+  button.classList.toggle('active',active);
+  button.setAttribute('aria-pressed',String(active));
+  button.dataset.active=String(active);
+ }
+ $('measurementTools').dataset.activeMode=mode;
 }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});const offset=panForWorldCenterPoint(x,y,zoom,rotationRadians());panX=offset.panX;panY=offset.panY;draw();}
 function selectResult(item){
