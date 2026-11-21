@@ -174,7 +174,7 @@ test('distance connector is one straight projected segment measured in the map p
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
  assert.match(app,/const label=formatMeasurementKilometres\(measurement\.chordDistanceMeters\)/);
- assert.match(app,/const label=formatMeasurementKilometres\(measurement\.chordDistanceMeters\)/);
+ assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.calibratedDistanceMeters\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
