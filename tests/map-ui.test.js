@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createIceWallTexturePaths,ICE_RIDGE_COUNT,ICE_CREVASSE_COUNT} from '../src/map/ice-wall.js';
+import {createCompassRoseLayout} from '../src/map/compass.js';
 import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -110,7 +111,7 @@ test('coordinate annotations reserve collision space and the compass remains scr
  assert.match(app,/dockRect\.left-canvasRect\.left/);
  assert.match(app,/function drawUprightMapText[\s\S]*?labelCollisionBoxes\.push\(box\)/);
  assert.match(app,/if\(layers\.grid\)drawAnnotations\(\);[\s\S]*?drawCapitals\(!interactionSimplified\);drawCountryLabels\(!interactionSimplified\)/);
- assert.match(app,/const cx=31,cy=31,r=14,angle=rotationRadians\(\)/);
+ assert.match(app,/createCompassRoseLayout\(rotationRadians\(\)\)/);
 });
 test('switching measurement tools clears distance and area drawings',()=>{
  assert.match(app,/function clearMeasurementDrawings\(\)\{\s*points=\[\];areaPoints=\[\];areaFinished=false;\s*updateMeasurement\(\);updateAreaMeasurement\(\);draw\(\);/);
@@ -315,7 +316,6 @@ test('scale-bar measurement is calculated once per frame and uses a pixel-accura
  assert.match(app,/shouldShowCapitalLabels\(frameScaleBarReadingKm\)/);
  assert.match(app,/shouldShowCountryLabels\(frameScaleBarReadingKm\)/);
  assert.match(app,/drawOceanLabels\(ctx,project,baseR,zoom,frameScaleBarReadingKm/);
- assert.match(app,/for\(let i=0;i<12;i\+\+\)/);
  assert.doesNotMatch(app,/for\(let i=0;i<36;i\+\+\)\{const mid=\(low\+high\)\/2;if\(flatDiskDistanceForScalePixels/);
 });
 
@@ -384,4 +384,26 @@ test('static country fills are cached while country outlines remain zoom-crisp',
  assert.match(app,/ctx\.lineWidth=\.62\/zoom;ctx\.stroke\(countryOutlinesPath\)/);
  assert.match(app,/countryLayerStyle===visualStyle/);
  assert.match(app,/buildCountryLayerCache\(\);/);
+});
+
+test('compass cardinal labels stay screen-fixed while the needle follows map rotation',()=>{
+ const northUp=createCompassRoseLayout(0);
+ const rotated=createCompassRoseLayout(Math.PI/12);
+ assert.deepEqual(rotated.cardinalLabels,northUp.cardinalLabels);
+ assert.equal(northUp.needleRotation,0);
+ assert.equal(rotated.needleRotation,Math.PI/12);
+ assert.equal(northUp.radius,17.5);
+ assert.ok(northUp.outerRadius>northUp.radius*1.7);
+ assert.match(app,/ctx\.save\(\);ctx\.rotate\(rose\.needleRotation\)/);
+ assert.match(app,/ctx\.restore\(\);\s*\/\/ A small hub/);
+ assert.match(app,/for\(const mark of rose\.cardinalLabels\)ctx\.fillText\(mark\.label,mark\.x,mark\.y\)/);
+});
+
+test('compass labels remain upright and independent of needle rotation',()=>{
+ const compassLayout=createCompassRoseLayout(0.3);
+ assert.deepEqual(compassLayout.cardinalLabels.map(mark=>mark.label),['N','E','S','W']);
+ assert.ok(compassLayout.cardinalLabels.every(mark=>Number.isFinite(mark.x)&&Number.isFinite(mark.y)));
+ assert.match(app,/function drawCompassRose\(\)/);
+ assert.match(app,/ctx\.save\(\);ctx\.rotate\(rose\.needleRotation\)/);
+ assert.match(app,/for\(const mark of rose\.cardinalLabels\)ctx\.fillText\(mark\.label,mark\.x,mark\.y\)/);
 });

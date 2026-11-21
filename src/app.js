@@ -7,6 +7,7 @@ import {createFeaturePath} from './map/feature-paths.js';
 import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
 import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
+import {createCompassRoseLayout} from './map/compass.js';
 import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePathAsync,drawCoastlines as renderCoastlines} from './map/coastlines.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
@@ -155,18 +156,42 @@ function resize(){
 function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
 function drawGrid(){ctx.save();const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];for(const lat of latitudes){if(lat===RESTRICTED_PARALLEL_LATITUDE)continue;const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;ctx.lineWidth=(lat===0?1.55:.65)/zoom;ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);ctx.stroke();}ctx.setLineDash([]);for(let d=0;d<360;d+=15){const [x,y]=project(d,-90);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.strokeStyle=d%30===0?visualPalette.grid:visualPalette.gridMinor;ctx.lineWidth=(d%30===0?.82:.42)/zoom;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();}
 function drawCompassRose(){
- const cx=31,cy=31,r=14,angle=rotationRadians();
+ const rose=createCompassRoseLayout(rotationRadians()),{cx,cy,radius:r,outerRadius}=rose;
  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.translate(cx,cy);
- ctx.beginPath();ctx.arc(0,0,r*1.72,0,Math.PI*2);ctx.fillStyle='rgba(255,253,246,.92)';ctx.fill();
+ ctx.beginPath();ctx.arc(0,0,outerRadius,0,Math.PI*2);ctx.fillStyle='rgba(255,253,246,.96)';ctx.fill();
  ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1;ctx.stroke();
- ctx.rotate(angle);ctx.beginPath();
- for(let i=0;i<12;i++){const a=-Math.PI/2+i*Math.PI/8,rr=i%2===0?r:r*.32,x=Math.cos(a)*rr,y=Math.sin(a)*rr;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
- ctx.closePath();ctx.fillStyle='rgba(255,253,246,.78)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=1.15;ctx.stroke();
- ctx.beginPath();ctx.moveTo(0,-r*.9);ctx.lineTo(0,r*.9);ctx.moveTo(-r*.9,0);ctx.lineTo(r*.9,0);ctx.stroke();
- ctx.fillStyle=visualPalette.labels;ctx.font='700 8px Georgia,serif';ctx.textAlign='center';ctx.textBaseline='middle';
- for(const [label,x,y] of [['N',0,-r*1.38],['S',0,r*1.38],['W',-r*1.38,0],['E',r*1.38,0]]){
-  ctx.save();ctx.translate(x,y);ctx.rotate(-angle);ctx.fillText(label,0,0);ctx.restore();
+ ctx.beginPath();ctx.arc(0,0,r*1.15,0,Math.PI*2);
+ ctx.strokeStyle='rgba(70,94,101,.24)';ctx.lineWidth=.65;ctx.stroke();
+
+ // Only the compass needle rotates: the cardinal marks stay in screen directions.
+ ctx.save();ctx.rotate(rose.needleRotation);
+ ctx.beginPath();
+ ctx.moveTo(0,-r*1.04);ctx.lineTo(r*.21,-r*.12);ctx.lineTo(0,-r*.31);ctx.lineTo(-r*.21,-r*.12);
+ ctx.closePath();ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.strokeStyle='rgba(255,253,246,.9)';ctx.lineWidth=.7;ctx.stroke();
+
+ ctx.beginPath();
+ ctx.moveTo(0,r*1.04);ctx.lineTo(-r*.21,r*.12);ctx.lineTo(0,r*.31);ctx.lineTo(r*.21,r*.12);
+ ctx.closePath();ctx.fillStyle='rgba(255,253,246,.98)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=.8;ctx.stroke();
+
+ for(const direction of [Math.PI/2,Math.PI,Math.PI*1.5]){
+  ctx.save();ctx.rotate(direction);ctx.beginPath();
+  ctx.moveTo(0,-r*.83);ctx.lineTo(r*.12,-r*.12);ctx.lineTo(0,-r*.25);ctx.lineTo(-r*.12,-r*.12);
+  ctx.closePath();ctx.fillStyle='rgba(95,125,134,.48)';ctx.fill();ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=.55;ctx.stroke();
+  ctx.restore();
  }
+ for(const direction of [Math.PI/4,Math.PI*3/4,Math.PI*5/4,Math.PI*7/4]){
+  ctx.save();ctx.rotate(direction);ctx.beginPath();
+  ctx.moveTo(0,-r*.66);ctx.lineTo(r*.075,-r*.12);ctx.lineTo(0,-r*.23);ctx.lineTo(-r*.075,-r*.12);
+  ctx.closePath();ctx.fillStyle='rgba(95,125,134,.36)';ctx.fill();ctx.restore();
+ }
+ ctx.restore();
+
+ // A small hub covers joins and anchors the needle.
+ ctx.beginPath();ctx.arc(0,0,r*.105,0,Math.PI*2);
+ ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.strokeStyle='rgba(255,253,246,.95)';ctx.lineWidth=.75;ctx.stroke();
+
+ ctx.fillStyle=visualPalette.labels;ctx.font='700 8.5px Georgia,serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const mark of rose.cardinalLabels)ctx.fillText(mark.label,mark.x,mark.y);
  ctx.restore();
 }
 function drawAnnotations(){
