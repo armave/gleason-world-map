@@ -500,7 +500,7 @@ function updateMeasurement(){
    messages.push('Correction bound applied: the unbounded empirical factor fell outside 0.90–2.50.');
   }
   if(messages.length===0){
-   messages.push('Calibration features are within the fitted mean-colatitude and endpoint-span ranges. This empirical estimate is not guaranteed outside the reference sample.');
+   messages.push('Calibration features are within the fitted mean-colatitude, endpoint-span, and wrapped-longitude ranges. This empirical estimate is not guaranteed outside the reference sample.');
   }
   diagnostics.textContent=messages.join(' ');
   diagnostics.classList.toggle('is-warning',measurement.warnings.length>0);
