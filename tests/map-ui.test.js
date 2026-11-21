@@ -163,7 +163,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /flightEmpiricalDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The connector and its map label show the ADS-B flight-mileage estimate/);
+  assert.match(app, /The connector and its map label report Euclidean distance along the straight projected chord/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
