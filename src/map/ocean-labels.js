@@ -1,3 +1,5 @@
+import {screenReadingDirection,uprightTextAngle} from './view-transform.js';
+
 const OCEAN_LABELS=Object.freeze([
  {name:'ARCTIC OCEAN',lat:78,lon:-145,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100,curve:false},
  {name:'NORTH PACIFIC OCEAN',lat:35,lon:-155,type:'ocean',maxScaleKm:18000,minScaleKm:600,priority:100},
@@ -74,21 +76,34 @@ function makeCurvedCandidate(ctx,label,anchor,project,baseR,zoom,viewport,isLand
  const curved=label.curve!==false;
  if(!Number.isFinite(radius)||radius<baseR*.01||(curved&&totalWidth/radius>1.35))return null;
  const theta=anchor.lon*DEG;
- const direction=(-Math.sin(theta))<-.001?-1:1;
+ // Choose the direction in which characters advance from left to right on screen,
+ // not merely east/west in the unrotated disk coordinate system.
+ const direction=curved
+  ?screenReadingDirection(theta,viewport.rotation)
+  :(Math.cos(viewport.rotation)>=0?1:-1);
  const glyphs=[];let cursor=-totalWidth/2;
  for(let i=0;i<text.length;i++){
   const char=text[i],width=advances[i]-letterGap;
   const offset=cursor+width/2,angle=theta+direction*offset/radius;
-  const pos=curved?project(angle/DEG,anchor.lat):[center[0]+offset,center[1]];
+  const pos=curved
+   ?project(angle/DEG,anchor.lat)
+   :[center[0]+direction*offset,center[1]];
   if(!pos||!pos.slice(0,2).every(Number.isFinite)||Math.hypot(pos[0],pos[1])>baseR*.985)return null;
   const sampleEvery=Math.max(1,Math.floor(text.length/4));
   if(isLand&&(i===0||i===text.length-1||i%sampleEvery===0)&&isLand(pos[0],pos[1]))return null;
-  const rotation=curved?Math.atan2(-direction*Math.cos(angle),-direction*Math.sin(angle)):0;
+  const localTangent=curved
+   ?Math.atan2(-direction*Math.cos(angle),-direction*Math.sin(angle))
+   :(direction>0?0:Math.PI);
+  const screenTangent=uprightTextAngle(localTangent+viewport.rotation);
+  const rotation=screenTangent-viewport.rotation;
   glyphs.push({char,x:pos[0],y:pos[1],rotation});
   cursor+=advances[i];
  }
- const tangent=curved?Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta)):0;
- const screenTangent=tangent,boxWidth=Math.abs(totalWidth*zoom*Math.cos(screenTangent))+Math.abs(fontSize*1.45*Math.sin(screenTangent))+8;
+ const localTangent=curved
+  ?Math.atan2(-direction*Math.cos(theta),-direction*Math.sin(theta))
+  :(direction>0?0:Math.PI);
+ const screenTangent=uprightTextAngle(localTangent+viewport.rotation);
+ const boxWidth=Math.abs(totalWidth*zoom*Math.cos(screenTangent))+Math.abs(fontSize*1.45*Math.sin(screenTangent))+8;
  const boxHeight=Math.abs(totalWidth*zoom*Math.sin(screenTangent))+Math.abs(fontSize*1.45*Math.cos(screenTangent))+6;
  const cosine=Math.cos(viewport.rotation),sine=Math.sin(viewport.rotation);
  const screenX=viewport.width/2+viewport.panX+(center[0]*cosine-center[1]*sine)*zoom;
