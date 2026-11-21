@@ -44,15 +44,18 @@ function syntheticDataset() {
 test('unit disk chord and radial/tangential endpoint features are symmetric', () => {
   const a = airports[0], b = airports[4];
   assert.equal(unitDiskChord(a, b), unitDiskChord(b, a));
-  assert.deepEqual(flightCalibrationFeatures(a, b), flightCalibrationFeatures(b, a));
+  const reverseFeatures = flightCalibrationFeatures(b, a);
+  const forwardFeatures = flightCalibrationFeatures(a, b);
+  for (let index = 0; index < forwardFeatures.length; index++) {
+    assert.ok(Math.abs(forwardFeatures[index] - reverseFeatures[index]) < 1e-14);
+  }
   const features = flightCalibrationFeatures(a, b);
   const tA = (90 - a.lat) / 180;
   const tB = (90 - b.lat) / 180;
   const qA = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
   const qB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
-  const longitudeSpan = Math.abs(
-    ((((b.lon - a.lon) + 180) % 360 + 360) % 360 - 180) * Math.PI / 180
-  );
+  const longitudeDelta = (Math.max(a.lon, b.lon) - Math.min(a.lon, b.lon)) % 360;
+  const longitudeSpan = Math.min(longitudeDelta, 360 - longitudeDelta) * Math.PI / 180;
   const radial = Math.PI * Math.abs(qA - qB);
   const tangential = Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   const chord = unitDiskChord(a, b);

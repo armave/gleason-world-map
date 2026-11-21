@@ -36,9 +36,12 @@ function validAirport(airport) {
 }
 
 function wrappedLongitudeSpanRadians(first, second) {
-  const wrappedDegrees =
-    ((((second.lon - first.lon) + 180) % 360 + 360) % 360 - 180);
-  return Math.abs(wrappedDegrees) * DEG;
+  // Canonical ordering makes the calculation bit-for-bit symmetric when the
+  // two endpoints are supplied in reverse order.
+  const lower = Math.min(first.lon, second.lon);
+  const upper = Math.max(first.lon, second.lon);
+  const delta = (upper - lower) % 360;
+  return Math.min(delta, 360 - delta) * DEG;
 }
 
 /**

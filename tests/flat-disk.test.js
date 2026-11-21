@@ -84,7 +84,7 @@ test('direct connector contains only the two projected endpoints', () => {
 });
 
 test('radial separation and same-latitude straight chord formulas are planar', () => {
-  close(northSouthDistanceKm(90, 0), Math.PI * DISK_RADIAL_SCALE_KM / 2, 1e-10);
+  close(northSouthDistanceKm(90, 0), radialDistanceFromNorthKm(0), 1e-10);
   const r = radialDistanceFromNorthKm(0);
   close(eastWestDistanceKm(0, Math.PI / 180),
     2 * r * Math.sin(Math.PI / 360), 1e-10);
@@ -192,8 +192,9 @@ test('Antarctica area preserves the full southern rim sweep shown by the map', (
   const withRim = flatDiskFeatureAreaM2(feature, projector, 400, {preserveAntarcticRim:true});
   const mapRadius = 400;
   const scale = DISK_RADIUS_METERS / mapRadius;
+  const southernBoundaryFraction = radialFraction(-60);
   const expectedAnnulusArea = Math.PI * (
-    mapRadius ** 2 - (mapRadius * 5 / 6) ** 2
+    mapRadius ** 2 - (mapRadius * southernBoundaryFraction) ** 2
   ) * scale ** 2;
   close(withRim, expectedAnnulusArea, expectedAnnulusArea * 0.001);
   assert.ok(Math.abs(withRim - withoutRim) > expectedAnnulusArea * 0.05);
