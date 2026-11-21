@@ -1,5 +1,5 @@
 import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
-import {measureDirectDistance,segmentCrossesRestrictedParallel,polylineCrossesRestrictedParallel,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
+import {measureDirectDistance,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -146,10 +146,13 @@ function drawRestrictedParallel(){
   ctx.lineTo(outer*Math.cos(angle),-outer*Math.sin(angle));
   ctx.strokeStyle='rgba(142,53,46,.72)';ctx.lineWidth=1/zoom;ctx.stroke();
  }
- const angle=rad(135),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
- const label='60°S · NO CROSSING';
+ // Opposing callouts mark the latitude where the hybrid distance metric changes.
+ const label='60°S · METRIC CHANGE';
  ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
- drawMeasurementLabelAtMap(x,y,label,'restricted');
+ for(const degree of [45,225]){
+  const angle=rad(degree),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
+  drawMeasurementLabelAtMap(x,y,label,'restricted');
+ }
  ctx.restore();
 }
 function drawCapitals(){
@@ -330,30 +333,28 @@ function syncMeasurementActionButtons(){
 }
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=areaPoints.length+' vertices';
- if(polylineCrossesRestrictedParallel(areaPoints,areaFinished)){
-  $('areaValue').textContent='Restricted';
-  $('areaPerimeter').textContent='Crosses the 60°S boundary';
-  $('areaHelp').textContent='This polygon crosses the restricted 60°S parallel. Remove or reposition vertices so no straight boundary edge crosses the circle.';
-  syncMeasurementActionButtons();
-  return;
- }
  if(areaFinished&&areaPoints.length>=3){
   const result=flatDiskPolygonMetrics(areaPoints,project,baseR);
-  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent='Planar perimeter · '+formatDistance(result.perimeterM);$('areaHelp').textContent='Planar shoelace area and straight-edge perimeter on the flat disk. Polygon edges may not cross the restricted 60°S parallel.';}
-  else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='Invalid polygon · check for crossing edges';$('areaHelp').textContent='This polygon could not be measured. Check that its edges do not cross and that it has at least three valid vertices.';}
+  if(result){
+   $('areaValue').textContent=formatArea(result.areaM2);
+   $('areaPerimeter').textContent='Planar perimeter · '+formatDistance(result.perimeterM);
+   $('areaHelp').textContent='Planar area and perimeter on the flat disk. Edges may cross 60°S.';
+  }else{
+   $('areaValue').textContent='Unavailable';
+   $('areaPerimeter').textContent='Invalid polygon · check for crossing edges';
+   $('areaHelp').textContent='Check that polygon edges do not self-intersect and that at least three valid vertices are set.';
+  }
  }else{
-  $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
-  $('areaHelp').textContent=areaPoints.length?'Add vertices; each straight edge receives a km label. Finish the polygon to show planar area and perimeter. Do not cross the restricted 60°S parallel.':'Choose Area, then click at least three points. Polygon edges may not cross the restricted 60°S parallel.';
+  $('areaValue').textContent='—';
+  $('areaPerimeter').textContent='Area not calculated';
+  $('areaHelp').textContent=areaPoints.length
+   ?'Add vertices, then finish to calculate planar area and perimeter.'
+   :'Click at least three points, then finish to calculate area and perimeter.';
  }
  syncMeasurementActionButtons();
 }
 function finishArea(){
  if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}
- if(polylineCrossesRestrictedParallel(areaPoints,true)){
-  $('areaValue').textContent='Restricted';$('areaPerimeter').textContent='Closing edge crosses 60°S';
-  $('areaHelp').textContent='The closing edge would cross the restricted 60°S parallel. Reposition the vertices before finishing this polygon.';
-  $('status').textContent='Restricted crossing · polygon cannot cross 60°S';return;
- }
  areaFinished=true;updateAreaMeasurement();draw();updateStatus();
 }
 function drawHistoricalOverlay(){
@@ -420,12 +421,9 @@ function showCounty(county){
 }
 function setPoint(index,p){
  const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};
- if(index===1&&points.length===1&&segmentCrossesRestrictedParallel(points[0],obj)){
-  $('distanceValue').textContent='Restricted';$('distanceSub').textContent='60°S crossing blocked';
-  $('measureHelp').textContent='This A–B segment crosses the restricted 60°S parallel. Choose both points on the same side, or end the measurement at the boundary.';
-  $('status').textContent='Restricted crossing · distance cannot cross 60°S';return false;
- }
- if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}
+ if(index===0||points.length===0){points=[obj];}
+ else if(points.length===1){points.push(obj);}
+ else{points[1]=obj;}
  mode='measure';setModeUI();updateMeasurement();draw();updateStatus();return true;
 }
 function updateMeasurement(){
@@ -440,23 +438,20 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  if(measurement.restricted){
-   $('distanceValue').textContent='Restricted';$('distanceSub').textContent='60°S crossing blocked';
-   $('measureHelp').textContent='This segment crosses the restricted 60°S parallel and cannot be measured.';
-  }else{
-   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
-   $('distanceSub').textContent=measurement.metric==='flat-disk'?'Flat-disk planar chord · ice-wall zone':'WGS84 shortest surface distance';
-   $('measureHelp').textContent=measurement.metric==='flat-disk'
-    ?'The ice-wall zone uses a straight flat-disk measurement; globe/ellipsoid calculations are not used. Segments crossing 60°S are blocked.'
-    :'North of 60°S, the numeric readout uses the shortest WGS84 surface distance. Segments crossing the restricted parallel are blocked.';
-  }
+  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
+  $('distanceSub').textContent=measurement.metric==='flat-disk'?'Flat-disk chord · Antarctic band involved':'WGS84 shortest surface distance';
+  $('measureHelp').textContent=measurement.metric==='flat-disk'
+   ?'If either endpoint is south of 60°S, the segment uses a flat-disk chord and may cross the parallel.'
+   :'Both endpoints are north of 60°S, so the readout uses the WGS84 shortest surface distance.';
  }else{
-  $('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 north of 60°S · planar in ice-wall zone';
-  $('measureHelp').textContent=points.length===1?'Point A set. Click a second point on the same side of the restricted 60°S parallel.':'Choose two places on the disk, or select a capital and assign it to A or B.';
+  $('distanceValue').textContent='—';
+  $('distanceSub').textContent='WGS84 north · flat-disk if Antarctic band involved';
+  $('measureHelp').textContent=points.length===1
+   ?'Point A set. Click anywhere on the disk to set point B.'
+   :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
  }
  syncMeasurementActionButtons();
 }
-
 function setModeUI(){
  const buttons=[['exploreMode','explore'],['measureMode','measure'],['areaMode','area']];
  for(const [id,value] of buttons){
@@ -492,10 +487,6 @@ function onMapClick(x,y){
  if(mode==='area'){
   if(areaFinished){areaPoints=[];areaFinished=false;}
   const p=cap?{lat:cap.lat,lon:cap.lon,name:cap.city}:q;
-  if(areaPoints.length&&segmentCrossesRestrictedParallel(areaPoints.at(-1),p)){
-   $('areaHelp').textContent='That edge would cross the restricted 60°S parallel. The vertex was not added.';
-   $('status').textContent='Restricted crossing · polygon edge rejected';return;
-  }
   areaPoints.push(p);updateAreaMeasurement();draw();updateStatus();return;
  }
  if(cap){showCapital(cap);return;}const c=findCountryAt(x,y);if(c){showCountry(c);return;}
@@ -518,10 +509,9 @@ function restoreSharedState(){
  const bits=q.get('ly');if(bits&&bits.length>=5){layers.countries=bits[0]==='1';layers.grid=bits[1]==='1';layers.capitals=bits[2]==='1';layers.capitalNames=bits[3]==='1';layers.antarctica=bits[4]==='1';if(bits.length>=6)layers.countryNames=bits[5]==='1';if(bits.length>=7)layers.oceanLabels=bits[6]==='1';if(bits.length>=8)layers.coastlines=bits[7]==='1';}
  const readPoint=(key,name)=>{const raw=q.get(key);if(!raw)return null;const v=raw.split(',').map(Number);return v.length===2&&v.every(Number.isFinite)&&Math.abs(v[0])<=90&&Math.abs(v[1])<=180?{lat:v[0],lon:v[1],name}:null;};
  const a=readPoint('a','Shared point A'),b=readPoint('b','Shared point B');
- points=a?(b&&!segmentCrossesRestrictedParallel(a,b)?[a,b]:[a]):[];
+ points=a?(b?[a,b]:[a]):[];
  const poly=q.get('ap');if(poly){areaPoints=poly.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===2&&v.every(Number.isFinite)&&Math.abs(v[0])<=90&&Math.abs(v[1])<=180).map(v=>({lat:v[0],lon:v[1]}));areaFinished=areaPoints.length>=3;}
- if(polylineCrossesRestrictedParallel(areaPoints,false)||(areaFinished&&polylineCrossesRestrictedParallel(areaPoints,true))){areaPoints=[];areaFinished=false;}
- const tie=q.get('gc');if(tie){registrationPoints=tie.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===4&&v.every(Number.isFinite)&&v[0]>=0&&v[0]<=1&&v[1]>=0&&v[1]<=1&&Math.abs(v[2])<=90&&Math.abs(v[3])<=180).map(v=>({u:v[0],v:v[1],lat:v[2],lon:v[3]})).slice(0,30);}
+  const tie=q.get('gc');if(tie){registrationPoints=tie.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===4&&v.every(Number.isFinite)&&v[0]>=0&&v[0]<=1&&v[1]>=0&&v[1]<=1&&Math.abs(v[2])<=90&&Math.abs(v[3])<=180).map(v=>({u:v[0],v:v[1],lat:v[2],lon:v[3]})).slice(0,30);}
  if(areaPoints.length)mode='area';else if(points.length)mode='measure';
  for(const [id,key] of [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames'],['layerOceanLabels','oceanLabels'],['layerCoastlines','coastlines']])$(id).checked=layers[key];
  $('mapStyle').value=visualStyle;syncRotationControls();
