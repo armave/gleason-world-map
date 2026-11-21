@@ -7,8 +7,9 @@
  *   x = r cos(longitude), y = -r sin(longitude)
  *
  * R = 6,371 km is the chosen radial scale constant for this map, not a
- * geodesic or ellipsoidal measurement parameter. Distances, areas and
- * perimeters are Euclidean measurements in the projected disk.
+ * geodesic or ellipsoidal measurement parameter. This module provides the
+ * display projection and planar area/perimeter helpers. The active A–B
+ * distance tool uses WGS84 geodesics from ./geodesic.js.
  */
 export const DISK_RADIAL_SCALE_KM = 6371;
 export const DISK_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
@@ -80,14 +81,14 @@ function pointInDiskKm(point) {
   return geographicPointInDiskKm(point.lon, point.lat);
 }
 
-/** Straight-line Euclidean distance between two projected map positions. */
+/** Euclidean chord length in the projected disk only; not geographic ground distance. */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
   if (!first || !second) return null;
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** One direct projected segment: exactly the line shown by the distance tool. */
+/** One straight projected chord between endpoints; the distance tool uses geodesicLinePath instead. */
 export function flatDiskLinePath(a, b, projectPoint) {
   if (!a || !b || typeof projectPoint !== 'function' ||
       ![a.lat, a.lon, b.lat, b.lon].every(Number.isFinite) ||
