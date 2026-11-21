@@ -185,11 +185,14 @@ test('opposite-side longitude separation is flagged as outside the sampled angul
   assert.ok(diagnostics.warnings.includes('outside-training-range'));
 });
 
-test('the correction-bound diagnostic reports when the empirical factor is capped', () => {
-  const result = measureDirectDistance(point(30, 0), point(90, 180));
+test('the correction-bound diagnostic reports when the local factor falls below its lower bound', () => {
+  const result = measureDirectDistance(
+    point(-35.1962094825631, -88.46809241131592),
+    point(-31.194773341912608, -115.28891102375371)
+  );
   assert.equal(result.calibration.factorWasClamped, true);
   assert.ok(result.warnings.includes('factor-clamped'));
-  assert.equal(result.calibrationFactor, 2.5);
+  assert.equal(result.calibrationFactor, 0.5);
 });
 
 test('polygon edges including closure are still checked for restricted-line crossings', () => {
