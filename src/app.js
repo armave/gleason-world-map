@@ -452,6 +452,10 @@ function updateMeasurement(){
  }
  syncMeasurementActionButtons();
 }
+function clearMeasurementDrawings(){
+ points=[];areaPoints=[];areaFinished=false;
+ updateMeasurement();updateAreaMeasurement();draw();
+}
 function setModeUI(){
  const buttons=[['exploreMode','explore'],['measureMode','measure'],['areaMode','area']];
  for(const [id,value] of buttons){
@@ -717,7 +721,7 @@ mobileToolsToggle.addEventListener('click',()=>setMobileToolsOpen(!document.body
 const mobileToolsQuery=window.matchMedia('(min-width: 761px)');
 mobileToolsQuery.addEventListener?.('change',event=>{if(event.matches)setMobileToolsOpen(false);});
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});$('search').addEventListener('keydown',e=>{if(e.key==='Escape')$('suggestions').classList.remove('open');if(e.key==='Enter'){const first=$('suggestions').querySelector('.suggestion');if(first)first.click();}});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
-$('exploreMode').addEventListener('click',()=>{mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{mode='area';areaFinished=false;setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
+$('exploreMode').addEventListener('click',()=>{if(mode!=='explore')clearMeasurementDrawings();mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{if(mode!=='measure')clearMeasurementDrawings();mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{if(mode!=='area')clearMeasurementDrawings();mode='area';setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('finishArea').addEventListener('click',finishArea);
 $('undoArea').addEventListener('click',()=>{areaPoints.pop();areaFinished=false;updateAreaMeasurement();draw();updateStatus();});
 $('clearArea').addEventListener('click',()=>{areaPoints=[];areaFinished=false;updateAreaMeasurement();draw();updateStatus();});

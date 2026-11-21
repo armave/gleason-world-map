@@ -108,6 +108,12 @@ test('coordinate annotations reserve collision space and the compass remains scr
  assert.match(app,/if\(layers\.grid\)drawAnnotations\(\);[\s\S]*?drawCapitals\(\);drawCountryLabels\(\)/);
  assert.match(app,/const cx=31,cy=31,r=14,angle=rotationRadians\(\)/);
 });
+test('switching measurement tools clears distance and area drawings',()=>{
+ assert.match(app,/function clearMeasurementDrawings\(\)\{\s*points=\[\];areaPoints=\[\];areaFinished=false;\s*updateMeasurement\(\);updateAreaMeasurement\(\);draw\(\);/);
+ assert.match(app,/if\(mode!=='explore'\)clearMeasurementDrawings\(\)/);
+ assert.match(app,/if\(mode!=='measure'\)clearMeasurementDrawings\(\)/);
+ assert.match(app,/if\(mode!=='area'\)clearMeasurementDrawings\(\)/);
+});
 test('measurement mode buttons expose a strong pressed state and actions reflect availability',()=>{
  assert.match(html,/id="exploreMode" class="active"[^>]*aria-pressed="true"/);
  assert.match(html,/id="measureMode"[^>]*aria-pressed="false"/);
