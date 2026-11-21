@@ -12,7 +12,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style flat circular disk · Hybrid distance &amp; planar area · 60°S restricted crossing · Historical scan registration</div>
+  <div class="subtitle">Gleason-style flat circular disk · Hybrid distance &amp; planar area · 60°S metric transition · Historical scan registration</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -47,7 +47,7 @@
         <section class="map-measure-tools" id="measurementTools" data-active-mode="explore" aria-label="Distance and area measurement tools">
         <div class="map-measure-head">
           <strong>Measure</strong>
-          <span class="map-measure-restriction">60°S · restricted</span>
+          <span class="map-measure-restriction">60°S · metric change</span>
           <button id="toggleMeasurementDetails" type="button" aria-expanded="false" aria-controls="measurementDetails" hidden>Details</button>
         </div>
         <div class="mode-row map-measure-modes" role="group" aria-label="Map mode">
@@ -80,7 +80,7 @@
             <div class="area-progress"><span id="areaVertexCount">0 vertices</span><span class="small">Planar area</span></div>
             <p class="small" id="areaHelp">Click at least three points, then finish to calculate area and perimeter.</p>
             <div class="endpoint-actions area-actions">
-              <button id="finishArea" type="button" disabled><span class="tool-icon" aria-hidden="true">✓</span> Finish</button>
+              <button id="finishArea" type="button" disabled><span class="tool-icon" aria-hidden="true">✓</span><span class="button-label">Finish</span></button>
               <button id="undoArea" type="button" disabled><span class="tool-icon" aria-hidden="true">↶</span> Undo</button>
               <button id="clearArea" type="button" disabled><span class="tool-icon" aria-hidden="true">×</span> Clear</button>
             </div>
