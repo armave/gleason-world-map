@@ -24,7 +24,7 @@ const heldOutFlightMileageRoutes = [
     second: point(-27.388888888889, 153.126111111111),
     medianTrackKm: 814.925394574103,
     telemetryCoverage: 1,
-    expectedErrorPercent: -7.6
+    expectedErrorPercent: -9.0
   },
   {
     route: 'Dubai–Singapore (OMDB–WSSS)',
@@ -32,7 +32,7 @@ const heldOutFlightMileageRoutes = [
     second: point(1.3451159576023457, 103.99194013366014),
     medianTrackKm: 5699.2843254262025,
     telemetryCoverage: 0.3516,
-    expectedErrorPercent: 6.6
+    expectedErrorPercent: 5.3
   },
   {
     route: 'Doha–Tokyo (OTHH–RJAA)',
@@ -40,7 +40,7 @@ const heldOutFlightMileageRoutes = [
     second: point(35.7647, 140.386),
     medianTrackKm: 8965.419707357165,
     telemetryCoverage: 0.3071,
-    expectedErrorPercent: 1.9
+    expectedErrorPercent: 1.5
   },
   {
     route: 'Istanbul–Amman (LTFM–OJAI)',
@@ -48,7 +48,7 @@ const heldOutFlightMileageRoutes = [
     second: point(31.7226, 35.9932),
     medianTrackKm: 1424.4753475218993,
     telemetryCoverage: 0.5355,
-    expectedErrorPercent: 2.5
+    expectedErrorPercent: 0.6
   }
 ];
 
@@ -131,6 +131,8 @@ for (const route of heldOutFlightMileageRoutes) {
       result.calibration.tangentialShareOfChord ** 2 - 1
     ) < 1e-9);
     assert.ok(Number.isFinite(route.telemetryCoverage));
+    assert.ok(Math.abs(errorPercent - route.expectedErrorPercent) < 0.15,
+      `${route.route}: expected ${route.expectedErrorPercent}% but got ${errorPercent.toFixed(2)}%`);
   });
 }
 

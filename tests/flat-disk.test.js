@@ -10,6 +10,7 @@ import {
   flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
   DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
+import { radialWarpDerivative } from '../src/core/radial-warp.js';
 
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
@@ -25,19 +26,25 @@ test('radial scale and disk radius use the fitted ADS-B flight-mileage parameter
   assert.ok(FLIGHT_CALIBRATION.trainingExamples.length >= 10);
 });
 
-test('radial calibration is r = R times colatitude', () => {
-  for (const [lat, radius] of [
-    [90, 0], [60, DISK_RADIAL_SCALE_KM * Math.PI / 6],
-    [30, DISK_RADIAL_SCALE_KM * Math.PI / 3],
-    [0, DISK_RADIAL_SCALE_KM * Math.PI / 2],
-    [-30, DISK_RADIAL_SCALE_KM * 2 * Math.PI / 3],
-    [-60, DISK_RADIAL_SCALE_KM * 5 * Math.PI / 6],
-    [-90, DISK_RADIUS_KM]
-  ]) close(radialDistanceFromNorthKm(lat), radius, 1e-9);
-  for (const lat of [90, 60, 30, 0, -30, -60, -90]) {
-    close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-10);
-    close(radialFraction(lat), colatitudeRadians(lat) / Math.PI, 1e-15);
+test('smooth radial warp preserves the pole and rim while recalibrating latitude-ring spacing', () => {
+  assert.equal(FLIGHT_CALIBRATION.radialWarp.kind, 'regularized-power');
+  assert.ok(FLIGHT_CALIBRATION.radialWarp.exponent > 0);
+  assert.ok(FLIGHT_CALIBRATION.radialWarp.epsilon > 0);
+  close(radialDistanceFromNorthKm(90), 0, 1e-12);
+  close(radialDistanceFromNorthKm(-90), DISK_RADIUS_KM, 1e-8);
+  assert.notEqual(radialFraction(0), colatitudeRadians(0) / Math.PI);
+
+  let previous = -Infinity;
+  for (let lat = 90; lat >= -90; lat -= 1) {
+    const fraction = radialFraction(lat);
+    assert.ok(fraction > previous);
+    previous = fraction;
+    close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-9);
   }
+  assert.ok(radialWarpDerivative(0, FLIGHT_CALIBRATION.radialWarp) > 0);
+  assert.ok(Number.isFinite(radialWarpDerivative(0, FLIGHT_CALIBRATION.radialWarp)));
+  assert.ok(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp) > 0);
+  assert.ok(Number.isFinite(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp)));
 });
 
 test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {

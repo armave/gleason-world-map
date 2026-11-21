@@ -6,6 +6,7 @@ import {
   fitFlightCalibration,
   predictFlightCalibratedKm
 } from '../src/core/flight-calibration-fit.js';
+import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from '../src/core/radial-warp.js';
 
 const airports = [
   { lat: 51.47, lon: -0.45 }, { lat: 40.64, lon: -73.78 },
@@ -45,29 +46,34 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   assert.equal(unitDiskChord(a, b), unitDiskChord(b, a));
   assert.deepEqual(flightCalibrationFeatures(a, b), flightCalibrationFeatures(b, a));
   const features = flightCalibrationFeatures(a, b);
-  const thetaA = (90 - a.lat) * Math.PI / 180;
-  const thetaB = (90 - b.lat) * Math.PI / 180;
+  const tA = (90 - a.lat) / 180;
+  const tB = (90 - b.lat) / 180;
+  const qA = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
+  const qB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
   const longitudeSpan = Math.abs(
     ((((b.lon - a.lon) + 180) % 360 + 360) % 360 - 180) * Math.PI / 180
   );
-  const radial = Math.abs(thetaA - thetaB);
-  const tangential = 2 * Math.sqrt(thetaA * thetaB) * Math.sin(longitudeSpan / 2);
+  const radial = Math.PI * Math.abs(qA - qB);
+  const tangential = Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   const chord = unitDiskChord(a, b);
   assert.ok(chord > 0);
+  assert.ok(Math.abs(features[0] - (qA + qB) / 2) < 1e-12);
   assert.ok(Math.abs(features[1] - radial / chord) < 1e-12);
   assert.ok(Math.abs(features[2] - tangential / chord) < 1e-12);
   assert.ok(Math.abs(features[1] ** 2 + features[2] ** 2 - 1) < 1e-12);
   assert.equal(unitDiskChord(a, a), 0);
-  assert.deepEqual(flightCalibrationFeatures(a, a), [thetaA, 0, 0]);
+  assert.deepEqual(flightCalibrationFeatures(a, a), [(qA + qB) / 2, 0, 0]);
 });
 
 test('flight telemetry calibration fits a radial scale and direction-aware route model', () => {
   const result = fitFlightCalibration(syntheticDataset());
   assert.ok(result.model.radialScaleKm > 0);
+  assert.equal(result.model.schemaVersion, 4);
+  assert.deepEqual(result.model.radialWarp, DEFAULT_RADIAL_WARP);
   assert.equal(result.model.trainingRouteCount, 12);
   assert.equal(result.model.holdoutRouteCount, 4);
   assert.deepEqual(result.model.featureNames, [
-    'meanColatitude',
+    'meanRadialFraction',
     'radialShareOfChord',
     'tangentialShareOfChord'
   ]);

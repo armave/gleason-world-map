@@ -73,43 +73,41 @@ A route needs at least 3 accepted flights before it can be used as a calibration
 
 ## Flat-disk model
 
-The geographic arrangement remains a flat radial disk:
+The map remains a circular radial disk, but the latitude-to-radius relation is now smoothly warped using the ADS-B route sample. This changes the map's latitude-ring spacing as well as the numeric radial scale; it is not merely a multiplier applied to a distance readout.
 
-[
-	heta = rac{pi}{2} - phi,qquad
-r = R	heta,qquad
-x = rcoslambda,qquad
-y = -rsinlambda
-]
-
-Here (phi) and (lambda) are the endpoint latitude/longitude values interpreted as angular map coordinates. (R) is no longer anchored to a city-pair distance from an external shortest-distance calculator. It is fitted from the training routes:
+For latitude `phi`, define colatitude `theta = pi/2 - phi` and normalized colatitude `t = theta / pi`. The current radial warp is a regularized power curve:
 
 ```text
-unit_chord_i = Euclidean flat-disk chord for route i when R = 1
-route_reference_i = median estimated ADS-B flight mileage for route i
-R = median(route_reference_i / unit_chord_i) across training routes
+q(t) = ((t + epsilon)^exponent - epsilon^exponent) /
+       ((1 + epsilon)^exponent - epsilon^exponent)
+
+exponent = 0.9
+epsilon = 0.005
+r = pi * R * q(t)
+x = r * cos(longitude)
+y = -r * sin(longitude)
 ```
 
-The model predicts the mileage-per-unit-chord ratio from three symmetric flat-disk endpoint features:
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale is regenerated from the training routes; the outer disk radius is `pi * R`.
 
-1. Mean endpoint colatitude.
-2. The radial component's share of the unit-disk chord.
-3. The tangential component's share of the unit-disk chord.
+Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
-The chord is decomposed exactly in the flat radial disk. For endpoint colatitudes `thetaA` and `thetaB`, and wrapped longitude span `deltaLambda`:
+The radial warp moves interior rings relative to a linear `r = R * theta` disk while retaining the same pole/rim topology. With the current fit, the 45°N ring is about 592 km farther from the centre than it would be in a linear disk using the same fitted `R`; the maximum shift among the sampled 15° latitude markers is about 621 km. The outer rim and North Pole do not move. This adjustment changes coastline, capital, grid and map-click coordinates consistently because all are rendered through the same transform.
+
+For each route, let `qA` and `qB` be the warped radial fractions, and let `deltaLambda` be the wrapped longitude span. The exact Euclidean chord components in the warped unit disk are:
 
 ```text
-radial_component = abs(thetaA - thetaB)
-tangential_component = 2 * sqrt(thetaA * thetaB) * sin(abs(deltaLambda) / 2)
+radial_component = pi * abs(qA - qB)
+tangential_component = pi * 2 * sqrt(qA * qB) * sin(abs(deltaLambda) / 2)
 unit_chord = sqrt(radial_component^2 + tangential_component^2)
 features = [
-  (thetaA + thetaB) / 2,
+  (qA + qB) / 2,
   radial_component / unit_chord,
   tangential_component / unit_chord
 ]
 ```
 
-For a new pair, it finds the **two nearest** training route examples in standardized feature space and takes an inverse-distance-weighted geometric mean of their observed mileage-per-unit-chord ratios. The weight is `1 / standardized_feature_distance`:
+The base scale `R` is the median of route median ADS-B mileage divided by this warped unit chord. The local model then predicts the route-mileage-per-unit-chord ratio from the two nearest training routes in standardized feature space, using inverse-distance weights and a weighted geometric mean:
 
 ```text
 route_ratio_i = route_median_flight_km_i / unit_chord_i
@@ -117,10 +115,9 @@ predicted_ratio = weighted_geometric_mean(two_nearest_route_ratios)
 flight_empirical_estimate = unit_chord * clamp(predicted_ratio, 0.5 * R, 2.5 * R)
 ```
 
-The radial/tangential split captures whether a route's disk chord is driven mostly by movement across concentric rings or around a ring. It resolves a weakness in the previous feature set, which supplied angular spans separately but did not describe their relative contribution to the actual chord. On the current 33-route training / 4-route holdout snapshot, this candidate reduced leave-one-route-out MAPE from 9.77% to approximately 8.61% and independent holdout MAPE from 5.58% to approximately 4.66%; the worst holdout error fell from 15.20% to approximately 7.59%. These are route-sample results, not a universal accuracy guarantee.
+The radial/tangential split distinguishes movement across concentric rings from movement around a ring. On the current 33-route training / 4-route holdout snapshot, the smooth warp plus local route model reports **7.59% leave-one-route-out MAPE** and **4.10% independent holdout MAPE**; the worst holdout route error is **8.96%**. The previous unwarped radial geometry on the same sample reported 8.61%, 4.66%, and 7.59%, respectively. The worst leave-one-out route error remains 29.28%, so accuracy is not uniform. These are route-sample results, not proof of universal map or physical-distance accuracy.
 
-The generated parameter file records the fitted radial scale, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, number of training and holdout routes, and source dataset version. The code is plain JavaScript; no external math or geodesic package is used.
-
+The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
 The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for:

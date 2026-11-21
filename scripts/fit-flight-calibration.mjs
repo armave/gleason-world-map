@@ -77,7 +77,9 @@ async function main() {
       target: 'Median telemetry-span flown-mileage estimate per airport pair',
       targetSource: 'ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate',
       formula: 'observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; estimated_span_km = observed_km / time_coverage',
-      inputGeometry: 'Flat radial disk chord with R=1; local inverse-distance-weighted nearest-route mileage-per-chord ratios over mean colatitude and normalized radial/tangential chord shares',
+      inputGeometry: 'Circular flat disk with regularized-power latitude warp q(t); local inverse-distance-weighted mileage-per-warped-chord ratios over mean warped radial fraction and normalized radial/tangential chord shares',
+      radialWarp: fitted.model.radialWarp,
+      radialCoordinateFormula: 't = theta / pi; q = ((t + epsilon)^exponent - epsilon^exponent) / ((1 + epsilon)^exponent - epsilon^exponent); r = pi * R * q',
       features: fitted.model.featureNames,
       trainingUnit: 'one independent airport pair, target is median of >=3 observed flights',
       splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted'

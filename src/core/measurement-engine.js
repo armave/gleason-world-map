@@ -53,18 +53,18 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
  *
  * The radial scale is fitted from observed ground-speed × timestamp mileage.
  * A local inverse-distance-weighted neighbour model predicts mileage per
- * unit disk chord from mean colatitude and radial/tangential chord shares.
+ * warped-disk chord from mean radial fraction and radial/tangential shares.
  * Runtime contains no globe-distance formula, ellipsoid, geodesic or path
  * coordinate distance calculation.
  */
 export function directLineCalibrationDiagnostics(first, second) {
   if (!validPoint(first) || !validPoint(second)) return null;
 
-  const features = flightCalibrationFeatures(first, second);
+  const features = flightCalibrationFeatures(first, second, FLIGHT_CALIBRATION.radialWarp);
   const prediction = predictFlightScaleRatio(features, FLIGHT_CALIBRATION);
   if (!prediction) return null;
 
-  const meanColatitude = features[0];
+  const meanRadialFraction = features[0];
   const radialShareOfChord = features[1];
   const tangentialShareOfChord = features[2];
   const radialScaleKm = FLIGHT_CALIBRATION.radialScaleKm;
@@ -91,7 +91,7 @@ export function directLineCalibrationDiagnostics(first, second) {
     calibrationFactor,
     unclampedFactor,
     correctionPercent: (calibrationFactor - 1) * 100,
-    meanColatitudeRadians: meanColatitude,
+    meanRadialFraction,
     radialShareOfChord,
     tangentialShareOfChord,
     radialScaleKm,
