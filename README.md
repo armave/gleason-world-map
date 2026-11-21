@@ -207,7 +207,7 @@ Country and Antarctica boundaries at 1:110m, 1:50m, and 1:10m are compressed and
 
 Capital coordinates are stored locally in `data/capitals.json` and were generated from the pinned `country-capital.csv` source in `iliyaj/country-data`. The source identifies REST Countries v3.1 as the underlying data source; its MIT license is included in `data/capital-data-LICENSE.txt`.
 
-To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. The application itself does not contact those upstream data hosts.
+To refresh the bundled geographic files from their pinned upstream sources, run `npm run vendor:data` with Node.js 20 or newer. To rebuild the Antarctic Digital Database surface bundle, run `npm run vendor:antarctica`; the application itself does not contact those upstream data hosts.
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
@@ -217,6 +217,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp, plus a local nearest-route correction. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well it generalizes to new route pairs.
 - The raw A–B result is a Euclidean chord in the displayed disk plane. The second result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight and is not a shortest-path distance. The running measurement engine uses no globe-distance formula or geodesic library; performance outside the sampled airport-pair domain is not guaranteed.
+- The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
 - Country, coastline, airport and capital coordinates remain as location data for rendering and endpoint selection. They are not used to calculate the calibration's distance targets.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth.
