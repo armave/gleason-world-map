@@ -7,6 +7,7 @@ import {drawIceWall as renderIceWall} from './map/ice-wall.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration,renderDistortionPanel} from './ui/calibration.js';
 import {selectNonOverlappingLabels,countyLabelText,countyAnchorForFeature,pointInCountyGeometry,CAPITAL_LABEL_MIN_ZOOM,COUNTY_BOUNDARY_MIN_ZOOM,COUNTY_LABEL_MIN_ZOOM} from './map/labels.js';
+import {createMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
 
 (() => {
 'use strict';
@@ -140,15 +141,37 @@ function drawCountyLabels(){
   ctx.fillText(item.text,item.x,item.y);
  }
 }
-function drawMeasure(){if(points.length===2){const path=geodesicLinePath(points[0],points[1]);ctx.beginPath();path.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle='#b45c39';ctx.lineWidth=2.3/zoom;ctx.setLineDash([7/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);}points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});}
+function strokeMeasurementConnector(tool){
+ const style=measurementStrokeStyle(tool,zoom);
+ ctx.save();
+ ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.setLineDash(style.dash);ctx.lineDashOffset=0;
+ // A parchment halo preserves visibility over land, water, and the historical scan.
+ ctx.strokeStyle=style.halo;ctx.lineWidth=style.haloWidth;ctx.stroke();
+ ctx.strokeStyle=style.color;ctx.lineWidth=style.lineWidth;ctx.stroke();
+ ctx.restore();
+}
+function drawMeasure(){
+ if(points.length===2){
+  const segments=createMeasurementSegments(points,geodesicLinePath);
+  if(segments.length){
+   ctx.beginPath();segments[0].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
+   strokeMeasurementConnector('distance');
+  }
+ }
+ points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.fillText(i===0?'A':'B',x,y+.3/zoom);});
+}
 function drawArea(){
  if(!areaPoints.length)return;
  ctx.save();
- if(areaPoints.length>=2){
+ const closed=areaFinished&&areaPoints.length>=3;
+ const segments=createMeasurementSegments(areaPoints,geodesicLinePath,closed);
+ if(segments.length){
   ctx.beginPath();
-  areaPoints.forEach((point,i)=>{if(i===0){const q=project(point.lon,point.lat);ctx.moveTo(q[0],q[1]);return;}const line=geodesicLinePath(areaPoints[i-1],point);line.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));});
-  if(areaFinished&&areaPoints.length>=3){const close=geodesicLinePath(areaPoints[areaPoints.length-1],areaPoints[0]);close.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
-  ctx.strokeStyle='#4f7e8f';ctx.lineWidth=2/zoom;ctx.setLineDash([5/zoom,3/zoom]);ctx.stroke();ctx.setLineDash([]);
+  const first=project(areaPoints[0].lon,areaPoints[0].lat);ctx.moveTo(first[0],first[1]);
+  for(const segment of segments)segment.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));
+  if(closed){ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
+  strokeMeasurementConnector('area');
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x,y);});
  ctx.restore();
@@ -156,7 +179,7 @@ function drawArea(){
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=`${areaPoints.length} vertices`;
  if(areaFinished&&areaPoints.length>=3){const result=wgs84PolygonMetrics(areaPoints);if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`WGS84 geodesic perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Area and perimeter are calculated on the WGS84 ellipsoid; polygon edges are shortest geodesics between vertices.';}else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='GeographicLib polygon-area engine unavailable';}}
- else{$('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';$('areaHelp').textContent=areaPoints.length?'Add more vertices, then finish the polygon to calculate area and perimeter.':'Choose Area, then click at least three points on the disk. Finish to calculate ellipsoidal area and perimeter.';}
+ else{$('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';$('areaHelp').textContent=areaPoints.length?'Add more vertices; dashed geodesic connectors join each successive point. Finish the polygon to close it and calculate area and perimeter.':'Choose Area, then click at least three points on the disk. Dashed geodesic connectors join successive vertices; Finish closes the outline and calculates ellipsoidal area and perimeter.';}
 }
 function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
 function drawHistoricalOverlay(){
@@ -212,7 +235,7 @@ function showCounty(county){
 }
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();setDistortionAnchor(obj,obj.name);updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The displayed value is surface distance; the dashed line is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The displayed value is surface distance; the dashed A–B connector is its route projected onto the disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);if(desiredZoom)zoom=desiredZoom;panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){
