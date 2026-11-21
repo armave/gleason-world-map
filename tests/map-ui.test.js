@@ -143,7 +143,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /rawDistanceValue/);
   assert.match(app, /calibratedDistanceMeters/);
   assert.match(app, /calibrationDiagnostics/);
-  assert.match(app, /Raw chord is the Euclidean distance in the map plane/);
+  assert.match(app, /Raw chord is the Euclidean distance in the map plane; the second reading estimates typical flown mileage from ADS-B ground-speed and timestamp samples/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -252,7 +252,7 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/measureDirectDistance applies the empirical flat-map factor to the same straight projected chord/);
+ assert.match(app,/measureDirectDistance applies the ADS-B flight-mileage model to the same straight projected chord/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
