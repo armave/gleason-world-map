@@ -110,7 +110,6 @@ function drawUprightMapText(text,x,y,{reserve=true,avoidReserved=false}={}){
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
 const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
 const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
-const makePath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,project,preserveAntarcticRim);
 function resize(){
  const rect=canvas.getBoundingClientRect();
  width=rect.width;height=rect.height;
@@ -120,15 +119,32 @@ function resize(){
  const nextBaseR=Math.min(width,height)*.405;
  if(!Number.isFinite(geometryBaseR)||Math.abs(nextBaseR-geometryBaseR)>1e-6){
   baseR=nextBaseR;
+  const projectionBaseR=baseR,resizeGeneration=loadGeneration;
+  const fixedProject=(lon,lat)=>projectFlatDisk(lon,lat,projectionBaseR);
+  const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,fixedProject,preserveAntarcticRim);
   iceWallTexturePaths=createIceWallTexturePaths(baseR);
-  pathRecords=countries.map(country=>({country,path:makePath(country.feature)}));
-  antarcticaPath=antarcticaFeature?makePath(antarcticaFeature,true):null;
-  antarcticSurfacePaths=antarcticAddData?createAntarcticSurfacePaths(antarcticAddData,project):null;
+  pathRecords=countries.map(country=>({country,path:makeResizedPath(country.feature)}));
+  antarcticaPath=antarcticaFeature?makeResizedPath(antarcticaFeature,true):null;
+  // Optional high-detail layers are rebuilt without blocking resize/fullscreen transitions.
+  antarcticSurfacePaths=null;coastlinePath=null;
   landMaskPath=new Path2D();
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
-  coastlinePath=coastlineData?createCoastlinePath(coastlineData,project):null;
-  geometryBaseR=baseR;
+  geometryBaseR=projectionBaseR;
+  if(antarcticAddData){
+   const source=antarcticAddData;
+   createAntarcticSurfacePathsAsync(source,fixedProject).then(paths=>{
+    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
+    antarcticSurfacePaths=paths;draw();
+   }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
+  }
+  if(coastlineData){
+   const source=coastlineData;
+   createCoastlinePathAsync(source,fixedProject).then(path=>{
+    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
+    coastlinePath=path;draw();
+   }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
+  }
  }else baseR=nextBaseR;
  draw();
 }
@@ -898,9 +914,9 @@ async function load(){
    coastlineData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    const source=coastlineData;
-    createCoastlinePathAsync(source,project).then(path=>{
-     if(generation!==loadGeneration)return;
+    const source=coastlineData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
+    createCoastlinePathAsync(source,buildProject).then(path=>{
+     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
      coastlinePath=path;draw();
     }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
    });
@@ -911,9 +927,9 @@ async function load(){
    antarcticAddData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    const source=antarcticAddData;
-    createAntarcticSurfacePathsAsync(source,project).then(paths=>{
-     if(generation!==loadGeneration)return;
+    const source=antarcticAddData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
+    createAntarcticSurfacePathsAsync(source,buildProject).then(paths=>{
+     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
      antarcticSurfacePaths=paths;draw();
     }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
    });
