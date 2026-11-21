@@ -127,64 +127,53 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 
 ## Project structure
 
-The app uses Lit web components for declarative panels and Vite for development, production bundling, and GitHub Pages deployment. The specialized map remains a browser Canvas 2D renderer; projection, measurement, geometry, and calibration stay framework-independent.
+The interface uses Lit web components and Vite. The map remains a custom Canvas 2D renderer; its projection, geometry, measurements, calibration, and geographic data are independent of the UI framework.
 
 ```text
-index.html                  page shell and light-DOM Lit panel templates
-styles.css                  responsive styling shared by Lit panels
-data/
-  us-counties.json          U.S. Census 2026 county-equivalent search points
-  countries/
-    low.geojson.gz          Natural Earth 1:110m boundaries
-    medium.geojson.gz       Natural Earth 1:50m boundaries
-    high.geojson.gz         Natural Earth 1:10m boundaries
-  capitals.json             vendored ISO/capital coordinates
-  metadata.json             pinned sources, versions, checksums
-  README.md                 data provenance and refresh instructions
+index.html                  page shell and Lit panel templates
+styles.css                  application and map styling
+vite.config.js              Vite dev/build/preview configuration
 src/
-  app.js                    state, UI wiring, and lifecycle
-  core/
-    flat-disk.js                    flat-disk projection, planar area and perimeter
-    flight-calibration-fit.js        local ADS-B route-neighbour predictor
-    flight-calibration-parameters.js generated radial scale and route examples
-    flight-telemetry.js              ground-speed × timestamp mileage integration
-    measurement-engine.js            straight projected A–B estimate and 60°S reference-line geometry
-    format.js                coordinates, units, and search formatting
-  data/
-    datasets.js             local asset loading, decompression, and validation
-    geojson.js              country identifiers, names, colours, centroids
-  map/
-    labels.js               zoom thresholds, collision-aware labels, and polygon containment checks
-    ocean-labels.js         curved ocean/sea labels, scale bands, water-aware anchors and collision checks
-    coastlines.js           dateline-safe projected Natural Earth coastline paths
-    feature-paths.js        projected GeoJSON paths and Antarctic rim handling
-    ice-wall.js             Antarctic land band and continuous rim
-    registration.js         scan control-point triangulation and affine image warp
-  ui/
-    calibration.js          flat-disk radial calibration table
-scripts/
-  vendor-geodata.mjs        reproducible pinned-source data import
-  vendor-county-labels.mjs  reproducible Census county-label data import
-  collect-flight-calibration.mjs historical ADS-B ground-speed/time samples
-  fit-flight-calibration.mjs     local route-neighbour fit and validation
-tests/
-  flat-disk.test.js              projection, planar area and perimeter regressions
-  flight-calibration-fit.test.js  radial scale, route-neighbour fit and holdout tests
-  flight-telemetry.test.js        ground-speed/time mileage integration tests
-  measurement-engine.test.js     ADS-B holdouts and 60°S geometry regressions
-  registration.test.js      registration transform regressions
-  datasets.test.js          bundled-data integrity and quality tests
-.github/workflows/test.yml automated Node tests
-package.json                test and data-vendor commands
+  main.js                   Vite entry point
+  app.js                    map initialization and interactions
+  app/
+    state.js                observable immutable application state
+    map-controller.js       requestAnimationFrame redraw scheduler
+  components/
+    panels.js               declarative Lit UI panels
+  core/                     projection, measurements, calibration
+  data/                     geographic data validation and loading
+  map/                      Canvas drawing, coastlines, labels, Ice Wall
+  ui/                       specialized UI renderers
+data/                       bundled map and reference datasets
+scripts/                    data vendor and calibration utilities
+tests/                      unit, regression and UI source checks
+e2e/                        Playwright browser tests
+.github/workflows/
+  test.yml                  production build and Node regression tests
+  browser-tests.yml         Playwright Chromium tests
+  deploy-pages.yml          GitHub Pages build and deployment
 ```
 
-Run the Node.js unit and regression tests with Node.js 20 or newer:
+Use Node.js 20.19+ or 22.12+.
+
+Install dependencies and start the Vite development server:
 
 ```bash
-npm test
+npm install
+npm run dev
 ```
 
-### Browser end-to-end tests
+Create and preview the production build:
+
+```bash
+npm run build
+npm run preview
+```
+
+Run the unit and regression suite with `npm test`. The separate Playwright workflow runs `npm run test:e2e` against the production Vite preview.
+
+## Browser end-to-end tests
 
 The Playwright suite launches the static site locally and exercises the real UI in Chromium. Install the project development dependencies and the browser once, then run:
 
@@ -198,18 +187,18 @@ The browser suite covers initial map loading, zoom and rotation, geographic sear
 
 ## Run locally
 
-Run a static web server from the repository root:
+Run the Vite development server from the repository root:
 
-    python -m http.server 8000
+```bash
+npm install
+npm run dev
+```
 
-Then open the URL printed by Vite (normally http://127.0.0.1:5173). Geographic datasets are bundled into the production build. Internet access is needed only for the optional historical scan.
+Open the URL printed by Vite (normally http://127.0.0.1:5173). The production bundle is generated in `dist/` by `npm run build`. Geographic datasets are bundled locally; internet access is needed only for the optional historical scan.
 
 ## Deploy with GitHub Pages
 
-1. Open **Settings → Pages**.
-2. Select **Deploy from a branch**.
-3. Choose branch **main** and folder **/(root)**.
-4. Save.
+Set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The `.github/workflows/deploy-pages.yml` workflow builds the Vite app and deploys the `dist/` artifact on pushes to `main`.
 
 Expected URL: https://armave.github.io/gleason-world-map/
 
