@@ -321,7 +321,7 @@ function drawMeasure(){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
-   const label=formatMeasurementKilometres(measurement.distanceMeters);
+   const label=formatMeasurementKilometres(measurement.chordDistanceMeters);
    drawMeasurementLabelAtMap(
     (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
    );
@@ -472,10 +472,6 @@ function updateMeasurement(){
   const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';
   row.append(badge,name,coord);box.append(row);
  }
- const diagnostics=$('calibrationDiagnostics');
- diagnostics.hidden=true;
- diagnostics.classList.remove('is-warning');
- diagnostics.textContent='';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   $('rawDistanceValue').textContent=Number.isFinite(measurement.chordDistanceMeters)
@@ -489,26 +485,7 @@ function updateMeasurement(){
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
    :'Flight-mileage model unavailable';
 
-  const messages=[];
-  if(measurement.calibration?.outsideTrainingRange){
-   messages.push('Outside the sampled route-feature range. The local nearest-route estimate is extrapolating beyond the endpoint patterns represented in the ADS-B training routes.');
-  }
-  if(measurement.calibration?.weakNeighbourSupport){
-   const support=measurement.calibration.nearestFeatureDistance;
-   messages.push('Weak local route support: the nearest sampled airport pair is '+support.toFixed(2)+' standardized feature units away. Treat this mileage estimate cautiously.');
-  }
-  if(measurement.calibration?.nearSouthRim){
-   messages.push('Southern-rim sensitivity: an endpoint is at or below 85°S. Longitude has a strong effect on position near the disk edge; interpret both readings as flat-disk model outputs.');
-  }
-  if(measurement.calibration?.factorWasClamped){
-   messages.push('Correction bound applied: the unbounded local route factor fell outside 0.50–2.50.');
-  }
-  if(messages.length===0){
-   messages.push('Endpoint features are within the sampled route range and supported by nearby airport-pair examples. This is an estimate of typical flown mileage from historical ADS-B flights, not a shortest-path distance or a prediction of a specific airline\'s track.');
-  }
-  diagnostics.textContent=messages.join(' ');
-  diagnostics.classList.toggle('is-warning',measurement.warnings.length>0);
-  diagnostics.hidden=false;
+  $('measureHelp').textContent='The connector and its map label show the raw Euclidean chord in the Gleason disk. The second value estimates typical flown mileage from ADS-B ground-speed and timestamp samples; it is not a shortest-path distance.';
   $('measureHelp').textContent='The connector remains one straight segment in the Gleason disk. The first value is its raw Euclidean chord; the second estimates typical flown mileage from ADS-B ground-speed and timestamp samples. It is not a shortest-path distance.';
  }else{
   $('rawDistanceValue').textContent='—';

@@ -135,9 +135,6 @@ canvas.rotating{cursor:crosshair}
 .map-measure-reading .measure-sub{font-size:9px;line-height:1.25;min-height:22px}
 .map-measure-reading.distance-reading .measure-value{font-size:15px}
 .map-measure-reading.area-reading{grid-column:1/-1}
-.calibration-diagnostics{margin-top:6px;padding:6px 7px;border:1px solid #d8d0bf;border-radius:6px;background:rgba(247,244,235,.9);color:#586269;font-size:9px;line-height:1.35}
-.calibration-diagnostics[hidden]{display:none!important}
-.calibration-diagnostics.is-warning{border-color:#d4a59a;background:#fbefea;color:#793e34}
 .map-measure-details{margin-top:7px;padding-top:7px;border-top:1px solid #e4dccd}
 .map-measure-details[hidden]{display:none!important}
 .map-measure-details p{margin:0 0 6px;font-size:10px;line-height:1.35}
