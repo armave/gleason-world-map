@@ -27,7 +27,7 @@
     "max": -60.4967
   },
   "uncompressedBytes": 34669086,
-  "compressedBytes": 5202850,
-  "sha256": "dd84364b351d8b1573dfb8ecd12f13446a054406e20009ece2d470f66c69f876",
+  "compressedBytes": 5206870,
+  "sha256": "ee8a1dd96c3cb03bf18cff4a079becefa376d3db62e5b5ad83aac62e11ccc39b",
   "file": "data/antarctic-add-v7.13.geojson.gz"
 }
