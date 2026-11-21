@@ -19,6 +19,7 @@ const MAX_CONCURRENT_DETAILS = 4;
 const AIRPORT_FALLBACK_RADIUS_METERS = 20000;
 
 const ROUTES = [
+  // Long-haul routes with broader colatitude and longitude coverage.
   { from: 'KJFK', to: 'EGLL', split: 'train' },
   { from: 'EGLL', to: 'WSSS', split: 'train' },
   { from: 'KORD', to: 'VHHH', split: 'train' },
@@ -29,6 +30,40 @@ const ROUTES = [
   { from: 'WMKK', to: 'EGLL', split: 'train' },
   { from: 'EGLL', to: 'KDFW', split: 'train' },
   { from: 'SCEL', to: 'YSSY', split: 'train' },
+
+  // Additional routes to cover short longitude spans and lower latitudes.
+  { from: 'EGLL', to: 'EHAM', split: 'train' },
+  { from: 'EGLL', to: 'LFPG', split: 'train' },
+  { from: 'EGLL', to: 'EDDF', split: 'train' },
+  { from: 'EGLL', to: 'LTFM', split: 'train' },
+  { from: 'KJFK', to: 'KLAX', split: 'train' },
+  { from: 'KJFK', to: 'KMIA', split: 'train' },
+  { from: 'KJFK', to: 'KORD', split: 'train' },
+  { from: 'KJFK', to: 'EDDF', split: 'train' },
+  { from: 'EHAM', to: 'LFPG', split: 'train' },
+  { from: 'EHAM', to: 'EDDF', split: 'train' },
+  { from: 'LTFM', to: 'HECA', split: 'train' },
+  { from: 'LTFM', to: 'OLBA', split: 'train' },
+  { from: 'LTFM', to: 'ORBI', split: 'train' },
+  { from: 'OMDB', to: 'VIDP', split: 'train' },
+  { from: 'OMDB', to: 'VABB', split: 'train' },
+  { from: 'OMDB', to: 'OKBK', split: 'train' },
+  { from: 'OMDB', to: 'OOMS', split: 'train' },
+  { from: 'OMDB', to: 'OBBI', split: 'train' },
+  { from: 'OMDB', to: 'OERK', split: 'train' },
+  { from: 'OTHH', to: 'OMDB', split: 'train' },
+  { from: 'OTHH', to: 'OOMS', split: 'train' },
+  { from: 'OTHH', to: 'OBBI', split: 'train' },
+  { from: 'WSSS', to: 'VTBS', split: 'train' },
+  { from: 'WSSS', to: 'RPLL', split: 'train' },
+  { from: 'WSSS', to: 'VRMM', split: 'train' },
+  { from: 'WMKK', to: 'VTBS', split: 'train' },
+  { from: 'YSSY', to: 'YMML', split: 'train' },
+  { from: 'YSSY', to: 'YBBN', split: 'train' },
+  { from: 'SCEL', to: 'SAEZ', split: 'train' },
+  { from: 'SCEL', to: 'SBGR', split: 'train' },
+
+  // Entire route pairs are held out from fitting.
   { from: 'OMDB', to: 'WSSS', split: 'holdout' },
   { from: 'OTHH', to: 'RJAA', split: 'holdout' },
   { from: 'LTFM', to: 'OJAI', split: 'holdout' }
