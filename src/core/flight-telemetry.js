@@ -45,7 +45,9 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       const timestamp = Number(current[0]);
       const nextTimestamp = Number(next[0]);
       const speedKnots = Number(current[1]);
-      const deltaSeconds = nextTimestamp - timestamp;
+      const clippedStart = Math.max(start, timestamp);
+      const clippedEnd = Math.min(end, nextTimestamp);
+      const deltaSeconds = clippedEnd - clippedStart;
       if (!(deltaSeconds > 0) ||
           !Number.isFinite(speedKnots) ||
           speedKnots < MIN_AIRBORNE_SPEED_KT ||
