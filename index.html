@@ -21,7 +21,7 @@
       <div class="map-status-group"><div class="status" id="status">Loading geographic data…</div><span id="zoomReadout" class="zoom-readout" title="Map zoom level">100%</span></div>
       <div class="map-actions">
         <button id="fullscreenMap" aria-label="Enter full screen map">Full screen</button>
-        <button id="resetView">Reset view</button>
+        <button id="resetView" type="button" title="Fit the complete disk and reset orientation">Fit disk</button>
         <button id="zoomOut">− Zoom</button>
         <button id="zoomIn">+ Zoom</button>
         <button id="exportPNG">Export PNG</button>
@@ -38,8 +38,11 @@
     <div class="map-viewport" id="mapViewport" aria-busy="true">
       <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
       <div class="map-tools-stack" id="mapToolsStack">
-        <map-find-panel data-lit-panel></map-find-panel>
-        <map-measure-panel data-lit-panel></map-measure-panel>
+        <button class="map-tools-toggle" id="mapToolsToggle" type="button" aria-expanded="false" aria-controls="mapToolsPanels">Find &amp; Measure</button>
+        <div class="map-tools-panels" id="mapToolsPanels">
+          <map-find-panel data-lit-panel></map-find-panel>
+          <map-measure-panel data-lit-panel></map-measure-panel>
+        </div>
       </div>
       <div class="map-loading" id="mapLoading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="false">
         <div class="map-loading-card">

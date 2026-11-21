@@ -12,9 +12,9 @@ import {drawOceanLabels} from './map/ocean-labels.js';
 import {createCoastlinePathAsync,drawCoastlines as renderCoastlines} from './map/coastlines.js';
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration} from './ui/calibration.js';
-import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
+import {selectNonOverlappingLabels,selectNonOverlappingMarkers,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
 import {createProjectedMeasurementSegments,createProjectedSegmentLabels,measurementStrokeStyle} from './map/measurements.js';
-import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint,normalizeRotationDegrees,shortestRotationDelta,screenUprightRotation} from './map/view-transform.js';
+import {rotatePoint,unrotatePoint,screenToWorldPoint,worldToScreenPoint,panForWorldCenterPoint,scalePanForDiskResize,normalizeRotationDegrees,shortestRotationDelta,screenUprightRotation} from './map/view-transform.js';
 import {buildSearchIndex,findSearchMatches} from './data/search-index.js';
 import {PANEL_TAGS} from './components/panels.js';
 import {createAppState} from './app/state.js';
@@ -148,6 +148,10 @@ function resize(){
  ctx.setTransform(dpr,0,0,dpr,0,0);
  const nextBaseR=Math.min(width,height)*.405;
  if(!Number.isFinite(geometryBaseR)||Math.abs(nextBaseR-geometryBaseR)>1e-6){
+  if(Number.isFinite(geometryBaseR)&&geometryBaseR>0){
+   const resizedPan=scalePanForDiskResize(panX,panY,geometryBaseR,nextBaseR);
+   panX=resizedPan.panX;panY=resizedPan.panY;
+  }
   baseR=nextBaseR;
   const projectionBaseR=baseR,resizeGeneration=loadGeneration;
   const fixedProject=(lon,lat)=>projectFlatDisk(lon,lat,projectionBaseR);
@@ -285,22 +289,29 @@ function drawRestrictedParallel(){
 }
 function drawCapitals(allowLabels=true){
  if(!layers.capitals)return;
- const labelOn=allowLabels&&layers.capitalNames&&(shouldShowCapitalLabels(frameScaleBarReadingKm)||(selected&&selected.type==='capital')),candidates=[];
+ const labelOn=allowLabels&&layers.capitalNames&&(shouldShowCapitalLabels(frameScaleBarReadingKm)||(selected&&selected.type==='capital')),markerCandidates=[];
  for(const p of capitals){
   const [x,y]=project(p.lon,p.lat),active=selected&&selected.type==='capital'&&selected.capital===p;
-  ctx.beginPath();ctx.arc(x,y,(active?4.4:2.1)/zoom,0,Math.PI*2);
-  ctx.fillStyle=active?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();
+  const screen=worldToScreen(x,y),sx=screen.x,sy=screen.y;
+  if(!Number.isFinite(sx)||!Number.isFinite(sy)||sx<-8||sx>width+8||sy<-8||sy>height+8)continue;
+  const markerRadius=active?4.4:2.1;
+  const marker={point:p,x,y,screenX:sx,screenY:sy,selected:!!active,markerRadius,radiusPx:markerRadius+.35,centerDistance:Math.hypot(sx-width/2,sy-height/2)};
   if(labelOn){
-   const screen=worldToScreen(x,y),sx=screen.x,sy=screen.y;
-   if(sx<-12||sx>width+12||sy<-12||sy>height+12)continue;
    const labelFontSize=Math.min(16,10+2*Math.log2(Math.max(1,zoom)));
    ctx.font=`600 ${labelFontSize/zoom}px ui-sans-serif,system-ui`;
    const text=p.city,tw=ctx.measureText(text).width*zoom,labelX=x+4/zoom,labelY=y-3/zoom,labelScreen=worldToScreen(labelX,labelY);
-   candidates.push({point:p,x,y,labelX,labelY,text,selected:!!active,labelFontSize,centerDistance:Math.hypot(sx-width/2,sy-height/2),
+   Object.assign(marker,{text,labelX,labelY,labelFontSize,
     box:{left:labelScreen.x-2,top:labelScreen.y-labelFontSize/2-2,right:labelScreen.x+tw+2,bottom:labelScreen.y+labelFontSize/2+2}});
   }
+  markerCandidates.push(marker);
+ }
+ const visibleMarkers=selectNonOverlappingMarkers(markerCandidates,labelCollisionBoxes,1.25);
+ for(const item of visibleMarkers){
+  ctx.beginPath();ctx.arc(item.x,item.y,item.markerRadius/zoom,0,Math.PI*2);
+  ctx.fillStyle=item.selected?'#a8492f':'#314f59';ctx.fill();ctx.strokeStyle='#fff9e9';ctx.lineWidth=.7/zoom;ctx.stroke();
  }
  if(labelOn){
+  const candidates=visibleMarkers.filter(item=>item.text);
   candidates.sort((a,b)=>Number(b.selected)-Number(a.selected)||a.centerDistance-b.centerDistance||a.text.length-b.text.length);
   const visible=selectNonOverlappingLabels(candidates,labelCollisionBoxes,4);labelCollisionBoxes.push(...visible.map(item=>item.box));
   ctx.textAlign='left';ctx.textBaseline='middle';
@@ -1052,6 +1063,7 @@ $('resetHistorical').addEventListener('click',()=>{Object.assign(historical,{opa
 $('retryHistorical').addEventListener('click',()=>loadHistoricalScan(true));
 [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames'],['layerOceanLabels','oceanLabels'],['layerCoastlines','coastlines']].forEach(([id,key])=>$(id).addEventListener('change',e=>{layers[key]=e.target.checked;draw();}));
 $('resetView').addEventListener('click',()=>{zoom=1;panX=0;panY=0;animateRotation(0);draw();});$('zoomIn').addEventListener('click',()=>setZoomAtViewCenter(zoom*1.25));$('zoomOut').addEventListener('click',()=>setZoomAtViewCenter(zoom/1.25));
+ $('mapToolsToggle').addEventListener('click',()=>{const open=$('mapToolsStack').classList.toggle('is-open');$('mapToolsToggle').setAttribute('aria-expanded',String(open));$('mapToolsToggle').textContent=open?'Hide map tools':'Find & Measure';});
 function setFullscreenButton(){const btn=$('fullscreenMap');if(btn)btn.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}
 async function toggleFullscreen(){try{if(!document.fullscreenElement){if($('mapCard').requestFullscreen)await $('mapCard').requestFullscreen();else if($('mapCard').webkitRequestFullscreen)$('mapCard').webkitRequestFullscreen();}else{await document.exitFullscreen();}}catch(err){$('status').textContent='Full-screen mode is unavailable in this browser.';}}
 $('fullscreenMap').addEventListener('click',toggleFullscreen);document.addEventListener('fullscreenchange',()=>{setFullscreenButton();requestAnimationFrame(resize);});

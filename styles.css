@@ -88,6 +88,9 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 10px;c
 .map-loading.is-error .map-loading-card strong{color:#8e4032}
 .map-card:fullscreen .map-viewport,.map-card:-webkit-full-screen .map-viewport{flex:1;min-height:0}
 .map-card:fullscreen .map-viewport canvas,.map-card:-webkit-full-screen .map-viewport canvas{height:100%;min-height:0}
+.map-card:fullscreen .map-top{padding:6px 9px;gap:6px}
+.map-card:fullscreen .map-actions button{min-height:36px;padding:6px 8px}
+.map-card:fullscreen .map-orientation{padding:4px 8px}
 @media(max-width:760px){
  .map-loading{padding:12px}
  .map-loading-card{padding:20px 17px}
@@ -216,6 +219,8 @@ canvas.rotating{cursor:crosshair}
  max-height:calc(100% - 20px);overflow-y:auto;display:flex;flex-direction:column;gap:7px;
  scrollbar-width:thin;scrollbar-color:#c9c0ad transparent
 }
+.map-tools-toggle{display:none;align-items:center;justify-content:center;align-self:flex-end;min-height:38px;padding:7px 12px;border-radius:8px;background:#294653;color:#fff;border-color:#294653;font-size:11px;font-weight:750;box-shadow:0 4px 12px rgba(35,48,50,.2)}
+.map-tools-panels{display:flex;flex-direction:column;gap:7px;min-width:0}
 .map-tools-stack .map-find-tools,
 .map-tools-stack .map-measure-tools{
  position:relative;inset:auto;width:100%;max-height:none;overflow:visible;
@@ -262,13 +267,24 @@ canvas.rotating{cursor:crosshair}
 .map-measure-tools .map-measure-restriction{font-size:8px;letter-spacing:0}
 .map-measure-tools .map-measure-modes button[aria-pressed="true"]::after{bottom:2px}
 @media(max-width:760px){
- .map-tools-stack{top:7px;right:7px;width:min(252px,calc(100% - 14px));max-height:calc(100% - 14px);gap:6px}
+ .map-tools-stack{top:7px;right:7px;width:max-content;max-width:calc(100% - 14px);max-height:calc(100% - 14px);gap:6px}
+ .map-tools-stack.is-open{width:min(252px,calc(100% - 14px))}
+ .map-tools-toggle{display:inline-flex;min-height:40px}
+ .map-tools-stack:not(.is-open) .map-tools-panels{display:none}
  .map-tools-stack .map-find-tools,.map-tools-stack .map-measure-tools{padding:7px}
  .map-measure-tools .map-measure-modes button{min-height:32px}
  .map-measure-tools .area-actions button{min-height:32px}
+ .map-card:fullscreen .map-top{padding:5px 7px;gap:5px}
+ .map-card:fullscreen .map-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+ .map-card:fullscreen .map-actions button{min-height:34px;padding:5px 3px;font-size:10px}
+ .map-card:fullscreen .map-orientation{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;padding:4px 7px}
+ .map-card:fullscreen .map-orientation label{display:flex;flex:0 0 auto;gap:3px;font-size:9px}
+ .map-card:fullscreen .map-orientation output{min-width:24px}
+ .map-card:fullscreen .map-orientation input[type="range"]{flex:1 1 auto;min-width:28px;width:auto}
+ .map-card:fullscreen .map-orientation button{min-height:30px;padding:4px 5px;font-size:9px;white-space:nowrap}
 }
 @media(max-width:360px){
- .map-tools-stack{width:min(232px,calc(100% - 14px))}
+ .map-tools-stack.is-open{width:min(232px,calc(100% - 14px))}
 }
 
 
