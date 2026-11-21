@@ -93,6 +93,7 @@ export async function loadCountyDataset() {
 
 // Current official county-equivalent polygons from U.S. Census TIGERweb.
 // Layer 82 is the January 1, 2026 Counties layer (TIGERweb ACS2026).
+export const COUNTY_BOUNDARY_DATA_FILE = new URL('../../data/us-counties-boundaries.geojson.gz', import.meta.url);
 export const COUNTY_BOUNDARY_SERVICE_URL =
   'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2026/MapServer/82';
 
@@ -121,6 +122,21 @@ export function validateCountyBoundaryDataset(data) {
 }
 
 export async function loadCountyBoundaryDataset() {
+  // Prefer the committed, locally served Census boundary bundle. The live service
+  // remains a fallback for developers who have not run the vendor command yet.
+  const localResponse = await fetch(COUNTY_BOUNDARY_DATA_FILE);
+  if (localResponse.ok) {
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('This browser does not support local county-boundary gzip decompression.');
+    }
+    if (!localResponse.body) throw new Error('The local county-boundary response has no data stream.');
+    const text = await new Response(localResponse.body.pipeThrough(new DecompressionStream('gzip'))).text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (error) { throw new Error(`The local county-boundary data is not valid JSON: ${error.message}`); }
+    return validateCountyBoundaryDataset(data);
+  }
+
   const params = new URLSearchParams({
     where: '1=1',
     outFields: 'GEOID,STATE,BASENAME,NAME,INTPTLAT,INTPTLON',
@@ -135,13 +151,11 @@ export async function loadCountyBoundaryDataset() {
     headers: { Accept: 'application/geo+json, application/json' }
   });
   if (!response.ok) {
-    throw new Error(`Unable to load 2026 Census county polygons (HTTP ${response.status}).`);
+    throw new Error(`Unable to load 2026 Census county polygons locally or remotely (HTTP ${response.status}).`);
   }
   let data;
   try { data = await response.json(); }
   catch (error) { throw new Error(`The Census county-boundary response is not valid JSON: ${error.message}`); }
-  if (data?.error) {
-    throw new Error(data.error.message || 'The Census county-boundary service returned an error.');
-  }
+  if (data?.error) throw new Error(data.error.message || 'The Census county-boundary service returned an error.');
   return validateCountyBoundaryDataset(data);
 }
