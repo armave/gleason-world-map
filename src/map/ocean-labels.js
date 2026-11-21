@@ -81,7 +81,8 @@ function makeCurvedCandidate(ctx,label,anchor,project,baseR,zoom,viewport,isLand
   const offset=cursor+width/2,angle=theta+direction*offset/radius;
   const pos=curved?project(angle/DEG,anchor.lat):[center[0]+offset,center[1]];
   if(!pos||!pos.slice(0,2).every(Number.isFinite)||Math.hypot(pos[0],pos[1])>baseR*.985)return null;
-  if(isLand&&isLand(pos[0],pos[1]))return null;
+  const sampleEvery=Math.max(1,Math.floor(text.length/4));
+  if(isLand&&(i===0||i===text.length-1||i%sampleEvery===0)&&isLand(pos[0],pos[1]))return null;
   const rotation=curved?Math.atan2(-direction*Math.cos(angle),-direction*Math.sin(angle)):0;
   glyphs.push({char,x:pos[0],y:pos[1],rotation});
   cursor+=advances[i];
