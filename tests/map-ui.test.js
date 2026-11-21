@@ -133,7 +133,7 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/geodesicLinePath/);
 });
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
@@ -156,12 +156,12 @@ test('latitude grid includes intermediate parallels, an emphasized equator, long
 });
 
 
-test('distance connector is drawn as a straight projected segment rather than a surface geodesic',()=>{
- assert.match(app,/const path=flatDiskLinePath\(points\[0\],points\[1\],project\)/);
- assert.match(app,/ctx\.lineTo\(path\[1\]\[0\],path\[1\]\[1\]\)/);
+test('distance connector follows the projected WGS84 geodesic used by the readout',()=>{
+ assert.match(app,/const path=geodesicLinePath\(points\[0\],points\[1\],project,50\)/);
+ assert.match(app,/for\(let i=1;i<path\.length;i\+\+\)ctx\.lineTo\(path\[i\]\[0\],path\[i\]\[1\]\)/);
+ assert.match(app,/const midpoint=path\[Math\.floor\(\(path\.length-1\)\/2\)\]/);
  assert.match(app,/strokeMeasurementConnector\('distance'\)/);
- assert.doesNotMatch(app,/geodesicLinePath\(points\[0\],points\[1\]/);
- assert.match(html,/Direct dashed line/);
+ assert.match(html,/Projected WGS84 geodesic/);
 });
 
 
