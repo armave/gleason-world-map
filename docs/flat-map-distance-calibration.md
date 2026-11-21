@@ -116,11 +116,11 @@ D_chord = hypot(x_B - x_A, y_B - y_A)
 The correction estimates a positive multiplier from the two endpoints. Latitude and longitude endpoints enter the app in degrees. Colatitudes and feature values are in radians; longitude difference is wrapped in degrees and then converted to radians.
 
 ```text
-thetaA = pi/2 - latitudeA
-thetaB = pi/2 - latitudeB
+thetaA = pi/2 - rad(latitudeA_degrees)
+thetaB = pi/2 - rad(latitudeB_degrees)
 meanTheta = (thetaA + thetaB) / 2
 thetaSpan = abs(thetaA - thetaB)
-longitudeSpan = abs(wrapLongitude(longitudeB - longitudeA))
+longitudeSpan = abs(rad(wrapLongitude(longitudeB_degrees - longitudeA_degrees)))
 ```
 
 The nine polynomial features, in the exact code order, are:
