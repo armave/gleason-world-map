@@ -5,7 +5,7 @@
  * integrations, never coordinate-derived route lengths.
  */
 import { readFile, writeFile } from 'node:fs/promises';
-import { fitFlightCalibration } from '../src/core/flight-calibration-fit.js';
+import { fitFlightCalibration, summarizeFlightCalibrationCoverage } from '../src/core/flight-calibration-fit.js';
 
 const DATA_PATH = 'data/flight-calibration.json';
 const PARAMETERS_PATH = 'src/core/flight-calibration-parameters.js';
@@ -43,8 +43,57 @@ async function main() {
     fitted = fitFlightCalibration(dataset);
   } catch (error) {
     if (String(error.message).includes('Insufficient empirical route coverage')) {
+      const spatialCoverage = summarizeFlightCalibrationCoverage(dataset);
+      const southernCandidates = (dataset.routes || []).filter(route =>
+        Number.isFinite(route.airportA?.lat) &&
+        Number.isFinite(route.airportB?.lat) &&
+        Math.min(route.airportA.lat, route.airportB.lat) <= -45
+      ).map(route => ({
+        routeId: route.routeId,
+        split: route.split,
+        airportA: route.airportA?.ident || null,
+        airportB: route.airportB?.ident || null,
+        minEndpointLatitude: Math.min(route.airportA.lat, route.airportB.lat),
+        candidateFlightsSeen: route.candidatesSeen || 0,
+        pagesScanned: route.pagesScanned || 0,
+        acceptedFlights: route.sampleCount || 0
+      }));
+      const rejectedSummary = {
+        schemaVersion: 1,
+        accepted: false,
+        status: 'insufficient-route-coverage',
+        generatedAt: new Date().toISOString(),
+        sourceDataset: DATA_PATH,
+        sourceRetrievedAt: dataset.source && dataset.source.retrievedAt,
+        rejectionReason: error.message,
+        qualityGate: {
+          ...spatialCoverage,
+          limits: {
+            minimumTrainingRoutes: MIN_TRAINING_ROUTES,
+            minimumHoldoutRoutes: MIN_HOLDOUT_ROUTES,
+            minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
+            minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
+            minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
+            minimumPolarHoldoutRoutes: MIN_POLAR_HOLDOUT_ROUTES
+          }
+        },
+        model: null,
+        metrics: null,
+        routeCoverage: {
+          ...spatialCoverage,
+          candidateRoutes: (dataset.routes || []).length,
+          totalObservedFlights: (dataset.routes || []).reduce(
+            (sum, route) => sum + (route.sampleCount || 0), 0
+          ),
+          routesWithAtLeastThreeFlights: (dataset.routes || []).filter(
+            route => (route.sampleCount || 0) >= 3
+          ).length,
+          southernRouteCandidates: southernCandidates
+        }
+      };
+      await writeFile(SUMMARY_PATH, JSON.stringify(rejectedSummary, null, 2) + '\\n', 'utf8');
       console.warn(error.message);
-      console.warn('No production coefficients were written; keep collecting flight telemetry.');
+      console.warn('Candidate summary recorded as rejected; production coefficients were preserved.');
       return;
     }
     throw error;
