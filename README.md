@@ -135,8 +135,8 @@ src/
   app.js                    state, UI wiring, and lifecycle
   core/
     flat-disk.js            map projection, planar area and perimeter
-  geodesic.js             WGS84 inverse/direct distances and projected geodesic paths
-    format.js               coordinates, units, and search formatting
+    geodesic.js              WGS84 inverse/direct distances and projected geodesic paths
+    format.js                coordinates, units, and search formatting
   data/
     datasets.js             local asset loading, decompression, and validation
     geojson.js              country identifiers, names, colours, centroids
