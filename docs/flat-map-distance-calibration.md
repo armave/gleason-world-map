@@ -4,11 +4,14 @@
 
 ## 1. What this calibration is intended to estimate
 
-The A–B tool still draws one straight segment between the two locations after projecting them into the circular flat-disk coordinate plane. The value shown beside that line is:
+The A–B tool draws one straight segment between the locations after projecting them into the circular flat-disk coordinate plane. The interface displays two values from those same endpoints:
 
 ```text
-displayed distance = flat-disk straight-chord length × empirical correction factor
+raw flat-disk chord = Euclidean distance between projected endpoints
+empirical flat-map estimate = raw flat-disk chord × empirical correction factor
 ```
+
+The visible connector is unchanged. The raw chord is the uncorrected measurement in the map plane; the empirical estimate applies the existing bounded endpoint-based factor.
 
 This is a point-to-point benchmark estimate. It is **not** an estimate of the length flown by a particular airline, on a particular date, at a particular altitude. It is also not a route planner, a track reconstruction, or a proof that the projection is a physical model of the Earth.
 
@@ -222,6 +225,19 @@ The automated regression tests in `tests/measurement-engine.test.js` enforce max
 
 The separate WGS84 implementation and actual-flight comparisons in `src/core/geodesic.js` and `tests/geodesic.test.js` are not called by the active A–B tool and were not used to fit this correction.
 
-## 8. Recommended next validation step
+## 8. Dual readouts and runtime diagnostics
 
-Keep the current A–B label as a straight-line point-to-point estimate. For a separate aviation-oriented feature, build a versioned dataset of recorded flights containing airline/flight identifier, date, origin/destination airport, source of track observations, and measured track length. Compare those track lengths with the great-circle baseline, but do not mix them into the current point-to-point calibration. Actual-track distance depends on flight and date; a single static city-pair correction cannot represent every operational route.
+The active interface displays both `chordDistanceMeters` (raw Euclidean disk chord) and `distanceMeters` (the existing empirically corrected estimate). It also displays the correction multiplier and percentage adjustment relative to the raw chord. The model coefficients and fitted formula have not changed in this implementation.
+
+The diagnostics are informational and never silently replace either number:
+
+- **Outside fitted feature range:** mean colatitude, colatitude span, or wrapped longitude separation is outside the observed intervals of the 15 fitted city pairs. The model clamps mean colatitude and colatitude span to fitted limits; longitude separation is not clamped, so it still enters the existing formula unchanged.
+- **Southern-rim sensitivity:** either endpoint is at or below 85°S. The radial disk places that endpoint close to the outer circumference, where longitude has a large effect on projected position. The app leaves the coordinates and both measurements unchanged but advises caution.
+- **Correction bound applied:** the unbounded multiplier falls outside the existing 0.90–2.50 interval and is clamped to that interval.
+- **Within fitted feature ranges:** the checked mean-colatitude and colatitude-span inputs fall inside their fitted intervals, and wrapped longitude separation falls inside the observed interval of the 15 city-pair fit. This is not a guarantee that the empirical estimate is accurate for that route.
+
+No globe equations or geodesic library are used by the active A–B measurement path. The empirical model is still a finite benchmark fit, not a mathematical proof of geographic distance. The existing reference tables and their provider methodology remain unchanged.
+
+## 9. Recommended next validation step
+
+Keep both A–B outputs visible and continue expanding the benchmark coverage. The raw output remains a map-plane chord; the corrected output remains an empirical estimate. For a separate aviation-oriented feature, build a versioned dataset of recorded flights containing airline/flight identifier, date, origin/destination airport, source of track observations, and measured track length. Compare those track lengths with the great-circle baseline, but do not mix them into the current point-to-point calibration. Actual-track distance depends on flight and date; a single static city-pair correction cannot represent every operational route.

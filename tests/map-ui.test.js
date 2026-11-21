@@ -140,7 +140,11 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
   assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
-  assert.match(app, /Empirically calibrated straight-line distance/);
+  assert.match(app, /rawDistanceValue/);
+  assert.match(app, /calibratedDistanceMeters/);
+  assert.match(app, /calibrationDiagnostics/);
+  assert.match(app, /Raw chord is the Euclidean distance in the map plane/);
+  assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
 
