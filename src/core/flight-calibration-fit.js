@@ -247,6 +247,7 @@ export function fitFlightCalibration(dataset) {
 
   const examples = makeTrainingExamples(training);
   const model = modelFromExamples(examples, dataset.schemaVersion);
+  model.holdoutRouteCount = holdout.length;
   const holdoutErrors = holdout.map(route => routeError(route, model));
   const leaveOneOutErrors = training.map(route => {
     const subset = examples.filter(example => example.routeId !== route.routeId);
