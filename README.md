@@ -68,7 +68,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same endpoint-based empirical correction as A–B. Because map scale varies by position and direction in the base projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the reference data and limitations.
+The scale bar is locally calibrated at the current view-centre anchor in the displayed horizontal direction. It uses the same local ADS-B route-neighbour correction as A–B. Because map scale varies by position and direction in the base projection, the scale-bar reading is local rather than one uniform scale for the entire disk. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the observed-flight data and limitations.
 
 ## Antarctica / Ice Wall
 
@@ -110,7 +110,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar calibrated with the same local empirical endpoint correction as A–B
+- View-centred scale bar calibrated with the same local ADS-B route-neighbour correction as A–B
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing
@@ -139,9 +139,11 @@ data/
 src/
   app.js                    state, UI wiring, and lifecycle
   core/
-    flat-disk.js            map projection, planar area and perimeter
-    geodesic.js              WGS84 inverse/direct distances and projected geodesic paths
-    measurement-engine.js    straight projected A–B distance and 60°S reference-line geometry
+    flat-disk.js                    flat-disk projection, planar area and perimeter
+    flight-calibration-fit.js        local ADS-B route-neighbour predictor
+    flight-calibration-parameters.js generated radial scale and route examples
+    flight-telemetry.js              ground-speed × timestamp mileage integration
+    measurement-engine.js            straight projected A–B estimate and 60°S reference-line geometry
     format.js                coordinates, units, and search formatting
   data/
     datasets.js             local asset loading, decompression, and validation
@@ -158,10 +160,13 @@ src/
 scripts/
   vendor-geodata.mjs        reproducible pinned-source data import
   vendor-county-labels.mjs  reproducible Census county-label data import
+  collect-flight-calibration.mjs historical ADS-B ground-speed/time samples
+  fit-flight-calibration.mjs     local route-neighbour fit and validation
 tests/
-  flat-disk.test.js        projection, planar area and perimeter regressions
-  geodesic.test.js         flight-route benchmarks, WGS84 distance and path regressions
-  measurement-engine.test.js direct-line distance regressions across the 60°S reference line
+  flat-disk.test.js              projection, planar area and perimeter regressions
+  flight-calibration-fit.test.js  radial scale, route-neighbour fit and holdout tests
+  flight-telemetry.test.js        ground-speed/time mileage integration tests
+  measurement-engine.test.js     ADS-B holdouts and 60°S geometry regressions
   registration.test.js      registration transform regressions
   datasets.test.js          bundled-data integrity and quality tests
 .github/workflows/test.yml automated Node tests
