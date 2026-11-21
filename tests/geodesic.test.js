@@ -116,6 +116,8 @@ test('distance is symmetric, wraps the antimeridian, and returns zero for identi
   assert.ok(geodesicDistanceMeters(a, b) < 100000);
   close(geodesicDistanceMeters(a, a), 0, 1e-9);
   close(geodesicDistanceMeters(point(90, -170), point(90, 150)), 0, 1e-7);
+  const antipodal = geodesicDistanceMeters(point(0, 0), point(0, 180));
+  assert.ok(antipodal > 19900000 && antipodal < 20100000);
 });
 
 test('near-antipodal fallback remains finite and the path retains exact endpoints', () => {
