@@ -17,7 +17,7 @@ for (let offset = 0; ; offset += PAGE_SIZE) {
     returnGeometry: 'true',
     outSR: '4326',
     geometryPrecision: '5',
-    maxAllowableOffset: '0.002',
+    maxAllowableOffset: '0.0002',
     resultRecordCount: String(PAGE_SIZE),
     resultOffset: String(offset),
     orderByFields: 'GEOID ASC',
@@ -40,14 +40,17 @@ const seen = new Set();
 for (const feature of features) {
   const p = feature.properties || {};
   const geoid = String(p.GEOID || '');
-  if (!/^\\d{5}$/.test(geoid) || !/^\\d{2}$/.test(String(p.STATE || '')) ||
-      !p.BASENAME || !['Polygon', 'MultiPolygon'].includes(feature.geometry?.type) ||
+  const lat = Number(p.INTPTLAT), lon = Number(p.INTPTLON);
+  if (!/^\d{5}$/.test(geoid) || !/^\d{2}$/.test(String(p.STATE || '')) ||
+      !p.BASENAME || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 ||
+      !['Polygon', 'MultiPolygon'].includes(feature.geometry?.type) ||
       !Array.isArray(feature.geometry.coordinates) || seen.has(geoid)) {
     throw new Error(`Invalid or duplicate Census county feature: ${geoid || '(missing GEOID)'}`);
   }
   seen.add(geoid);
 }
 if (features.length < 3000) throw new Error(`Expected at least 3,000 county equivalents; received ${features.length}.`);
+if (!features.some(feature => String(feature.properties.GEOID) === '06037')) throw new Error('Census output is missing Los Angeles County (GEOID 06037).');
 const geojson = JSON.stringify({
   type: 'FeatureCollection',
   name: 'U.S. Census TIGERweb ACS2026 county equivalents',
@@ -57,6 +60,7 @@ const geojson = JSON.stringify({
 });
 const compressed = gzipSync(Buffer.from(geojson), { level: 9 });
 await mkdir(resolve('data'), { recursive: true });
+if (compressed.length > 90 * 1024 * 1024) throw new Error(`Compressed county boundary bundle is too large for GitHub: ${compressed.length.toLocaleString()} bytes.`);
 await writeFile(OUT, compressed);
 const hash = createHash('sha256').update(compressed).digest('hex');
 console.log(`Saved ${features.length.toLocaleString()} features to ${OUT}`);
