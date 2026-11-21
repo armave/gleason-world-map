@@ -1,4 +1,5 @@
-import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskDistanceMeters,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2,DISK_RADIUS_KM} from './core/flat-disk.js';
+import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
+import {geodesicDistanceMeters,geodesicLinePath} from './core/geodesic.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -146,9 +147,10 @@ function strokeMeasurementConnector(tool){
 }
 function drawMeasure(){
  if(points.length===2){
-  const path=flatDiskLinePath(points[0],points[1],project);
-  if(path.length===2){
-   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
+  const path=geodesicLinePath(points[0],points[1],project);
+  if(path.length>=2){
+   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);
+   for(let i=1;i<path.length;i++)ctx.lineTo(path[i][0],path[i][1]);
    strokeMeasurementConnector('distance');
   }
  }
@@ -228,7 +230,7 @@ function updateViewReadout(){
 function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;const point=screenToWorld(sx,sy);return {x:point.x,y:point.y,sx,sy};}
-function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Direct-line distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
+function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Direct geodesic distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
 function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'});$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;draw();}
 function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Flat-disk planar area from projected boundary';const area=c?flatDiskFeatureAreaM2(c.feature,project,baseR,{preserveAntarcticRim:c.iso==='ATA'||c.name==='Antarctica'}):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;draw();}
 const US_STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam',MP:'Northern Mariana Islands',VI:'U.S. Virgin Islands'};
@@ -243,7 +245,7 @@ function showCounty(county){
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){
  $('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const distanceMeters=flatDiskDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='Direct A–B line on the calibrated flat disk';$('measureHelp').textContent='Measurement complete. The numeric result is the Euclidean length of the same direct line drawn between A and B on the disk, not a travelled route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk straight-line distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
+ if(points.length===2){const distanceMeters=geodesicDistanceMeters(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='WGS84 shortest surface distance';$('measureHelp').textContent='The readout is the shortest path along the WGS84 reference ellipsoid. The connector shows that direct geodesic projected onto the disk; it is not an actual flight or travelled route.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 direct surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}
 }
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});const offset=panForWorldCenterPoint(x,y,zoom,rotationRadians());panX=offset.panX;panY=offset.panY;draw();}
@@ -344,8 +346,12 @@ function scaleBarReferencePixels(anchor=scaleAnchorWorld(),scaleZoom=zoom){
 }
 function groundDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0||!Number.isFinite(baseR)||baseR<=0)return Infinity;
- // Distance is uniform in the flat projected plane, independent of map rotation or position.
- return (px/scaleZoom)*(DISK_RADIUS_KM/baseR);
+ // Calibrate the horizontal screen direction at the current view anchor using the same WGS84 metric as A–B.
+ const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
+ const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
+ const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
+ const distance=geodesicDistanceMeters(first,second);
+ return Number.isFinite(distance)?distance/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
  const safeAnchor=constrainScaleAnchor(anchor),pixels=scaleBarReferencePixels(safeAnchor,scaleZoom);
