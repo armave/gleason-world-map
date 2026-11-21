@@ -96,7 +96,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Curved ocean and sea labels that fade by scale and avoid land and other labels
 - White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
-- Smooth animated map rotation along the shortest angular path; geographic and measurement labels rotate with the disk
+- Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Hybrid A–B distance: WGS84 north of 60°S, flat-disk planar chord in the ice-wall zone
 - Direct A–B segments that cross the restricted 60°S parallel are rejected; permitted segments receive a metric-appropriate km label
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
