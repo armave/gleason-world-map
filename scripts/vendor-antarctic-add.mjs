@@ -46,10 +46,19 @@ async function requestJson(url, label) {
         throw new Error(label + ': HTTP ' + response.status + ' ' + (await response.text()).slice(0, 300));
       }
       const payload = await response.json();
-      if (payload.error) throw new Error(label + ': ' + (payload.error.message || JSON.stringify(payload.error)));
+      if (payload.error) {
+        const details = Array.isArray(payload.error.details) ? payload.error.details.join('; ') : '';
+        const error = new Error(
+          label + ': ArcGIS error ' + (payload.error.code ?? 'unknown') + ': ' +
+          (payload.error.message || 'query failed') + (details ? ' (' + details + ')' : '')
+        );
+        error.retryable = Number(payload.error.code) === 429 || Number(payload.error.code) >= 500;
+        throw error;
+      }
       return payload;
     } catch (error) {
       lastError = error;
+      if (error.retryable === false) throw error;
       if (attempt < 4) await new Promise(resolve => setTimeout(resolve, 600 * (2 ** attempt)));
     }
   }
@@ -66,8 +75,17 @@ function normalizeSurface(value) {
   return String(value || '').trim().toLowerCase().replace(/[_-]+/g, ' ');
 }
 
-function normalizeFeature(feature) {
-  const surface = normalizeSurface(feature?.attributes?.surface ?? feature?.properties?.surface);
+function attributeValue(attributes, fieldName) {
+  if (!attributes || !fieldName) return null;
+  if (Object.hasOwn(attributes, fieldName)) return attributes[fieldName];
+  const match = Object.keys(attributes).find(key => key.toLowerCase() === fieldName.toLowerCase());
+  return match ? attributes[match] : null;
+}
+
+function normalizeFeature(feature, fields = {}) {
+  const surface = normalizeSurface(
+    attributeValue(feature?.attributes, fields.surface) ?? feature?.properties?.surface
+  );
   const rings = feature?.geometry?.rings;
   if (!SURFACES.has(surface) || !Array.isArray(rings)) return null;
   const coordinates = rings.map(ring => {
@@ -87,8 +105,8 @@ function normalizeFeature(feature) {
     type: 'Feature',
     properties: {
       surface,
-      sourceDate: attributes.sourcedate ?? null,
-      revisionDate: attributes.revdate ?? null
+      sourceDate: attributeValue(attributes, fields.sourceDate) ?? null,
+      revisionDate: attributeValue(attributes, fields.revisionDate) ?? null
     },
     // Esri polygon rings are retained together. The renderer uses even-odd
     // fill semantics so disconnected shells and holes remain correctly filled.
@@ -113,6 +131,22 @@ async function main() {
     throw new Error('The selected ADD layer is not polygon geometry.');
   }
 
+  const layerFields = Array.isArray(layerMetadata.fields) ? layerMetadata.fields : [];
+  const findField = name => layerFields.find(field =>
+    String(field.name || '').toLowerCase() === name.toLowerCase()
+  )?.name || null;
+  const fields = {
+    surface: findField('surface'),
+    sourceDate: findField('sourcedate'),
+    revisionDate: findField('revdate')
+  };
+  if (!fields.surface) {
+    throw new Error('The selected ADD layer has no surface field. Available fields: ' +
+      layerFields.map(field => field.name).join(', '));
+  }
+  const outFields = [...new Set(Object.values(fields).filter(Boolean))].join(',');
+  console.log('Using ADD layer ' + layer.id + ' (' + layer.name + '); requested fields: ' + outFields);
+
   const idPayload = await requestJson(addQuery(layerUrl + '/query', {
     where: '1=1',
     returnIdsOnly: 'true',
@@ -128,7 +162,7 @@ async function main() {
     const batch = objectIds.slice(offset, offset + BATCH_SIZE);
     const payload = await requestJson(addQuery(layerUrl + '/query', {
       objectIds: batch.join(','),
-      outFields: 'surface,sourcedate,revdate',
+      outFields,
       returnGeometry: 'true',
       outSR: OUT_SR,
       geometryPrecision: 4,
@@ -136,7 +170,7 @@ async function main() {
       f: 'json'
     }), 'ADD polygon batch ' + (Math.floor(offset / BATCH_SIZE) + 1));
     for (const candidate of payload.features || []) {
-      const normalized = normalizeFeature(candidate);
+      const normalized = normalizeFeature(candidate, fields);
       if (normalized) features.push(normalized);
     }
     console.log('Fetched ' + Math.min(offset + batch.length, objectIds.length) +

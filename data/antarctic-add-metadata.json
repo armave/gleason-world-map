@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "provider": "British Antarctic Survey / SCAR Antarctic Digital Database",
+  "edition": "7.13",
+  "published": "2026-11-12",
+  "doi": "10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb",
+  "service": "https://services7.arcgis.com/tPxy1hrFDhJfZ0Mf/arcgis/rest/services/High_resolution_vector_polygons_of_the_Antarctic_coastline/FeatureServer",
+  "layerId": 1,
+  "layerName": "add_coastline_high_res_polygon_v7_13",
+  "attribution": "Data from the SCAR Antarctic Digital Database, 2026",
+  "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+  "sourceCrs": "EPSG:4326 (reprojected by ArcGIS from EPSG:3031)",
+  "generalization": {
+    "method": "ArcGIS maxAllowableOffset applied in WGS84 output coordinates",
+    "toleranceDegrees": 0.003,
+    "coordinatePrecisionDecimals": 4
+  },
+  "surfaceCounts": {
+    "land": 17257,
+    "ice shelf": 331,
+    "ice tongue": 37,
+    "rumple": 64
+  },
+  "featureCount": 17689,
+  "latitudeExtent": {
+    "min": -89,
+    "max": -60.4967
+  },
+  "uncompressedBytes": 34669086,
+  "compressedBytes": 5205959,
+  "sha256": "4c7ee73aedd07f88eac3f34774c97021ea6094b997380dcc412c661771f92890",
+  "file": "data/antarctic-add-v7.13.geojson.gz"
+}
