@@ -63,6 +63,9 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 
 - Gleason-style 2D north-polar circular disk layout
 - Fixed WGS84 meridional radial calibration from the North Pole
+- Separate Natural Earth physical coastlines and island shorelines, with dateline-safe projection
+- Curved ocean and sea labels that fade by scale and avoid land and other labels
+- White Antarctic ice-wall band with radial ridges, crevasse details and repeated rim lettering
 - Greenwich-right, 90°E-up longitude orientation
 - WGS84 ellipsoidal surface-distance measurements in metres and kilometres
 - Distance A–B routes and successive area vertices are joined by high-contrast dashed geodesic connectors; finished area outlines close back to the first point
