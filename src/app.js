@@ -1,4 +1,5 @@
 import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
+import {geodesicLinePath} from './core/geodesic.js';
 import {measureDirectDistance,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
@@ -315,16 +316,16 @@ function projectedPolygonLabelAnchor(vertices){
 }
 function drawMeasure(){
  if(points.length===2){
-  // The connector is a straight projected A–B line; its numeric readout is the WGS84 surface distance.
-  const path=flatDiskLinePath(points[0],points[1],project);
-  if(path.length===2){
-   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
+  // Draw the same shortest WGS84 geodesic whose length is shown in the readout.
+  const path=geodesicLinePath(points[0],points[1],project,50);
+  if(path.length>=2){
+   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);
+   for(let i=1;i<path.length;i++)ctx.lineTo(path[i][0],path[i][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
    const label=formatMeasurementKilometres(measurement.distanceMeters);
-   drawMeasurementLabelAtMap(
-    (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
-   );
+   const midpoint=path[Math.floor((path.length-1)/2)];
+   drawMeasurementLabelAtMap(midpoint[0],midpoint[1],label,'distance');
   }
  }
  points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';drawUprightMapText(i===0?'A':'B',x,y+.3/zoom);});
