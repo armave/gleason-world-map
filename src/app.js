@@ -1,4 +1,5 @@
-import {rad,clamp,radialFraction,meridionalDistanceFromNorthKm,wrapLongitude,project as projectWgs84,unproject as unprojectWgs84,geodesicInverse,geodesicDirect,geodesicLinePath as createGeodesicLinePath,wgs84PolygonMetrics,featureGeodesicAreaM2} from './core/wgs84.js';
+import {rad,clamp,radialFraction,meridionalDistanceFromNorthKm,wrapLongitude,project as projectWgs84,unproject as unprojectWgs84} from './core/wgs84.js';
+import {DEFAULT_DISK_RADIUS_KM,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset} from './data/datasets.js';
@@ -9,7 +10,7 @@ import {createCoastlinePath,drawCoastlines as renderCoastlines} from './map/coas
 import {drawRegisteredHistoricalScan as renderRegisteredHistoricalScan,triangulateControlPoints} from './map/registration.js';
 import {renderRadialCalibration,renderDistortionPanel} from './ui/calibration.js';
 import {selectNonOverlappingLabels,shouldShowCapitalLabels,shouldShowCountryLabels,CAPITAL_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MAX_SCALE_KM,COUNTRY_LABEL_MIN_SCALE_KM} from './map/labels.js';
-import {createMeasurementSegments,createProjectedMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
+import {createProjectedMeasurementSegments,measurementStrokeStyle} from './map/measurements.js';
 
 (() => {
 'use strict';
@@ -36,7 +37,6 @@ const colors = ['#cdb889','#b8c6a9','#d8cba9','#b8c2b0','#d4b995','#c1c9b8','#d9
 const hashColor=key=>hashColorForPalette(key,colors);
 const project=(lon,lat)=>projectWgs84(lon,lat,baseR);
 const unproject=(x,y)=>unprojectWgs84(x,y,baseR);
-const geodesicLinePath=(a,b)=>createGeodesicLinePath(a,b,project);
 function setDistortionAnchor(point,label){
  if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lon))return;
  distortionAnchor={lat:clamp(point.lat,-90,90),lon:wrapLongitude(point.lon),label:label||fmtCoord(point.lat,point.lon)};
@@ -151,11 +151,11 @@ function drawArea(){
  if(!areaPoints.length)return;
  ctx.save();
  const closed=areaFinished&&areaPoints.length>=3;
- const segments=createMeasurementSegments(areaPoints,geodesicLinePath,closed);
+ const segments=createProjectedMeasurementSegments(areaPoints,project,closed);
  if(segments.length){
   ctx.beginPath();
   const first=project(areaPoints[0].lon,areaPoints[0].lat);ctx.moveTo(first[0],first[1]);
-  for(const segment of segments)segment.slice(1).forEach(([x,y])=>ctx.lineTo(x,y));
+  for(const segment of segments)ctx.lineTo(segment[1][0],segment[1][1]);
   if(closed){ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
   strokeMeasurementConnector('area');
  }
@@ -164,8 +164,14 @@ function drawArea(){
 }
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=`${areaPoints.length} vertices`;
- if(areaFinished&&areaPoints.length>=3){const result=wgs84PolygonMetrics(areaPoints);if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`WGS84 geodesic perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Area and perimeter are calculated on the WGS84 ellipsoid; polygon edges are shortest geodesics between vertices.';}else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='GeographicLib polygon-area engine unavailable';}}
- else{$('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';$('areaHelp').textContent=areaPoints.length?'Add more vertices; dashed geodesic connectors join each successive point. Finish the polygon to close it and calculate area and perimeter.':'Choose Area, then click at least three points on the disk. Dashed geodesic connectors join successive vertices; Finish closes the outline and calculates ellipsoidal area and perimeter.';}
+ if(areaFinished&&areaPoints.length>=3){
+  const result=flatDiskPolygonMetrics(areaPoints,project,baseR,DEFAULT_DISK_RADIUS_KM);
+  if(result){$('areaValue').textContent=formatArea(result.areaM2);$('areaPerimeter').textContent=`Flat-disk perimeter · ${formatDistance(result.perimeterM)}`;$('areaHelp').textContent='Planar area and straight-edge perimeter are calculated in the projected disk coordinates.';}
+  else{$('areaValue').textContent='Unavailable';$('areaPerimeter').textContent='Invalid polygon · check for crossing edges';$('areaHelp').textContent='This polygon could not be measured. Check that its edges do not cross and that it has at least three valid vertices.';}
+ }else{
+  $('areaValue').textContent='—';$('areaPerimeter').textContent='Area not calculated';
+  $('areaHelp').textContent=areaPoints.length?'Add more vertices; straight segments join each successive point. Finish the polygon to close it and calculate projected-plane area and perimeter.':'Choose Area, then click at least three points on the disk. Straight map-plane segments join successive vertices; Finish closes the outline and calculates planar area and perimeter.';
+ }
 }
 function finishArea(){if(areaPoints.length<3){$('areaHelp').textContent='An area needs at least three distinct vertices.';return;}areaFinished=true;updateAreaMeasurement();draw();updateStatus();}
 function drawHistoricalOverlay(){
@@ -215,9 +221,9 @@ function updateViewReadout(){
 function findCountryAt(x,y){if(!layers.countries)return null;for(let i=pathRecords.length-1;i>=0;i--){const rec=pathRecords[i];if(ctx.isPointInPath(rec.path,x,y,'evenodd'))return rec.country;}return null;}
 function findCapitalAt(x,y,tol=8){if(!layers.capitals)return null;let best=null,bd=Infinity;for(const p of capitals){const [cx,cy]=project(p.lon,p.lat);const d=Math.hypot(cx-x,cy-y);if(d<tol/zoom&&d<bd){best=p;bd=d;}}return best;}
 function mapCoords(e){const rect=canvas.getBoundingClientRect();const sx=e.clientX-rect.left,sy=e.clientY-rect.top;return {x:(sx-width/2-panX)/zoom,y:(sy-height/2-panY)/zoom,sx,sy};}
-function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Geodesic distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
-function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=featureGeodesicAreaM2(c.feature);$('selectionFactTitle').textContent='WGS84 area from boundary geometry';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;setDistortionAnchor(c.center,c.name);draw();}
-function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='WGS84 area from boundary geometry';$('selectionFactValue').textContent=c?formatArea(featureGeodesicAreaM2(c.feature)):'—';$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;setDistortionAnchor(p,p.city);draw();}
+function updateStatus(){if(mode==='measure'){if(points.length===0)$('status').textContent='Distance mode · Choose point A';else if(points.length===1)$('status').textContent='Distance mode · Choose point B';else $('status').textContent='Flat-disk distance complete';}else if(mode==='area'){$('status').textContent=`Area mode · ${areaPoints.length} vertices · ${areaFinished?'polygon finished':'add boundary points'}`;}else{$('status').textContent=hoveredCountry?`Country: ${hoveredCountry.name}`:hoveredCapital?`Capital: ${hoveredCapital.city}`:`Explore mode · ${countries.length} countries/areas · ${capitals.length} capital points`;}}
+function showCountry(c){const cap=capitalByIso.get(c.iso)||null;selected={type:'country',country:c,capital:cap};$('selectionName').textContent=c.name;$('selectionKind').textContent=`Country / territory · ${boundaryScaleLabel} boundary`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=cap?cap.city:'Not listed';$('selectionCoords').textContent=cap?fmtCoord(cap.lat,cap.lon):'—';const area=flatDiskFeatureAreaM2(c.feature,project,baseR,DEFAULT_DISK_RADIUS_KM);$('selectionFactTitle').textContent='Flat-disk area from projected boundary';$('selectionFactValue').textContent=area==null?'Unavailable':formatArea(area);$('selectionButtons').style.display=cap?'flex':'none';$('setA').disabled=!cap;$('setB').disabled=!cap||points.length===0;setDistortionAnchor(c.center,c.name);draw();}
+function showCapital(p){const c=countryByIso.get(p.iso);selected={type:'capital',capital:p,country:c||null};$('selectionName').textContent=p.city;$('selectionKind').textContent=`Capital of ${p.countryName||c?.name||'country'}`;$('selectionMetaTitle').textContent='Capital';$('selectionCapital').textContent=p.city;$('selectionCoords').textContent=fmtCoord(p.lat,p.lon);$('selectionFactTitle').textContent='Flat-disk area from projected boundary';const area=c?flatDiskFeatureAreaM2(c.feature,project,baseR,DEFAULT_DISK_RADIUS_KM):null;$('selectionFactValue').textContent=area==null?'—':formatArea(area);$('selectionButtons').style.display='flex';$('setA').disabled=false;$('setB').disabled=points.length===0;setDistortionAnchor(p,p.city);draw();}
 const US_STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam',MP:'Northern Mariana Islands',VI:'U.S. Virgin Islands'};
 function showCounty(county){
  selected={type:'county',county};$('selectionName').textContent=county.name;
@@ -229,7 +235,7 @@ function showCounty(county){
 }
 function setPoint(index,p){const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};if(index===0||points.length===0){points=[obj];}else if(points.length===1){points.push(obj);}else{points[1]=obj;}mode='measure';setModeUI();setDistortionAnchor(obj,obj.name);updateMeasurement();draw();updateStatus();}
 function updateMeasurement(){$('setB').disabled=!(selected&&selected.capital&&points.length>0);const box=$('endpointRows');box.innerHTML='';for(let i=0;i<2;i++){ const p=points[i];const row=document.createElement('div');row.className='point-row';const badge=document.createElement('span');badge.className=`point-badge ${i===0?'a':'b'}`;badge.textContent=i?'B':'A';const name=document.createElement('span');name.textContent=p?p.name:'Not set';const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';row.append(badge,name,coord);box.append(row);}
- if(points.length===2){const result=geodesicInverse(points[0],points[1]);$('distanceValue').textContent=Number.isFinite(result.distanceMeters)?formatDistance(result.distanceMeters):'Unavailable';$('distanceSub').textContent=result.approximate?'Accurate near-antipodal distance unavailable · GeographicLib could not be loaded':'Shortest surface geodesic · WGS84 reference ellipsoid';$('measureHelp').textContent=result.approximate?'This pair is nearly antipodal. Reload with the GeographicLib script available to calculate its accurate WGS84 geodesic.':'Measurement complete. The solid A–B connector is the direct line across the flat disk; the numeric distance remains the WGS84 shortest surface distance.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='WGS84 ellipsoidal surface distance';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
+ if(points.length===2){const distanceMeters=flatDiskDistanceMeters(points[0],points[1],project,baseR,DEFAULT_DISK_RADIUS_KM);$('distanceValue').textContent=Number.isFinite(distanceMeters)?formatDistance(distanceMeters):'Unavailable';$('distanceSub').textContent='Straight-line distance in the flat projected disk';$('measureHelp').textContent='Measurement complete. Both the solid A–B connector and the numeric result are the straight chord across the projected disk.';}else{$('distanceValue').textContent='—';$('distanceSub').textContent='Flat-disk distance · projected X/Y coordinates';$('measureHelp').textContent=points.length===1?'Point A set. Click a second point to set B.':'Choose two places on the disk, or select a capital and assign it to A or B.';}}
 function setModeUI(){ $('exploreMode').classList.toggle('active',mode==='explore');$('measureMode').classList.toggle('active',mode==='measure');$('areaMode').classList.toggle('active',mode==='area'); }
 function focusGeo(lat,lon,desiredZoom){const [x,y]=project(lon,lat);zoom=clampZoom(desiredZoom||zoom,{x,y});panX=-x*zoom;panY=-y*zoom;draw();}
 function selectResult(item){
