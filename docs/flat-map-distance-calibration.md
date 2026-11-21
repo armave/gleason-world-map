@@ -92,7 +92,7 @@ x = r * cos(longitude)
 y = -r * sin(longitude)
 ```
 
-The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale is regenerated from the training routes; the outer disk radius is `pi * R`.
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale is regenerated from the approved training routes; the outer disk radius is `pi * R`. Adding a candidate airport pair does not change this value until its measured observations pass the independent acceptance gate.
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
@@ -120,6 +120,8 @@ flight_empirical_estimate = unit_chord * clamp(predicted_ratio, 0.5 * R, 2.5 * R
 ```
 
 The radial/tangential split distinguishes movement across concentric rings from movement around a ring. On the current 33-route training / 4-route holdout snapshot, the smooth warp plus local route model reports **7.59% leave-one-route-out MAPE** and **4.10% independent holdout MAPE**; the worst holdout route error is **8.96%**. The previous unwarped radial geometry on the same sample reported 8.61%, 4.66%, and 7.59%, respectively. The worst leave-one-out route error remains 29.28%, so accuracy is not uniform. These are route-sample results, not proof of universal map or physical-distance accuracy.
+
+**Important southern-limit note:** the currently approved production snapshot has no training or holdout airport pair with an endpoint south of 60°S; its southernmost accepted endpoint is about 37.7°S. Therefore estimates near the Antarctic rim are still bounded extrapolations, not polar-validated predictions. The new southern/Antarctic airport pairs are collection candidates only. The model will keep the existing approved coefficients until actual ADS-B observations produce sufficient independent southern training and polar holdout coverage and the error gate passes.
 
 The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
