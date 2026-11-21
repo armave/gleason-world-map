@@ -11,15 +11,10 @@
  */
 import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { integrateGroundSpeedSeries } from '../src/core/flight-telemetry.js';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
 const OUTPUT_PATH = 'data/flight-calibration.json';
-const KNOT_TO_KM_PER_HOUR = 1.852;
-const MIN_AIRBORNE_SPEED_KT = 40;
-const MAX_AIRBORNE_SPEED_KT = 750;
-const MIN_FLIGHT_MINUTES = 35;
-const MIN_TELEMETRY_COVERAGE = 0.60;
-const MIN_SPEED_INTERVALS = 3;
 const MAX_CONCURRENT_DETAILS = 4;
 const AIRPORT_FALLBACK_RADIUS_METERS = 20000;
 
@@ -98,12 +93,6 @@ async function postJson(path, body) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body)
   }, path);
-}
-
-function epochSeconds(value) {
-  if (typeof value === 'number') return value;
-  const milliseconds = Date.parse(value);
-  return Number.isFinite(milliseconds) ? milliseconds / 1000 : NaN;
 }
 
 function percentile(values, fraction) {
@@ -266,6 +255,7 @@ async function collectRoute(route, airports, endDate) {
   let cursor = null;
   let pagesScanned = 0;
   let candidatesSeen = 0;
+  let detailsTried = 0;
 
   if (!airportA || !airportB) {
     return { route, airportA, airportB, observations, counters: { airportLookupFailed: 1 }, pagesScanned, candidatesSeen };
@@ -306,8 +296,9 @@ async function collectRoute(route, airports, endDate) {
       if (!flight.flight_id || seen.has(flight.flight_id)) return false;
       seen.add(flight.flight_id);
       return true;
-    });
+    }).slice(0, Math.max(0, MAX_DETAILS_PER_ROUTE - detailsTried));
     candidatesSeen += candidates.length;
+    detailsTried += candidates.length;
 
     const details = await mapLimit(candidates, MAX_CONCURRENT_DETAILS, async candidate => {
       await sleep(60);
@@ -325,7 +316,7 @@ async function collectRoute(route, airports, endDate) {
       ', candidates ' + candidates.length +
       ', accepted telemetry ' + observations.length + '/' + SAMPLES_PER_ROUTE
     );
-    if (observations.length >= SAMPLES_PER_ROUTE || !page.cursor) break;
+    if (observations.length >= SAMPLES_PER_ROUTE || detailsTried >= MAX_DETAILS_PER_ROUTE || !page.cursor) break;
     cursor = page.cursor;
   }
 
