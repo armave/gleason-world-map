@@ -231,7 +231,7 @@ The active interface displays both `chordDistanceMeters` (raw Euclidean disk cho
 
 The diagnostics are informational and never silently replace either number:
 
-- **Outside fitted feature range:** the unbounded mean colatitude or colatitude span is outside the training intervals used by the current model. The existing model clamps these feature inputs to its fitted limits.
+- **Outside fitted feature range:** mean colatitude, colatitude span, or wrapped longitude separation is outside the observed intervals of the 15 fitted city pairs. The model clamps mean colatitude and colatitude span to fitted limits; longitude separation is not clamped, so it still enters the existing formula unchanged.
 - **Southern-rim sensitivity:** either endpoint is at or below 85°S. The radial disk places that endpoint close to the outer circumference, where longitude has a large effect on projected position. The app leaves the coordinates and both measurements unchanged but advises caution.
 - **Correction bound applied:** the unbounded multiplier falls outside the existing 0.90–2.50 interval and is clamped to that interval.
 - **Within fitted feature ranges:** the checked mean-colatitude and colatitude-span inputs fall inside their fitted intervals. This is not a guarantee that the empirical estimate is accurate for that route.
