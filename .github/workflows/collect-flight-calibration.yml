@@ -39,7 +39,28 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Add observed ADS-B flight calibration sample"
             git fetch origin "${GITHUB_REF_NAME}"
-            git rebase --autostash "origin/${GITHUB_REF_NAME}"
+            if ! git rebase --autostash "origin/${GITHUB_REF_NAME}"; then
+              conflicts=$(git diff --name-only --diff-filter=U)
+              for file in $conflicts; do
+                case "$file" in
+                  data/flight-calibration.json|data/flight-calibration-summary.json|src/core/flight-calibration-parameters.js)
+                    # This workflow owns these generated files. Keep the
+                    # just-collected snapshot while replaying it onto the newer branch.
+                    git checkout --theirs -- "$file"
+                    git add -- "$file"
+                    ;;
+                  *)
+                    echo "Unexpected rebase conflict: $file"
+                    exit 1
+                    ;;
+                esac
+              done
+              if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+                echo "Unresolved non-generated rebase conflicts remain."
+                exit 1
+              fi
+              GIT_EDITOR=true git rebase --continue
+            fi
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
       - name: Upload the collected telemetry dataset
