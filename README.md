@@ -28,7 +28,7 @@ The distance and area tools deliberately use different metrics because the disk 
 
 **Direct A–B distance**
 
-The engine always calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method), regardless of endpoint latitude or whether the shortest route passes south of 60°S. This avoids a discontinuous jump in the readout when a point is moved across the 60°S line. The displayed dashed connector remains a straight projected map segment; it is a visual link between endpoints, while the numeric distance is the WGS84 surface distance.
+The engine always calculates the shortest inverse geodesic on the WGS84 reference ellipsoid (Vincenty's inverse method), regardless of endpoint latitude or whether the shortest route passes south of 60°S. This avoids a discontinuous jump in the readout when a point is moved across the 60°S line. The displayed dashed connector is the shortest WGS84 geodesic sampled on the ellipsoid and projected onto the disk, so its shape corresponds to the numeric surface distance.
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
