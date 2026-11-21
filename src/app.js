@@ -455,15 +455,32 @@ function showCounty(county){
  $('selectionFactTitle').textContent='Census GEOID';$('selectionFactValue').textContent=county.geoid;
  $('selectionButtons').style.display='none';draw();
 }
+function syncCoordinateInputs(){
+ const fields=[['coordALat',0,'lat'],['coordALon',0,'lon'],['coordBLat',1,'lat'],['coordBLon',1,'lon']];
+ for(const [id,index,key] of fields){
+  const field=$(id);if(!field)continue;
+  const point=points[index];field.value=point?Number(point[key]).toFixed(5):'';
+ }
+}
+function applyCoordinateEndpoint(index){
+ const prefix=index===0?'coordA':'coordB';
+ const lat=Number($(prefix+'Lat').value),lon=Number($(prefix+'Lon').value);
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat < -90||lat > 90||lon < -180||lon > 180){
+  $('status').textContent='Enter a valid latitude (−90 to 90) and longitude (−180 to 180).';
+  return false;
+ }
+ return setPoint(index,{lat,lon,name:'Manual coordinates'});
+}
 function setPoint(index,p){
  const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};
  if(index===0||points.length===0){points=[obj];}
  else if(points.length===1){points.push(obj);}
  else{points[1]=obj;}
- mode='measure';setModeUI();updateMeasurement();draw();updateStatus();return true;
+ mode='measure';setModeUI();syncCoordinateInputs();updateMeasurement();draw();updateStatus();return true;
 }
 function updateMeasurement(){
  $('setB').disabled=!(selected&&selected.capital&&points.length>0);
+ syncCoordinateInputs();
  const box=$('endpointRows');box.innerHTML='';
  for(let i=0;i<2;i++){
   const p=points[i],row=document.createElement('div');row.className='point-row';
@@ -486,7 +503,18 @@ function updateMeasurement(){
    :'Flight-mileage model unavailable';
 
   $('measureHelp').textContent='The connector and its map label show the ADS-B flight-mileage estimate. The raw Euclidean chord is retained as a secondary flat-disk reference; the estimate is based on historical ground-speed and timestamp samples and is not a shortest-path distance.';
+  const calibration=measurement.calibration;
+  const support=$('calibrationSupport'),routes=$('calibrationRoutes');
+  const status=calibration?.status;
+  support.textContent=status==='bounded-extrapolation'
+   ?'Bounded extrapolation · the route fit does not cover this endpoint geometry.'
+   :status==='extrapolated'
+    ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
+    :'Within sampled route-feature range.';
+  routes.textContent='Nearest reference routes: '+(calibration?.neighbourRouteIds?.join(', ')||'not available');
  }else{
+  $('calibrationSupport').textContent='Calibration support appears after both endpoints are set.';
+  $('calibrationRoutes').textContent='Nearest reference routes: —';
   $('rawDistanceValue').textContent='—';
   $('rawDistanceSub').textContent='Uncorrected Euclidean chord';
   $('distanceValue').textContent='—';
@@ -803,7 +831,9 @@ mobileToolsToggle.addEventListener('click',()=>setMobileToolsOpen(!document.body
 const mobileToolsQuery=window.matchMedia('(min-width: 761px)');
 mobileToolsQuery.addEventListener?.('change',event=>{if(event.matches)setMobileToolsOpen(false);});
 $('search').addEventListener('input',e=>drawSearchResults(e.target.value));$('search').addEventListener('focus',e=>{if(e.target.value)drawSearchResults(e.target.value);});$('search').addEventListener('keydown',e=>{if(e.key==='Escape')$('suggestions').classList.remove('open');if(e.key==='Enter'){const first=$('suggestions').querySelector('.suggestion');if(first)first.click();}});document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('suggestions').classList.remove('open');});
-$('exploreMode').addEventListener('click',()=>{if(mode!=='explore')clearMeasurementDrawings();mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{if(mode!=='measure')clearMeasurementDrawings();mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{if(mode!=='area')clearMeasurementDrawings();mode='area';setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
+$('exploreMode').addEventListener('click',()=>{if(mode!=='explore')clearMeasurementDrawings();mode='explore';setModeUI();updateStatus();});$('measureMode').addEventListener('click',()=>{if(mode!=='measure')clearMeasurementDrawings();mode='measure';setModeUI();updateStatus();});$('areaMode').addEventListener('click',()=>{if(mode!=='area')clearMeasurementDrawings();mode='area';setModeUI();updateAreaMeasurement();updateStatus();});$('setA').addEventListener('click',()=>assignSelection(0));$('setB').addEventListener('click',()=>assignSelection(1));
+$('applyCoordsA').addEventListener('click',()=>applyCoordinateEndpoint(0));$('applyCoordsB').addEventListener('click',()=>applyCoordinateEndpoint(1));
+$('clearMeasure').addEventListener('click',()=>{points=[];updateMeasurement();draw();updateStatus();});
 $('finishArea').addEventListener('click',finishArea);
 $('undoArea').addEventListener('click',()=>{areaPoints.pop();areaFinished=false;updateAreaMeasurement();draw();updateStatus();});
 $('clearArea').addEventListener('click',()=>{areaPoints=[];areaFinished=false;updateAreaMeasurement();draw();updateStatus();});
