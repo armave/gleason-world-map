@@ -20,15 +20,15 @@ The outer disk radius is **pi * R = 8,727.952513 km**. These values define the X
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. Its displayed distance is the flat-disk chord multiplied by a bounded empirical correction fitted to city-distance references using the endpoints' mean colatitude, colatitude separation, and wrapped longitude separation. The active measurement engine does not calculate globe or geodesic distances. The 60°S Restricted Line is a visual reference only and does not change the correction.
+The Gleason disk remains the measurement plane for the A–B tool. The visible connector is always one straight segment between the projected endpoints. The interface displays two readings from those same projected endpoints: (1) the raw Euclidean flat-disk chord and (2) that chord multiplied by the bounded empirical correction fitted to city-distance references using mean endpoint colatitude, colatitude separation, and wrapped longitude separation. The correction multiplier and fit-range / southern-rim warnings are shown alongside the readings. The active measurement engine does not calculate globe or geodesic distances. The 60°S Restricted Line is a visual reference only and does not change either reading.
 
 ## Flat-map direct-line distance and planar area measurements
 
-The A–B tool draws one straight projected segment and reports its empirically corrected flat-map length. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
+The A–B tool draws one straight projected segment and reports both the raw Euclidean chord in the disk plane and a separate empirically corrected estimate. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
 
 **Direct A–B distance**
 
-The engine projects A and B into the calibrated disk plane, calculates the Euclidean chord, and multiplies it by a bounded empirical factor derived from mean endpoint colatitude, colatitude separation, and wrapped longitude separation. The dashed connector remains exactly one straight segment. The correction was fitted to 15 city-to-city distance references and checked against five separate airport-pair references. The app does not use globe or geodesic calculations for the A–B readout. Moving an endpoint across 60°S does not trigger a metric switch.
+The engine projects A and B into the calibrated disk plane and exposes the Euclidean chord as the **raw flat-disk reading**. The second **empirical flat-map estimate** is that same chord multiplied by a bounded empirical factor derived from mean endpoint colatitude, colatitude separation, and wrapped longitude separation. The UI displays both values, the multiplier, the percentage adjustment relative to the raw chord, and diagnostics when inputs exceed the fitted feature ranges, the correction is clamped, or an endpoint is at or beyond 85°S. The dashed connector remains exactly one straight segment. The correction was fitted to 15 city-to-city distance references and checked against five separate airport-pair references. The active A–B engine does not use globe equations or geodesic libraries. Moving an endpoint across 60°S does not trigger a metric switch.
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
@@ -138,7 +138,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: one straight Euclidean segment in calibrated flat-disk coordinates
+- A–B distance: simultaneous raw Euclidean flat-disk chord and empirical corrected estimate from the same two endpoints, with correction-factor and fit-range diagnostics
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -240,10 +240,10 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 ## Important limitations
 
-- The radial disk geometry still uses one uniform base scale. The A–B readout adds a bounded empirical factor fitted to a finite set of route references; leave-one-out testing shows that untested route errors can still be substantial.
-- A–B is an empirically calibrated straight-line map measurement, not a surveyed route or actual flight track. It does not use a globe or geodesic model in the running app; distances outside the benchmark domain can still differ from external references.
+- The radial disk geometry still uses one uniform base scale. The A–B interface shows both the raw disk chord and a bounded empirical estimate fitted to a finite set of route references; leave-one-out testing shows that untested route errors can still be substantial.
+- The raw A–B result is a Euclidean chord in the displayed disk plane. The second result is an empirical estimate, not a surveyed route, actual flight track, or guaranteed geographic distance. The running A–B engine uses no globe equations or geodesic libraries; results outside the calibration sample can differ substantially from external references.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not WGS84 ellipsoidal polygon areas or survey-grade ground measurements.
-- The separate WGS84 utility uses a spherical fallback only for nearly antipodal pairs where Vincenty's iterative inverse does not converge; this fallback does not affect the active direct-line map measurement.
+- A legacy standalone geodesic utility remains in the repository for its own isolated tests; it is not imported or called by the application measurement path.
 - The flat-disk measurement conventions describe a mathematical map layout; they are not evidence or a claim about the physical shape of the Earth. The Boston Public Library identifies the 1892 Gleason sheet as a polar azimuthal projection.
 - Natural Earth 1:10m geometry is generalized cartographic data, not a cadastral or survey-grade boundary source. The browser falls back to 1:110m only when the high-resolution data cannot be fetched.
 - The historical scan is not ground truth; manual control-point registration improves visual fit but cannot remove errors in the original engraving.
