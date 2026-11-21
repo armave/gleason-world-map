@@ -467,12 +467,13 @@ function syncCoordinateInputs(){
 }
 function applyCoordinateEndpoint(index){
  const prefix=index===0?'coordA':'coordB';
- const lat=Number($(prefix+'Lat').value),lon=Number($(prefix+'Lon').value);
- if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat < -90||lat > 90||lon < -180||lon > 180){
+ const latText=$(prefix+'Lat').value.trim(),lonText=$(prefix+'Lon').value.trim();
+ const lat=Number(latText),lon=Number(lonText);
+ if(!latText||!lonText||!Number.isFinite(lat)||!Number.isFinite(lon)||lat < -90||lat > 90||lon < -180||lon > 180){
   $('status').textContent='Enter a valid latitude (−90 to 90) and longitude (−180 to 180).';
   return false;
  }
- return setPoint(index,{lat,lon,name:'Manual coordinates'});
+ return setPoint(index,{lat,lon,name:index===0?'A · manual coordinates':'B · manual coordinates'});
 }
 function setPoint(index,p){
  const obj={lat:p.lat,lon:p.lon,name:p.name||fmtCoord(p.lat,p.lon)};
@@ -509,12 +510,18 @@ function updateMeasurement(){
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
-  support.textContent=status==='bounded-extrapolation'
-   ?'Bounded extrapolation · the route fit does not cover this endpoint geometry.'
-   :status==='extrapolated'
-    ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
-    :'Within sampled route-feature range.';
-  routes.textContent='Nearest reference routes: '+(calibration?.neighbourRouteIds?.join(', ')||'not available');
+  support.textContent=calibration?.factorWasClamped
+   ?'Bounded extrapolation · correction limited to '+factor.toFixed(2)+'×; this endpoint geometry is outside the sampled route range.'
+   :status==='bounded-extrapolation'
+    ?'Polar extrapolation · endpoint is near the southern rim and is not validated by nearby routes.'
+    :status==='extrapolated'
+     ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
+     :'Within sampled route-feature range.';
+  const routeIds=calibration?.neighbourRouteIds||[];
+  const routeWeights=calibration?.neighbourWeights||[];
+  routes.textContent='Nearest reference routes: '+(routeIds.length
+   ?routeIds.map((route,index)=>route+' '+Math.round((routeWeights[index]||0)*100)+'%').join(' · ')
+   :'not available');
  }else{
   $('calibrationSupport').textContent='Calibration support appears after both endpoints are set.';
   $('calibrationRoutes').textContent='Nearest reference routes: —';
@@ -745,8 +752,38 @@ function drawScaleBar(){
  ctx.fillStyle='#294653';ctx.fillText(label,x,y-14);ctx.restore();
 }
 function exportPNG(){
- draw();if(!canvas.toBlob){$('status').textContent='PNG export is not supported in this browser.';return;}
- canvas.toBlob(blob=>{if(!blob){$('status').textContent='Could not create PNG.';return;}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='gleason-world-map.png';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported.';},'image/png');
+ draw();
+ const generatedAt=new Date().toISOString();
+ const footerHeight=84*dpr;
+ const output=document.createElement('canvas');
+ output.width=canvas.width;output.height=canvas.height+footerHeight;
+ const outputCtx=output.getContext('2d');
+ if(!outputCtx||!output.toBlob){$('status').textContent='PNG export is not supported in this browser.';return;}
+ outputCtx.drawImage(canvas,0,0);
+ outputCtx.fillStyle='#f7f3e9';outputCtx.fillRect(0,canvas.height,output.width,footerHeight);
+ outputCtx.strokeStyle='#c9c0ad';outputCtx.lineWidth=Math.max(1,dpr);
+ outputCtx.beginPath();outputCtx.moveTo(0,canvas.height);outputCtx.lineTo(output.width,canvas.height);outputCtx.stroke();
+ outputCtx.fillStyle='#304a55';outputCtx.textAlign='left';outputCtx.textBaseline='middle';
+ outputCtx.font='700 '+(11*dpr)+'px ui-sans-serif,system-ui';
+ outputCtx.fillText('GLEASON-STYLE FLAT-DISK MAP · GENERATED '+generatedAt.slice(0,10),14*dpr,canvas.height+16*dpr);
+ let measurementText='A–B measurement: not set';
+ if(points.length===2){
+  const measurement=measureDirectDistance(points[0],points[1]);
+  measurementText='ADS-B estimate '+formatDistance(measurement.distanceMeters)+' · raw disk chord '+formatDistance(measurement.chordDistanceMeters);
+ }
+ outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
+ outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
+ outputCtx.font='9px ui-sans-serif,system-ui';
+ outputCtx.fillText('ADS-B ground-speed × time estimate · not a shortest-path measurement · model v'+FLIGHT_CALIBRATION.schemaVersion+
+  ' · '+FLIGHT_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_CALIBRATION.holdoutRouteCount+' holdout route pairs',14*dpr,canvas.height+53*dpr);
+ outputCtx.fillText('Natural Earth boundaries · Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)',14*dpr,canvas.height+70*dpr);
+ output.toBlob(blob=>{
+  if(!blob){$('status').textContent='Could not create PNG.';return;}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='gleason-world-map-'+generatedAt.slice(0,10)+'.png';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with calibration and source metadata.';
+ },'image/png');
 }
 async function copyShareLink(){
  const url=new URL(window.location.href);url.search='';
