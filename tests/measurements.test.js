@@ -15,8 +15,10 @@ test('flat-disk distance connector is one straight projected segment from A to B
  const segments=createProjectedMeasurementSegments(points,project);
  assert.equal(segments.length,1);
  assert.equal(segments[0].length,2);
- assert.deepEqual(segments[0][0],[-141.34,-100.35]);
- assert.deepEqual(segments[0][1],[298.26,-105.81]);
+ assert.ok(Math.abs(segments[0][0][0]+141.34)<1e-9);
+ assert.ok(Math.abs(segments[0][0][1]+100.35)<1e-9);
+ assert.ok(Math.abs(segments[0][1][0]-298.26)<1e-9);
+ assert.ok(Math.abs(segments[0][1][1]+105.81)<1e-9);
 });
 test('flat-disk connector supports open and closed chains without inventing curved samples',()=>{
  const points=[point(0,0),point(0,2),point(2,2)];
