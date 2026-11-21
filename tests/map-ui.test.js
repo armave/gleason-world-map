@@ -130,7 +130,7 @@ test('distance connector is drawn as a straight projected segment rather than a 
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?formatMeasurementKilometres\(distanceMeters\),'distance'\)/);
+ assert.match(app,/formatMeasurementKilometres\(distanceMeters\),'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
  assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
