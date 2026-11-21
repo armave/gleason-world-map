@@ -363,6 +363,16 @@ test('map gestures use a lightweight preview and redraw full detail when settled
 });
 
 test('large coastline and Antarctic surface paths are built in yielding batches',()=>{
- assert.match(app,/createCoastlinePathAsync\(source,project\)/);
- assert.match(app,/createAntarcticSurfacePathsAsync\(source,project\)/);
+ assert.match(app,/createCoastlinePathAsync\(source,/);
+ assert.match(app,/createAntarcticSurfacePathsAsync\(source,/);
+});
+
+
+test('resize rebuilds deferred detail paths with a stable projection snapshot',()=>{
+ assert.match(app,/const fixedProject=\(lon,lat\)=>projectFlatDisk\(lon,lat,projectionBaseR\)/);
+ assert.match(app,/const makeResizedPath=.*fixedProject/);
+ assert.match(app,/geometryBaseR!==projectionBaseR/);
+ assert.doesNotMatch(app,/createCoastlinePath\(coastlineData,project\)|createAntarcticSurfacePaths\(antarcticAddData,project\)/);
+ assert.match(app,/createCoastlinePathAsync\(source,buildProject\)/);
+ assert.match(app,/createAntarcticSurfacePathsAsync\(source,buildProject\)/);
 });
