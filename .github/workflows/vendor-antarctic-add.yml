@@ -1,7 +1,7 @@
 name: Vendor Antarctic Digital Database surfaces
 on:
   push:
-    branches: ['**']
+    branches: [main]
     paths:
       - scripts/vendor-antarctic-add.mjs
       - src/map/antarctic-surfaces.js
