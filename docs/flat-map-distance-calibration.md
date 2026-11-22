@@ -143,7 +143,7 @@ x_base = r_base * cos(longitude)
 y_base = -r_base * sin(longitude)
 ```
 
-The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The currently deployed `R_base` is frozen from the last accepted legacy calibration. The strict observed-only refresh creates a separate candidate and does not change the production scale unless its route coverage, Southern Hemisphere and visual-projection validation gates all pass. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the deployed scale until its measured observations pass the independent acceptance gate.
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The currently deployed `R_base` and smooth radial-profile exponent are frozen from the last accepted production calibration. The strict observed-only refresh creates a separate candidate and does not change the production scale or ring spacing unless its route coverage, Southern Hemisphere and visual-projection validation gates all pass. Before the radial profile, the base radius is `pi * R_base`; the final measured disk radius is `mu * pi * R_base`, where `mu` is the integral mean of the local profile. Adding a candidate airport pair does not change deployed geometry until its measurements pass the independent acceptance gate.
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
@@ -255,10 +255,10 @@ The figures in the schema-2 dataset snapshot are now historical diagnostics only
 The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the flight-estimate neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
-The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for two separate models:
+The fitter searches a joint latitude-warp/profile-exponent grid using nested leave-one-route-out validation, then reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for the visible map geometry:
 
 - The route-neighbour model, which estimates typical flown mileage as a secondary empirical reference.
-- The primary visual projection, which uses only the one global radial scale multiplied by the same displayed 12-circle chord used by the map. It is scored using leave-one-route-out training validation and independent holdout routes.
+- The primary visual projection, which uses one global radial scale and the fitted smooth 12-circle profile. Its training and holdout scores are computed from projected observed flight paths, not endpoint chord approximations.
 
 Production parameters are emitted only when both models, route-count and Southern Hemisphere coverage gates pass. In particular, the primary visual projection must meet its own MAPE and worst-route limits without relying on the local route-neighbour correction. A rejected fit still writes the summary for review and preserves the last approved production parameter file. This prevents a good secondary flight-mileage estimate from masking a poorly calibrated map visual scale.
 
@@ -268,7 +268,7 @@ The summary and raw source records are:
 - `data/flight-calibration-summary.json` — endpoint-based secondary estimate fit and its acceptance decision.
 - `data/flight-path-calibration-summary.json` — visible path-fit candidate, route coverage, train/holdout/leave-one-route-out metrics and acceptance decision.
 - `src/core/flight-calibration-parameters.js` — parameters for the secondary endpoint-based flight-mileage estimate.
-- `src/core/flight-path-calibration-parameters.js` — active visible map scale and latitude warp, replaced only by an accepted path fit.
+- `src/core/flight-path-calibration-parameters.js` — active visible map scale, latitude warp and radial-profile exponent, replaced only by an accepted path fit.
 
 To collect and fit locally:
 
