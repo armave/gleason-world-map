@@ -163,7 +163,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /flightEmpiricalDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The primary A–B readout multiplies the straight projected chord by a smoothly interpolated 12-circle radial factor/);
+  assert.match(app, /The map geometry uses a smooth, edge-anchored radial warp across all 12 circles/);
+  assert.match(app, /The A–B readout keeps the separate calibration chord and 12-circle factor/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -217,7 +218,8 @@ test('distance connector is one straight projected segment measured in the map p
 
 test('the radial-corrected A–B readout and ADS-B flight mileage remain separate references',()=>{
  assert.match(html,/Radially calibrated A–B distance/);
- assert.match(html,/12-circle distance multiplier/);
+ assert.match(html,/12-circle visual radial calibration/);
+ assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
