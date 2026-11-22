@@ -1,6 +1,11 @@
 import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
 import {FLIGHT_PATH_CALIBRATION} from '../core/flight-path-calibration-parameters.js';
 import {
+ ACTIVE_VISUAL_LONGITUDE_WARP,
+ maximumLongitudeWarpDisplacementRadians,
+ minimumLongitudeWarpStretch
+} from '../core/visual-longitude-calibration.js';
+import {
  RADIAL_DISTANCE_PROFILE_MEAN,
  RADIAL_DISTANCE_PROFILE_EXPONENT,
  RADIAL_DISTANCE_VISUAL_CIRCLES,
@@ -17,6 +22,9 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
  const profileMean=RADIAL_DISTANCE_PROFILE_MEAN.toFixed(6);
  const inner=RADIAL_DISTANCE_INNER_FACTOR.toFixed(2);
  const outer=RADIAL_DISTANCE_OUTER_FACTOR.toFixed(2);
+ const longitudeWarp=ACTIVE_VISUAL_LONGITUDE_WARP;
+ const angularShift=maximumLongitudeWarpDisplacementRadians(longitudeWarp)*180/Math.PI;
+ const minimumAngularStretch=minimumLongitudeWarpStretch(longitudeWarp).toFixed(3);
  if(formulaElement){
   const scaleLabel=pending?'last approved scale retained':'accepted ADS-B path-fit scale';
   formulaElement.innerHTML='R_base = '+baseScale+' km ('+scaleLabel+')<br>'+
@@ -30,8 +38,12 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
    'qᵥ = I(q) / mean(m)<br>'+
    'R_disk = πR_base · mean(m)<br>'+
    'r = πR_base · I(q) = R_disk · qᵥ<br>'+
-   'x = r · cos(λ)<br>'+
-   'y = −r · sin(λ)<br>'+
+   'g(q) = 4q(1 − q)<br>'+
+   'λ′ = λ + g(q)[a₁sinλ + b₁(1 − cosλ) + a₂sin2λ + b₂(1 − cos2λ)]<br>'+
+   'a₁ = '+longitudeWarp.firstSine.toFixed(4)+' · b₁ = '+longitudeWarp.firstCosine.toFixed(4)+'<br>'+
+   'a₂ = '+longitudeWarp.secondSine.toFixed(4)+' · b₂ = '+longitudeWarp.secondCosine.toFixed(4)+'<br>'+
+   'max |λ′ − λ| = '+angularShift.toFixed(2)+'° · min dλ′/dλ = '+minimumAngularStretch+'<br>'+
+   'x = r · cos(λ′) · y = −r · sin(λ′)<br>'+
    'Flat-disk radius = πR_base · mean(m)';
  }
  if(statusElement){
@@ -39,7 +51,7 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
    ? 'No observed-path candidate has passed validation yet. The last approved flat-disk scale and latitude warp remain active; the endpoint-based ADS-B mileage estimate is shown separately.'
    : 'Active visible-map fit: '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+
     ' training airport pairs and '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+
-    ' independent holdout pairs. The displayed scale, latitude warp and 12-circle radial-spacing profile were accepted against projected ADS-B flight paths compared with independent ground-speed/time mileage.';
+    ' independent holdout pairs. The scale, latitude warp, 12-circle radial spacing and smooth longitude shear were fitted against projected ADS-B paths and observed ground-speed/time mileage. The shear returns to zero at the pole and Ice Wall; deep-southern rings remain an extrapolation where this archive has no routes.';
  }
 
  const rows=[90,60,30,0,-30,-60,-90].map(lat=>{
