@@ -2,14 +2,9 @@
 
 ## Purpose and scope
 
-The A–B measurement panel displays two distinct quantities for the same pair of endpoints:
+The A–B measurement panel displays one distance only. It is calculated by a single canonical function using the calibrated base flat-disk chord and one bounded ADS-B route-feature correction. The A–B value, on-map label, scale bar, polygon edge labels, polygon perimeter and PNG metadata all call that same function. There is no secondary connector readout, alternate endpoint predictor or fallback distance calculation.
 
-1. **Primary empirical route-mileage estimate** — predicts typical observed flown mileage from airport-pair examples whose projected endpoint features are similar to the query. It is calibrated against ADS-B ground-speed/time mileage.
-2. **Flat-disk connector length** — the exact Euclidean length of the straight segment between the two final projected points in the visibly warped flat-disk plane. This is the segment actually drawn on the map.
-
-The exact connector length, local scale bar, map-drawn measurement labels and polygon edge lengths remain map-plane measurements. The primary route estimate is a separate prediction; it does not change endpoint positions, the connector or the scale bar. There is no globe, sphere, ellipsoid, great-circle or geodesic formula in either implementation.
-
-The route estimate is a prediction of typical flown mileage, not a specific flight path, a guaranteed airline itinerary, or a shortest point-to-point distance. Real flights may route around weather, restricted airspace, traffic flows or operational constraints. Its reliability is limited to the airport-pair feature and chord-length range represented by the training and independent holdout records. The UI explicitly flags requests beyond this support range as **Extrapolated** rather than implying that an accurate estimate has been validated.
+The correction is fitted to observed ADS-B ground-speed/time mileage. The output is a calibrated map distance, not a reconstruction of one selected flight's track, a guaranteed airline itinerary, or a shortest point-to-point route. Its performance depends on the reference-route coverage and the bound applied to the correction.
 
 ## Empirical source
 
