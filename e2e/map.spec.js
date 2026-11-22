@@ -65,26 +65,46 @@ test('searches for a capital and shows its geographic details', async ({ page })
   await expect(page.locator('#selectionCoords')).not.toHaveText('—');
 });
 
-test('shows empirical route estimate separately from the displayed flat-disk connector', async ({ page }) => {
+test('shows a supported mileage estimate and distinguishes the projected disk chord', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
-  await page.locator('#coordALat').fill('40.1792');
-  await page.locator('#coordALon').fill('44.4991');
+  await page.locator('#coordALat').fill('47.4489');
+  await page.locator('#coordALon').fill('-122.3094');
   await page.locator('#applyCoordsA').click();
 
   await expect(page.locator('#applyCoordsB')).toBeEnabled();
-  await page.locator('#coordBLat').fill('51.5072');
-  await page.locator('#coordBLon').fill('-0.1276');
+  await page.locator('#coordBLat').fill('37.6213');
+  await page.locator('#coordBLon').fill('-122.3790');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('.primary-distance-reading')).toContainText('Empirical route-distance estimate');
-  await expect(page.locator('.primary-distance-reading')).toContainText('Typical flown mileage');
-  await expect(page.locator('.primary-distance-reading')).toContainText('not a selected flight path');
-  await expect(page.locator('.secondary-distance-reading')).toContainText('Flat-disk connector length');
-  await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Empirical route-mileage estimate');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Supported typical flown mileage');
+  await expect(page.locator('#distanceValue')).not.toHaveText('Not validated');
+  await expect(page.locator('.secondary-distance-reading')).toContainText('Projected flat-disk chord');
+  await expect(page.locator('.secondary-distance-reading')).toContainText('not flown route mileage');
   await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
-  await expect(page.locator('#calibrationRoutes')).toContainText('Nearest reference routes:');
+  await expect(page.locator('#calibrationSupport')).toContainText('Supported by nearby reference routes');
+});
+
+test('withholds the unsupported Santiago–Canberra mileage estimate', async ({ page }) => {
+  await openLoadedMap(page);
+
+  await page.locator('#measureMode').click();
+  await page.locator('#coordALat').fill('-33.45');
+  await page.locator('#coordALon').fill('-70.67');
+  await page.locator('#applyCoordsA').click();
+
+  await page.locator('#coordBLat').fill('-35.27');
+  await page.locator('#coordBLon').fill('149.13');
+  await page.locator('#applyCoordsB').click();
+
+  await expect(page.locator('#distanceValue')).toHaveText('Not validated');
+  await expect(page.locator('#distanceSub')).toContainText('Numeric estimate withheld');
+  await expect(page.locator('#calibrationSupport')).toContainText('5.09');
+  await expect(page.locator('#calibrationSupport')).toContainText('0.90');
+  await expect(page.locator('#flightDistanceValue')).toContainText('23,894.4');
+  await expect(page.locator('.secondary-distance-reading')).toContainText('not flown route mileage');
 });
 
 test('90°S coordinates remain distinct longitude-indexed points on the Antarctic disk rim', async ({ page }) => {
@@ -99,8 +119,8 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
   await page.locator('#applyCoordsB').click();
 
   await expect(page.locator('#flightDistanceValue')).toContainText('36,527.2');
-  await expect(page.locator('#distanceValue')).not.toHaveText('—');
-  await expect(page.locator('.primary-distance-reading')).toContainText('EXTRAPOLATED · provisional');
+  await expect(page.locator('#distanceValue')).toHaveText('Not validated');
+  await expect(page.locator('#distanceSub')).toContainText('Numeric estimate withheld');
   await expect(page.locator('#calibrationSupport')).toContainText('Extrapolated');
   await expect(page.locator('#measureHelp')).toContainText('Antarctic rim retains longitude-indexed positions');
 });
