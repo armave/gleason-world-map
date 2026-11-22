@@ -1,14 +1,12 @@
 import {
   clamp,
   baseFlatDiskDistanceMeters,
-  flatDiskDistanceMeters,
   radialDistanceFromNorthKm,
   DISK_RADIUS_KM,
   project
 } from './flat-disk.js';
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { flightCalibrationFeatures, predictFlightScaleRatio } from './flight-calibration-fit.js';
-import { predictEndpointDistance } from './endpoint-distance-calibration.js';
 
 export const RESTRICTED_PARALLEL_LATITUDE = -60;
 const RESTRICTED_RADIUS_KM = radialDistanceFromNorthKm(RESTRICTED_PARALLEL_LATITUDE);
@@ -56,11 +54,11 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
 }
 
 /**
- * ADS-B flight-mileage correction for a straight segment in the flat disk.
+ * The single canonical distance calibration for the flat-disk map.
  *
- * The model is calibrated from observed ground-speed × timestamp mileage.
- * It remains a secondary empirical reference and never replaces the distance
- * measured directly in the displayed, 12-circle-warped disk.
+ * The model is fitted to observed ADS-B ground-speed × timestamp mileage.
+ * Every distance readout uses the same base-disk chord multiplied by this
+ * one bounded, route-feature calibration factor.
  */
 export function directLineCalibrationDiagnostics(first, second) {
   if (!validPoint(first) || !validPoint(second)) return null;
@@ -120,30 +118,27 @@ export function directLineCalibrationDiagnostics(first, second) {
   };
 }
 
+/** Canonical distance entry point shared by every UI measurement surface. */
+export function measureDistanceMeters(first, second) {
+  return measureDirectDistance(first, second).distanceMeters;
+}
+
 /** Return the bounded ADS-B flight-mileage factor for a straight disk chord. */
 export function directLineCalibrationFactor(first, second) {
   return directLineCalibrationDiagnostics(first, second)?.calibrationFactor ?? null;
 }
 
 /**
- * Measure the straight Euclidean segment in the displayed, 12-circle-warped
- * disk. The distance is calculated from the same projected endpoints used by
- * the visible connector and local flat-disk scale bar. No globe, sphere,
- * ellipsoid, great-circle or geodesic model is involved.
+ * Measure one canonical ADS-B-calibrated flat-disk distance.
  *
- * The ADS-B estimate is based on the chord geometry stored in the accepted
- * calibration model. New model versions use the displayed 12-circle chord;
+ * Formula: base flat-disk chord × the single bounded route-feature factor.
+ * ADS-B ground-speed/time observations calibrate the factor; no second
+ * endpoint estimator or uncorrected chord is returned as another distance.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
-      flatDiskDistanceMeters: null,
-      baseChordDistanceMeters: null,
-      flightEmpiricalDistanceMeters: null,
-      calibratedDistanceMeters: null,
-      endpointDistanceEstimateMeters: null,
-      endpointDistanceCalibration: null,
       calibrationFactor: null,
       correctionPercent: null,
       calibration: null,
@@ -153,44 +148,23 @@ export function measureDirectDistance(first, second) {
     };
   }
 
-  const flatDistance = flatDiskDistanceMeters(first, second);
   const baseChordDistance = baseFlatDiskDistanceMeters(first, second);
-  const chordGeometry = FLIGHT_CALIBRATION.chordGeometry === 'visual-12-circle'
-    ? 'visual-12-circle' : 'base';
-  const calibrationChordDistance = chordGeometry === 'visual-12-circle'
-    ? flatDistance : baseChordDistance;
   const calibration = directLineCalibrationDiagnostics(first, second);
   const calibrationFactor = calibration?.calibrationFactor ?? null;
-  const flightEmpiricalDistance = Number.isFinite(calibrationChordDistance) &&
+  const canonicalDistance = Number.isFinite(baseChordDistance) &&
     Number.isFinite(calibrationFactor)
-    ? calibrationChordDistance * calibrationFactor
+    ? baseChordDistance * calibrationFactor
     : null;
-
-  const safeFlatDistance = Number.isFinite(flatDistance) ? flatDistance : null;
-  const safeBaseChord = Number.isFinite(baseChordDistance) ? baseChordDistance : null;
-  const safeFlightEstimate = Number.isFinite(flightEmpiricalDistance)
-    ? flightEmpiricalDistance
-    : null;
-  const endpointDistanceCalibration = predictEndpointDistance(first, second);
-  const endpointDistanceEstimate = Number.isFinite(endpointDistanceCalibration?.distanceMeters)
-    ? endpointDistanceCalibration.distanceMeters
-    : null;
+  const safeDistance = Number.isFinite(canonicalDistance) ? canonicalDistance : null;
+  const safeCalibration = calibration;
 
   return {
-    distanceMeters: safeFlatDistance,
-    flatDiskDistanceMeters: safeFlatDistance,
-    baseChordDistanceMeters: safeBaseChord,
-    calibrationChordGeometry: FLIGHT_CALIBRATION.chordGeometry === 'visual-12-circle'
-      ? 'visual-12-circle' : 'base',
-    flightEmpiricalDistanceMeters: safeFlightEstimate,
-    calibratedDistanceMeters: safeFlightEstimate,
-    endpointDistanceEstimateMeters: endpointDistanceEstimate,
-    endpointDistanceCalibration,
+    distanceMeters: safeDistance,
     calibrationFactor,
     correctionPercent: calibration?.correctionPercent ?? null,
-    calibration,
+    calibration: safeCalibration,
     warnings: calibration?.warnings ?? [],
-    metric: 'flat-disk-euclidean',
+    metric: 'adsb-calibrated-flat-disk',
     restricted: false
   };
 }

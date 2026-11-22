@@ -4,10 +4,9 @@
  * integrated smooth 1.00×→0.50× local radial-distance multiplier profile:
  * Screen fraction qv = integral(0..q, m(u) du) / mean(m).
  * The fitted power taper changes all 12 ring spacings while preserving the
- * centre and outer rim; the same projected coordinates drive rendering and measurement.
- * Projection, A–B distance, polygon edges and scale bar share this geometry.
- * The visible transform loads a separately gated observed-ADS-B-path parameter set.
- * A separate endpoint-chord model remains available only for empirical flight-mileage estimates.
+ * centre and outer rim. The visible transform loads a separately gated
+ * observed-ADS-B-path parameter set.
+ * All displayed distances use one ADS-B-calibrated base-chord formula.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
@@ -56,8 +55,8 @@ export function baseRadialFraction(latitudeDegrees) {
   );
 }
 
-/** Original chord-model fraction, retained only for the secondary flight-mileage estimate. */
-function secondaryBaseRadialFraction(latitudeDegrees) {
+/** Radial fraction for the canonical ADS-B-calibrated base-disk distance. */
+function calibratedBaseRadialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
   if (!Number.isFinite(theta)) return NaN;
   return radialFractionFromUnitColatitude(
@@ -80,11 +79,11 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
-/** Radius in the original fitted projection, retained only for ADS-B calibration. */
+/** Radius in the original fitted base projection used by the canonical distance formula. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
-  const fraction = secondaryBaseRadialFraction(latitudeDegrees);
-  const secondaryBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
-  return Number.isFinite(fraction) ? secondaryBaseRadiusKm * fraction : NaN;
+  const fraction = calibratedBaseRadialFraction(latitudeDegrees);
+  const calibratedBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
+  return Number.isFinite(fraction) ? calibratedBaseRadiusKm * fraction : NaN;
 }
 
 /** Inverse of the final visual flat-disk radial transform. */
@@ -100,7 +99,7 @@ function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees, useBaseProje
   if (!Number.isFinite(longitudeDegrees) || !Number.isFinite(latitudeDegrees) ||
       latitudeDegrees < -90 || latitudeDegrees > 90) return null;
   const baseFraction = useBaseProjection
-    ? secondaryBaseRadialFraction(latitudeDegrees)
+    ? calibratedBaseRadialFraction(latitudeDegrees)
     : baseRadialFraction(latitudeDegrees);
   const radius = useBaseProjection
     ? baseRadialDistanceFromNorthKm(latitudeDegrees)
@@ -146,14 +145,14 @@ function pointInDiskKm(point, useBaseProjection = false) {
   return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
 }
 
-/** Euclidean chord length in the visually calibrated disk; not ground distance. */
+/** Euclidean chord in the visible disk, retained for geometry analysis; not the A–B distance metric. */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
   if (!first || !second) return null;
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** Original fitted-projection chord used only by the secondary ADS-B mileage estimator. */
+/** Base flat-disk chord used as the input to the canonical ADS-B distance formula. */
 export function baseFlatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a, true), second = pointInDiskKm(b, true);
   if (!first || !second) return null;
@@ -356,13 +355,29 @@ const clickPointCoordinate = point =>
   point.lat >= -90 && point.lat <= 90
     ? [point.lon, point.lat] : null;
 
-/** Planar shoelace area and straight-edge perimeter for a user polygon. */
-export function flatDiskPolygonMetrics(vertices, projectPoint, baseRadius) {
+/**
+ * Planar shoelace area and canonical calibrated perimeter for a user polygon.
+ * The same distance callback used by the A–B ruler is required for every edge.
+ */
+export function flatDiskPolygonMetrics(
+  vertices, projectPoint, baseRadius, measureDistanceMeters
+) {
   const scale = metersPerProjectedUnit(baseRadius);
-  if (scale == null) return null;
+  if (scale == null || typeof measureDistanceMeters !== 'function') return null;
   const points = projectRing(vertices, clickPointCoordinate, projectPoint, scale);
   const result = ringPlanarMetrics(points, true);
-  return result;
+  if (!result) return null;
+
+  let perimeterM = 0;
+  for (let index = 0; index < vertices.length; index++) {
+    const distance = measureDistanceMeters(
+      vertices[index],
+      vertices[(index + 1) % vertices.length]
+    );
+    if (!Number.isFinite(distance) || distance < 0) return null;
+    perimeterM += distance;
+  }
+  return { ...result, perimeterM };
 }
 
 /** Planar area of GeoJSON Polygon/MultiPolygon geometry, in square metres. */

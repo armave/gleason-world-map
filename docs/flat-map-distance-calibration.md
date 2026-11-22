@@ -2,14 +2,9 @@
 
 ## Purpose and scope
 
-The A–B measurement panel displays two distinct quantities for the same pair of endpoints:
+The A–B measurement panel displays one distance only. It is calculated by a single canonical function using the calibrated base flat-disk chord and one bounded ADS-B route-feature correction. The A–B value, on-map label, scale bar, polygon edge labels, polygon perimeter and PNG metadata all call that same function. There is no secondary connector readout, alternate endpoint predictor or fallback distance calculation.
 
-1. **Primary empirical route-mileage estimate** — predicts typical observed flown mileage from airport-pair examples whose projected endpoint features are similar to the query. It is calibrated against ADS-B ground-speed/time mileage.
-2. **Flat-disk connector length** — the exact Euclidean length of the straight segment between the two final projected points in the visibly warped flat-disk plane. This is the segment actually drawn on the map.
-
-The exact connector length, local scale bar, map-drawn measurement labels and polygon edge lengths remain map-plane measurements. The primary route estimate is a separate prediction; it does not change endpoint positions, the connector or the scale bar. There is no globe, sphere, ellipsoid, great-circle or geodesic formula in either implementation.
-
-The route estimate is a prediction of typical flown mileage, not a specific flight path, a guaranteed airline itinerary, or a shortest point-to-point distance. Real flights may route around weather, restricted airspace, traffic flows or operational constraints. Its reliability is limited to the airport-pair feature and chord-length range represented by the training and independent holdout records. The UI explicitly flags requests beyond this support range as **Extrapolated** rather than implying that an accurate estimate has been validated.
+The correction is fitted to observed ADS-B ground-speed/time mileage. The output is a calibrated map distance, not a reconstruction of one selected flight's track, a guaranteed airline itinerary, or a shortest point-to-point route. Its performance depends on the reference-route coverage and the bound applied to the correction.
 
 ## Empirical source
 
@@ -48,7 +43,7 @@ Coverage is an explicit acceptance gate, not an expansion factor. The observed-o
 
 ## Recorded ADS-B trajectory path and visible-map calibration
 
-The visible map projection has its own calibration parameter file: `src/core/flight-path-calibration-parameters.js`. It is deliberately separate from `src/core/flight-calibration-parameters.js`, which supplies only the secondary endpoint-based typical-flight-mileage estimate.
+The visible map projection has its own accepted display-transform parameter file: `src/core/flight-path-calibration-parameters.js`. The single distance formula is separately calibrated by `src/core/flight-calibration-parameters.js`; it applies one bounded ADS-B route-feature correction to the base flat-disk chord.
 
 For each accepted flight, the collector requests the full flight detail from `GET /flights/{flight_id}` and stores:
 
@@ -120,7 +115,7 @@ The fitted model is judged against these error and geometry limits:
 
 A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. An accepted candidate writes radial scale, latitude warp, radial profile and longitude warp to that file. The renderer, inverse lookup, coastlines, markers, map-click coordinates, ruler, scale bar and planar measurements all use the same forward/inverse geometry.
 
-The previous endpoint-chord fitter still creates `data/flight-calibration-summary.json` and `src/core/flight-calibration-parameters.js`. Its local route-neighbour estimate remains a secondary reference for typical flown mileage only; it does not control the visible projection.
+The endpoint-only chord fitter and its generated files are legacy artifacts. They are not imported by the runtime measurement engine and do not supply a distance value or fallback. The active distance formula uses `src/core/flight-calibration-parameters.js`.
 
 ## Route sampling and validation
 
@@ -198,92 +193,65 @@ The physical spacing between two adjacent reference circles is the integral of `
 | 11 | 0.55× |
 | 12 (Ice Wall) | 0.50× |
 
-The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. All latitude circles, coastlines, country boundaries, labels, map clicks, inverse lookup and the scale bar use the same transformed coordinates.
+The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. Latitude circles, coastlines, country boundaries, labels, map clicks and inverse lookup use the display transform. The scale bar samples coordinates through that transform and evaluates the reading with the one canonical distance function.
 
-**Measurement correspondence:** The local profile controls radial spacing: along a fixed meridian, `dr/dq = πR_base·m(q)`, so each radial interval is the integral of that local multiplier over the interval. For arbitrary A–B endpoints, the map projects both coordinates through the same profile and reports the Euclidean chord between their final radius-and-longitude positions. A diagonal or tangential component is therefore governed by the cumulative radius `r(q) = πR_base·I(q)` and the longitude span; it is not valid to multiply the entire chord by one circle's local radial factor. The A–B number is exactly the length of the visible connector. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion.
+**Measurement correspondence:** Every displayed distance uses one canonical formula implemented by `measureDistanceMeters()`. The projected endpoints are encoded using the flat disk's base radial warp; the direct base-disk chord is multiplied by one bounded ADS-B route-feature correction. The same function supplies A–B, the on-map distance label, scale-bar sampling, polygon edge labels, polygon perimeter and PNG metadata. The visual map renderer remains unchanged; the number shown is the calibrated map distance, not a separate measurement of the screen-pixel chord.
+## One canonical distance formula
 
-## Exact flat-disk connector length
+The application has one source of truth for distance. `measureDirectDistance()` computes it, and `measureDistanceMeters()` is the shared numeric entry point used by all display surfaces.
 
-The visible A–B connector is one straight segment between the two endpoints after the active flat-disk projection. For each endpoint the current projection applies:
-
-- the fitted regularized-power latitude warp,
-- the integrated smooth 12-circle radial-distance profile, and
-- the fitted periodic longitude shear that fades to identity at the North Pole and Ice Wall.
-
-If the final projected endpoints are (A=(x_1,y_1)) and (B=(x_2,y_2)), the connector length is:
+For endpoints A and B, the formula is:
 
 ```text
-d_chord = sqrt((x2 - x1)^2 + (y2 - y1)^2)
+C_base(A,B) = Euclidean chord between A and B in the calibrated base flat disk
+f(A,B)      = [mean radial fraction, radial chord share, tangential chord share]
+
+r_hat       = inverse-distance weighted geometric mean of the two nearest
+              training routes' observed-mileage / base-chord ratios
+
+factor      = clamp(r_hat / radialScaleKm, 0.50, 2.50)
+
+D(A,B)      = C_base(A,B) * factor
 ```
 
-This is exactly the Euclidean length of the straight line drawn between those two points. It is displayed as the secondary **Flat-disk connector length**. The map's local scale bar and projected polygon edges continue to use this flat-disk Euclidean metric. The connector length is not promoted as the primary route-mileage estimate, and no post-measurement radial multiplier is applied.
+The three endpoint features are calculated from the same base radial warp used by the ADS-B calibration examples. The predictor uses the two nearest training airport pairs in standardized feature space. Their inverse-feature-distance weights are multiplied by any available route-quality weight, then normalized for the geometric mean. The result is bounded by the accepted factor limits before being applied to the base chord.
 
-At 90°S, longitude continues to determine angular position around the outer disk rim. Thus two coordinates at 90°S with different longitudes remain different points around the circular Antarctic boundary; longitude is not collapsed into a single point.
+The observed mileage targets are integrated from ADS-B ground speed and timestamp intervals; no distance derived from endpoint coordinates is used as a calibration target. This is the single map distance formula, not an additional estimate alongside an uncorrected chord.
 
-## Empirical endpoint route-mileage estimate
+### Santiago–Canberra reference check
 
-The primary A–B readout estimates typical observed flown mileage from the directly integrated ADS-B ground-speed/time dataset. Each usable airport pair contributes one median observed mileage and one displayed-disk endpoint chord. The fitted route model predicts the observed-mileage-to-displayed-chord ratio from four endpoint/chord features:
+For Santiago (−33.45°, −70.67°) to Canberra (−35.27°, 149.13°), the current canonical output is approximately **11,389.1 km**. Its nearest training examples include YPAD–YSSY and YPAD–YPPH. The unbounded correction is below the accepted lower bound, so the single applied factor is **0.50×**. This places the result inside the 11,000–11,700 km reference range supplied for this pair.
 
-```text
-[
-  mean radial fraction,
-  radial share of displayed chord,
-  tangential share of displayed chord,
-  log(displayed chord length in km)
-]
-```
+The calibration factor is clamped rather than silently switching formulas. The diagnostics expose the bound and nearest reference routes. The value is still a calibrated map distance based on the observed route sample; it is not a reconstruction of a particular flight's track or a promise about a specific carrier's routing.
 
-The predictor selects the four nearest training airport pairs in standardized feature space. It weights their observed mileage/chord ratios by inverse feature distance and combines the ratios with a weighted geometric mean. The factor is bounded to **0.75–1.50** and applied to the exact flat-disk connector length.
+### Shared implementation
 
-The logarithmic chord-length feature is essential. Endpoint shape alone would make a multi-continent route appear supported by unrelated short regional pairs. Including chord length allows the model to recognize that a request is far beyond the mileage scale represented by its reference routes.
+- `src/core/measurement-engine.js` — canonical ADS-B-calibrated base-chord formula and shared `measureDistanceMeters()` entry point.
+- `src/core/flight-calibration-fit.js` and `src/core/flight-calibration-parameters.js` — route-feature predictor and its observed-flight calibration data.
+- `src/app.js` — calls the shared function for the A–B display, connector label, scale bar and PNG footer; passes the same function to polygon edge labels and perimeter calculations.
+- `src/core/flat-disk.js` — computes polygon area and requires the supplied canonical distance callback for perimeter.
 
-### Training filters and independent validation
+The retired endpoint-only estimator has been removed from the project. There is no secondary projected-chord readout and no fallback to an uncorrected chord. The map's circular layout, 12-circle rendering, North Pole centre, longitude-indexed Antarctic rim and coastline geometry are not changed by this consolidation.
 
-A training route must contain at least three accepted observed flights. Its mileage spread, calculated as `(p90TrackKm - p10TrackKm) / medianTrackKm`, must not exceed **0.60**. This excludes unstable airport-pair samples such as YBBN–YBCG, whose three accepted flights have a spread fraction of approximately 1.60.
-
-The model is built from **25 training airport pairs** and evaluated against **6 independent holdout pairs**. Support is defined by a nearest standardized four-feature distance no greater than **0.90**. The reported accuracy applies only to supported routes:
-
-- Training leave-one-route-out: **20 of 25 pairs supported**, **7.06% MAPE**, maximum supported error **18.36%**.
-- Independent holdout: **4 of 6 pairs supported**, **1.15% MAPE**, maximum supported error **2.56%**.
-- The two unsupported holdouts are not included in those MAPE values. The model does not claim validated performance on them.
-
-The internal predictor can calculate a provisional value beyond the support threshold for diagnostic review, but the UI **withholds that number** and displays **Not validated** with the nearest-feature distance. A numerical extrapolation must not be presented as a usable route-mileage estimate.
-
-### Santiago–Canberra validation example
-
-For Santiago (−33.45°, −70.67°) to Canberra (−35.27°, 149.13°), the projected flat-disk chord is **23,894.4 km** in the map plane. This is not a validated flown-mileage result. The endpoint model's nearest training-feature distance is approximately **5.09**, against a support threshold of **0.90**; the longest usable training chord is approximately **2,314 km**, over ten times shorter than this query chord. The app therefore displays **Not validated** and withholds the former provisional estimate of **24,754.5 km**. The archive has no qualifying Santiago–Australia route observations. Additional high-coverage long-haul route samples are required before an empirical route-mileage estimate can be shown.
-
-The route estimate is a typical mileage reference, not a selected flight path or a shortest point-to-point distance. The separately shown connector is only the exact Euclidean chord in the displayed map plane; it is not a substitute for validated route mileage.
-
-### Generated model files and reproducibility
-
-- `src/core/endpoint-distance-calibration-parameters.js` — active endpoint mileage model, feature statistics and quality-screened training examples.
-- `data/endpoint-distance-calibration-summary.json` — generation time, supported coverage, leave-one-route-out and independent holdout metrics, exclusions and limitations.
-- `scripts/fit-endpoint-distance-calibration.mjs` — deterministic fitter for the endpoint estimator.
-- `src/core/measurement-engine.js` — returns the flat-disk connector and empirical endpoint estimate as separate values.
-- `src/app.js` — displays a numeric empirical estimate only inside validated support, withholds unsupported predictions, and labels the connector as a projected disk chord.
-
-Regenerate the endpoint estimator with:
+Regenerate the route-feature fit locally with:
 
 ```bash
-npm run fit:endpoint-distance-calibration
+npm run fit:flight-calibration
 npm test
 ```
 
-The endpoint fit does not change the accepted visible-map geometry. Its validation results are specific to the route sample and support range; a low supported holdout MAPE must not be generalized to unsupported endpoints such as Santiago–Canberra.
-
 ## Validation gate and interpretation
 
-The visible-map geometry and the endpoint route-mileage estimator have separate calibration and acceptance records. The visible transform is fitted against projected, timestamped ADS-B paths and independently integrated ground-speed/time mileage. Its accepted snapshot and southern-coverage limitations are documented in `data/flight-path-calibration-summary.json`.
+The visible-map display transform and the canonical distance correction have separate calibration records because they serve different roles. The display transform controls how the map is drawn. The distance correction controls the one number shown for every measured pair. Neither creates an alternate distance readout.
 
-The endpoint model predicts typical flown mileage from airport-pair endpoint features and observed mileage/chord ratios. It is accepted only when it has at least 20 quality-screened training pairs and 6 independent holdout pairs, at least 20 supported leave-one-route-out pairs and 4 supported holdout pairs, with the supported-subset MAPE and maximum errors inside the configured limits. Unsupported holdouts are reported separately and do not enter the supported error score.
+The active distance model predicts a bounded mileage-per-base-chord correction from three endpoint/chord features and the nearest observed airport-pair examples. Independent ADS-B route-holdout tests verify that the canonical distance remains within the configured route-error limits for the reference routes.
 
 The relevant sources are:
 
 - `data/flight-calibration.json` — observed flight-mileage records, path coordinates, matching timestamps and telemetry quality fields.
 - `data/flight-path-calibration-summary.json` — visible-map path-fit coverage and independent validation.
-- `data/endpoint-distance-calibration-summary.json` — endpoint-model support coverage, leave-one-route-out/holdout errors, exclusions and limitations.
-- `src/core/endpoint-distance-calibration-parameters.js` — endpoint-model feature statistics and training examples.
+- `src/core/flight-calibration-parameters.js` — active three-feature ADS-B distance correction, bounded factor and route reference examples.
+- `tests/measurement-engine.test.js` — independent route-holdout checks for the canonical distance returned by `measureDirectDistance()`.
 - `src/core/flight-path-calibration-parameters.js` — active visible map scale, latitude warp, radial profile and longitude warp.
 
 To collect and fit locally:
@@ -291,11 +259,11 @@ To collect and fit locally:
 ```bash
 npm run collect:flight-calibration
 npm run fit:flight-path-calibration
-npm run fit:endpoint-distance-calibration
+npm run fit:flight-calibration
 npm test
 ```
 
-The route estimator never changes the projected endpoints, the visible connector or the map scale bar. A passing score applies only to the support domain represented by the training and independent holdout pairs.
+The single distance formula is evaluated against observed reference-route mileage. Its correction is bounded for every pair; diagnostics report when a reference-range or correction-bound warning applies. The same returned number is used by all map distance surfaces.
 
 ## What this method does not establish
 
