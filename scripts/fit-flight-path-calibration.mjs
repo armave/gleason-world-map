@@ -50,11 +50,17 @@ async function main() {
     holdoutMaxErrorPercent,
     leaveOneOutMapePercent,
     leaveOneOutMaxRouteErrorPercent,
+    usableTrainingRouteCount: metrics?.training?.routeCount ?? 0,
+    usableHoldoutRouteCount: metrics?.holdout?.routeCount ?? 0,
     limits: {
       minimumTrainingRoutes: limits.minimumTrainingRoutes,
       minimumHoldoutRoutes: limits.minimumHoldoutRoutes,
       minimumSouthernTrainingRoutes: limits.minimumSouthernTrainingRoutes,
       minimumSouthernHoldoutRoutes: limits.minimumSouthernHoldoutRoutes,
+      minimumTrainingRoutesSouthOf45S: limits.minimumTrainingRoutesSouthOf45S,
+      minimumHoldoutRoutesSouthOf45S: limits.minimumHoldoutRoutesSouthOf45S,
+      minimumTrainingRoutesSouthOf60S: limits.minimumTrainingRoutesSouthOf60S,
+      minimumHoldoutRoutesSouthOf60S: limits.minimumHoldoutRoutesSouthOf60S,
       maxTrainingMapePercent: limits.maxTrainingMapePercent,
       maxHoldoutMapePercent: limits.maxHoldoutMapePercent,
       maxHoldoutRouteErrorPercent: limits.maxHoldoutRouteErrorPercent,
@@ -72,8 +78,14 @@ async function main() {
     leaveOneOutMaxRouteErrorPercent <= limits.maxLeaveOneOutRouteErrorPercent &&
     routeCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     routeCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+    (metrics?.training?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
+    (metrics?.holdout?.routeCount ?? 0) >= limits.minimumHoldoutRoutes &&
     routeCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes;
+    routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    routeCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    routeCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    routeCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 
   const summary = {
     schemaVersion: 1,
