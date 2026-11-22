@@ -16,7 +16,9 @@ export function greatCircleDistanceMeters(first, second) {
   const lat1 = toRadians(first.lat);
   const lat2 = toRadians(second.lat);
   const deltaLat = lat2 - lat1;
-  const deltaLon = toRadians(((second.lon - first.lon + 540) % 360) - 180);
+  const rawDeltaLongitude = second.lon - first.lon;
+  const wrappedDeltaLongitude = ((rawDeltaLongitude + 180) % 360 + 360) % 360 - 180;
+  const deltaLon = toRadians(wrappedDeltaLongitude);
   const haversine = Math.sin(deltaLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
   return 2 * MEAN_EARTH_RADIUS_METERS *
