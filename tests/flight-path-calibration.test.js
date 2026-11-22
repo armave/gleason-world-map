@@ -77,7 +77,9 @@ function syntheticDataset() {
       coverage: 1,
       maxGapMinutes: 0,
       trackCoordinates: coordinates,
-      trackTimestamps: [[1000,2000,3000,4000]],
+      startTs: '1970-01-01T00:16:40Z',
+      endTs: '1970-01-01T00:41:40Z',
+      trackTimestamps: [[1000,1500,2000,2500]],
       trackPointCount: 4
     }));
     routes.push({
@@ -109,6 +111,18 @@ test('path coverage counts independent route splits and southern observations', 
   assert.equal(coverage.trainingFlightsWithPaths, 72);
   assert.equal(coverage.holdoutFlightsWithPaths, 18);
   assert.equal(coverage.totalTrajectoryPoints, 360);
+});
+
+test('path coverage rejects incomplete telemetry and gaps over 15 minutes', () => {
+  const dataset = syntheticDataset();
+  dataset.routes[0].observations[0].trackTimestamps[0][1] = 2000;
+  const coverage = summarizeFlightPathCoverage(dataset);
+  assert.equal(coverage.trainingRouteCount, 23);
+
+  const incomplete = syntheticDataset();
+  incomplete.routes[1].observations[0].endTs = '1970-01-01T01:06:40Z';
+  const incompleteCoverage = summarizeFlightPathCoverage(incomplete);
+  assert.equal(incompleteCoverage.trainingRouteCount, 23);
 });
 
 test('path fit recovers a known radial scale and warp on independent held-out routes', () => {
