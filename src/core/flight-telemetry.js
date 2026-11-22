@@ -84,9 +84,11 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       const intervalEnd = Math.min(telemetryEnd, nextTimestamp);
       const deltaSeconds = intervalEnd - intervalStart;
       if (!(deltaSeconds > 0)) continue;
-      if (deltaSeconds > FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds) {
+      const recordedIntervalSeconds = nextTimestamp - timestamp;
+      if (recordedIntervalSeconds > FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds) {
         // A single speed sample must not be treated as representative across
-        // a long blind interval. Leave it uncovered and report the gap.
+        // a long recorded interval, even when only part of that gap overlaps
+        // the flight window. Leave the in-flight overlap uncovered.
         maxGapSeconds = Math.max(maxGapSeconds, deltaSeconds);
         continue;
       }
