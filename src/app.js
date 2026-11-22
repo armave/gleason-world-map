@@ -7,7 +7,7 @@ import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDa
 import {createFeaturePath} from './map/feature-paths.js';
 import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
 import {FLIGHT_PATH_CALIBRATION} from './core/flight-path-calibration-parameters.js';
-import {isGloballyValidatedFlightPathCalibration} from './core/flight-path-calibration.js';
+import {isGloballyValidatedFlightPathCalibration} from './core/flight-path-calibration-status.js';
 import FLIGHT_PATH_CALIBRATION_SUMMARY from '../data/flight-path-calibration-summary.json';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {createCompassRoseLayout} from './map/compass.js';
