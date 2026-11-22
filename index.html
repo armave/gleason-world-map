@@ -194,7 +194,7 @@
         <thead><tr><th>Circle</th><th>Display multiplier</th><th>Disk radius</th><th>Radius km</th></tr></thead>
         <tbody id="visualRadialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The continuous radial profile used by both the map and the path fitter is a positive smooth taper from 1.00× at the North Pole to 0.50× at the Ice Wall. The fitter jointly selects its curvature and the latitude warp using timestamped ADS-B path vertices, comparing projected polyline length with independent ground-speed × time mileage. Speed data and path timestamps are each required to cover at least 98% of the complete flight duration, with no gap longer than 15 minutes. Whole airport pairs are held out; rejected candidates do not replace the active visible-map parameters. The secondary flat-disk connector readout remains its exact Euclidean length. The primary empirical estimate predicts typical route mileage and is not the track of one selected flight.</p>
+      <p class="note" style="margin:9px 0 0">The continuous radial profile used for the visible map is a positive smooth taper from 1.00× at the North Pole to 0.50× at the Ice Wall. The display fitter uses timestamped ADS-B path vertices and independent ground-speed × time mileage, with whole airport pairs held out. Every distance readout uses one canonical formula: the calibrated base flat-disk chord multiplied by one bounded ADS-B route-feature correction. There is no second connector distance or alternate fallback. The canonical value is a model-calibrated map distance, not the track of one selected flight.</p>
     </section>
 </template>
 <template id="geometry-panel-template">
