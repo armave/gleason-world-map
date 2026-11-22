@@ -244,6 +244,9 @@ async function main() {
   };
 
   await writeFile(SUMMARY_PATH, JSON.stringify(summary, null, 2) + '\n', 'utf8');
+  if (!accepted && process.argv.includes('--require-accepted')) {
+    throw new Error('Endpoint-distance calibration did not pass its supported-subset acceptance gates.');
+  }
   if (accepted) {
     await writeFile(PARAMETERS_PATH, asJavaScript(model), 'utf8');
     console.log('Accepted endpoint-distance calibration written to ' + PARAMETERS_PATH);
