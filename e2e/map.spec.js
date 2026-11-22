@@ -62,7 +62,7 @@ test('searches for a capital and shows its geographic details', async ({ page })
   await expect(page.locator('#selectionCoords')).not.toHaveText('—');
 });
 
-test('shows coordinate-only great-circle A–B distance and ADS-B estimate as separate references', async ({ page }) => {
+test('shows coordinate-only great-circle distance and ADS-B estimate as separate references', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
