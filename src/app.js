@@ -638,7 +638,7 @@ function updateMeasurement(){
   const factor=measurement.calibrationFactor;
   const correction=measurement.correctionPercent;
   $('flightDistanceSub').textContent=Number.isFinite(factor)
-   ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
+   ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs base chord'
    :'Flight-mileage model unavailable';
 
   $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B readout keeps the separate calibration chord and 12-circle factor; the visual chord and scale bar follow the warped projection. The ADS-B estimate remains an independent empirical reference.';
