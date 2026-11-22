@@ -170,21 +170,39 @@ for (const route of heldOutFlightMileageRoutes) {
   });
 }
 
-test('primary A–B distance preserves ordering of the visible chord regardless of route correction', () => {
+test('radial correction preserves chord ordering for endpoints on the same circle', () => {
   const shorter = measureDirectDistance(
     point(40.17, 44.5), point(40.17, 45.5)
   );
   const longer = measureDirectDistance(
-    point(25.2528, 55.3644), point(1.3451159576023457, 103.99194013366014)
+    point(40.17, 44.5), point(40.17, 50.5)
   );
   assert.ok(shorter.chordDistanceMeters < longer.chordDistanceMeters);
-  assert.equal(shorter.distanceMeters, shorter.chordDistanceMeters);
-  assert.equal(longer.distanceMeters, longer.chordDistanceMeters);
+  assert.equal(shorter.radialCorrectionFactor, longer.radialCorrectionFactor);
   assert.ok(shorter.distanceMeters < longer.distanceMeters);
+  assert.equal(shorter.distanceMeters,
+    shorter.chordDistanceMeters * shorter.radialCorrectionFactor);
+  assert.equal(longer.distanceMeters,
+    longer.chordDistanceMeters * longer.radialCorrectionFactor);
   assert.equal(shorter.flightEmpiricalDistanceMeters,
     shorter.chordDistanceMeters * shorter.calibrationFactor);
   assert.equal(longer.flightEmpiricalDistanceMeters,
     longer.chordDistanceMeters * longer.calibrationFactor);
+});
+
+test('mixed-circle endpoints blend the two radial positions before applying the factor', () => {
+  const first = point(75, 20), second = point(-75, 120);
+  const diagnostics = radialDistanceCorrectionDiagnostics(first, second);
+  const reversed = radialDistanceCorrectionDiagnostics(second, first);
+  assert.ok(diagnostics);
+  assert.equal(diagnostics.factor, reversed.factor);
+  assert.equal(diagnostics.meanRadialFraction, reversed.meanRadialFraction);
+  assert.ok(diagnostics.circlePosition > 1 && diagnostics.circlePosition < 12);
+  assert.equal(diagnostics.factor,
+    radialDistanceCorrectionFactor(diagnostics.meanRadialFraction));
+  const result = measureDirectDistance(first, second);
+  assert.equal(result.distanceMeters,
+    result.chordDistanceMeters * diagnostics.factor);
 });
 
 test('invalid coordinates fail safely', () => {
