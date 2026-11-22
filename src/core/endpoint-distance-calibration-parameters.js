@@ -7,22 +7,25 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
   "featureNames": [
     "meanRadialFraction",
     "radialShareOfChord",
-    "tangentialShareOfChord"
+    "tangentialShareOfChord",
+    "logChordDistanceKm"
   ],
   "featureMeans": [
     0.30812539176261416,
     0.5774074382419933,
-    0.7166475214089678
+    0.7166475214089678,
+    6.628397534955148
   ],
   "featureScales": [
     0.17661922908434202,
     0.2949543751893742,
-    0.25694142693977323
+    0.25694142693977323,
+    0.5682979621387481
   ],
   "neighborCount": 4,
   "inverseDistancePower": 1,
   "maxTrainingSpreadFraction": 0.6,
-  "maxSupportedFeatureDistance": 0.65,
+  "maxSupportedFeatureDistance": 0.9,
   "factorBounds": [
     0.75,
     1.5
@@ -35,7 +38,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.17494083393958382,
         0.24617539081379294,
-        0.9692252973162043
+        0.9692252973162043,
+        5.854753678939255
       ],
       "medianTrackKm": 426.5715561192075,
       "mileagePerUnitChord": 1.222657109589735,
@@ -47,7 +51,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.18433616013789877,
         0.7791341573676831,
-        0.6268572124678423
+        0.6268572124678423,
+        5.799801681348942
       ],
       "medianTrackKm": 388.5924403649625,
       "mileagePerUnitChord": 1.1767182288771336,
@@ -59,7 +64,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.1813891499303371,
         0.23767828075166803,
-        0.9713439323220839
+        0.9713439323220839,
+        6.44514150532627
       ],
       "medianTrackKm": 741.9578035274521,
       "mileagePerUnitChord": 1.1783920829419106,
@@ -71,7 +77,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.2851324504363444,
         0.8887036126776843,
-        0.4584821575739168
+        0.4584821575739168,
+        7.51961346398433
       ],
       "medianTrackKm": 1947.0114454772631,
       "mileagePerUnitChord": 1.0559463931045479,
@@ -83,7 +90,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.2363157938131779,
         0.1258180786642421,
-        0.9920533307646513
+        0.9920533307646513,
+        7.046151727538177
       ],
       "medianTrackKm": 1338.0856905513851,
       "mileagePerUnitChord": 1.1651426837728343,
@@ -95,7 +103,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.18198481686833493,
         0.9190233488667727,
-        0.39420310023857585
+        0.39420310023857585,
+        5.9227119865213895
       ],
       "medianTrackKm": 472.59773277894294,
       "mileagePerUnitChord": 1.2655826143855693,
@@ -107,7 +116,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.1790378066607733,
         0.6739699822565693,
-        0.7387587312628328
+        0.7387587312628328,
+        5.856444599498558
       ],
       "medianTrackKm": 473.6627279565939,
       "mileagePerUnitChord": 1.355338074291175,
@@ -119,7 +129,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.33842178932546907,
         0.42615096747509973,
-        0.9046520618005668
+        0.9046520618005668,
+        6.080110033525204
       ],
       "medianTrackKm": 424.13977465552307,
       "mileagePerUnitChord": 0.9703999475406376,
@@ -131,7 +142,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.33020035674552134,
         0.1850400248990543,
-        0.9827309851558391
+        0.9827309851558391,
+        6.423772834533958
       ],
       "medianTrackKm": 600.7405245290847,
       "mileagePerUnitChord": 0.9747154148674896,
@@ -143,7 +155,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.7074601383818504,
         0.5477095295900923,
-        0.8366685551615922
+        0.8366685551615922,
+        6.594509843460278
       ],
       "medianTrackKm": 754.0685150927978,
       "mileagePerUnitChord": 1.0314580556413269,
@@ -155,7 +168,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.7104205994704226,
         0.3995127370950048,
-        0.9167276437955058
+        0.9167276437955058,
+        6.595211766715277
       ],
       "medianTrackKm": 692.4307012476072,
       "mileagePerUnitChord": 0.9464817367687337,
@@ -167,7 +181,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.699458500537173,
         0.08518829920669684,
-        0.996364869753175
+        0.996364869753175,
+        7.146292100915476
       ],
       "medianTrackKm": 1232.9481392766374,
       "mileagePerUnitChord": 0.9712914908036104,
@@ -179,7 +194,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.679294838651963,
         0.9697658110088515,
-        0.2440374393373657
+        0.2440374393373657,
+        6.473852011629706
       ],
       "medianTrackKm": 721.2087466072967,
       "mileagePerUnitChord": 1.113019516832141,
@@ -191,7 +207,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.23517701193414103,
         0.6055081917085441,
-        0.7958390727866125
+        0.7958390727866125,
+        5.727916594379795
       ],
       "medianTrackKm": 415.2220319792815,
       "mileagePerUnitChord": 1.3510699033859157,
@@ -203,7 +220,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.23862625200808962,
         0.1555358889426731,
-        0.9878302421220001
+        0.9878302421220001,
+        7.2941107450362574
       ],
       "medianTrackKm": 1533.8971052350294,
       "mileagePerUnitChord": 1.0423274636744964,
@@ -215,7 +233,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.25729130857836974,
         0.9784865093431403,
-        0.20631081172220808
+        0.20631081172220808,
+        6.835927964763132
       ],
       "medianTrackKm": 1078.0822582073542,
       "mileagePerUnitChord": 1.1583668093732986,
@@ -227,7 +246,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.26932253595590533,
         0.7930025725483086,
-        0.6092182859466527
+        0.6092182859466527,
+        6.2326290441631205
       ],
       "medianTrackKm": 625.6886956324372,
       "mileagePerUnitChord": 1.2290283672951672,
@@ -239,7 +259,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.27393508500741937,
         0.5323080011141665,
-        0.8465507615907292
+        0.8465507615907292,
+        6.091088705741241
       ],
       "medianTrackKm": 441.11064611883825,
       "mileagePerUnitChord": 0.9982086428634714,
@@ -251,7 +272,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.3061079652015362,
         0.9354481526125095,
-        0.35346393560566153
+        0.35346393560566153,
+        6.838051269185352
       ],
       "medianTrackKm": 1070.537428836787,
       "mileagePerUnitChord": 1.1478203569002672,
@@ -263,7 +285,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.18622281132735102,
         0.35530526854862166,
-        0.9347503228892666
+        0.9347503228892666,
+        6.822321233570587
       ],
       "medianTrackKm": 1011.3261028073712,
       "mileagePerUnitChord": 1.101525996682312,
@@ -275,7 +298,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.20534860020501886,
         0.7167289065881317,
-        0.697351901453621
+        0.697351901453621,
+        7.26533107717528
       ],
       "medianTrackKm": 1574.9847181282958,
       "mileagePerUnitChord": 1.1014965677329283,
@@ -287,7 +311,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.20692792993811054,
         0.8914384670785584,
-        0.4531417652486125
+        0.4531417652486125,
+        7.249240154608743
       ],
       "medianTrackKm": 1529.5262051880472,
       "mileagePerUnitChord": 1.0870560187593863,
@@ -299,7 +324,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.21239258313377,
         0.6922584038172741,
-        0.7216497088923113
+        0.7216497088923113,
+        7.010966507339612
       ],
       "medianTrackKm": 1173.142979731177,
       "mileagePerUnitChord": 1.0581004013496378,
@@ -311,7 +337,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.20944557292620833,
         0.9391338348347027,
-        0.34355151035713155
+        0.34355151035713155,
+        6.837215994055008
       ],
       "medianTrackKm": 1029.9384301474147,
       "mileagePerUnitChord": 1.1052132566870987,
@@ -323,7 +350,8 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
       "features": [
         0.21394390295058424,
         0.35616153823998803,
-        0.9344243996592381
+        0.9344243996592381,
+        7.746771849923743
       ],
       "medianTrackKm": 2297.9830265989567,
       "mileagePerUnitChord": 0.9930395591596435,
@@ -334,154 +362,171 @@ export const ENDPOINT_DISTANCE_CALIBRATION = Object.freeze({
   "validation": {
     "trainingLeaveOneRouteOut": {
       "routeCount": 25,
-      "supportedRouteCount": 23,
-      "supportedCoveragePercent": 92,
-      "meanAbsolutePercent": 8.134349740792874,
-      "maxAbsolutePercent": 17.453702003541526,
+      "supportedRouteCount": 20,
+      "supportedCoveragePercent": 80,
+      "meanAbsolutePercent": 7.062596403914466,
+      "maxAbsolutePercent": 18.357365001950974,
       "supportedRouteErrors": [
         {
-          "routeId": "EGLL--EHAM",
-          "errorPercent": -6.345108873826977,
-          "nearestFeatureDistance": 0.047232000427962446
-        },
-        {
           "routeId": "EGLL--LFPG",
-          "errorPercent": -0.6272466063126259,
-          "nearestFeatureDistance": 0.366322575942216
+          "errorPercent": 11.116693688685487,
+          "nearestFeatureDistance": 0.5646474554621722
         },
         {
           "routeId": "EDDF--EGLL",
-          "errorPercent": -0.10862629691609227,
-          "nearestFeatureDistance": 0.047232000427962446
+          "errorPercent": -6.349152523426394,
+          "nearestFeatureDistance": 0.7793381750889465
         },
         {
           "routeId": "KJFK--KMIA",
-          "errorPercent": 8.273556420957174,
-          "nearestFeatureDistance": 0.44337050093967084
+          "errorPercent": 4.686598432924871,
+          "nearestFeatureDistance": 0.6564842121604039
         },
         {
           "routeId": "KJFK--KORD",
-          "errorPercent": -8.038473768931475,
-          "nearestFeatureDistance": 0.1029204673731023
-        },
-        {
-          "routeId": "EHAM--LFPG",
-          "errorPercent": -13.31933152279543,
-          "nearestFeatureDistance": 0.26016172078746796
+          "errorPercent": -8.570418835376003,
+          "nearestFeatureDistance": 0.4452040580762895
         },
         {
           "routeId": "EDDF--EHAM",
-          "errorPercent": -16.25021319381329,
-          "nearestFeatureDistance": 0.20962636367373788
+          "errorPercent": -11.083794067318486,
+          "nearestFeatureDistance": 0.5017329012089923
         },
         {
           "routeId": "OMDB--OOMS",
-          "errorPercent": 4.313231743821744,
-          "nearestFeatureDistance": 0.5603382777491465
+          "errorPercent": 12.91274216488738,
+          "nearestFeatureDistance": 0.5517674991099625
         },
         {
           "routeId": "OBBI--OMDB",
-          "errorPercent": 11.635863040476169,
-          "nearestFeatureDistance": 0.5284170708569008
+          "errorPercent": 13.226089627801407,
+          "nearestFeatureDistance": 0.8475210983748067
         },
         {
           "routeId": "YMML--YSSY",
-          "errorPercent": -6.813756971008422,
-          "nearestFeatureDistance": 0.5914489200440282
+          "errorPercent": -5.650913163085836,
+          "nearestFeatureDistance": 0.5803889627033002
         },
         {
           "routeId": "YMML--YPAD",
-          "errorPercent": 5.676017563165203,
-          "nearestFeatureDistance": 0.5914489200440282
+          "errorPercent": 6.008738387699664,
+          "nearestFeatureDistance": 0.5848425096101001
         },
         {
           "routeId": "KBOS--KJFK",
-          "errorPercent": -17.453702003541526,
-          "nearestFeatureDistance": 0.3856164472590432
+          "errorPercent": -14.624310880330283,
+          "nearestFeatureDistance": 0.5018276918971138
         },
         {
           "routeId": "KDEN--KORD",
-          "errorPercent": 10.31913953592598,
-          "nearestFeatureDistance": 0.1029204673731023
+          "errorPercent": 7.337375471394347,
+          "nearestFeatureDistance": 0.45269500440301536
         },
         {
           "routeId": "KATL--KORD",
-          "errorPercent": -1.4661882655380931,
-          "nearestFeatureDistance": 0.6135825595109143
+          "errorPercent": -4.276212937293334,
+          "nearestFeatureDistance": 0.6457361333464479
         },
         {
           "routeId": "KLAX--KSFO",
-          "errorPercent": -10.24311544888934,
-          "nearestFeatureDistance": 0.48832544280565726
+          "errorPercent": -2.442990100587772,
+          "nearestFeatureDistance": 0.8931970084357727
         },
         {
           "routeId": "KLAS--KLAX",
-          "errorPercent": 12.255269131997327,
-          "nearestFeatureDistance": 0.3856164472590432
+          "errorPercent": 18.357365001950974,
+          "nearestFeatureDistance": 0.5501288819596711
         },
         {
           "routeId": "KATL--KMIA",
-          "errorPercent": -4.427477854900919,
-          "nearestFeatureDistance": 0.45417609843976453
+          "errorPercent": -3.371218351398908,
+          "nearestFeatureDistance": 0.5378381364368363
         },
         {
           "routeId": "EDDM--EGLL",
-          "errorPercent": -2.4561620613750446,
-          "nearestFeatureDistance": 0.15698595416604963
+          "errorPercent": -0.0680884888210942,
+          "nearestFeatureDistance": 0.7759644268785667
         },
         {
           "routeId": "EGLL--LIRF",
-          "errorPercent": 5.5564130093038955,
-          "nearestFeatureDistance": 0.1319705100759009
+          "errorPercent": -2.9253129125693222,
+          "nearestFeatureDistance": 0.4687759061388947
         },
         {
           "routeId": "EHAM--LEMD",
-          "errorPercent": 6.396918591431011,
-          "nearestFeatureDistance": 0.2851470182299132
+          "errorPercent": 0.8825600408292722,
+          "nearestFeatureDistance": 0.6480834620508745
         },
         {
           "routeId": "LFPG--LIRF",
-          "errorPercent": 14.551887404419128,
-          "nearestFeatureDistance": 0.1319705100759009
+          "errorPercent": 5.636171407668233,
+          "nearestFeatureDistance": 0.46130847678018366
         },
         {
           "routeId": "EDDF--LIRF",
-          "errorPercent": 6.8660682569736675,
-          "nearestFeatureDistance": 0.26016172078746796
+          "errorPercent": 1.7251815942402215,
+          "nearestFeatureDistance": 0.5413554677793022
+        }
+      ],
+      "unsupportedRoutes": [
+        {
+          "routeId": "EGLL--EHAM",
+          "nearestFeatureDistance": 1.0606600538972288
+        },
+        {
+          "routeId": "EHAM--LFPG",
+          "nearestFeatureDistance": 1.0579459882647655
+        },
+        {
+          "routeId": "YPAD--YSSY",
+          "nearestFeatureDistance": 1.50667587293822
+        },
+        {
+          "routeId": "YBCG--YSSY",
+          "nearestFeatureDistance": 2.4217190291577517
         },
         {
           "routeId": "LFPG--LTFM",
-          "errorPercent": 13.696276471915581,
-          "nearestFeatureDistance": 0.15698595416604963
+          "nearestFeatureDistance": 1.1148121495965921
         }
       ]
     },
     "independentHoldout": {
       "routeCount": 6,
       "supportedRouteCount": 4,
-      "supportedCoveragePercent": 66.66666666666667,
-      "meanAbsolutePercent": 5.188048477491764,
-      "maxAbsolutePercent": 14.217643871625786,
+      "supportedCoveragePercent": 66.66666666666666,
+      "meanAbsolutePercent": 1.1511279211889103,
+      "maxAbsolutePercent": 2.5644076510512592,
       "supportedRouteErrors": [
         {
           "routeId": "YBBN--YSSY",
-          "errorPercent": 0.03291778019334224,
-          "nearestFeatureDistance": 0.36705608788470023
+          "errorPercent": 0.5444588264647443,
+          "nearestFeatureDistance": 0.41323625500259586
         },
         {
           "routeId": "KATL--KJFK",
-          "errorPercent": 14.217643871625786,
-          "nearestFeatureDistance": 0.17320460935586854
+          "errorPercent": 2.5644076510512592,
+          "nearestFeatureDistance": 0.6440315366304525
         },
         {
           "routeId": "KSEA--KSFO",
-          "errorPercent": 3.5303467715202874,
-          "nearestFeatureDistance": 0.16871989002460588
+          "errorPercent": 1.3330117626880744,
+          "nearestFeatureDistance": 0.30798133863429644
         },
         {
           "routeId": "EGLL--LEMD",
-          "errorPercent": 2.9712854866276395,
-          "nearestFeatureDistance": 0.2718461590708316
+          "errorPercent": 0.16263344455156314,
+          "nearestFeatureDistance": 0.5161022542093716
+        }
+      ],
+      "unsupportedRoutes": [
+        {
+          "routeId": "YBBN--YMML",
+          "nearestFeatureDistance": 1.7390440725816332
+        },
+        {
+          "routeId": "WMKK--WSSS",
+          "nearestFeatureDistance": 1.297474252350142
         }
       ]
     }
