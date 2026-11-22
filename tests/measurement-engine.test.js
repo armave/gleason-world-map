@@ -54,7 +54,7 @@ const heldOutFlightMileageRoutes = [
   }
 ];
 
-test('the map geometry retains its fitted display scale (distance readout is independently spherical)', () => {
+test('the map geometry retains its fitted display scale (A–B distance uses the displayed flat-disk metric)', () => {
   assert.equal(DISK_RADIAL_SCALE_KM, FLIGHT_CALIBRATION.radialScaleKm);
   assert.ok(DISK_RADIAL_SCALE_KM > 0);
   assert.equal(DISK_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM);
@@ -130,7 +130,7 @@ test('crossing the 60°S reference line does not switch the direct-line metric',
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
   assert.equal(result.metric, 'flat-disk-euclidean');
   assert.equal(result.restricted, false);
-  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
+  assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
@@ -146,7 +146,7 @@ test('southern local segments and one restricted-line touch remain measurable', 
   assert.equal(segmentCrossesRestrictedParallel(a, b), false);
   assert.equal(measureDirectDistance(a, b).metric, 'flat-disk-euclidean');
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric,
-    'spherical-great-circle');
+    'flat-disk-euclidean');
 });
 
 for (const route of heldOutFlightMileageRoutes) {
@@ -156,7 +156,7 @@ for (const route of heldOutFlightMileageRoutes) {
     const errorPercent = (predictedKm / route.medianTrackKm - 1) * 100;
     assert.ok(Math.abs(errorPercent) <= 20,
       `${route.route}: ${predictedKm.toFixed(1)} km vs observed median ${route.medianTrackKm.toFixed(1)} km (${errorPercent.toFixed(1)}%)`);
-    assert.equal(result.metric, 'spherical-great-circle');
+    assert.equal(result.metric, 'flat-disk-euclidean');
     assert.ok(Number.isFinite(result.calibration.radialShareOfChord));
     assert.ok(Number.isFinite(result.calibration.tangentialShareOfChord));
     assert.ok(Math.abs(
@@ -220,7 +220,7 @@ test('near-south-rim endpoints warn about longitude sensitivity without changing
   const first = point(-89.99, 0), second = point(-89.99, 180);
   const result = measureDirectDistance(first, second);
   assert.ok(result.baseChordDistanceMeters > 17_000_000);
-  assert.equal(result.rawDistanceMeters, baseFlatDiskDistanceMeters(first, second));
+  assert.equal(result.baseChordDistanceMeters, baseFlatDiskDistanceMeters(first, second));
   assert.equal(result.calibration.nearSouthRim, true);
   assert.ok(result.warnings.includes('near-south-rim'));
   assert.equal(result.calibration.status, 'bounded-extrapolation');
@@ -230,7 +230,7 @@ test('near-south-rim endpoints warn about longitude sensitivity without changing
 
 test('longitude-separated South Pole coordinates remain distinct in the disk and are flagged', () => {
   const result = measureDirectDistance(point(-90, 0), point(-90, 180));
-  assert.ok(result.rawDistanceMeters > 17_000_000);
+  assert.ok(result.baseChordDistanceMeters > 17_000_000);
   assert.equal(result.calibration.nearSouthRim, true);
   assert.ok(result.warnings.includes('near-south-rim'));
 });
