@@ -70,6 +70,15 @@ test('the boundary envelope leaves the pole and full Antarctic rim fixed', () =>
   const rim = applyMultiAnchorWarpXY(DISK_RADIUS_KM, 0, model);
   assert.deepEqual(centre, [0, 0]);
   assert.deepEqual(rim, [DISK_RADIUS_KM, 0]);
+  for (let index = 0; index < 72; index++) {
+    const angle = 2 * Math.PI * index / 72;
+    const point = [
+      DISK_RADIUS_KM * Math.cos(angle),
+      DISK_RADIUS_KM * Math.sin(angle)
+    ];
+    const mapped = applyMultiAnchorWarpXY(point[0], point[1], model);
+    assert.ok(Math.hypot(mapped[0] - point[0], mapped[1] - point[1]) < 1e-8);
+  }
 });
 
 test('topology diagnostics detect a deliberately folded and oversized disk warp', () => {
@@ -112,6 +121,20 @@ test('the numerical inverse recovers an interior point after candidate warping',
     recovered[0] - original[0],
     recovered[1] - original[1]
   ) < 0.01);
+
+  for (let radial = 1; radial <= 5; radial++) {
+    for (let angular = 0; angular < 24; angular++) {
+      const angle = 2 * Math.PI * angular / 24;
+      const point = [
+        DISK_RADIUS_KM * radial / 7 * Math.cos(angle),
+        DISK_RADIUS_KM * radial / 7 * Math.sin(angle)
+      ];
+      const forward = applyMultiAnchorWarpXY(point[0], point[1], model);
+      const inverse = invertMultiAnchorWarpXY(forward[0], forward[1], model);
+      assert.ok(inverse, 'inverse failed at radial=' + radial + ', angular=' + angular);
+      assert.ok(Math.hypot(inverse[0] - point[0], inverse[1] - point[1]) < 0.01);
+    }
+  }
 });
 
 test('conflicting anchor coordinates are rejected', () => {
@@ -256,6 +279,7 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   assert.ok(result.metrics.holdout.meanAbsolutePercent <= 10);
   assert.ok(result.metrics.holdout.maxAbsolutePercent <= 20);
   assert.ok(result.metrics.minimumJacobianDeterminant >= 0.2);
+  assert.equal(result.metrics.rigidityMatrixRank, 2 * anchors.length - 3);
   assert.equal(
     result.accepted,
     true,
