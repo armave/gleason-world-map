@@ -192,7 +192,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
  assert.match(html,/One ADS-B-calibrated flat-disk distance formula/);
-  assert.match(html,/continuous radial profile used by both the map and the path fitter/);
+  assert.match(html,/continuous radial profile used for the visible map is a positive smooth taper/);
 });
 
 test('direct A/B coordinate entry and calibration route support are available',()=>{
