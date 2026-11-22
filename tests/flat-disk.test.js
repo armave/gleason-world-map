@@ -8,7 +8,7 @@ import {
   radialFraction, baseRadialFraction,
   latitudeFromRadialDistanceKm, project, unproject,
   flatDiskDistanceMeters, baseFlatDiskDistanceMeters, flatDiskLinePath,
-  northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2,
+  northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2, rad,
   flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
   DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
