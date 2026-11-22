@@ -39,6 +39,8 @@ async function main() {
   }
 
   const metrics = fitted?.metrics ?? null;
+  const candidateUsableProjectedPathCoverage =
+    metrics?.usableProjectedPathCoverage ?? usableProjectedPathCoverage;
   const trainingMapePercent = metrics?.training?.meanAbsolutePercent ?? null;
   const holdoutMapePercent = metrics?.holdout?.meanAbsolutePercent ?? null;
   const holdoutMaxErrorPercent = metrics?.holdout?.maxAbsolutePercent ?? null;
@@ -54,7 +56,8 @@ async function main() {
     leaveOneOutMaxRouteErrorPercent,
     usableTrainingRouteCount: metrics?.training?.routeCount ?? 0,
     usableHoldoutRouteCount: metrics?.holdout?.routeCount ?? 0,
-    usableProjectedPathCoverage,
+    activeProfileUsableProjectedPathCoverage: usableProjectedPathCoverage,
+    usableProjectedPathCoverage: candidateUsableProjectedPathCoverage,
     limits: {
       minimumTrainingRoutes: limits.minimumTrainingRoutes,
       minimumHoldoutRoutes: limits.minimumHoldoutRoutes,
@@ -85,6 +88,7 @@ async function main() {
     (metrics?.training?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
     (metrics?.holdout?.routeCount ?? 0) >= limits.minimumHoldoutRoutes &&
     (metrics?.leaveOneOut?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
+    (metrics?.leaveOneOut?.routeCount ?? 0) >= (metrics?.training?.routeCount ?? Infinity) &&
     routeCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
     routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
     routeCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
@@ -93,12 +97,12 @@ async function main() {
     routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S &&
     usableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     usableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
-    usableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    usableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
-    usableProjectedPathCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
-    usableProjectedPathCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
-    usableProjectedPathCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
-    usableProjectedPathCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
+    candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    candidateUsableProjectedPathCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    candidateUsableProjectedPathCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 
   const acceptanceFailures = [];
   if (!fitted) {
@@ -124,17 +128,18 @@ async function main() {
     if (routeCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
         routeCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S)
       acceptanceFailures.push('insufficient qualified training/holdout routes south of 60°S');
-    if (usableProjectedPathCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
-        usableProjectedPathCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S)
+    if (candidateUsableProjectedPathCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+        candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S)
       acceptanceFailures.push('insufficient usable projected-path training/holdout routes south of 45°S');
-    if (usableProjectedPathCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
-        usableProjectedPathCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S)
+    if (candidateUsableProjectedPathCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+        candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S)
       acceptanceFailures.push('insufficient usable projected-path training/holdout routes south of 60°S');
     if ((metrics?.training?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
         (metrics?.holdout?.routeCount ?? 0) < limits.minimumHoldoutRoutes)
       acceptanceFailures.push('minimum usable projected training/holdout route gate failed');
-    if ((metrics?.leaveOneOut?.routeCount ?? 0) < limits.minimumTrainingRoutes)
-      acceptanceFailures.push('not enough successful leave-one-route-out training folds');
+    if ((metrics?.leaveOneOut?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
+        (metrics?.leaveOneOut?.routeCount ?? 0) < (metrics?.training?.routeCount ?? Infinity))
+      acceptanceFailures.push('not every usable training route completed a leave-one-route-out fold');
   }
   const finalRejectionReason = accepted
     ? null
