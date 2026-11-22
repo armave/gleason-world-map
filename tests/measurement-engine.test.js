@@ -20,8 +20,53 @@ import {
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from '../src/core/flight-path-calibration-parameters.js';
 import { RADIAL_DISTANCE_PROFILE_MEAN, radialDistanceCorrectionFactor } from '../src/core/visual-radial-calibration.js';
+import { endpointDistanceFeatures, predictEndpointDistance } from '../src/core/endpoint-distance-calibration.js';
 
 const point = (lat, lon) => ({ lat, lon });
+
+test('Santiago–Canberra uses a supported ADS-B endpoint estimate while preserving the displayed map chord', () => {
+  const santiago = point(-33.45, -70.67);
+  const canberra = point(-35.27, 149.13);
+  const result = measureDirectDistance(santiago, canberra);
+  const reverse = measureDirectDistance(canberra, santiago);
+
+  assert.equal(result.endpointDistanceCalibration.supportStatus, 'supported');
+  assert.ok(Math.abs(result.distanceMeters - 23_894_366.29) < 1);
+  assert.ok(Math.abs(result.endpointDistanceEstimateMeters - 23_266_012.66) < 1);
+  assert.ok(Math.abs(
+    result.endpointDistanceEstimateMeters -
+    result.distanceMeters * result.endpointDistanceCalibration.calibrationFactor
+  ) < 1e-6);
+  assert.equal(result.endpointDistanceEstimateMeters,
+    result.endpointDistanceCalibration.distanceMeters);
+  assert.equal(result.endpointDistanceEstimateMeters, reverse.endpointDistanceEstimateMeters);
+  assert.equal(result.endpointDistanceCalibration.neighborRouteIds[0], 'YPAD--YSSY');
+  assert.equal(result.metric, 'flat-disk-euclidean');
+  assert.equal(result.distanceMeters, result.flatDiskDistanceMeters);
+});
+
+test('endpoint route estimator marks route pairs outside empirical feature support as extrapolated', () => {
+  const singapore = point(1.3451159576023457, 103.99194013366014);
+  const kualaLumpur = point(2.7456, 101.71);
+  const estimate = predictEndpointDistance(singapore, kualaLumpur);
+  assert.ok(estimate);
+  assert.equal(estimate.supportStatus, 'extrapolated');
+  assert.ok(estimate.nearestFeatureDistance > estimate.maxSupportedFeatureDistance);
+  assert.ok(estimate.warnings.includes('outside-validated-route-feature-support'));
+});
+
+test('endpoint feature decomposition is symmetric and corresponds to the displayed chord', () => {
+  const first = point(-33.45, -70.67);
+  const second = point(-35.27, 149.13);
+  const forward = endpointDistanceFeatures(first, second);
+  const reverse = endpointDistanceFeatures(second, first);
+  assert.ok(forward);
+  assert.equal(forward.chordDistanceMeters, reverse.chordDistanceMeters);
+  assert.ok(Math.abs(
+    Math.hypot(forward.features[1], forward.features[2]) - 1
+  ) < 1e-9);
+  assert.deepEqual(forward.features, reverse.features);
+});
 
 const heldOutFlightMileageRoutes = [
   {
@@ -250,6 +295,8 @@ test('invalid coordinates fail safely', () => {
   assert.equal(result.flatDiskDistanceMeters, null);
   assert.equal(result.baseChordDistanceMeters, null);
   assert.equal(result.calibrationFactor, null);
+  assert.equal(result.endpointDistanceEstimateMeters, null);
+  assert.equal(result.endpointDistanceCalibration, null);
   assert.equal(result.metric, 'unavailable');
   assert.equal(directLineCalibrationFactor(point(91, 0), point(0, 0)), null);
   assert.equal(result.restricted, false);
