@@ -19,6 +19,10 @@ export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   minimumHoldoutRoutes: 6,
   minimumSouthernTrainingRoutes: 4,
   minimumSouthernHoldoutRoutes: 2,
+  minimumTrainingRoutesSouthOf45S: 2,
+  minimumHoldoutRoutesSouthOf45S: 1,
+  minimumTrainingRoutesSouthOf60S: 1,
+  minimumHoldoutRoutesSouthOf60S: 1,
   maxTrainingMapePercent: 10,
   maxHoldoutMapePercent: 12,
   maxHoldoutRouteErrorPercent: 20,
@@ -446,7 +450,11 @@ export function fitFlightPathCalibration(dataset) {
   if (coverage.trainingRouteCount < limits.minimumTrainingRoutes ||
       coverage.holdoutRouteCount < limits.minimumHoldoutRoutes ||
       coverage.trainingRoutesSouthOf30S < limits.minimumSouthernTrainingRoutes ||
-      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes) {
+      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes ||
+      coverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+      coverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S ||
+      coverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+      coverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S) {
     throw new Error('Insufficient independent ADS-B flight-path coverage for production calibration.');
   }
 
@@ -466,6 +474,13 @@ export function fitFlightPathCalibration(dataset) {
   const best = candidates[0];
   if (!best || !Number.isFinite(best.radialScaleKm) || best.radialScaleKm <= 0) {
     throw new Error('No finite flight-path radial calibration candidate could be fitted.');
+  }
+  if (best.training.routeCount < limits.minimumTrainingRoutes ||
+      best.holdout.routeCount < limits.minimumHoldoutRoutes) {
+    throw new Error(
+      'Insufficient usable projected-path airport-pair coverage after projection; ' +
+      'the minimum training and holdout route counts must still be met.'
+    );
   }
 
   return {
