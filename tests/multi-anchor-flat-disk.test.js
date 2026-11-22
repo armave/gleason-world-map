@@ -220,7 +220,7 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
     learningRateKm: 8,
     anchorWeight: 0.03,
     sigmaKm,
-    regularization: 1e-7
+    regularization: 1e-3
   });
 
   assert.notEqual(result.status, 'fit-failed');
