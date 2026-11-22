@@ -17,6 +17,7 @@ import {
   baseFlatDiskDistanceMeters
 } from '../src/core/flat-disk.js';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
+import { greatCircleDistanceMeters } from '../src/core/great-circle.js';
 
 const point = (lat, lon) => ({ lat, lon });
 
@@ -55,7 +56,7 @@ const heldOutFlightMileageRoutes = [
   }
 ];
 
-test('the radial scale is the fitted ADS-B flight-mileage median scale', () => {
+test('the map geometry retains its fitted display scale (distance readout is independently spherical)', () => {
   assert.equal(DISK_RADIAL_SCALE_KM, FLIGHT_CALIBRATION.radialScaleKm);
   assert.ok(DISK_RADIAL_SCALE_KM > 0);
   assert.equal(DISK_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM);
@@ -79,13 +80,13 @@ test('12-circle radial factors taper linearly from 1.00× at the centre to 0.50�
 test('A–B primary readout applies the radial factor while retaining the raw chord and ADS-B estimate', () => {
   const a = point(40.17, 44.5), b = point(51.5, -0.12);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
+  assert.equal(result.metric, 'spherical-great-circle');
   assert.equal(result.restricted, false);
   assert.equal(result.chordDistanceMeters, baseFlatDiskDistanceMeters(a, b));
   assert.equal(result.visualChordDistanceMeters, flatDiskDistanceMeters(a, b));
   assert.equal(result.rawDistanceMeters, result.chordDistanceMeters);
   assert.equal(result.radiallyCorrectedDistanceMeters, result.distanceMeters);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
+  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
   assert.notEqual(result.visualChordDistanceMeters, result.chordDistanceMeters);
   assert.equal(result.radialCorrectionFactor, radialDistanceCorrectionDiagnostics(a, b).factor);
   assert.equal(result.radialCirclePosition, radialDistanceCorrectionDiagnostics(a, b).circlePosition);
@@ -110,7 +111,7 @@ test('outer-rim endpoint pairs receive the full 0.50× correction', () => {
   const result = measureDirectDistance(point(-90, 0), point(-90, 180));
   assert.equal(result.radialCorrectionFactor, 0.5);
   assert.equal(result.radialCorrection.circlePosition, 12);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * 0.5);
+  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
 });
 
 test('the flight-mileage factor is symmetric and longitude-wrap safe', () => {
@@ -122,8 +123,8 @@ test('the flight-mileage factor is symmetric and longitude-wrap safe', () => {
 test('the separate flight-mileage estimate remains available in the Antarctic band', () => {
   const a = point(-70, 10), b = point(-70, 20);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
+  assert.equal(result.metric, 'spherical-great-circle');
+  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
   assert.equal(result.flightEmpiricalDistanceMeters,
     result.chordDistanceMeters * directLineCalibrationFactor(a, b));
 });
@@ -132,25 +133,25 @@ test('crossing the 60°S reference line does not switch the direct-line metric',
   const a = point(-59.9, 20), b = point(-60.1, 110);
   const result = measureDirectDistance(a, b);
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
-  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
+  assert.equal(result.metric, 'spherical-great-circle');
   assert.equal(result.restricted, false);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
+  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
   const a = point(-60, 0), b = point(-60, 180);
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
+  assert.equal(result.metric, 'spherical-great-circle');
   assert.ok(result.distanceMeters > 0);
 });
 
 test('southern local segments and one restricted-line touch remain measurable', () => {
   const a = point(-70, 10), b = point(-70, 20);
   assert.equal(segmentCrossesRestrictedParallel(a, b), false);
-  assert.equal(measureDirectDistance(a, b).metric, 'radially-corrected-flat-disk-chord');
+  assert.equal(measureDirectDistance(a, b).metric, 'spherical-great-circle');
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric,
-    'radially-corrected-flat-disk-chord');
+    'spherical-great-circle');
 });
 
 for (const route of heldOutFlightMileageRoutes) {
@@ -160,7 +161,7 @@ for (const route of heldOutFlightMileageRoutes) {
     const errorPercent = (predictedKm / route.medianTrackKm - 1) * 100;
     assert.ok(Math.abs(errorPercent) <= 20,
       `${route.route}: ${predictedKm.toFixed(1)} km vs observed median ${route.medianTrackKm.toFixed(1)} km (${errorPercent.toFixed(1)}%)`);
-    assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
+    assert.equal(result.metric, 'spherical-great-circle');
     assert.ok(Number.isFinite(result.calibration.radialShareOfChord));
     assert.ok(Number.isFinite(result.calibration.tangentialShareOfChord));
     assert.ok(Math.abs(
@@ -183,10 +184,8 @@ test('radial correction preserves chord ordering for endpoints on the same circl
   assert.ok(shorter.chordDistanceMeters < longer.chordDistanceMeters);
   assert.equal(shorter.radialCorrectionFactor, longer.radialCorrectionFactor);
   assert.ok(shorter.distanceMeters < longer.distanceMeters);
-  assert.equal(shorter.distanceMeters,
-    shorter.chordDistanceMeters * shorter.radialCorrectionFactor);
-  assert.equal(longer.distanceMeters,
-    longer.chordDistanceMeters * longer.radialCorrectionFactor);
+  assert.equal(shorter.distanceMeters, shorter.greatCircleDistanceMeters);
+  assert.equal(longer.distanceMeters, longer.greatCircleDistanceMeters);
   assert.equal(shorter.flightEmpiricalDistanceMeters,
     shorter.chordDistanceMeters * shorter.calibrationFactor);
   assert.equal(longer.flightEmpiricalDistanceMeters,
@@ -204,8 +203,7 @@ test('mixed-circle endpoints blend the two radial positions before applying the 
   assert.equal(diagnostics.factor,
     radialDistanceCorrectionFactor(diagnostics.meanRadialFraction));
   const result = measureDirectDistance(first, second);
-  assert.equal(result.distanceMeters,
-    result.chordDistanceMeters * diagnostics.factor);
+  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
 });
 
 test('invalid coordinates fail safely', () => {
@@ -291,4 +289,15 @@ test('polygon edges including closure are still checked for restricted-line cros
   const ring = [point(-70, 0), point(-70, 120), point(-70, -120)];
   assert.equal(polylineCrossesRestrictedParallel(ring, true), true);
   assert.equal(polylineCrossesRestrictedParallel([point(-70, 0), point(-70, 10)]), false);
+});
+
+
+test('Santiago to Canberra uses coordinate-only great-circle distance', () => {
+  const santiago = point(-33.4489, -70.6693);
+  const canberra = point(-35.2809, 149.1300);
+  const result = measureDirectDistance(santiago, canberra);
+  assert.equal(result.metric, 'spherical-great-circle');
+  assert.ok(Math.abs(result.distanceMeters / 1000 - 11322.57) < 0.02);
+  assert.equal(result.distanceMeters, greatCircleDistanceMeters(santiago, canberra));
+  assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
 });
