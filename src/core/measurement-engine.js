@@ -1,4 +1,4 @@
-import { clamp, flatDiskDistanceMeters, radialDistanceFromNorthKm, radialFraction, rad, wrapLongitude } from './flat-disk.js';
+import { clamp, baseFlatDiskDistanceMeters, flatDiskDistanceMeters, radialDistanceFromNorthKm, baseRadialFraction, rad, wrapLongitude } from './flat-disk.js';
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { flightCalibrationFeatures, predictFlightScaleRatio } from './flight-calibration-fit.js';
 
@@ -33,8 +33,8 @@ function validPoint(point) {
  */
 export function radialDistanceCorrectionDiagnostics(first, second) {
   if (!validPoint(first) || !validPoint(second)) return null;
-  const firstRadialFraction = radialFraction(first.lat);
-  const secondRadialFraction = radialFraction(second.lat);
+  const firstRadialFraction = baseRadialFraction(first.lat);
+  const secondRadialFraction = baseRadialFraction(second.lat);
   if (![firstRadialFraction, secondRadialFraction].every(Number.isFinite)) return null;
   const meanRadialFraction = clamp((firstRadialFraction + secondRadialFraction) / 2, 0, 1);
   const factor = radialDistanceCorrectionFactor(meanRadialFraction);
@@ -167,6 +167,7 @@ export function measureDirectDistance(first, second) {
       calibratedDistanceMeters: null,
       flightEmpiricalDistanceMeters: null,
       chordDistanceMeters: null,
+      visualChordDistanceMeters: null,
       rawDistanceMeters: null,
       radialCorrectionFactor: null,
       radialCorrectionPercent: null,
@@ -181,7 +182,10 @@ export function measureDirectDistance(first, second) {
     };
   }
 
-  const chordDistanceMeters = flatDiskDistanceMeters(first, second);
+  // Keep the numeric calibration chord on the pre-visual projection so the
+  // 12-circle readout and ADS-B model remain stable while the map is redrawn.
+  const chordDistanceMeters = baseFlatDiskDistanceMeters(first, second);
+  const visualChordDistanceMeters = flatDiskDistanceMeters(first, second);
   const radialCorrection = radialDistanceCorrectionDiagnostics(first, second);
   const radialCorrectionFactor = radialCorrection?.factor ?? null;
   const radiallyCorrectedDistanceMeters = Number.isFinite(chordDistanceMeters) &&
@@ -195,6 +199,7 @@ export function measureDirectDistance(first, second) {
     ? chordDistanceMeters * calibrationFactor
     : null;
   const safeChordDistance = Number.isFinite(chordDistanceMeters) ? chordDistanceMeters : null;
+  const safeVisualChordDistance = Number.isFinite(visualChordDistanceMeters) ? visualChordDistanceMeters : null;
   const safeRadiallyCorrectedDistance = Number.isFinite(radiallyCorrectedDistanceMeters)
     ? radiallyCorrectedDistanceMeters
     : null;
@@ -210,6 +215,7 @@ export function measureDirectDistance(first, second) {
     flightEmpiricalDistanceMeters: safeFlightEmpiricalDistance,
     // Preserve the actual geometric chord as an independent reference.
     chordDistanceMeters: safeChordDistance,
+    visualChordDistanceMeters: safeVisualChordDistance,
     rawDistanceMeters: safeChordDistance,
     radialCorrectionFactor,
     radialCorrectionPercent: radialCorrection?.correctionPercent ?? null,
