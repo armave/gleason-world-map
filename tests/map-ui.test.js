@@ -223,9 +223,9 @@ test('the coordinate-only great-circle readout and ADS-B flight mileage remain s
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
- assert.match(app,/Base chord .*formatDistance\(measurement\.chordDistanceMeters\).*radial factor/);
- assert.match(app,/visual chord .*formatDistance\(measurement\.visualChordDistanceMeters\)/);
- assert.match(app,/radialCirclePosition/);
+ assert.match(app,/Spherical great-circle arc .*map chord .*is display-only/);
+ assert.match(app,/The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula/);
+ assert.match(app,/flightEmpiricalDistanceMeters/);
 });
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
