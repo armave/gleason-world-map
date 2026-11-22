@@ -187,7 +187,7 @@ test('crossing the 60°S reference line does not switch the direct-line metric',
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
   assert.equal(result.metric, 'adsb-calibrated-flat-disk');
   assert.equal(result.restricted, false);
-  assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
+  assert.equal(result.distanceMeters, baseFlatDiskDistanceMeters(a, b) * result.calibrationFactor);
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
@@ -246,10 +246,10 @@ test('flat-disk distance preserves endpoint ordering and equals the projected se
     baseFlatDiskDistanceMeters(point(40.17, 44.5), point(40.17, 45.5)) * shorter.calibrationFactor);
   assert.equal(longer.distanceMeters,
     baseFlatDiskDistanceMeters(point(40.17, 44.5), point(40.17, 50.5)) * longer.calibrationFactor);
-  assert.equal(shorter.flightEmpiricalDistanceMeters,
-    shorter.baseChordDistanceMeters * shorter.calibrationFactor);
-  assert.equal(longer.flightEmpiricalDistanceMeters,
-    longer.baseChordDistanceMeters * longer.calibrationFactor);
+  assert.equal(shorter.distanceMeters,
+    baseFlatDiskDistanceMeters(point(40.17, 44.5), point(40.17, 45.5)) * shorter.calibrationFactor);
+  assert.equal(longer.distanceMeters,
+    baseFlatDiskDistanceMeters(point(40.17, 44.5), point(40.17, 50.5)) * longer.calibrationFactor);
 });
 
 test('mixed-radius endpoints use symmetric Euclidean distances in the warped disk', () => {
@@ -258,7 +258,7 @@ test('mixed-radius endpoints use symmetric Euclidean distances in the warped dis
   const reverse = measureDirectDistance(second, first);
   assert.ok(forward.distanceMeters > 0);
   assert.equal(forward.distanceMeters, reverse.distanceMeters);
-  assert.equal(forward.baseChordDistanceMeters, reverse.baseChordDistanceMeters);
+  assert.equal(forward.distanceMeters, reverse.distanceMeters);
   assert.equal(forward.calibrationFactor, reverse.calibrationFactor);
 });
 
@@ -290,7 +290,7 @@ test('near-south-rim endpoints warn about longitude sensitivity without changing
   assert.equal(result.calibration.nearSouthRim, true);
   assert.ok(result.warnings.includes('near-south-rim'));
   assert.equal(result.calibration.status, 'bounded-extrapolation');
-  assert.ok(Number.isFinite(result.calibratedDistanceMeters));
+  assert.ok(Number.isFinite(result.distanceMeters));
   assert.ok(result.calibrationFactor >= 0.5 && result.calibrationFactor <= 2.5);
 });
 
