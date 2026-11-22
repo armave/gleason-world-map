@@ -116,6 +116,7 @@ test('path coverage counts independent route splits and southern observations', 
 test('path coverage rejects incomplete telemetry and gaps over 15 minutes', () => {
   const dataset = syntheticDataset();
   dataset.routes[0].observations[0].trackTimestamps[0][1] = 2000;
+  dataset.routes[0].observations[0].trackTimestamps[0][2] = 2300;
   const coverage = summarizeFlightPathCoverage(dataset);
   assert.equal(coverage.trainingRouteCount, 23);
 
