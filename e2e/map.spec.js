@@ -121,7 +121,7 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
   await expect(page.locator('#flightDistanceValue')).toContainText('36,527.2');
   await expect(page.locator('#distanceValue')).toHaveText('Not validated');
   await expect(page.locator('#distanceSub')).toContainText('Numeric estimate withheld');
-  await expect(page.locator('#calibrationSupport')).toContainText('Extrapolated');
+  await expect(page.locator('#calibrationSupport')).toContainText('No route-mileage number shown');
   await expect(page.locator('#measureHelp')).toContainText('Antarctic rim retains longitude-indexed positions');
 });
 
