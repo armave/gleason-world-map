@@ -43,7 +43,7 @@ Coverage is an explicit acceptance gate, not an expansion factor. The observed-o
 
 ## Recorded ADS-B trajectory path and visible-map calibration
 
-The visible map projection has its own calibration parameter file: `src/core/flight-path-calibration-parameters.js`. It is deliberately separate from `src/core/flight-calibration-parameters.js`, which supplies only the secondary endpoint-based typical-flight-mileage estimate.
+The visible map projection has its own accepted display-transform parameter file: `src/core/flight-path-calibration-parameters.js`. The single distance formula is separately calibrated by `src/core/flight-calibration-parameters.js`; it applies one bounded ADS-B route-feature correction to the base flat-disk chord.
 
 For each accepted flight, the collector requests the full flight detail from `GET /flights/{flight_id}` and stores:
 
@@ -115,7 +115,7 @@ The fitted model is judged against these error and geometry limits:
 
 A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. An accepted candidate writes radial scale, latitude warp, radial profile and longitude warp to that file. The renderer, inverse lookup, coastlines, markers, map-click coordinates, ruler, scale bar and planar measurements all use the same forward/inverse geometry.
 
-The previous endpoint-chord fitter still creates `data/flight-calibration-summary.json` and `src/core/flight-calibration-parameters.js`. Its local route-neighbour estimate remains a secondary reference for typical flown mileage only; it does not control the visible projection.
+The endpoint-only chord fitter and its generated files are legacy artifacts. They are not imported by the runtime measurement engine and do not supply a distance value or fallback. The active distance formula uses `src/core/flight-calibration-parameters.js`.
 
 ## Route sampling and validation
 
@@ -242,16 +242,16 @@ npm test
 
 ## Validation gate and interpretation
 
-The visible-map geometry and the endpoint route-mileage estimator have separate calibration and acceptance records. The visible transform is fitted against projected, timestamped ADS-B paths and independently integrated ground-speed/time mileage. Its accepted snapshot and southern-coverage limitations are documented in `data/flight-path-calibration-summary.json`.
+The visible-map display transform and the canonical distance correction have separate calibration records because they serve different roles. The display transform controls how the map is drawn. The distance correction controls the one number shown for every measured pair. Neither creates an alternate distance readout.
 
-The endpoint model predicts typical flown mileage from airport-pair endpoint features and observed mileage/chord ratios. It is accepted only when it has at least 20 quality-screened training pairs and 6 independent holdout pairs, at least 20 supported leave-one-route-out pairs and 4 supported holdout pairs, with the supported-subset MAPE and maximum errors inside the configured limits. Unsupported holdouts are reported separately and do not enter the supported error score.
+The active distance model predicts a bounded mileage-per-base-chord correction from three endpoint/chord features and the nearest observed airport-pair examples. Independent ADS-B route-holdout tests verify that the canonical distance remains within the configured route-error limits for the reference routes.
 
 The relevant sources are:
 
 - `data/flight-calibration.json` — observed flight-mileage records, path coordinates, matching timestamps and telemetry quality fields.
 - `data/flight-path-calibration-summary.json` — visible-map path-fit coverage and independent validation.
-- `data/endpoint-distance-calibration-summary.json` — endpoint-model support coverage, leave-one-route-out/holdout errors, exclusions and limitations.
-- `src/core/endpoint-distance-calibration-parameters.js` — endpoint-model feature statistics and training examples.
+- `src/core/flight-calibration-parameters.js` — active three-feature ADS-B distance correction, bounded factor and route reference examples.
+- `tests/measurement-engine.test.js` — independent route-holdout checks for the canonical distance returned by `measureDirectDistance()`.
 - `src/core/flight-path-calibration-parameters.js` — active visible map scale, latitude warp, radial profile and longitude warp.
 
 To collect and fit locally:
@@ -259,11 +259,11 @@ To collect and fit locally:
 ```bash
 npm run collect:flight-calibration
 npm run fit:flight-path-calibration
-npm run fit:endpoint-distance-calibration
+npm run fit:flight-calibration
 npm test
 ```
 
-The route estimator never changes the projected endpoints, the visible connector or the map scale bar. A passing score applies only to the support domain represented by the training and independent holdout pairs.
+The single distance formula is evaluated against observed reference-route mileage. Its correction is bounded for every pair; diagnostics report when a reference-range or correction-bound warning applies. The same returned number is used by all map distance surfaces.
 
 ## What this method does not establish
 
