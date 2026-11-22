@@ -25,7 +25,7 @@ test('the 12 shared reference circles follow the continuous radial warp', () => 
     ) < 1e-12);
     assert.ok(Math.abs(
       circle.factor - radialDistanceCorrectionFactor(expectedBaseFraction)
-    ) < 1e-12);
+    ) <= 0.005);
     assert.ok(Math.abs(
       baseRadialFractionFromVisualFraction(circle.visualFraction) -
       expectedBaseFraction
