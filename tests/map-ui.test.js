@@ -219,7 +219,7 @@ test('the radial-corrected A–B readout and ADS-B flight mileage remain separat
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
- assert.match(app,/Raw disk chord × .* radial factor/);
+ assert.match(app,/Raw chord .*formatDistance\(measurement\.chordDistanceMeters\).*radial factor/);
  assert.match(app,/radialCirclePosition/);
 });
 
