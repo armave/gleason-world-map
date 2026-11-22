@@ -230,7 +230,7 @@ function drawCompassRose(){
  ctx.restore();
 }
 function drawAnnotations(){
- ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75],labelAngle=rad(225);
+ ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75];
  for(const lat of ringLabels){const [x,y]=project(225,lat),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y,{avoidReserved:true});}
  for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a),{avoidReserved:true});}}
  ctx.restore();
