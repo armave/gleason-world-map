@@ -12,7 +12,9 @@ import {
   DISK_RADIAL_SCALE_KM,
   DISK_RADIUS_KM,
   flatDiskDistanceMeters,
-  baseFlatDiskDistanceMeters
+  baseFlatDiskDistanceMeters,
+  flatDiskLinePath,
+  project
 } from '../src/core/flat-disk.js';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import { radialDistanceCorrectionFactor } from '../src/core/visual-radial-calibration.js';
@@ -75,9 +77,13 @@ test('12-circle radial factors taper linearly from 1.00× at the centre to 0.50�
   assert.equal(radialDistanceCorrectionFactor(1), 0.5);
 });
 
-test('primary A–B distance exactly matches the straight connector in the final warped disk', () => {
+test('primary A–B distance exactly matches the rendered connector in the final warped disk', () => {
   const a = point(40.17, 44.5), b = point(51.5, -0.12);
   const result = measureDirectDistance(a, b);
+  const mapRadiusPx = 480;
+  const line = flatDiskLinePath(a, b, (longitude, latitude) =>
+    project(longitude, latitude, mapRadiusPx)
+  );
   assert.equal(result.metric, 'flat-disk-euclidean');
   assert.equal(result.restricted, false);
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
@@ -90,6 +96,15 @@ test('primary A–B distance exactly matches the straight connector in the final
   assert.ok(result.calibrationFactor >= 0.5 && result.calibrationFactor <= 2.5);
   assert.ok(result.distanceMeters > 0);
   assert.ok(result.flightEmpiricalDistanceMeters > 0);
+
+  const visiblePixelLength = Math.hypot(
+    line[1][0] - line[0][0],
+    line[1][1] - line[0][1]
+  );
+  const mapPlaneMetresPerPixel = DISK_RADIUS_KM * 1000 / mapRadiusPx;
+  assert.ok(Math.abs(
+    result.distanceMeters - visiblePixelLength * mapPlaneMetresPerPixel
+  ) < 1e-6);
 });
 
 test('same-circle distances use the visible warped-disk chord for both short and long spans', () => {
