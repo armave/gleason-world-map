@@ -8,6 +8,10 @@
  * equations, coordinate-derived route lengths, or external math libraries.
  */
 import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from './radial-warp.js';
+import {
+  RADIAL_DISTANCE_PROFILE_MEAN,
+  visualRadialFractionFromBaseFraction
+} from './visual-radial-calibration.js';
 
 const DEG = Math.PI / 180;
 const FACTOR_BOUNDS = [0.5, 2.5];
@@ -50,15 +54,24 @@ function wrappedLongitudeSpanRadians(first, second) {
  * Exact chord components in the warped radial disk when R=1. Multiplication
  * by pi keeps the unit-chord units aligned with the nominal scale R.
  */
-function diskChordComponents(first, second, radialWarp = DEFAULT_RADIAL_WARP) {
+function diskChordComponents(
+  first,
+  second,
+  radialWarp = DEFAULT_RADIAL_WARP,
+  chordGeometry = 'visual-12-circle'
+) {
   const tA = (90 - first.lat) / 180;
   const tB = (90 - second.lat) / 180;
-  const qA = radialFractionFromUnitColatitude(tA, radialWarp);
-  const qB = radialFractionFromUnitColatitude(tB, radialWarp);
-  const radialComponent = Math.PI * Math.abs(qA - qB);
+  const baseA = radialFractionFromUnitColatitude(tA, radialWarp);
+  const baseB = radialFractionFromUnitColatitude(tB, radialWarp);
+  const useVisualChord = chordGeometry === 'visual-12-circle';
+  const qA = useVisualChord ? visualRadialFractionFromBaseFraction(baseA) : baseA;
+  const qB = useVisualChord ? visualRadialFractionFromBaseFraction(baseB) : baseB;
+  const profileScale = useVisualChord ? RADIAL_DISTANCE_PROFILE_MEAN : 1;
+  const radialComponent = profileScale * Math.PI * Math.abs(qA - qB);
   const longitudeSpan = wrappedLongitudeSpanRadians(first, second);
   const tangentialComponent =
-    Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
+    profileScale * Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   return {
     meanRadialFraction: (qA + qB) / 2,
     radialComponent,
@@ -67,16 +80,18 @@ function diskChordComponents(first, second, radialWarp = DEFAULT_RADIAL_WARP) {
   };
 }
 
-export function unitDiskChord(first, second, radialWarp = DEFAULT_RADIAL_WARP) {
+export function unitDiskChord(
+  first, second, radialWarp = DEFAULT_RADIAL_WARP, chordGeometry = 'visual-12-circle'
+) {
   if (!validAirport(first) || !validAirport(second)) return NaN;
-  return diskChordComponents(first, second, radialWarp).chord;
+  return diskChordComponents(first, second, radialWarp, chordGeometry).chord;
 }
 
 export function flightCalibrationFeatures(
-  first, second, radialWarp = DEFAULT_RADIAL_WARP
+  first, second, radialWarp = DEFAULT_RADIAL_WARP, chordGeometry = 'visual-12-circle'
 ) {
   if (!validAirport(first) || !validAirport(second)) return null;
-  const components = diskChordComponents(first, second, radialWarp);
+  const components = diskChordComponents(first, second, radialWarp, chordGeometry);
   if (components.chord <= 1e-9) {
     return [components.meanRadialFraction, 0, 0];
   }
@@ -222,10 +237,11 @@ function radialScale(examples) {
 function modelFromExamples(examples, sourceDatasetVersion, radialWarp) {
   const stats = featureStatistics(examples);
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     sourceDatasetVersion,
+    chordGeometry: 'visual-12-circle',
     radialWarp: { ...radialWarp },
-    target: 'median observed ADS-B flight-track mileage from ground-speed × time integration',
+    target: 'median directly observed ADS-B flown mileage calibrated against the displayed 12-circle flat-disk chord',
     radialScaleKm: radialScale(examples),
     featureNames: ['meanRadialFraction', 'radialShareOfChord', 'tangentialShareOfChord'],
     featureMeans: stats.means,

@@ -8,6 +8,10 @@ import {
   summarizeFlightCalibrationCoverage
 } from '../src/core/flight-calibration-fit.js';
 import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from '../src/core/radial-warp.js';
+import {
+  RADIAL_DISTANCE_PROFILE_MEAN,
+  visualRadialFractionFromBaseFraction
+} from '../src/core/visual-radial-calibration.js';
 
 const airports = [
   { lat: 51.47, lon: -0.45 }, { lat: 40.64, lon: -73.78 },
@@ -57,12 +61,15 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   const features = flightCalibrationFeatures(a, b);
   const tA = (90 - a.lat) / 180;
   const tB = (90 - b.lat) / 180;
-  const qA = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
-  const qB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
+  const baseA = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
+  const baseB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
+  const qA = visualRadialFractionFromBaseFraction(baseA);
+  const qB = visualRadialFractionFromBaseFraction(baseB);
   const longitudeDelta = (Math.max(a.lon, b.lon) - Math.min(a.lon, b.lon)) % 360;
   const longitudeSpan = Math.min(longitudeDelta, 360 - longitudeDelta) * Math.PI / 180;
-  const radial = Math.PI * Math.abs(qA - qB);
-  const tangential = Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
+  const radial = RADIAL_DISTANCE_PROFILE_MEAN * Math.PI * Math.abs(qA - qB);
+  const tangential = RADIAL_DISTANCE_PROFILE_MEAN * Math.PI * 2 *
+    Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   const chord = unitDiskChord(a, b);
   assert.ok(chord > 0);
   assert.ok(Math.abs(features[0] - (qA + qB) / 2) < 1e-12);
@@ -70,14 +77,17 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   assert.ok(Math.abs(features[2] - tangential / chord) < 1e-12);
   assert.ok(Math.abs(features[1] ** 2 + features[2] ** 2 - 1) < 1e-12);
   assert.equal(unitDiskChord(a, a), 0);
-  const samePointQ = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
+  const samePointQ = visualRadialFractionFromBaseFraction(
+    radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP)
+  );
   assert.deepEqual(flightCalibrationFeatures(a, a), [samePointQ, 0, 0]);
 });
 
 test('flight telemetry calibration fits a radial scale and direction-aware route model', () => {
   const result = fitFlightCalibration(syntheticDataset());
   assert.ok(result.model.radialScaleKm > 0);
-  assert.equal(result.model.schemaVersion, 5);
+  assert.equal(result.model.schemaVersion, 6);
+  assert.equal(result.model.chordGeometry, 'visual-12-circle');
   assert.deepEqual(result.model.radialWarp, DEFAULT_RADIAL_WARP);
   assert.equal(result.model.trainingRouteCount, 12);
   assert.equal(result.model.holdoutRouteCount, 4);
