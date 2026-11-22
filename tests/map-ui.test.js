@@ -161,7 +161,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
   assert.match(app, /flightDistanceValue/);
-  assert.match(app, /flightEmpiricalDistanceMeters/);
+  assert.match(app, /endpointDistanceEstimateMeters/);
+  assert.match(app, /endpointDistanceCalibration/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
   assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
