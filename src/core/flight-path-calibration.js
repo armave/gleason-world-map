@@ -44,13 +44,6 @@ export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
 export const FLIGHT_PATH_PROFILE = ACTIVE_RADIAL_DISTANCE_PROFILE;
 
 const DEG = Math.PI / 180;
-const MIN_EXPONENT = 0.65;
-const MAX_EXPONENT = 1.35;
-const EXPONENT_STEP = 0.025;
-export const FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES = Object.freeze(
-  [...new Set([0.7, 0.85, FLIGHT_PATH_PROFILE.exponent, 1.15, 1.3])]
-    .sort((first, second) => first - second)
-);
 const median = values => {
   if (!values.length) return NaN;
   const ordered = [...values].sort((a, b) => a - b);
@@ -585,10 +578,10 @@ export function fitFlightPathCalibration(dataset) {
       leaveOneOut,
       spatialCoverage: coverage,
       usableProjectedPathCoverage,
-      selectedExponentObjective: fitted.objective,
+      selectedGeometryObjective: fitted.objective,
       selectedProfileExponent: fitted.geometry.radialProfile.exponent,
-      profileExponentCandidatesTested: 1,
-      geometryCandidatesTested: fitted.evaluations,
+      jointGeometryParameterCount: fitted.vector.length,
+      geometryCandidatesEvaluated: fitted.evaluations,
       nestedGeometryFolds: leaveOneOut.routeCount,
       minimumAngularStretch: fitted.angularStretch,
       longitudeWarpPenalty: fitted.longitudePenalty
