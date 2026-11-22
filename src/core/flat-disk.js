@@ -1,7 +1,8 @@
 /**
  * Flat-disk geometry engine for the Gleason-style north-polar map.
- * Latitude is mapped to a smooth radial fraction q(t), then r = pi * R * q.
- * The monotonic warp preserves the North Pole and circular Antarctic rim.
+ * Latitude is mapped through the fitted base fraction q(t), then through a
+ * smooth, edge-anchored visual calibration qv = q + q(1-q)/3. The transform
+ * preserves the North Pole and circular Antarctic rim without ring joins.
  * R is fitted from observed ADS-B ground-speed × elapsed-time mileage.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
