@@ -85,7 +85,8 @@ test('A–B primary readout applies the radial factor while retaining the raw ch
   assert.equal(result.chordDistanceMeters, baseFlatDiskDistanceMeters(a, b));
   assert.equal(result.visualChordDistanceMeters, flatDiskDistanceMeters(a, b));
   assert.equal(result.rawDistanceMeters, result.chordDistanceMeters);
-  assert.equal(result.radiallyCorrectedDistanceMeters, result.distanceMeters);
+  assert.equal(result.radiallyCorrectedDistanceMeters,
+    result.chordDistanceMeters * result.radialCorrectionFactor);
   assert.equal(result.distanceMeters, result.greatCircleDistanceMeters);
   assert.notEqual(result.visualChordDistanceMeters, result.chordDistanceMeters);
   assert.equal(result.radialCorrectionFactor, radialDistanceCorrectionDiagnostics(a, b).factor);
