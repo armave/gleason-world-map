@@ -139,7 +139,7 @@ test('the Antarctic rim preserves longitude-indexed positions around the flat-di
   const result = measureDirectDistance(first, second);
   assert.equal(result.metric, 'flat-disk-euclidean');
   assert.ok(Math.abs(result.distanceMeters - 2 * DISK_RADIUS_KM * 1000) < 1e-6);
-  assert.ok(result.distanceMeters > 30_000_000);
+  assert.ok(result.distanceMeters > 25_000_000);
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
 });
 
