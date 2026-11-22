@@ -15,6 +15,11 @@ const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_LEAVE_ONE_OUT_MAPE = 15;
 const MAX_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
+const MAX_MAP_TRAINING_MAPE = 10;
+const MAX_MAP_HOLDOUT_MAPE = 12;
+const MAX_MAP_HOLDOUT_ROUTE_ERROR = 20;
+const MAX_MAP_LEAVE_ONE_OUT_MAPE = 15;
+const MAX_MAP_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
 const MIN_TRAINING_ROUTES = 20;
 const MIN_HOLDOUT_ROUTES = 6;
 const MIN_SOUTHERN_TRAINING_ROUTES = 4;
@@ -101,6 +106,11 @@ async function main() {
     holdoutMaxErrorPercent: fitted.metrics.holdout.maxAbsolutePercent,
     leaveOneOutMapePercent: fitted.metrics.leaveOneOut?.meanAbsolutePercent ?? null,
     leaveOneOutMaxRouteErrorPercent: fitted.metrics.leaveOneOut?.maxAbsolutePercent ?? null,
+    mapTrainingMapePercent: fitted.metrics.visualProjection.training.meanAbsolutePercent,
+    mapHoldoutMapePercent: fitted.metrics.visualProjection.holdout.meanAbsolutePercent,
+    mapHoldoutMaxErrorPercent: fitted.metrics.visualProjection.holdout.maxAbsolutePercent,
+    mapLeaveOneOutMapePercent: fitted.metrics.visualProjection.training.meanAbsolutePercent,
+    mapLeaveOneOutMaxRouteErrorPercent: fitted.metrics.visualProjection.training.maxAbsolutePercent,
     trainingRouteCount: fitted.metrics.spatialCoverage.trainingRouteCount,
     holdoutRouteCount: fitted.metrics.spatialCoverage.holdoutRouteCount,
     trainingRoutesSouthOf30S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf30S,
@@ -118,7 +128,12 @@ async function main() {
       maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
       maxLeaveOneOutMapePercent: MAX_LEAVE_ONE_OUT_MAPE,
-      maxLeaveOneOutRouteErrorPercent: MAX_LEAVE_ONE_OUT_ROUTE_ERROR
+      maxLeaveOneOutRouteErrorPercent: MAX_LEAVE_ONE_OUT_ROUTE_ERROR,
+      maxMapTrainingMapePercent: MAX_MAP_TRAINING_MAPE,
+      maxMapHoldoutMapePercent: MAX_MAP_HOLDOUT_MAPE,
+      maxMapHoldoutRouteErrorPercent: MAX_MAP_HOLDOUT_ROUTE_ERROR,
+      maxMapLeaveOneOutMapePercent: MAX_MAP_LEAVE_ONE_OUT_MAPE,
+      maxMapLeaveOneOutRouteErrorPercent: MAX_MAP_LEAVE_ONE_OUT_ROUTE_ERROR
     }
   };
   const accepted =
@@ -131,7 +146,12 @@ async function main() {
     qualityGate.trainingRouteCount >= MIN_TRAINING_ROUTES &&
     qualityGate.holdoutRouteCount >= MIN_HOLDOUT_ROUTES &&
     qualityGate.trainingRoutesSouthOf30S >= MIN_SOUTHERN_TRAINING_ROUTES &&
-    qualityGate.holdoutRoutesSouthOf30S >= MIN_SOUTHERN_HOLDOUT_ROUTES;
+    qualityGate.holdoutRoutesSouthOf30S >= MIN_SOUTHERN_HOLDOUT_ROUTES &&
+    qualityGate.mapTrainingMapePercent <= MAX_MAP_TRAINING_MAPE &&
+    qualityGate.mapHoldoutMapePercent <= MAX_MAP_HOLDOUT_MAPE &&
+    qualityGate.mapHoldoutMaxErrorPercent <= MAX_MAP_HOLDOUT_ROUTE_ERROR &&
+    qualityGate.mapLeaveOneOutMapePercent <= MAX_MAP_LEAVE_ONE_OUT_MAPE &&
+    qualityGate.mapLeaveOneOutMaxRouteErrorPercent <= MAX_MAP_LEAVE_ONE_OUT_ROUTE_ERROR;
 
   const summary = {
     schemaVersion: 1,
@@ -151,7 +171,9 @@ async function main() {
       trainingUnit: 'one independent airport pair, target is median of >=3 high-coverage observed flights',
       splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted',
       coverageDenominator: 'full-flight-duration',
-      distancePolicy: 'observed-only'
+      distancePolicy: 'observed-only',
+      chordGeometry: fitted.model.chordGeometry,
+      mapVisualCalibration: 'The primary map scale is fitted and validated separately from the route-neighbour flight-mileage estimate. Only visualProjection metrics can approve replacement map coefficients.'
     },
     model: fitted.model,
     metrics: fitted.metrics,

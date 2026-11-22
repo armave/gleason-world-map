@@ -369,6 +369,20 @@ function summarizeErrors(routes, errors) {
   };
 }
 
+/**
+ * Error of the actual primary map measurement: its displayed 12-circle chord
+ * multiplied only by the map's one radial scale. This excludes the local
+ * route-neighbour correction used for the secondary flight-mileage estimate.
+ */
+function visualProjectionError(route, radialScaleKm, radialWarp) {
+  const chord = unitDiskChord(
+    route.airportA, route.airportB, radialWarp, 'visual-12-circle'
+  );
+  if (!Number.isFinite(chord) || !Number.isFinite(radialScaleKm) ||
+      !(radialScaleKm > 0) || !(route.medianTrackKm > 0)) return NaN;
+  return (chord * radialScaleKm / route.medianTrackKm - 1) * 100;
+}
+
 export function fitFlightCalibration(dataset) {
   const radialWarp = DEFAULT_RADIAL_WARP;
   const training = routeObservations(dataset, 'train', radialWarp);
@@ -397,12 +411,28 @@ export function fitFlightCalibration(dataset) {
   const trainingMetrics = summarizeErrors(training, leaveOneOutErrors);
   const holdoutMetrics = summarizeErrors(holdout, holdoutErrors);
 
+  // Independent route-level validation for the primary displayed map chord.
+  // LOO folds refit only the one global radial scale on the remaining routes.
+  const visualProjectionTrainingErrors = training.map(route => {
+    const subset = examples.filter(example => example.routeId !== route.routeId);
+    const looModel = modelFromExamples(subset, dataset.schemaVersion, radialWarp);
+    return visualProjectionError(route, looModel.radialScaleKm, radialWarp);
+  });
+  const visualProjectionHoldoutErrors = holdout.map(route =>
+    visualProjectionError(route, model.radialScaleKm, radialWarp)
+  );
+  const visualProjection = {
+    training: summarizeErrors(training, visualProjectionTrainingErrors),
+    holdout: summarizeErrors(holdout, visualProjectionHoldoutErrors)
+  };
+
   return {
     model,
     metrics: {
       training: trainingMetrics,
       holdout: holdoutMetrics,
       leaveOneOut: trainingMetrics,
+      visualProjection,
       spatialCoverage
     }
   };

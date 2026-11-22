@@ -102,6 +102,10 @@ test('flight telemetry calibration fits a radial scale and direction-aware route
   assert.equal(result.metrics.training.routeCount, 12);
   assert.equal(result.metrics.holdout.routeCount, 4);
   assert.equal(result.metrics.leaveOneOut.routeCount, 12);
+  assert.equal(result.metrics.visualProjection.training.routeCount, 12);
+  assert.equal(result.metrics.visualProjection.holdout.routeCount, 4);
+  assert.ok(Number.isFinite(result.metrics.visualProjection.training.meanAbsolutePercent));
+  assert.ok(Number.isFinite(result.metrics.visualProjection.holdout.maxAbsolutePercent));
   const prediction = predictFlightCalibratedKm(
     airports[1], airports[8], result.model
   );
