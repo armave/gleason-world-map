@@ -165,8 +165,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /endpointDistanceCalibration/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
-  assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
+  assert.match(app, /The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support/);
+  assert.match(app, /The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -193,7 +193,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Exact Euclidean length of the displayed straight connector/);
+ assert.match(html,/Euclidean map-plane chord · not flown route mileage/);
   assert.match(html,/continuous radial profile used by both the map and the path fitter/);
 });
 
@@ -233,24 +233,27 @@ test('distance connector is one straight projected segment measured in the map p
 
 
 test('the empirical route estimate and flat-disk connector remain separate measurements',()=>{
- assert.match(html,/Empirical route-distance estimate/);
- assert.match(html,/Flat-disk connector length/);
- assert.match(html,/Observed ADS-B mileage estimate from nearby airport-pair references/);
+ assert.match(html,/Empirical route-mileage estimate/);
+ assert.match(html,/Projected flat-disk chord/);
+ assert.match(html,/Shown only for endpoint pairs inside validated ADS-B route support/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
  assert.match(app,/endpointDistanceEstimateMeters/);
  assert.match(app,/routeCalibration\.neighborRouteIds/);
- assert.match(app,/Exact Euclidean length of the straight connector in the displayed flat disk/);
+ assert.match(app,/Euclidean chord in the displayed flat-disk map plane · not flown route mileage/);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
  assert.match(app,/endpointDistanceCalibration/);
- assert.match(app,/routeCalibration\.supportStatus/);
+ assert.match(app,/routeCalibration\?\.supportStatus==='supported'/);
+ assert.match(app,/'Not validated'/);
+ assert.match(app,/Numeric estimate withheld/);
+ assert.match(app,/projected disk chord/);
  assert.match(app,/routeCalibration\.validation/);
 });
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(routeEstimate\)/);
+ assert.match(app,/const label='Disk chord · '\+formatMeasurementKilometres\(measurement\.distanceMeters\)/);
+ assert.match(app,/distanceValue'\)\.textContent=routeSupported&&Number\.isFinite\(routeEstimate\)/);
  assert.match(app,/flightDistanceValue'\)\.textContent=Number\.isFinite\(chordDistance\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
