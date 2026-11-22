@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import {
   DISK_RADIAL_SCALE_KM, DISK_RADIUS_KM,
-  colatitudeRadians, radialDistanceFromNorthKm, radialFraction,
+  colatitudeRadians, radialDistanceFromNorthKm, baseRadialDistanceFromNorthKm,
+  radialFraction, baseRadialFraction,
   latitudeFromRadialDistanceKm, project, unproject,
-  flatDiskDistanceMeters, flatDiskLinePath,
+  flatDiskDistanceMeters, baseFlatDiskDistanceMeters, flatDiskLinePath,
   northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2,
   flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
   DISK_RADIUS_METERS
@@ -45,6 +46,41 @@ test('smooth radial warp preserves the pole and rim while recalibrating latitude
   assert.ok(Number.isFinite(radialWarpDerivative(0, FLIGHT_CALIBRATION.radialWarp)));
   assert.ok(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp) > 0);
   assert.ok(Number.isFinite(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp)));
+});
+
+test('smooth 12-circle visual calibration preserves both anchors and has no hard ring joins', () => {
+  assert.equal(radialFraction(90), 0);
+  assert.equal(radialFraction(-90), 1);
+  assert.equal(baseRadialFraction(90), 0);
+  assert.equal(baseRadialFraction(-90), 1);
+
+  let previousVisual = -Infinity;
+  for (let lat = 90; lat >= -90; lat -= 0.25) {
+    const base = baseRadialFraction(lat);
+    const visual = radialFraction(lat);
+    assert.ok(visual > previousVisual);
+    previousVisual = visual;
+    close(visual, base + base * (1 - base) / 3, 1e-12);
+    close(baseRadialDistanceFromNorthKm(lat), base * DISK_RADIUS_KM, 1e-8);
+    close(radialDistanceFromNorthKm(lat), visual * DISK_RADIUS_KM, 1e-8);
+    close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-8);
+    if (base > 0 && base < 1) assert.ok(visual > base);
+  }
+
+  const epsilon = 1e-6;
+  for (let circle = 1; circle < 11; circle++) {
+    const q = circle / 11;
+    const left = (
+      ((q + epsilon) + (q + epsilon) * (1 - q - epsilon) / 3) -
+      ((q - epsilon) + (q - epsilon) * (1 - q + epsilon) / 3)
+    ) / (2 * epsilon);
+    close(left, (4 - 2 * q) / 3, 1e-8);
+  }
+
+  const a = point(40, 10), b = point(40, 20);
+  const visual = flatDiskDistanceMeters(a, b);
+  const base = baseFlatDiskDistanceMeters(a, b);
+  assert.ok(visual > base);
 });
 
 test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {
