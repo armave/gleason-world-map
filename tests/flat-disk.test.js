@@ -19,6 +19,9 @@ import { warpLongitudeRadians, wrapRadians } from '../src/core/visual-longitude-
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
 const point = (lat, lon) => ({lat, lon});
+const identityEdgeDistance = scale => (a,b) =>
+  Math.hypot(b.lon-a.lon,b.lat-a.lat)*scale;
+
 
 test('visible radial scale and disk radius use the observed-flight-path calibration parameters', () => {
   close(DISK_RADIAL_SCALE_KM, FLIGHT_PATH_CALIBRATION.radialScaleKm, 1e-12);
@@ -193,11 +196,11 @@ test('sector area uses Euclidean disk geometry', () => {
 
 test('polygon uses shoelace area and straight-edge perimeter', () => {
   const triangle = [point(0, 0), point(0, 3), point(4, 0)];
-  const result = flatDiskPolygonMetrics(triangle, (lon, lat) => [lon, lat], DISK_RADIUS_KM);
+  const result = flatDiskPolygonMetrics(triangle, (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000));
   assert.ok(result);
   close(result.areaM2, 6e6, 1e-6);
   close(result.perimeterM, 12e3, 1e-6);
-  const reversed = flatDiskPolygonMetrics([...triangle].reverse(), (lon, lat) => [lon, lat], DISK_RADIUS_KM);
+  const reversed = flatDiskPolygonMetrics([...triangle].reverse(), (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000));
   close(reversed.areaM2, result.areaM2, 1e-6);
   close(reversed.perimeterM, result.perimeterM, 1e-6);
 });
@@ -205,7 +208,7 @@ test('polygon uses shoelace area and straight-edge perimeter', () => {
 test('polygon closure is automatic and self-intersections are rejected', () => {
   const open = [point(0, 0), point(0, 4), point(4, 4), point(4, 0)];
   const closed = [...open, point(0, 0)];
-  const measure = points => flatDiskPolygonMetrics(points, (lon, lat) => [lon, lat], DISK_RADIUS_KM);
+  const measure = points => flatDiskPolygonMetrics(points, (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000));
   assert.deepEqual(measure(open), measure(closed));
   const bowTie = [point(0, 0), point(4, 4), point(0, 4), point(4, 0)];
   assert.equal(measure(bowTie), null);
@@ -214,7 +217,7 @@ test('polygon closure is automatic and self-intersections are rejected', () => {
 test('shoelace area remains accurate for a small polygon far from the coordinate origin', () => {
   const offsetProject = (lon, lat) => [10_000_000 + lon, 10_000_000 + lat];
   const square = [point(0, 0), point(0, 1), point(1, 1), point(1, 0)];
-  const result = flatDiskPolygonMetrics(square, offsetProject, DISK_RADIUS_METERS);
+  const result = flatDiskPolygonMetrics(square, offsetProject, DISK_RADIUS_METERS, identityEdgeDistance(1));
   close(result.areaM2, 1, 1e-12);
   close(result.perimeterM, 4, 1e-12);
 });
@@ -224,7 +227,7 @@ test('non-adjacent polygon edges that touch are rejected as self-intersections',
     point(0, 0), point(0, 4), point(4, 4), point(0, 2), point(4, 0)
   ];
   assert.equal(
-    flatDiskPolygonMetrics(touching, (lon, lat) => [lon, lat], DISK_RADIUS_KM),
+    flatDiskPolygonMetrics(touching, (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000)),
     null
   );
 });
@@ -232,7 +235,7 @@ test('non-adjacent polygon edges that touch are rejected as self-intersections',
 test('degenerate collinear polygons do not report a zero-area measurement', () => {
   const collinear = [point(0, 0), point(0, 2), point(0, 4)];
   assert.equal(
-    flatDiskPolygonMetrics(collinear, (lon, lat) => [lon, lat], DISK_RADIUS_KM),
+    flatDiskPolygonMetrics(collinear, (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000)),
     null
   );
 });
@@ -300,11 +303,11 @@ test('canvas normalization keeps planar measurements stable across resize', () =
   close(flatDiskDistanceMeters(a, b), flatDiskDistanceMeters(a, b), 0);
   const small = flatDiskPolygonMetrics(
     [a, b, point(-5, 80)],
-    (lon, lat) => project(lon, lat, 300), 300
+    (lon, lat) => project(lon, lat, 300), 300, baseFlatDiskDistanceMeters
   );
   const large = flatDiskPolygonMetrics(
     [a, b, point(-5, 80)],
-    (lon, lat) => project(lon, lat, 900), 900
+    (lon, lat) => project(lon, lat, 900), 900, baseFlatDiskDistanceMeters
   );
   close(small.areaM2, large.areaM2, 0.1);
   close(small.perimeterM, large.perimeterM, 1e-5);
@@ -319,10 +322,10 @@ test('invalid coordinates and invalid calibration fail safely', () => {
   assert.deepEqual(flatDiskLinePath(point(91, 0), point(0, 0),
     (lon, lat) => [lon, lat]), []);
   assert.equal(flatDiskPolygonMetrics(
-    [point(0, 0), point(91, 1), point(1, 1)], (lon, lat) => [lon, lat], DISK_RADIUS_KM
+    [point(0, 0), point(91, 1), point(1, 1)], (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000)
   ), null);
   assert.equal(flatDiskPolygonMetrics(
-    [point(0, 0), point(1, 1)], (lon, lat) => [lon, lat], 0
+    [point(0, 0), point(1, 1)], (lon, lat) => [lon, lat], 0, identityEdgeDistance(1000)
   ), null);
   assert.equal(flatDiskFeatureAreaM2({geometry:{type:'Point',coordinates:[0,0]}},
     (lon, lat) => [lon, lat], DISK_RADIUS_KM), null);
