@@ -1,6 +1,6 @@
 import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
 import {FLIGHT_PATH_CALIBRATION} from '../core/flight-path-calibration-parameters.js';
-import {isGloballyValidatedFlightPathCalibration} from '../core/flight-path-calibration.js';
+import {isGloballyValidatedFlightPathCalibration} from '../core/flight-path-calibration-status.js';
 import FLIGHT_PATH_CALIBRATION_SUMMARY from '../../data/flight-path-calibration-summary.json';
 import {
  ACTIVE_VISUAL_LONGITUDE_WARP,
