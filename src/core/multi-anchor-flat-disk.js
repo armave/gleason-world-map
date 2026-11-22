@@ -178,25 +178,59 @@ function coverageFor(training, holdout, errors = []) {
   };
 }
 
-function graphConnected(anchorIds, observations) {
-  if (!anchorIds.length) return false;
-  const adjacent = new Map(anchorIds.map(id => [id, []]));
+function graphRigidityDiagnostics(anchorIds, observations) {
+  const adjacent = new Map(anchorIds.map(id => [id, new Set()]));
   for (const item of observations) {
-    adjacent.get(item.a.id)?.push(item.b.id);
-    adjacent.get(item.b.id)?.push(item.a.id);
+    adjacent.get(item.a.id)?.add(item.b.id);
+    adjacent.get(item.b.id)?.add(item.a.id);
   }
-  const visited = new Set([anchorIds[0]]);
-  const pending = [anchorIds[0]];
-  while (pending.length) {
-    const id = pending.pop();
-    for (const next of adjacent.get(id) || []) {
-      if (!visited.has(next)) {
-        visited.add(next);
-        pending.push(next);
+  const degrees = [...adjacent.values()].map(neighbours => neighbours.size);
+  const minimumDegree = degrees.length ? Math.min(...degrees) : 0;
+  const isConnectedAfterRemoving = excluded => {
+    const remaining = anchorIds.filter(id => !excluded.has(id));
+    if (remaining.length < 2) return remaining.length === 1;
+    const visited = new Set([remaining[0]]);
+    const pending = [remaining[0]];
+    while (pending.length) {
+      const id = pending.pop();
+      for (const next of adjacent.get(id) || []) {
+        if (!excluded.has(next) && !visited.has(next)) {
+          visited.add(next);
+          pending.push(next);
+        }
+      }
+    }
+    return visited.size === remaining.length;
+  };
+
+  let twoVertexConnected = anchorIds.length >= 3 && isConnectedAfterRemoving(new Set());
+  if (twoVertexConnected) {
+    for (const id of anchorIds) {
+      if (!isConnectedAfterRemoving(new Set([id]))) {
+        twoVertexConnected = false;
+        break;
       }
     }
   }
-  return visited.size === anchorIds.length;
+  let threeVertexConnected = twoVertexConnected && minimumDegree >= 3 &&
+    observations.length >= Math.max(0, 2 * anchorIds.length - 2);
+  if (threeVertexConnected) {
+    outer:
+    for (let first = 0; first < anchorIds.length; first++) {
+      for (let second = first + 1; second < anchorIds.length; second++) {
+        if (!isConnectedAfterRemoving(new Set([anchorIds[first], anchorIds[second]]))) {
+          threeVertexConnected = false;
+          break outer;
+        }
+      }
+    }
+  }
+  return {
+    edgeCount: observations.length,
+    minimumDegree,
+    twoVertexConnected,
+    threeVertexConnected
+  };
 }
 
 function solveLinearSystem(matrix, vector) {
@@ -465,8 +499,14 @@ function optimizePositions(training, anchors, options = {}) {
   if (anchorIds.length > MULTI_ANCHOR_FILTERS.maximumControlPoints) {
     throw new Error('Training anchor count exceeds the configured solver limit');
   }
-  if (!graphConnected(anchorIds, training)) {
-    throw new Error('Training anchor graph is disconnected');
+  const rigidity = graphRigidityDiagnostics(anchorIds, training);
+  if (!rigidity.threeVertexConnected) {
+    throw new Error(
+      'Training anchor network is not sufficiently redundant: require a ' +
+      '3-vertex-connected graph, minimum degree 3, and at least 2N-2 pairs ' +
+      '(observed ' + rigidity.edgeCount + ' pairs, minimum degree ' +
+      rigidity.minimumDegree + ')'
+    );
   }
 
   const nodeIndex = new Map(anchorIds.map((id, index) => [id, index]));
