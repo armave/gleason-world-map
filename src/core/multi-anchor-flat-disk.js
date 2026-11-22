@@ -521,6 +521,7 @@ function topologyMetrics(model) {
 /** Damped Newton inverse for previewing a candidate; never used by production. */
 export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY) ||
+      !options || typeof options !== 'object' ||
       !isValidWarpModel(model) ||
       Math.hypot(targetX, targetY) > model.diskRadiusKm * (1 + 1e-8)) return null;
   let x = targetX, y = targetY;
@@ -888,6 +889,9 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     });
     optimized = optimizePositions(training, anchors, options);
     model = buildWarp(optimized.seed, optimized.positions, optimized.anchorIds, options);
+    if (!isValidWarpModel(model)) {
+      throw new Error('Candidate radial-basis fit produced invalid model parameters');
+    }
   } catch (error) {
     return {
       accepted: false,
