@@ -236,7 +236,7 @@ test('the empirical route estimate and flat-disk connector remain separate measu
  assert.match(html,/Flat-disk connector length/);
  assert.match(html,/Observed ADS-B mileage estimate from nearby airport-pair references/);
  assert.match(html,/id="visualRadialRows"/);
- assert.match(html,/1\\.00×[\\s\\S]*0\\.50×/);
+ assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
  assert.match(app,/endpointDistanceEstimateMeters/);
  assert.match(app,/routeCalibration\.neighborRouteIds/);
