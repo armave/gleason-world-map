@@ -439,7 +439,7 @@ function drawMeasure(){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
-   const label=formatMeasurementKilometres(measurement.distanceMeters);
+   const label='Disk chord · '+formatMeasurementKilometres(measurement.distanceMeters);
    drawMeasurementLabelAtMap(
     (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
    );
@@ -629,26 +629,25 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const routeEstimate=measurement.endpointDistanceEstimateMeters;
   const routeCalibration=measurement.endpointDistanceCalibration;
+  const routeSupported=routeCalibration?.supportStatus==='supported';
+  const routeEstimate=routeSupported?measurement.endpointDistanceEstimateMeters:null;
   const chordDistance=measurement.distanceMeters;
-  $('distanceValue').textContent=Number.isFinite(routeEstimate)
-   ?formatDistance(routeEstimate):'Unavailable';
-  const visibleSupportLabel=routeCalibration?.supportStatus==='supported'
-   ?'SUPPORTED'
+  $('distanceValue').textContent=routeSupported&&Number.isFinite(routeEstimate)
+   ?formatDistance(routeEstimate)
+   :routeCalibration?.supportStatus==='extrapolated'?'Not validated':'Unavailable';
+  $('distanceSub').textContent=routeSupported&&Number.isFinite(routeEstimate)
+   ?'Supported typical flown mileage from observed ADS-B routes · not a selected flight path'
    :routeCalibration?.supportStatus==='extrapolated'
-    ?'EXTRAPOLATED · provisional'
-    :'support unavailable';
-  $('distanceSub').textContent=Number.isFinite(routeEstimate)
-   ?'Typical flown mileage · '+visibleSupportLabel+' · not a selected flight path'
-   :'No empirical route-distance estimate available';
+    ?'Numeric estimate withheld · outside validated route-feature and chord-length support'
+    :'No supported empirical route-mileage estimate available';
   $('flightDistanceValue').textContent=Number.isFinite(chordDistance)
    ?formatDistance(chordDistance):'Unavailable';
   $('flightDistanceSub').textContent=Number.isFinite(chordDistance)
-   ?'Exact Euclidean length of the straight connector in the displayed flat disk'
-   :'Displayed map connector length unavailable';
+   ?'Euclidean chord in the displayed flat-disk map plane · not flown route mileage'
+   :'Displayed flat-disk chord unavailable';
 
-  $('measureHelp').textContent='The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data, calibrated against nearby airport-pair examples in the current flat-disk projection. It is not a selected flight path or a guaranteed shortest distance. The secondary value is the exact Euclidean length of the straight connector drawn between the two endpoints in the displayed 12-circle-warped disk. The projection and calibration use the project’s flat-disk geometry; no globe, sphere, ellipsoid or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point. Estimates outside the validated route-feature range are explicitly marked as extrapolations.';
+  $('measureHelp').textContent='The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support. Outside that domain, the numeric estimate is withheld and the panel says Not validated. The secondary value is the exact Euclidean chord in the displayed flat-disk map plane; it is not a flown route mileage. The projection, connector and scale bar continue to use the project’s flat-disk geometry. No globe, sphere, ellipsoid, great-circle or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point.';
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   if(routeCalibration){
    const validation=routeCalibration.validation||{};
@@ -657,7 +656,7 @@ function updateMeasurement(){
    const supported=routeCalibration.supportStatus==='supported';
    support.textContent=supported
     ?'Supported by nearby reference routes · nearest feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' · independent supported holdout MAPE '+(Number.isFinite(holdout?.meanAbsolutePercent)?holdout.meanAbsolutePercent.toFixed(1)+'%':'not available')+' ('+(holdout?.supportedRouteCount??'—')+'/'+(holdout?.routeCount??'—')+' pairs).'
-    :'Extrapolated · nearest reference feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' exceeds the validated support limit '+routeCalibration.maxSupportedFeatureDistance.toFixed(2)+'; treat the estimate as provisional.';
+    :'No route-mileage number shown · nearest reference feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' exceeds the validated support limit '+routeCalibration.maxSupportedFeatureDistance.toFixed(2)+';';
    const routeIds=routeCalibration.neighborRouteIds||[];
    const routeWeights=routeCalibration.neighborWeights||[];
    routes.textContent='Nearest reference routes: '+(routeIds.length
@@ -671,7 +670,7 @@ function updateMeasurement(){
   $('calibrationSupport').textContent='Empirical route support appears after both endpoints are set.';
   $('calibrationRoutes').textContent='Nearest reference routes: —';
   $('flightDistanceValue').textContent='—';
-  $('flightDistanceSub').textContent='Exact map-plane length of the displayed connector';
+  $('flightDistanceSub').textContent='Euclidean chord in the flat-disk map plane · not flown route mileage';
   $('distanceValue').textContent='—';
   $('distanceSub').textContent='Set two endpoints to estimate typical route mileage';
   $('measureHelp').textContent=points.length===1
@@ -922,100 +921,15 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const routeEstimate=measurement.endpointDistanceEstimateMeters;
-  const supportLabel=measurement.endpointDistanceCalibration?.supportStatus==='supported'
-   ?'supported' :'EXTRAPOLATED / provisional';
-  measurementText='Route estimate '+(Number.isFinite(routeEstimate)?formatDistance(routeEstimate):'Unavailable')+
-   ' · '+supportLabel+' · connector '+formatDistance(measurement.distanceMeters);
- }
- outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
- outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
- outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
-  const pathFitCaption=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion>0
-   ? 'Visible map · ADS-B projected-path fit v'+FLIGHT_PATH_CALIBRATION.schemaVersion+
-    ' · '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+' independent holdout route pairs'
-   : 'Visible map · previously approved flat-disk scale retained · ADS-B projected-path fit pending';
-  outputCtx.fillText(pathFitCaption,14*dpr,canvas.height+53*dpr);
- const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
- outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
- output.toBlob(blob=>{
-  if(!blob){$('status').textContent='Could not create PNG.';return;}
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download='gleason-world-map-'+generatedAt.slice(0,10)+'.png';
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with calibration and source metadata.';
- },'image/png');
-}
-async function copyShareLink(){
- const url=new URL(window.location.href);url.search='';
- url.searchParams.set('z',zoom.toFixed(3));url.searchParams.set('px',(panX/baseR).toFixed(4));url.searchParams.set('py',(panY/baseR).toFixed(4));url.searchParams.set('r',rotationDegrees.toFixed(1));url.searchParams.set('style',visualStyle);
- url.searchParams.set('ly',[layers.countries,layers.grid,layers.capitals,layers.capitalNames,layers.antarctica,layers.countryNames,layers.oceanLabels,layers.coastlines].map(v=>v?'1':'0').join(''));
-  url.searchParams.set('flat','1');
- url.searchParams.set('hist',[historical.enabled?1:0,historical.opacity,historical.centerX,historical.centerY,historical.diameter,historical.scale].join(','));url.searchParams.set('hr',historical.rotation.toFixed(1));
- if(points[0])url.searchParams.set('a',`${points[0].lat.toFixed(5)},${points[0].lon.toFixed(5)}`);
- if(points[1])url.searchParams.set('b',`${points[1].lat.toFixed(5)},${points[1].lon.toFixed(5)}`);
- if(areaPoints.length)url.searchParams.set('ap',areaPoints.map(p=>`${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(';'));
- if(registrationPoints.length)url.searchParams.set('gc',registrationPoints.map(p=>`${p.u.toFixed(6)},${p.v.toFixed(6)},${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(';'));
- try{await navigator.clipboard.writeText(url.toString());$('status').textContent='Share link copied to clipboard.';}
- catch(err){const field=document.createElement('textarea');field.value=url.toString();field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();const copied=document.execCommand('copy');field.remove();$('status').textContent=copied?'Share link copied to clipboard.':'Copy the URL from your browser address bar.';}
-}
-function runWhenIdle(callback){
- if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(callback,{timeout:1200});
- else window.setTimeout(callback,0);
-}
-function setMapLoading(active,message='Loading local geographic data…'){
- const overlay=$('mapLoading'),spinner=$('mapLoadingSpinner'),title=$('mapLoadingTitle'),copy=$('mapLoadingMessage'),retry=$('retryMapLoading');
- if(!overlay)return;
- overlay.hidden=!active;overlay.classList.remove('is-error');overlay.setAttribute('aria-hidden',String(!active));
- $('mapViewport').setAttribute('aria-busy',String(active));
- if(active){spinner.hidden=false;retry.hidden=true;title.textContent='Preparing map';copy.textContent=message;}
-}
-function showLoadError(err){
- console.error(err);$('status').textContent='Could not load geographic data';
- const overlay=$('mapLoading');
- overlay.hidden=false;overlay.classList.add('is-error');overlay.setAttribute('aria-hidden','false');
- $('mapViewport').setAttribute('aria-busy','false');
- $('mapLoadingSpinner').hidden=true;
- $('mapLoadingTitle').textContent='Map data could not be loaded';
- $('mapLoadingMessage').textContent=err?.message||'The local geographic data could not be loaded.';
- $('retryMapLoading').hidden=false;
-}
-async function load(){
- const generation=++loadGeneration;
- setMapLoading(true,'Loading country boundaries and capital locations…');
- try{
-  mapQuality=readMapQuality();$('mapQuality').value=mapQuality;
-  $('status').textContent='Loading '+MAP_QUALITY_OPTIONS[mapQuality].label.toLowerCase()+' country boundaries…';
-  const [geoData,capRaw]=await Promise.all([
-   (async()=>{try{return {data:await loadCountryDataset(mapQuality),fallback:false};}
-    catch(boundaryError){if(mapQuality==='low')throw boundaryError;console.warn('Requested bundled boundary quality unavailable; falling back to low:',boundaryError);return {data:await loadCountryDataset('low'),fallback:true};}})(),
-   loadCapitalDataset()
-  ]);
-  if(generation!==loadGeneration)return;
-  features=geoData.data.features||[];
-  // Optional detail is populated after the base map is visible and interactive.
-  counties=[];coastlineData=null;coastlinePath=null;antarcticAddData=null;antarcticSurfacePaths=null;
-  if(!features.length)throw new Error('The bundled country boundary dataset contains no features.');
-  antarcticaFeature=features.find(f=>isoFor(f)==='ATA'||norm(nameFor(f))==='antarctica')||null;
-  const usable=features.filter(f=>isoFor(f)!=='ATA'&&norm(nameFor(f))!=='antarctica');
-  countries=usable.map(f=>({feature:f,iso:isoFor(f),name:nameFor(f),center:centroidOfFeature(f)})).filter(c=>c.iso&&c.name);
-  antarcticaCountry=antarcticaFeature?{feature:antarcticaFeature,iso:'ATA',name:nameFor(antarcticaFeature)||'Antarctica',center:centroidOfFeature(antarcticaFeature)}:null;
-  capitals=capRaw.map(p=>{const c=countries.find(country=>country.iso===p.iso);return {...p,countryName:c?c.name:'',country:c||null};});
-  searchIndex=buildSearchIndex({countries,capitals,counties,stateNames:US_STATE_NAMES,antarctica:antarcticaCountry});
-  geometryBaseR=NaN;
-  if(!countries.length||!capitals.length)throw new Error('One or more bundled geographic datasets did not contain usable records.');
-  countryByIso.clear();capitalByIso.clear();countries.forEach(c=>countryByIso.set(c.iso,c));
-  capitals.forEach(p=>{if(!capitalByIso.has(p.iso))capitalByIso.set(p.iso,p);});
-  boundaryScaleLabel=geoData.fallback?'Natural Earth '+MAP_QUALITY_OPTIONS.low.scale+' fallback':'Natural Earth '+MAP_QUALITY_OPTIONS[mapQuality].scale;
-  restoreSharedState();publishAppState('share-link-restore');resize();draw();
-  updateStatus();$('status').textContent+=' · base map ready';
-  setMapLoading(false);
-
-  // County search, coastlines and BAS ice-surface geometry no longer delay first interaction.
-  loadCountyDataset().then(countyRaw=>{
-   if(generation!==loadGeneration)return;
-   counties=countyRaw;searchIndex=buildSearchIndex({countries,capitals,counties,stateNames:US_STATE_NAMES,antarctica:antarcticaCountry});
-   if($('search').value.trim())drawSearchResults($('search').value);
+  const routeCalibration=measurement.endpointDistanceCalibration;
+  const routeEstimate=routeCalibration?.supportStatus==='supported'
+   ?measurement.endpointDistanceEstimateMeters:null;
+  const routeLabel=Number.isFinite(routeEstimate)
+   ?'Supported route-mileage estimate '+formatDistance(routeEstimate)
+   :routeCalibration?.supportStatus==='extrapolated'
+    ?'Route mileage not validated · numeric estimate withheld'
+    :'Route-mileage estimate unavailable';
+  measurementText=routeLabel+' · projected disk chord '+formatDistance(measurement.distanceMeters);
   }).catch(error=>console.warn('County search data unavailable:',error));
 
   loadCoastlineDataset().then(raw=>{
