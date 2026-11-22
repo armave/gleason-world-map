@@ -773,7 +773,7 @@ function restoreSharedState(){
  syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();
 }
-function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'));}
+function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'),$('calibrationFormula'),$('pathCalibrationStatus'));}
 function syncHistoricalControls(){
  const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
  for(const [id,key,unit] of specs){$(id).value=historical[key];$(id+'Value').textContent=unit==='°'?Number(historical[key]).toFixed(1)+unit:Math.round(historical[key]*10)/10+unit;}
