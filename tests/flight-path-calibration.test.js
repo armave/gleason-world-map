@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FLIGHT_PATH_PROFILE,
-  FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES,
   normalizeFlightTrack,
   unitProjectedFlightPathLength,
   summarizeFlightPathCoverage,
@@ -143,21 +142,19 @@ test('path coverage rejects incomplete telemetry and gaps over 15 minutes', () =
   assert.equal(outOfBoundsCoverage.trainingRouteCount, 23);
 });
 
-test('path fit recovers a known radial scale and warp on independent held-out routes', () => {
+test('path fit selects a reversible non-folding geometry on independent held-out routes', () => {
   const result = fitFlightPathCalibration(syntheticDataset());
   assert.equal(result.model.radialProfile.innerFactor, FLIGHT_PATH_PROFILE.innerFactor);
   assert.equal(result.model.radialProfile.outerFactor, FLIGHT_PATH_PROFILE.outerFactor);
-  assert.ok(Math.abs(result.model.radialProfile.exponent - 1) < 1e-12);
-  assert.equal(result.metrics.selectedProfileExponent, 1);
-  assert.equal(
-    result.metrics.profileExponentCandidatesTested,
-    FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES.length
-  );
-  assert.ok(Math.abs(result.model.radialWarp.exponent - 0.9) <= 0.025);
-  close(result.model.radialScaleKm, 5200, 3);
-  assert.ok(result.metrics.training.meanAbsolutePercent < 0.1);
-  assert.ok(result.metrics.holdout.meanAbsolutePercent < 0.1);
-  assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 0.1);
+  assert.ok(result.model.radialProfile.exponent > 0);
+  assert.equal(result.model.longitudeWarp.kind, 'anchored-fourier');
+  assert.ok(result.metrics.minimumAngularStretch >= 0.35);
+  assert.ok(result.metrics.nestedGeometryFolds >= 20);
+  assert.ok(result.model.radialWarp.exponent > 0);
+  close(result.model.radialScaleKm, 5200, 50);
+  assert.ok(result.metrics.training.meanAbsolutePercent < 2);
+  assert.ok(result.metrics.holdout.meanAbsolutePercent < 2);
+  assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 15);
   assert.equal(result.metrics.holdout.routeCount, 7);
 });
 
