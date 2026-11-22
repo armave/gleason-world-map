@@ -32,13 +32,15 @@ export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
 
 export const FLIGHT_PATH_PROFILE = Object.freeze({
   innerFactor: 1,
-  outerFactor: 0.5
+  outerFactor: 0.5,
+  exponent: 1
 });
 
 const DEG = Math.PI / 180;
 const MIN_EXPONENT = 0.65;
 const MAX_EXPONENT = 1.35;
 const EXPONENT_STEP = 0.025;
+const PROFILE_EXPONENT_CANDIDATES = Object.freeze([0.7, 0.85, 1, 1.15, 1.3]);
 const median = values => {
   if (!values.length) return NaN;
   const ordered = [...values].sort((a, b) => a - b);
@@ -117,9 +119,15 @@ function pointInUnitDisk(coordinate, radialWarp) {
   const q = radialFractionFromUnitColatitude(normalizedColatitude, radialWarp);
   if (!Number.isFinite(q)) return null;
 
-  const taper = FLIGHT_PATH_PROFILE.innerFactor - FLIGHT_PATH_PROFILE.outerFactor;
+  const profile = arguments.length > 2 && arguments[2]
+    ? arguments[2] : FLIGHT_PATH_PROFILE;
+  const innerFactor = profile.innerFactor ?? FLIGHT_PATH_PROFILE.innerFactor;
+  const outerFactor = profile.outerFactor ?? FLIGHT_PATH_PROFILE.outerFactor;
+  const exponent = profile.exponent ?? FLIGHT_PATH_PROFILE.exponent;
+  const taper = innerFactor - outerFactor;
   const integratedFraction =
-    FLIGHT_PATH_PROFILE.innerFactor * q - taper * q * q / 2;
+    outerFactor * q +
+    taper * (1 - Math.pow(1 - q, exponent + 1)) / (exponent + 1);
   const radius = Math.PI * integratedFraction;
   return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
 }
@@ -130,7 +138,8 @@ function pointInUnitDisk(coordinate, radialWarp) {
  */
 export function unitProjectedFlightPathLength(
   trackCoordinates,
-  radialWarp = DEFAULT_RADIAL_WARP
+  radialWarp = DEFAULT_RADIAL_WARP,
+  radialProfile = FLIGHT_PATH_PROFILE
 ) {
   if (!Array.isArray(trackCoordinates)) return NaN;
   let total = 0;
@@ -140,7 +149,7 @@ export function unitProjectedFlightPathLength(
     if (!Array.isArray(sequence) || sequence.length < 2) continue;
     let previous = null;
     for (const coordinate of sequence) {
-      const current = pointInUnitDisk(coordinate, radialWarp);
+      const current = pointInUnitDisk(coordinate, radialWarp, radialProfile);
       if (!current) {
         previous = null;
         continue;
@@ -273,7 +282,8 @@ function hasMinimumProjectedCoverage(coverage, limits) {
 
 export function summarizeUsableProjectedPathCoverage(
   dataset,
-  radialWarp = DEFAULT_RADIAL_WARP
+  radialWarp = DEFAULT_RADIAL_WARP,
+  radialProfile = FLIGHT_PATH_PROFILE
 ) {
   const records = routeFlightRecords(dataset).filter(({ route, flights }) =>
     flights.length >= FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute &&
@@ -283,12 +293,12 @@ export function summarizeUsableProjectedPathCoverage(
   const training = records.filter(item => item.route.split === 'train');
   const holdout = records.filter(item => item.route.split === 'holdout');
   return summarizeProjectedRouteCoverage(
-    makeRouteExamplesFromRecords(training, radialWarp),
-    makeRouteExamplesFromRecords(holdout, radialWarp)
+    makeRouteExamplesFromRecords(training, radialWarp, radialProfile),
+    makeRouteExamplesFromRecords(holdout, radialWarp, radialProfile)
   );
 }
 
-function makeRouteExamples(dataset, radialWarp) {
+function makeRouteExamples(dataset, radialWarp, radialProfile = FLIGHT_PATH_PROFILE) {
   return routeFlightRecords(dataset).flatMap(({ route, flights }) => {
     if (!['train', 'holdout'].includes(route.split) ||
         !Number.isFinite(route.airportA?.lat) ||
@@ -301,7 +311,7 @@ function makeRouteExamples(dataset, radialWarp) {
     for (const flight of flights) {
       const measuredKm = flight.observedTrackKm ?? flight.trackKm;
       const unitPathLength = unitProjectedFlightPathLength(
-        flight.trackCoordinates, radialWarp
+        flight.trackCoordinates, radialWarp, radialProfile
       );
       if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
         measured.push(measuredKm);
@@ -366,12 +376,28 @@ function exponentCandidates() {
  * scale errors are used only to select a stable exponent; no outer validation
  * route is present in this function's inputs.
  */
-function fitTrainingExponent(training, exponent) {
+function profileExponentCandidates() {
+  return PROFILE_EXPONENT_CANDIDATES;
+}
+
+/**
+ * Fit the latitude warp and smooth radial-spacing taper on a training subset.
+ * The taper is constrained to remain positive and monotonic from the pole to
+ * the rim; only a single curvature exponent is added, avoiding 12 free
+ * parameters that would overfit the present airport-pair sample.
+ */
+function fitTrainingExponent(training, exponent, profileExponent) {
   const radialWarp = {
     ...DEFAULT_RADIAL_WARP,
     exponent
   };
-  const trainingExamples = makeRouteExamplesFromRecords(training, radialWarp);
+  const radialProfile = {
+    ...FLIGHT_PATH_PROFILE,
+    exponent: profileExponent
+  };
+  const trainingExamples = makeRouteExamplesFromRecords(
+    training, radialWarp, radialProfile
+  );
   const radialScaleKm = median(trainingExamples.map(item => item.requiredRadialScaleKm));
   const trainingMetrics = summarizeErrors(trainingExamples, radialScaleKm);
 
@@ -393,6 +419,7 @@ function fitTrainingExponent(training, exponent) {
   };
   return {
     radialWarp,
+    radialProfile,
     trainingExamples,
     radialScaleKm,
     training: trainingMetrics,
@@ -401,19 +428,25 @@ function fitTrainingExponent(training, exponent) {
   };
 }
 
-function evaluateExponent(training, holdout, exponent) {
-  const fitted = fitTrainingExponent(training, exponent);
-  const holdoutExamples = makeRouteExamplesFromRecords(holdout, fitted.radialWarp);
+function evaluateGeometry(training, holdout, exponent, profileExponent) {
+  const fitted = fitTrainingExponent(training, exponent, profileExponent);
+  const holdoutExamples = makeRouteExamplesFromRecords(
+    holdout, fitted.radialWarp, fitted.radialProfile
+  );
   const holdoutMetrics = summarizeErrors(holdoutExamples, fitted.radialScaleKm);
 
-  // Nested leave-one-route-out: for each outer route, re-select the exponent
-  // and radial scale using only the remaining training routes.
+  // Nested leave-one-route-out: re-select both shape parameters using only
+  // the remaining airport pairs; the outer route is never seen during fitting.
   const leaveOneOutErrors = training.flatMap(heldOutRoute => {
     const reducedTraining = training.filter(item =>
       item.route.routeId !== heldOutRoute.route.routeId
     );
-    const nestedCandidates = exponentCandidates().map(candidateExponent =>
-      fitTrainingExponent(reducedTraining, candidateExponent)
+    const nestedCandidates = exponentCandidates().flatMap(candidateExponent =>
+      profileExponentCandidates().map(candidateProfileExponent =>
+        fitTrainingExponent(
+          reducedTraining, candidateExponent, candidateProfileExponent
+        )
+      )
     ).filter(candidate =>
       Number.isFinite(candidate.objective) &&
       Number.isFinite(candidate.radialScaleKm) &&
@@ -424,7 +457,7 @@ function evaluateExponent(training, holdout, exponent) {
     if (!nestedFit) return [];
 
     const heldOutExamples = makeRouteExamplesFromRecords(
-      [heldOutRoute], nestedFit.radialWarp
+      [heldOutRoute], nestedFit.radialWarp, nestedFit.radialProfile
     );
     if (!heldOutExamples.length) return [];
     return [absolutePercentError(
@@ -443,6 +476,7 @@ function evaluateExponent(training, holdout, exponent) {
   };
   return {
     radialWarp: fitted.radialWarp,
+    radialProfile: fitted.radialProfile,
     radialScaleKm: fitted.radialScaleKm,
     training: fitted.training,
     holdout: holdoutMetrics,
@@ -456,7 +490,9 @@ function evaluateExponent(training, holdout, exponent) {
   };
 }
 
-function makeRouteExamplesFromRecords(records, radialWarp) {
+function makeRouteExamplesFromRecords(
+  records, radialWarp, radialProfile = FLIGHT_PATH_PROFILE
+) {
   return records.flatMap(({ route, flights }) => {
     const measured = [];
     const projected = [];
@@ -464,7 +500,7 @@ function makeRouteExamplesFromRecords(records, radialWarp) {
     for (const flight of flights) {
       const measuredKm = flight.observedTrackKm ?? flight.trackKm;
       const unitPathLength = unitProjectedFlightPathLength(
-        flight.trackCoordinates, radialWarp
+        flight.trackCoordinates, radialWarp, radialProfile
       );
       if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
         measured.push(measuredKm);
@@ -523,8 +559,12 @@ export function fitFlightPathCalibration(dataset) {
   const candidates = [];
 
   for (const exponent of exponentCandidates()) {
-    const candidate = evaluateExponent(training, holdout, exponent);
-    if (Number.isFinite(candidate.objective)) candidates.push(candidate);
+    for (const profileExponent of profileExponentCandidates()) {
+      const candidate = evaluateGeometry(
+        training, holdout, exponent, profileExponent
+      );
+      if (Number.isFinite(candidate.objective)) candidates.push(candidate);
+    }
   }
   candidates.sort((first, second) => first.objective - second.objective);
   const best = candidates[0];
@@ -548,7 +588,7 @@ export function fitFlightPathCalibration(dataset) {
       target: 'Observed ADS-B ground-speed/time mileage compared with the projected polyline of that flight\'s recorded path',
       radialScaleKm: best.radialScaleKm,
       radialWarp: best.radialWarp,
-      radialProfile: FLIGHT_PATH_PROFILE,
+      radialProfile: best.radialProfile,
       geometry: 'sum-of-sequence-segment-lengths-in-the-displayed-flat-disk',
       trainingRouteCount: best.training.routeCount,
       holdoutRouteCount: best.holdout.routeCount
@@ -560,7 +600,8 @@ export function fitFlightPathCalibration(dataset) {
       holdout: best.holdout,
       leaveOneOut: best.leaveOneOut,
       selectedExponentObjective: best.objective,
-      exponentCandidatesTested: candidates.length
+      exponentCandidatesTested: exponentCandidates().length,
+      profileExponentCandidatesTested: profileExponentCandidates().length
     }
   };
 }
