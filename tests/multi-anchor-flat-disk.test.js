@@ -5,6 +5,7 @@ import {
   fitMultiAnchorFlatDisk,
   invertMultiAnchorWarpXY,
   inspectMultiAnchorTopology,
+  inspectMultiAnchorRoundTrips,
   summarizeMultiAnchorCoverage
 } from '../src/core/multi-anchor-flat-disk.js';
 import { DISK_RADIUS_KM, project } from '../src/core/flat-disk.js';
@@ -141,6 +142,25 @@ test('malformed model controls fail closed rather than throwing', () => {
   const diagnostics = inspectMultiAnchorTopology(malformed);
   assert.equal(diagnostics.minimumJacobianDeterminant, -Infinity);
   assert.equal(diagnostics.topologySampleCount, 0);
+});
+
+test('round-trip diagnostics cover the disk and control points', () => {
+  const model = {
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm: DISK_RADIUS_KM * 0.2,
+    controls: [{
+      id: 'control',
+      xKm: DISK_RADIUS_KM * 0.4,
+      yKm: DISK_RADIUS_KM * 0.1,
+      envelope: 0.8,
+      alphaX: 120,
+      alphaY: -70
+    }]
+  };
+  const diagnostics = inspectMultiAnchorRoundTrips(model);
+  assert.ok(diagnostics.roundTripSampleCount > 500);
+  assert.equal(diagnostics.roundTripFailureCount, 0);
+  assert.ok(diagnostics.maximumRoundTripErrorKm <= 0.01);
 });
 
 test('the numerical inverse recovers an interior point after candidate warping', () => {
@@ -339,6 +359,9 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumRadialOvershootFraction <= 1e-5);
   assert.ok(result.metrics.maximumBoundaryDisplacementKm < 1e-5);
+  assert.ok(result.metrics.roundTripSampleCount > 500);
+  assert.equal(result.metrics.roundTripFailureCount, 0);
+  assert.ok(result.metrics.maximumRoundTripErrorKm <= 0.01);
 });
 
 
