@@ -10,7 +10,10 @@ import {
   DEFAULT_RADIAL_WARP,
   radialFractionFromUnitColatitude
 } from './radial-warp.js';
-import { integratedRadialDistanceMultiplier } from './visual-radial-calibration.js';
+import {
+  ACTIVE_RADIAL_DISTANCE_PROFILE,
+  integratedRadialDistanceMultiplier
+} from './visual-radial-calibration.js';
 
 export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   minimumFlightsPerRoute: 3,
@@ -31,17 +34,16 @@ export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   maxLeaveOneOutRouteErrorPercent: 45
 });
 
-export const FLIGHT_PATH_PROFILE = Object.freeze({
-  innerFactor: 1,
-  outerFactor: 0.5,
-  exponent: 1
-});
+export const FLIGHT_PATH_PROFILE = ACTIVE_RADIAL_DISTANCE_PROFILE;
 
 const DEG = Math.PI / 180;
 const MIN_EXPONENT = 0.65;
 const MAX_EXPONENT = 1.35;
 const EXPONENT_STEP = 0.025;
-export const FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES = Object.freeze([0.7, 0.85, 1, 1.15, 1.3]);
+export const FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES = Object.freeze(
+  [...new Set([0.7, 0.85, FLIGHT_PATH_PROFILE.exponent, 1.15, 1.3])]
+    .sort((first, second) => first - second)
+);
 const median = values => {
   if (!values.length) return NaN;
   const ordered = [...values].sort((a, b) => a - b);
@@ -361,132 +363,20 @@ function exponentCandidates() {
   const values = [];
   for (let exponent = MIN_EXPONENT; exponent <= MAX_EXPONENT + 1e-9;
        exponent += EXPONENT_STEP) {
-    values.push(exponent);
+    values.push(Number(exponent.toFixed(3)));
   }
   return values;
 }
 
-/**
- * Fit one fixed exponent on a training subset. The inner leave-one-route-out
- * scale errors are used only to select a stable exponent; no outer validation
- * route is present in this function's inputs.
- */
 function profileExponentCandidates() {
   return FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES;
 }
 
-/**
- * Fit the latitude warp and smooth radial-spacing taper on a training subset.
- * The taper is constrained to remain positive and monotonic from the pole to
- * the rim; only a single curvature exponent is added, avoiding 12 free
- * parameters that would overfit the present airport-pair sample.
- */
-function fitTrainingExponent(training, exponent, profileExponent) {
-  const radialWarp = {
-    ...DEFAULT_RADIAL_WARP,
-    exponent
-  };
-  const radialProfile = {
-    ...FLIGHT_PATH_PROFILE,
-    exponent: profileExponent
-  };
-  const trainingExamples = makeRouteExamplesFromRecords(
-    training, radialWarp, radialProfile
-  );
-  const radialScaleKm = median(trainingExamples.map(item => item.requiredRadialScaleKm));
-  const trainingMetrics = summarizeErrors(trainingExamples, radialScaleKm);
-
-  const innerErrors = trainingExamples.map(example => {
-    const otherRatios = trainingExamples
-      .filter(item => item.routeId !== example.routeId)
-      .map(item => item.requiredRadialScaleKm);
-    return absolutePercentError(
-      median(otherRatios),
-      example.requiredRadialScaleKm
-    );
-  });
-  const innerLeaveOneOut = {
-    routeCount: innerErrors.length,
-    meanAbsolutePercent: innerErrors.length
-      ? innerErrors.reduce((sum, value) => sum + value, 0) / innerErrors.length
-      : null,
-    maxAbsolutePercent: innerErrors.length ? Math.max(...innerErrors) : null
-  };
-  return {
-    radialWarp,
-    radialProfile,
-    trainingExamples,
-    radialScaleKm,
-    training: trainingMetrics,
-    innerLeaveOneOut,
-    objective: trainingMetrics.meanAbsolutePercent + innerLeaveOneOut.meanAbsolutePercent
-  };
-}
-
-function evaluateGeometry(training, holdout, exponent, profileExponent) {
-  const fitted = fitTrainingExponent(training, exponent, profileExponent);
-  const holdoutExamples = makeRouteExamplesFromRecords(
-    holdout, fitted.radialWarp, fitted.radialProfile
-  );
-  const holdoutMetrics = summarizeErrors(holdoutExamples, fitted.radialScaleKm);
-
-  // Nested leave-one-route-out: re-select both shape parameters using only
-  // the remaining airport pairs; the outer route is never seen during fitting.
-  const leaveOneOutErrors = training.flatMap(heldOutRoute => {
-    const reducedTraining = training.filter(item =>
-      item.route.routeId !== heldOutRoute.route.routeId
-    );
-    const nestedCandidates = exponentCandidates().flatMap(candidateExponent =>
-      profileExponentCandidates().map(candidateProfileExponent =>
-        fitTrainingExponent(
-          reducedTraining, candidateExponent, candidateProfileExponent
-        )
-      )
-    ).filter(candidate =>
-      Number.isFinite(candidate.objective) &&
-      Number.isFinite(candidate.radialScaleKm) &&
-      candidate.radialScaleKm > 0
-    );
-    nestedCandidates.sort((first, second) => first.objective - second.objective);
-    const nestedFit = nestedCandidates[0];
-    if (!nestedFit) return [];
-
-    const heldOutExamples = makeRouteExamplesFromRecords(
-      [heldOutRoute], nestedFit.radialWarp, nestedFit.radialProfile
-    );
-    if (!heldOutExamples.length) return [];
-    return [absolutePercentError(
-      nestedFit.radialScaleKm,
-      heldOutExamples[0].requiredRadialScaleKm
-    )];
-  });
-
-  const leaveOneOut = {
-    routeCount: leaveOneOutErrors.length,
-    meanAbsolutePercent: leaveOneOutErrors.length
-      ? leaveOneOutErrors.reduce((sum, value) => sum + value, 0) / leaveOneOutErrors.length
-      : null,
-    maxAbsolutePercent: leaveOneOutErrors.length
-      ? Math.max(...leaveOneOutErrors) : null
-  };
-  return {
-    radialWarp: fitted.radialWarp,
-    radialProfile: fitted.radialProfile,
-    radialScaleKm: fitted.radialScaleKm,
-    training: fitted.training,
-    holdout: holdoutMetrics,
-    leaveOneOut,
-    trainingExamples: fitted.trainingExamples,
-    holdoutExamples,
-    objective: Number.isFinite(fitted.training.meanAbsolutePercent) &&
-      Number.isFinite(leaveOneOut.meanAbsolutePercent)
-      ? fitted.training.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
-      : Infinity
-  };
-}
-
+/** Build airport-pair ratios for one candidate projection shape. */
 function makeRouteExamplesFromRecords(
-  records, radialWarp, radialProfile = FLIGHT_PATH_PROFILE
+  records,
+  radialWarp,
+  radialProfile = FLIGHT_PATH_PROFILE
 ) {
   return records.flatMap(({ route, flights }) => {
     const measured = [];
@@ -504,19 +394,137 @@ function makeRouteExamplesFromRecords(
       }
     }
     if (pairedScaleRatios.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
-    const medianObservedTrackKm = median(measured);
-    const medianUnitPathLength = median(projected);
     return [{
       routeId: route.routeId,
       split: route.split,
       airportA: route.airportA,
       airportB: route.airportB,
       sampleCount: pairedScaleRatios.length,
-      medianObservedTrackKm,
-      medianUnitPathLength,
+      medianObservedTrackKm: median(measured),
+      medianUnitPathLength: median(projected),
       requiredRadialScaleKm: median(pairedScaleRatios)
     }];
   });
+}
+
+/** Fit the scale of an already projected route set; no path is projected here. */
+function fitTrainingExamples(examples) {
+  if (!Array.isArray(examples) || examples.length < 2) return null;
+  const radialScaleKm = median(examples.map(item => item.requiredRadialScaleKm));
+  if (!(Number.isFinite(radialScaleKm) && radialScaleKm > 0)) return null;
+  const training = summarizeErrors(examples, radialScaleKm);
+  const innerErrors = examples.map(example => {
+    const otherRatios = examples
+      .filter(item => item.routeId !== example.routeId)
+      .map(item => item.requiredRadialScaleKm);
+    return otherRatios.length
+      ? absolutePercentError(median(otherRatios), example.requiredRadialScaleKm)
+      : NaN;
+  }).filter(Number.isFinite);
+  const innerLeaveOneOut = {
+    routeCount: innerErrors.length,
+    meanAbsolutePercent: innerErrors.length
+      ? innerErrors.reduce((sum, value) => sum + value, 0) / innerErrors.length
+      : null,
+    maxAbsolutePercent: innerErrors.length ? Math.max(...innerErrors) : null
+  };
+  if (!Number.isFinite(innerLeaveOneOut.meanAbsolutePercent)) return null;
+  return {
+    radialScaleKm,
+    training,
+    innerLeaveOneOut,
+    objective: training.meanAbsolutePercent + innerLeaveOneOut.meanAbsolutePercent
+  };
+}
+
+/**
+ * Project each route once for each candidate shape. The nested leave-one-route-
+ * out selector then reuses those route ratios, rather than reprojecting every
+ * track thousands of times inside every validation fold.
+ */
+function buildGeometryCandidates(training, holdout) {
+  const candidates = [];
+  for (const exponent of exponentCandidates()) {
+    const radialWarp = { ...DEFAULT_RADIAL_WARP, exponent };
+    for (const profileExponent of profileExponentCandidates()) {
+      const radialProfile = {
+        ...FLIGHT_PATH_PROFILE,
+        exponent: profileExponent
+      };
+      const trainingExamples = makeRouteExamplesFromRecords(
+        training, radialWarp, radialProfile
+      );
+      const holdoutExamples = makeRouteExamplesFromRecords(
+        holdout, radialWarp, radialProfile
+      );
+      const fitted = fitTrainingExamples(trainingExamples);
+      if (!fitted || !holdoutExamples.length) continue;
+      candidates.push({
+        radialWarp,
+        radialProfile,
+        trainingExamples,
+        holdoutExamples,
+        ...fitted
+      });
+    }
+  }
+  return candidates;
+}
+
+function nestedLeaveOneRouteOut(candidates, trainingRecords) {
+  const errors = [];
+  for (const heldOutRoute of trainingRecords) {
+    const routeId = heldOutRoute.route.routeId;
+    const nestedFits = candidates.flatMap(candidate => {
+      const heldOutExample = candidate.trainingExamples.find(
+        example => example.routeId === routeId
+      );
+      if (!heldOutExample) return [];
+      const reduced = candidate.trainingExamples.filter(
+        example => example.routeId !== routeId
+      );
+      const fitted = fitTrainingExamples(reduced);
+      return fitted ? [{ candidate, heldOutExample, ...fitted }] : [];
+    });
+    nestedFits.sort((first, second) =>
+      first.objective - second.objective ||
+      Math.abs(first.candidate.radialProfile.exponent - 1) -
+        Math.abs(second.candidate.radialProfile.exponent - 1)
+    );
+    const best = nestedFits[0];
+    if (best) {
+      errors.push(absolutePercentError(
+        best.radialScaleKm,
+        best.heldOutExample.requiredRadialScaleKm
+      ));
+    }
+  }
+  return {
+    routeCount: errors.length,
+    meanAbsolutePercent: errors.length
+      ? errors.reduce((sum, value) => sum + value, 0) / errors.length
+      : null,
+    maxAbsolutePercent: errors.length ? Math.max(...errors) : null,
+    errors
+  };
+}
+
+function evaluateGeometryCandidates(candidates, trainingRecords) {
+  return candidates.map(candidate => {
+    const holdout = summarizeErrors(
+      candidate.holdoutExamples, candidate.radialScaleKm
+    );
+    const leaveOneOut = nestedLeaveOneRouteOut(candidates, trainingRecords);
+    return {
+      ...candidate,
+      holdout,
+      leaveOneOut,
+      objective: Number.isFinite(candidate.training.meanAbsolutePercent) &&
+        Number.isFinite(leaveOneOut.meanAbsolutePercent)
+        ? candidate.training.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
+        : Infinity
+    };
+  }).filter(candidate => Number.isFinite(candidate.objective));
 }
 
 export function fitFlightPathCalibration(dataset) {
@@ -551,17 +559,13 @@ export function fitFlightPathCalibration(dataset) {
       'the minimum route counts and southern coverage gates must still be met.'
     );
   }
-  const candidates = [];
-
-  for (const exponent of exponentCandidates()) {
-    for (const profileExponent of profileExponentCandidates()) {
-      const candidate = evaluateGeometry(
-        training, holdout, exponent, profileExponent
-      );
-      if (Number.isFinite(candidate.objective)) candidates.push(candidate);
-    }
-  }
-  candidates.sort((first, second) => first.objective - second.objective);
+  const projectedCandidates = buildGeometryCandidates(training, holdout);
+  const candidates = evaluateGeometryCandidates(projectedCandidates, training);
+  candidates.sort((first, second) =>
+    first.objective - second.objective ||
+    Math.abs(first.radialProfile.exponent - FLIGHT_PATH_PROFILE.exponent) -
+      Math.abs(second.radialProfile.exponent - FLIGHT_PATH_PROFILE.exponent)
+  );
   const best = candidates[0];
   if (!best || !Number.isFinite(best.radialScaleKm) || best.radialScaleKm <= 0) {
     throw new Error('No finite flight-path radial calibration candidate could be fitted.');
@@ -597,7 +601,8 @@ export function fitFlightPathCalibration(dataset) {
       selectedExponentObjective: best.objective,
       selectedProfileExponent: best.radialProfile.exponent,
       exponentCandidatesTested: exponentCandidates().length,
-      profileExponentCandidatesTested: profileExponentCandidates().length
+      profileExponentCandidatesTested: profileExponentCandidates().length,
+      geometryCandidatesTested: projectedCandidates.length
     }
   };
 }
