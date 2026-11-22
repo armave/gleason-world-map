@@ -1,5 +1,5 @@
-import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskDistanceMeters,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
-import {measureDirectDistance,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
+import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
+import {measureDirectDistance,measureDistanceMeters,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
 import {RADIAL_DISTANCE_VISUAL_CIRCLES} from './core/visual-radial-calibration.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
@@ -439,7 +439,7 @@ function drawMeasure(){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
-   const label='Disk chord · '+formatMeasurementKilometres(measurement.distanceMeters);
+   const label=formatMeasurementKilometres(measurement.distanceMeters);
    drawMeasurementLabelAtMap(
     (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
    );
@@ -461,12 +461,12 @@ function drawArea(){
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';drawUprightMapText(String(i+1),x,y);});
  // Each edge label uses the same projected-plane kilometres as the polygon perimeter.
- const edgeLabels=createProjectedSegmentLabels(areaPoints,project,flatDiskDistanceMeters,closed);
+ const edgeLabels=createProjectedSegmentLabels(areaPoints,project,measureDistanceMeters,closed);
  edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
   label.x,label.y,formatMeasurementKilometres(label.meters),'area'
  ));
  if(closed){
-  const metrics=flatDiskPolygonMetrics(areaPoints,project,baseR);
+  const metrics=flatDiskPolygonMetrics(areaPoints,project,baseR,measureDistanceMeters);
   const anchor=projectedPolygonLabelAnchor(areaPoints);
   if(metrics&&anchor)drawMeasurementLabelAtMap(anchor.x,anchor.y,formatMeasurementSquareKilometres(metrics.areaM2),'area');
  }
@@ -483,11 +483,11 @@ function syncMeasurementActionButtons(){
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=areaPoints.length+' vertices';
  if(areaFinished&&areaPoints.length>=3){
-  const result=flatDiskPolygonMetrics(areaPoints,project,baseR);
+  const result=flatDiskPolygonMetrics(areaPoints,project,baseR,measureDistanceMeters);
   if(result){
    $('areaValue').textContent=formatArea(result.areaM2);
-   $('areaPerimeter').textContent='Planar perimeter · '+formatDistance(result.perimeterM);
-   $('areaHelp').textContent='Planar area and perimeter on the flat disk. Edges may cross 60°S.';
+   $('areaPerimeter').textContent='Perimeter · '+formatDistance(result.perimeterM);
+   $('areaHelp').textContent='Planar area; perimeter uses the same calibrated distance formula as A–B and the scale bar. Edges may cross 60°S.';
   }else{
    $('areaValue').textContent='Unavailable';
    $('areaPerimeter').textContent='Invalid polygon · check for crossing edges';
@@ -629,50 +629,38 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const routeCalibration=measurement.endpointDistanceCalibration;
-  const routeSupported=routeCalibration?.supportStatus==='supported';
-  const routeEstimate=routeSupported?measurement.endpointDistanceEstimateMeters:null;
-  const chordDistance=measurement.distanceMeters;
-  $('distanceValue').textContent=routeSupported&&Number.isFinite(routeEstimate)
-   ?formatDistance(routeEstimate)
-   :routeCalibration?.supportStatus==='extrapolated'?'Not validated':'Unavailable';
-  $('distanceSub').textContent=routeSupported&&Number.isFinite(routeEstimate)
-   ?'Supported typical flown mileage from observed ADS-B routes · not a selected flight path'
-   :routeCalibration?.supportStatus==='extrapolated'
-    ?'Numeric estimate withheld · outside validated route-feature and chord-length support'
-    :'No supported empirical route-mileage estimate available';
-  $('flightDistanceValue').textContent=Number.isFinite(chordDistance)
-   ?formatDistance(chordDistance):'Unavailable';
-  $('flightDistanceSub').textContent=Number.isFinite(chordDistance)
-   ?'Euclidean chord in the displayed flat-disk map plane · not flown route mileage'
-   :'Displayed flat-disk chord unavailable';
-
-  $('measureHelp').textContent='The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support. Outside that domain, the numeric estimate is withheld and the panel says Not validated. The secondary value is the exact Euclidean chord in the displayed flat-disk map plane; it is not a flown route mileage. The projection, connector and scale bar continue to use the project’s flat-disk geometry. The project’s flat-disk geometry is used throughout; no external Earth-shape distance formula is introduced. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point.';
+  const calibration=measurement.calibration;
+  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
+   ?formatDistance(measurement.distanceMeters):'Unavailable';
+  $('distanceSub').textContent=Number.isFinite(measurement.distanceMeters)
+   ?'One ADS-B-calibrated flat-disk distance · same formula used throughout the map'
+   :'Canonical distance unavailable for these coordinates';
+  $('measureHelp').textContent='One distance formula powers the A–B reading, on-map label, scale bar, polygon edge labels and polygon perimeter. The formula applies the accepted ADS-B route-feature correction to the flat-disk base chord. ADS-B ground-speed and timestamp observations calibrate the correction; the same output is used everywhere. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
-  if(routeCalibration){
-   const validation=routeCalibration.validation||{};
-   const holdout=validation.independentHoldout;
-   const loo=validation.trainingLeaveOneRouteOut;
-   const supported=routeCalibration.supportStatus==='supported';
-   support.textContent=supported
-    ?'Supported by nearby reference routes · nearest feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' · independent supported holdout MAPE '+(Number.isFinite(holdout?.meanAbsolutePercent)?holdout.meanAbsolutePercent.toFixed(1)+'%':'not available')+' ('+(holdout?.supportedRouteCount??'—')+'/'+(holdout?.routeCount??'—')+' pairs).'
-    :'No route-mileage number shown · nearest reference feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' exceeds the validated support limit '+routeCalibration.maxSupportedFeatureDistance.toFixed(2)+';';
-   const routeIds=routeCalibration.neighborRouteIds||[];
-   const routeWeights=routeCalibration.neighborWeights||[];
-   routes.textContent='Nearest reference routes: '+(routeIds.length
+  if(calibration){
+   const status=calibration.status==='within-fit-range'
+    ?'Within fitted calibration range'
+    :calibration.status==='bounded-extrapolation'
+     ?'Bounded calibration · review warnings'
+     :'Calibration extrapolation · review warnings';
+   support.textContent=status+' · distance factor '+calibration.calibrationFactor.toFixed(2)+'×'+
+    ' · nearest reference feature '+calibration.nearestFeatureDistance.toFixed(2)+
+    (calibration.factorWasClamped?' · correction bound applied':'')+
+    (calibration.nearSouthRim?' · near Antarctic rim':'');
+   const routeIds=calibration.neighbourRouteIds||[];
+   const routeWeights=calibration.neighbourWeights||[];
+   routes.textContent='ADS-B reference routes: '+(routeIds.length
     ?routeIds.map((route,index)=>route+' '+Math.round((routeWeights[index]||0)*100)+'%').join(' · ')
-    :'not available')+(Number.isFinite(loo?.meanAbsolutePercent)?' · leave-one-route-out MAPE '+loo.meanAbsolutePercent.toFixed(1)+'%':'');
+    :'not available');
   }else{
-   support.textContent='Endpoint calibration unavailable for these coordinates.';
-   routes.textContent='Nearest reference routes: not available';
+   support.textContent='ADS-B calibration unavailable for these coordinates.';
+   routes.textContent='Reference routes: not available';
   }
  }else{
-  $('calibrationSupport').textContent='Empirical route support appears after both endpoints are set.';
+  $('calibrationSupport').textContent='ADS-B calibration diagnostics appear after both endpoints are set.';
   $('calibrationRoutes').textContent='Nearest reference routes: —';
-  $('flightDistanceValue').textContent='—';
-  $('flightDistanceSub').textContent='Euclidean chord in the flat-disk map plane · not flown route mileage';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='Set two endpoints to estimate typical route mileage';
+  $('distanceSub').textContent='Set two endpoints to calculate the canonical distance';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -843,8 +831,8 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
- const distanceMeters=flatDiskDistanceMeters(first,second);
- // The scale bar uses the same uncorrected map-plane chord metric as A–B.
+ const distanceMeters=measureDistanceMeters(first,second);
+ // The scale bar uses the same canonical calibrated metric as A–B and area edges.
  return Number.isFinite(distanceMeters)?distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
@@ -921,15 +909,8 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const routeCalibration=measurement.endpointDistanceCalibration;
-  const routeEstimate=routeCalibration?.supportStatus==='supported'
-   ?measurement.endpointDistanceEstimateMeters:null;
-  const routeLabel=Number.isFinite(routeEstimate)
-   ?'Supported route-mileage estimate '+formatDistance(routeEstimate)
-   :routeCalibration?.supportStatus==='extrapolated'
-    ?'Route mileage not validated · numeric estimate withheld'
-    :'Route-mileage estimate unavailable';
-  measurementText=routeLabel+' · projected disk chord '+formatDistance(measurement.distanceMeters);
+  measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
+   ' · single ADS-B-calibrated flat-disk metric';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
