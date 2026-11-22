@@ -12,10 +12,9 @@ The current repository contains observed ADS-B ground-speed/time mileage and tim
 2. Load independently sourced straight-line distances between named reference anchors.
 3. Split complete unordered endpoint pairs into training and holdout sets before fitting.
 4. Adjust training-anchor positions with a confidence-weighted Huber loss to reduce relative distance error while regularizing movement from the seed map.
-5. Interpolate the anchor displacements with a smooth Gaussian radial-basis field.
+5. Fit a regularized Gaussian radial-basis field to the optimized anchor displacements, excluding fixed centre/rim controls from the solve.
 6. Multiply the field by a smooth radial envelope that is zero at the North Pole and at the full Antarctic rim.
-7. Interpolate the displacements with a regularized Gaussian RBF, excluding fixed centre/rim controls from the solve.
-8. Test independent holdout errors, displacement limits, and a dense sampled Jacobian determinant to screen out foldover.
+7. Test independent holdout errors, dense sampled Jacobian determinants, maximum interpolated displacement, and radial-boundary overshoot.
 
 This is a constrained two-dimensional drawing-plane fit. It does not infer or assert the physical shape of the Earth.
 
@@ -45,7 +44,8 @@ Run npm run fit:multi-anchor to produce a candidate summary. Run npm test for th
 - Maximum holdout pair error no greater than 20%.
 - Holdout MAPE improves over the current flat-disk baseline by at least 0.25 percentage points.
 - Minimum sampled Jacobian determinant at least 0.2.
-- Maximum training-anchor displacement no greater than 12% of disk radius.
+- Maximum training-anchor and interpolated-warp displacement no greater than 12% of disk radius.
+- No sampled radial overshoot beyond the circular rim and numerical pole/rim displacement below 1e-5 km.
 - At least eight independent holdout anchors, three holdout latitude bands, four holdout longitude sectors, and four holdout anchors never used for fitting.
 
 The fitting script writes data/multi-anchor-distance-calibration-summary.json. It writes src/core/multi-anchor-flat-disk-parameters.js only when every gate passes. Even then, it does not automatically activate the model.
