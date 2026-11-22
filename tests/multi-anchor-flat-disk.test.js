@@ -22,6 +22,10 @@ test('empty input is rejected without producing active parameters', () => {
   assert.equal(result.model, null);
   assert.ok(result.failures.some(item => item.includes('training observations')));
   assert.ok(result.failures.some(item => item.includes('holdout observations')));
+  assert.ok(result.failures.some(item => item.includes('training anchors south of 45 degrees south')));
+  assert.ok(result.failures.some(item => item.includes('independent holdout anchors south of 45 degrees south')));
+  assert.ok(result.failures.some(item => item.includes('deep-southern training anchors south of 60 degrees south')));
+  assert.ok(result.failures.some(item => item.includes('deep-southern holdout anchors south of 60 degrees south')));
 });
 
 test('ADS-B flown mileage is rejected as a straight-line calibration target', () => {
@@ -274,7 +278,7 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   );
   const holdoutAnchors = [
     { id: 'H0', lat: -66, lon: -135 },
-    { id: 'H1', lat: -42, lon: -90 },
+    { id: 'H1', lat: -54, lon: -90 },
     { id: 'H2', lat: -18, lon: -45 },
     { id: 'H3', lat: 6, lon: 0 },
     { id: 'H4', lat: 30, lon: 45 },
@@ -413,6 +417,22 @@ test('duplicate observation IDs are rejected before fitting', () => {
   assert.ok(coverage.validationErrors.some(item =>
     item.includes('duplicates observation ID same-id')
   ));
+});
+
+test('coverage counts deep-southern training and holdout anchors independently', () => {
+  const base = {
+    distanceKm: 1000,
+    measurementType: 'direct-straight-line',
+    source: sampleSource
+  };
+  const coverage = summarizeMultiAnchorCoverage([
+    { ...base, split: 'train', a: { id: 'TA', lat: -50, lon: -90 }, b: { id: 'TB', lat: -65, lon: -45 } },
+    { ...base, split: 'holdout', a: { id: 'HA', lat: -55, lon: 90 }, b: { id: 'HB', lat: -70, lon: 135 } }
+  ]);
+  assert.equal(coverage.trainingAnchorsSouthOf45S, 2);
+  assert.equal(coverage.trainingAnchorsSouthOf60S, 1);
+  assert.equal(coverage.holdoutAnchorsSouthOf45S, 2);
+  assert.equal(coverage.holdoutAnchorsSouthOf60S, 1);
 });
 
 test('coverage reports unseen holdout anchors separately from pair counts', () => {
