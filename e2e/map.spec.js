@@ -62,7 +62,7 @@ test('searches for a capital and shows its geographic details', async ({ page })
   await expect(page.locator('#selectionCoords')).not.toHaveText('—');
 });
 
-test('shows coordinate-only great-circle distance and ADS-B estimate as separate references', async ({ page }) => {
+test('shows flat-disk A–B distance matching the displayed connector and separate ADS-B reference', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
@@ -75,13 +75,28 @@ test('shows coordinate-only great-circle distance and ADS-B estimate as separate
   await page.locator('#coordBLon').fill('-0.1276');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('.primary-distance-reading')).toContainText('Great-circle A–B distance');
-  await expect(page.locator('.primary-distance-reading')).toContainText('Spherical great-circle arc');
-  await expect(page.locator('.primary-distance-reading')).toContainText('is display-only');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Flat-disk A–B distance');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Euclidean length of the displayed connector');
+  await expect(page.locator('.primary-distance-reading')).toContainText('12-circle warped disk');
   await expect(page.locator('.secondary-distance-reading')).toContainText('ADS-B flight-mileage estimate');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
   await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
   await expect(page.locator('#calibrationRoutes')).toContainText('Nearest reference routes:');
+});
+
+test('90°S coordinates remain distinct longitude-indexed points on the Antarctic disk rim', async ({ page }) => {
+  await openLoadedMap(page);
+  await page.locator('#measureMode').click();
+
+  await page.locator('#coordALat').fill('-90');
+  await page.locator('#coordALon').fill('0');
+  await page.locator('#applyCoordsA').click();
+  await page.locator('#coordBLat').fill('-90');
+  await page.locator('#coordBLon').fill('180');
+  await page.locator('#applyCoordsB').click();
+
+  await expect(page.locator('#distanceValue')).toContainText('33,835');
+  await expect(page.locator('#measureHelp')).toContainText('longitude remains the angular position');
 });
 
 test('calculates a planar polygon area from three map clicks', async ({ page }) => {
