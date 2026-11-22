@@ -4,6 +4,7 @@ import {
   applyMultiAnchorWarpXY,
   fitMultiAnchorFlatDisk,
   invertMultiAnchorWarpXY,
+  inspectMultiAnchorTopology,
   summarizeMultiAnchorCoverage
 } from '../src/core/multi-anchor-flat-disk.js';
 import { DISK_RADIUS_KM, project } from '../src/core/flat-disk.js';
@@ -69,6 +70,25 @@ test('the boundary envelope leaves the pole and full Antarctic rim fixed', () =>
   const rim = applyMultiAnchorWarpXY(DISK_RADIUS_KM, 0, model);
   assert.deepEqual(centre, [0, 0]);
   assert.deepEqual(rim, [DISK_RADIUS_KM, 0]);
+});
+
+test('topology diagnostics detect a deliberately folded and oversized disk warp', () => {
+  const model = {
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm: DISK_RADIUS_KM * 0.12,
+    controls: [{
+      id: 'aggressive-control',
+      xKm: DISK_RADIUS_KM * 0.5,
+      yKm: 0,
+      envelope: 1,
+      alphaX: -50000,
+      alphaY: 30000
+    }]
+  };
+  const diagnostics = inspectMultiAnchorTopology(model);
+  assert.ok(diagnostics.minimumJacobianDeterminant < 0.2);
+  assert.ok(diagnostics.maximumWarpDisplacementFraction > 0.12);
+  assert.equal(diagnostics.maximumBoundaryDisplacementKm, 0);
 });
 
 test('the numerical inverse recovers an interior point after candidate warping', () => {
@@ -211,6 +231,9 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
     result.metrics.baselineHoldout.meanAbsolutePercent);
   assert.ok(result.metrics.minimumJacobianDeterminant > 0);
   assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
+  assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
+  assert.ok(result.metrics.maximumRadialOvershootFraction <= 1e-5);
+  assert.equal(result.metrics.maximumBoundaryDisplacementKm, 0);
 });
 
 
