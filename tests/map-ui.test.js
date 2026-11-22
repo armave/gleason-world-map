@@ -253,7 +253,7 @@ test('the empirical route estimate and flat-disk connector remain separate measu
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
  assert.match(app,/const label='Disk chord · '\+formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(routeEstimate\)/);
+ assert.match(app,/distanceValue'\)\.textContent=routeSupported&&Number\.isFinite\(routeEstimate\)/);
  assert.match(app,/flightDistanceValue'\)\.textContent=Number\.isFinite\(chordDistance\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
