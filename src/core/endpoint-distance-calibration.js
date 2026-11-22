@@ -130,6 +130,7 @@ export function predictEndpointDistance(first, second, model = ENDPOINT_DISTANCE
     maxSupportedFeatureDistance: maxSupportedDistance,
     neighborRouteIds: neighbors.map(neighbor => neighbor.routeId),
     neighborWeights: weights.map(weight => weight / totalWeight),
+    validation: model.validation || null,
     supportStatus: supported ? 'supported' : 'extrapolated',
     warnings: supported ? [] : ['outside-validated-route-feature-support'],
     metric: 'adsb-empirical-endpoint-route-mileage'
