@@ -16,7 +16,8 @@
     "fit:flight-calibration": "node scripts/fit-flight-calibration.mjs",
     "vendor:antarctica": "node scripts/vendor-antarctic-add.mjs",
     "test:e2e": "npm run build && playwright test",
-    "test:all": "npm test && npm run test:e2e"
+    "test:all": "npm test && npm run test:e2e",
+    "fit:flight-path-calibration": "node scripts/fit-flight-path-calibration.mjs"
   },
   "dependencies": {
     "lit": "3.3.3"

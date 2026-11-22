@@ -6,7 +6,7 @@ import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from 
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
 import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
-import {FLIGHT_CALIBRATION} from './core/flight-calibration-parameters.js';
+import {FLIGHT_PATH_CALIBRATION} from './core/flight-path-calibration-parameters.js';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {createCompassRoseLayout} from './map/compass.js';
 import {centeredCanvasTransform} from './map/canvas-transform.js';
@@ -773,7 +773,7 @@ function restoreSharedState(){
  syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();
 }
-function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'));}
+function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'),$('calibrationFormula'),$('pathCalibrationStatus'));}
 function syncHistoricalControls(){
  const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
  for(const [id,key,unit] of specs){$(id).value=historical[key];$(id+'Value').textContent=unit==='°'?Number(historical[key]).toFixed(1)+unit:Math.round(historical[key]*10)/10+unit;}
@@ -918,8 +918,11 @@ function exportPNG(){
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
  outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
- outputCtx.fillText('ADS-B ground-speed × time estimate · not a shortest-path measurement · model v'+FLIGHT_CALIBRATION.schemaVersion+
-  ' · '+FLIGHT_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_CALIBRATION.holdoutRouteCount+' holdout route pairs',14*dpr,canvas.height+53*dpr);
+  const pathFitCaption=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion>0
+   ? 'Visible map · ADS-B projected-path fit v'+FLIGHT_PATH_CALIBRATION.schemaVersion+
+    ' · '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+' independent holdout route pairs'
+   : 'Visible map · previously approved flat-disk scale retained · ADS-B projected-path fit pending';
+  outputCtx.fillText(pathFitCaption,14*dpr,canvas.height+53*dpr);
  const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
  outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
  output.toBlob(blob=>{

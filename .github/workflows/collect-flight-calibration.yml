@@ -5,6 +5,9 @@ on:
     paths:
       - scripts/collect-flight-calibration.mjs
       - scripts/fit-flight-calibration.mjs
+      - scripts/fit-flight-path-calibration.mjs
+      - src/core/flight-path-calibration.js
+      - src/core/flight-path-calibration-parameters.js
       - src/core/flight-telemetry.js
       - src/core/flight-calibration-fit.js
       - package.json
@@ -26,16 +29,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Collect observed ground-speed and timestamp samples
-        run: npm run collect:flight-calibration -- --max-pages-per-route=120 --samples-per-route=6 --history-days=180
+      - name: Collect observed ground-speed and timestamp samples across the available archive
+        run: npm run collect:flight-calibration -- --max-pages-per-route=120 --samples-per-route=6 --history-days=560
       - name: Fit only when independent route coverage is sufficient
         run: npm run fit:flight-calibration
+      - name: Fit visual geometry against recorded ADS-B trajectories
+        run: npm run fit:flight-path-calibration
       - name: Commit reproducible telemetry data and fitted parameters
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- data/flight-calibration.json data/flight-calibration-summary.json src/core/flight-calibration-parameters.js
+          git add -A -- data/flight-calibration.json data/flight-calibration-summary.json data/flight-path-calibration-summary.json src/core/flight-calibration-parameters.js src/core/flight-path-calibration-parameters.js
           if ! git diff --cached --quiet; then
             git commit -m "Add observed ADS-B flight calibration sample"
             git fetch origin "${GITHUB_REF_NAME}"
@@ -43,7 +48,7 @@ jobs:
               conflicts=$(git diff --name-only --diff-filter=U)
               for file in $conflicts; do
                 case "$file" in
-                  data/flight-calibration.json|data/flight-calibration-summary.json|src/core/flight-calibration-parameters.js)
+                  data/flight-calibration.json|data/flight-calibration-summary.json|data/flight-path-calibration-summary.json|src/core/flight-calibration-parameters.js|src/core/flight-path-calibration-parameters.js)
                     # This workflow owns these generated files. Keep the
                     # just-collected snapshot while replaying it onto the newer branch.
                     git checkout --theirs -- "$file"
@@ -71,5 +76,6 @@ jobs:
           path: |
             data/flight-calibration.json
             data/flight-calibration-summary.json
+            data/flight-path-calibration-summary.json
           if-no-files-found: warn
           retention-days: 30

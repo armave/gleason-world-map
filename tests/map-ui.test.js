@@ -178,8 +178,8 @@ test('map orientation is display-only, pointer-safe and included in share links'
 });
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
- assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\)\)/);
- assert.match(html,/12-circle display profile · provisional/);assert.match(html,/id="visualRadialRows"/);
+  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\),\$\('calibrationFormula'\),\$\('pathCalibrationStatus'\)\)/);
+ assert.match(html,/id="calibrationFormula"/);assert.match(html,/id="pathCalibrationStatus"/);assert.match(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
 
@@ -191,9 +191,9 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/RADIAL_DISTANCE_VISUAL_CIRCLES\.map/);
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
- assert.match(html,/not yet validated against the new observed-only ADS-B sample/);
- assert.match(html,/Euclidean length of the visible connector/);
- assert.match(html,/profile is provisional/);
+  assert.match(html,/timestamped ADS-B path vertices/);
+ assert.match(html,/Euclidean length of the displayed connector/);
+  assert.match(html,/continuous radial profile used by both the map and the path fitter/);
 });
 
 test('direct A/B coordinate entry and calibration route support are available',()=>{
@@ -214,9 +214,11 @@ test('direct A/B coordinate entry and calibration route support are available',(
 test('PNG exports include date, measurement and model/source metadata',()=>{
  assert.match(app,/function exportPNG\(\)/);
  assert.match(app,/outputCtx\.fillText\('GLEASON-STYLE FLAT-DISK MAP/);
- assert.match(app,/ADS-B ground-speed × time estimate/);
+ assert.match(app,/Visible map · ADS-B projected-path fit/);
+ assert.match(app,/ADS-B projected-path fit pending/);
  assert.match(app,/SCAR Antarctic Digital Database v7\.13/);
- assert.match(app,/FLIGHT_CALIBRATION\.schemaVersion/);
+ assert.match(app,/FLIGHT_PATH_CALIBRATION\.schemaVersion/);
+ assert.match(app,/FLIGHT_PATH_CALIBRATION\.trainingRouteCount/);
 });
 
 test('distance connector is one straight projected segment measured in the map plane',()=>{
@@ -231,7 +233,7 @@ test('distance connector is one straight projected segment measured in the map p
 
 test('the flat-disk A–B readout and ADS-B flight mileage remain separate references',()=>{
  assert.match(html,/Flat-disk A–B distance/);
- assert.match(html,/12-circle display profile · provisional/);
+ assert.match(html,/timestamped ADS-B path vertices/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);

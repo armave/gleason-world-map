@@ -5,13 +5,15 @@
  * Target mileage is integrated from ground speed and elapsed time only:
  *   track_km = sum(ground_speed_knots * elapsed_seconds / 3600) * 1.852
  *
- * Flight coordinates are not used to calculate a distance. Airport geometry
- * is used only by the upstream query API to retrieve flights for an airport
- * pair; airport lat/lon are retained only as flat-disk endpoint coordinates.
+ * Flight coordinates are never used to calculate the observed-mileage target.
+ * They are stored with matching timestamps for a separate flat-disk projected
+ * path-length comparison. Airport geometry is used only by the upstream query
+ * API to retrieve airport-pair flights and retain their map endpoints.
  */
 import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { integrateGroundSpeedSeries, FLIGHT_TELEMETRY_FILTERS } from '../src/core/flight-telemetry.js';
+import { normalizeFlightTrack } from '../src/core/flight-path-calibration.js';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
 const OUTPUT_PATH = 'data/flight-calibration.json';
@@ -59,7 +61,8 @@ const ROUTES = [
   { from: 'WMKK', to: 'VTBS', split: 'train' },
   { from: 'YSSY', to: 'YMML', split: 'train' },
   // Southern-hemisphere short and medium regional routes for low-latitude fit coverage.
-  { from: 'YBBN', to: 'YMML', split: 'train' },
+  // Southern airport-pair holdout; no YBBN–YMML flight enters fitting.
+  { from: 'YBBN', to: 'YMML', split: 'holdout' },
   { from: 'YBBN', to: 'YPPH', split: 'train' },
   { from: 'YMML', to: 'YPAD', split: 'train' },
   { from: 'YSSY', to: 'YPAD', split: 'train' },
@@ -99,7 +102,8 @@ const ROUTES = [
   { from: 'KDFW', to: 'KMIA', split: 'train' },
   { from: 'KLAX', to: 'KSFO', split: 'train' },
   { from: 'KLAX', to: 'KLAS', split: 'train' },
-  { from: 'KSEA', to: 'KSFO', split: 'train' },
+  // Independent western North American airport-pair holdout.
+  { from: 'KSEA', to: 'KSFO', split: 'holdout' },
   { from: 'KATL', to: 'KMIA', split: 'train' },
   { from: 'EGLL', to: 'LEMD', split: 'holdout' },
   { from: 'EGLL', to: 'EDDM', split: 'train' },
@@ -144,7 +148,7 @@ function option(name, fallback) {
 
 const MAX_PAGES_PER_ROUTE = option('max-pages-per-route', 120);
 const SAMPLES_PER_ROUTE = option('samples-per-route', 6);
-const HISTORY_DAYS = option('history-days', 180);
+const HISTORY_DAYS = option('history-days', 560);
 const MAX_DETAILS_PER_ROUTE = SAMPLES_PER_ROUTE * 12;
 const ROUTE_PAGE_LIMIT = 1000;
 
@@ -268,6 +272,10 @@ async function fetchFlightDetail(candidate, airportA, airportB, counters) {
       counters[integrated.reason] = (counters[integrated.reason] || 0) + 1;
       return null;
     }
+    const trajectory = normalizeFlightTrack(detail.path, detail.timestamps);
+    if (!trajectory) {
+      counters.missingOrInvalidTrajectory = (counters.missingOrInvalidTrajectory || 0) + 1;
+    }
     return {
       flightId: detail.flight_id,
       sourceRecordUrl: API_ROOT + '/flights/' + encodeURIComponent(detail.flight_id),
@@ -282,6 +290,7 @@ async function fetchFlightDetail(candidate, airportA, airportB, counters) {
       endPoint: coordinatesFromPoint(detail.end_point),
       rawPointCount: detail.raw_point_count === undefined ? null : detail.raw_point_count,
       pointCount: detail.point_count === undefined ? null : detail.point_count,
+      ...(trajectory || {}),
       ...integrated
     };
   } catch (error) {
@@ -481,7 +490,7 @@ async function collect() {
   const trainRoutes = outputRoutes.filter(route => route.split === 'train' && route.sampleCount >= 3);
   const holdoutRoutes = outputRoutes.filter(route => route.split === 'holdout' && route.sampleCount >= 3);
   const result = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     dataset: 'Observed-only ADS-B ground-speed flight mileage benchmarks for the Gleason flat-disk map',
     source: {
       provider: 'adsb.lol historical ADS-B archive',
@@ -510,12 +519,13 @@ async function collect() {
         minSpeedIntervals: FLIGHT_TELEMETRY_FILTERS.minSpeedIntervals
       },
       explicitlyNotUsed: [
-        'API path_length_m',
-        'latitude/longitude-derived distances',
+        'API path_length_m as the observed-mileage target',
+        'latitude/longitude-derived Earth or route distances as the observed-mileage target',
         'great-circle, spherical, ellipsoidal, or geodesic calculations',
         'scheduled flight times or estimated cruise-speed averages'
       ],
-      airportBoundaryUse: 'Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. Airport coordinates are retained only as map endpoints. No airport or trajectory coordinates enter the track-distance integration.'
+      trajectoryGeometry: 'The source API GeoJSON MultiLineString path coordinates and matching timestamps are stored for each accepted flight. Candidate visual calibration projects those recorded points into the custom flat-disk plane and compares the resulting polyline length with the independent ground-speed/time integral. The coordinates are never used to calculate the observed-mileage target.',
+      airportBoundaryUse: 'Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. Airport coordinates are retained as map endpoints. The observed-mileage target is calculated only from recorded ground speed and elapsed time.'
     },
     collection: {
       endDate,
@@ -525,6 +535,11 @@ async function collect() {
       samplesPerRouteTarget: SAMPLES_PER_ROUTE,
       routesWithAtLeastThreeTrainFlights: trainRoutes.length,
       routesWithAtLeastThreeHoldoutFlights: holdoutRoutes.length,
+      observationsWithTrajectoryPath: outputRoutes.reduce((sum, route) =>
+        sum + route.observations.filter(item => Array.isArray(item.trackCoordinates)).length, 0),
+      storedTrajectoryPoints: outputRoutes.reduce((sum, route) =>
+        sum + route.observations.reduce((flightSum, item) =>
+          flightSum + (item.trackPointCount || 0), 0), 0),
       airportLookupErrors: airportErrors
     },
     routes: outputRoutes

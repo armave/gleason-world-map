@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "accepted": false,
+  "status": "rejected",
+  "generatedAt": "2026-11-22T07:36:14.538Z",
+  "sourceDataset": "data/flight-calibration.json",
+  "sourceRetrievedAt": "2026-11-22T07:33:32.270Z",
+  "method": {
+    "target": "Independently observed ADS-B ground-speed/time mileage for each flight",
+    "targetFormula": "sum(ground_speed_knots * accepted_interval_seconds / 3600) * 1.852",
+    "visualMeasurement": "Sum the Euclidean lengths of the recorded flight path segments after projecting each timestamped ADS-B position into the custom 12-circle flat-disk plane.",
+    "coordinatesUsedFor": "Visual path geometry only; never used to calculate observed flight mileage.",
+    "sequenceHandling": "Preserve and measure each source MultiLineString sequence independently; never draw or measure a connector across a sequence break.",
+    "radialProfile": "Fixed requested 12-circle continuous profile: local multiplier tapers linearly from 1.00 at the North Pole to 0.50 at the Ice Wall.",
+    "fit": "Search the regularized-power latitude warp exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length.",
+    "validation": "Leave-one-airport-pair-out training validation plus fully independent airport-pair holdouts."
+  },
+  "rejectionReason": "Candidate metrics are retained as diagnostics, but this snapshot has no qualifying training or holdout routes south of 45°S or 60°S. The stricter Antarctic coverage gate therefore rejects promotion.",
+  "qualityGate": {
+    "trainingRouteCount": 26,
+    "holdoutRouteCount": 6,
+    "trainingRoutesSouthOf30S": 4,
+    "holdoutRoutesSouthOf30S": 2,
+    "trainingRoutesSouthOf45S": 0,
+    "holdoutRoutesSouthOf45S": 0,
+    "trainingRoutesSouthOf60S": 0,
+    "holdoutRoutesSouthOf60S": 0,
+    "trainingFlightsWithPaths": 149,
+    "holdoutFlightsWithPaths": 36,
+    "totalTrajectoryPoints": 30287,
+    "trainingMapePercent": 15.327397996044834,
+    "holdoutMapePercent": 12.703210624909287,
+    "holdoutMaxErrorPercent": 36.35099043767529,
+    "leaveOneOutMapePercent": 16.216858673453917,
+    "leaveOneOutMaxRouteErrorPercent": 117.13340268106775,
+    "limits": {
+      "minimumTrainingRoutes": 20,
+      "minimumHoldoutRoutes": 6,
+      "minimumSouthernTrainingRoutes": 4,
+      "minimumSouthernHoldoutRoutes": 2,
+      "maxTrainingMapePercent": 10,
+      "maxHoldoutMapePercent": 12,
+      "maxHoldoutRouteErrorPercent": 20,
+      "maxLeaveOneOutMapePercent": 15,
+      "maxLeaveOneOutRouteErrorPercent": 45,
+      "minimumTrainingRoutesSouthOf45S": 2,
+      "minimumHoldoutRoutesSouthOf45S": 1,
+      "minimumTrainingRoutesSouthOf60S": 1,
+      "minimumHoldoutRoutesSouthOf60S": 1
+    },
+    "usableTrainingRouteCount": 26,
+    "usableHoldoutRouteCount": 6,
+    "usableProjectedPathCoverage": {
+      "trainingRouteCount": 26,
+      "holdoutRouteCount": 6,
+      "trainingRoutesSouthOf30S": 4,
+      "holdoutRoutesSouthOf30S": 2,
+      "trainingRoutesSouthOf45S": 0,
+      "holdoutRoutesSouthOf45S": 0,
+      "trainingRoutesSouthOf60S": 0,
+      "holdoutRoutesSouthOf60S": 0
+    }
+  },
+  "model": {
+    "schemaVersion": 1,
+    "sourceDatasetVersion": 4,
+    "target": "Observed ADS-B ground-speed/time mileage compared with the projected polyline of that flight's recorded path",
+    "radialScaleKm": 6462.4077100935465,
+    "radialWarp": {
+      "kind": "regularized-power",
+      "exponent": 1.0000000000000002,
+      "epsilon": 0.005
+    },
+    "radialProfile": {
+      "innerFactor": 1,
+      "outerFactor": 0.5
+    },
+    "geometry": "sum-of-sequence-segment-lengths-in-the-displayed-flat-disk",
+    "trainingRouteCount": 26,
+    "holdoutRouteCount": 6
+  },
+  "metrics": {
+    "spatialCoverage": {
+      "trainingRouteCount": 26,
+      "holdoutRouteCount": 6,
+      "trainingRoutesSouthOf30S": 4,
+      "holdoutRoutesSouthOf30S": 2,
+      "trainingRoutesSouthOf45S": 0,
+      "holdoutRoutesSouthOf45S": 0,
+      "trainingRoutesSouthOf60S": 0,
+      "holdoutRoutesSouthOf60S": 0,
+      "trainingFlightsWithPaths": 149,
+      "holdoutFlightsWithPaths": 36,
+      "totalTrajectoryPoints": 30287
+    },
+    "training": {
+      "routeCount": 26,
+      "meanAbsolutePercent": 15.327397996044834,
+      "rmsPercent": 33.382975592120474,
+      "maxAbsolutePercent": 112.95990251897621,
+      "errors": [
+        {
+          "routeId": "EGLL--EHAM",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6430.170513193481,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 0.5013428000691489
+        },
+        {
+          "routeId": "EGLL--LFPG",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6681.695196089617,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 3.2819139389118734
+        },
+        {
+          "routeId": "EDDF--EGLL",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6348.220008649025,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 1.7987357288964168
+        },
+        {
+          "routeId": "KJFK--KMIA",
+          "sampleCount": 5,
+          "requiredRadialScaleKm": 7062.172212034848,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 8.492634899489214
+        },
+        {
+          "routeId": "KJFK--KORD",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6216.947962548628,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 3.9482355172278494
+        },
+        {
+          "routeId": "EHAM--LFPG",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6988.467559775161,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 7.527542271349397
+        },
+        {
+          "routeId": "EDDF--EHAM",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6673.456184691865,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 3.1625063349099314
+        },
+        {
+          "routeId": "OMDB--OOMS",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6058.433604895631,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 6.6679629016892505
+        },
+        {
+          "routeId": "OBBI--OMDB",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 5968.123361894031,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 8.282073245259625
+        },
+        {
+          "routeId": "YMML--YSSY",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 3568.087919251717,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 81.1168294151455
+        },
+        {
+          "routeId": "YMML--YPAD",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 3332.0761251934136,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 93.94538021601862
+        },
+        {
+          "routeId": "YPAD--YSSY",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 3034.565490335769,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 112.95990251897621
+        },
+        {
+          "routeId": "YBCG--YSSY",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6493.816235603492,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 0.4836682217421284
+        },
+        {
+          "routeId": "KBOS--KJFK",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6537.793335852468,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 1.1530744684986605
+        },
+        {
+          "routeId": "KDEN--KORD",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6132.8328895120485,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 5.373940991366566
+        },
+        {
+          "routeId": "KATL--KORD",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 7111.428392203317,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 9.126446141556189
+        },
+        {
+          "routeId": "KLAX--KSFO",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6633.599439133131,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 2.580676307189811
+        },
+        {
+          "routeId": "KLAS--KLAX",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6430.999184583601,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 0.48839262155775387
+        },
+        {
+          "routeId": "KATL--KMIA",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6973.299902524068,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 7.326404995798297
+        },
+        {
+          "routeId": "EDDM--EGLL",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6388.07374192782,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 1.1636366637072237
+        },
+        {
+          "routeId": "EGLL--LIRF",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6668.844414883104,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 3.0955393760401018
+        },
+        {
+          "routeId": "EHAM--LEMD",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6988.731044466958,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 7.531028609122203
+        },
+        {
+          "routeId": "LFPG--LIRF",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6704.603008297558,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 3.612373438133065
+        },
+        {
+          "routeId": "EDDF--LIRF",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 7106.897356448437,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 9.068509280918668
+        },
+        {
+          "routeId": "LFPG--LTFM",
+          "sampleCount": 3,
+          "requiredRadialScaleKm": 6323.302824717423,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 2.1998770141510526
+        },
+        {
+          "routeId": "YBBN--YBCG",
+          "sampleCount": 3,
+          "requiredRadialScaleKm": 5687.551605653165,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 13.623719979440896
+        }
+      ]
+    },
+    "holdout": {
+      "routeCount": 6,
+      "meanAbsolutePercent": 12.703210624909287,
+      "rmsPercent": 16.89470838866754,
+      "maxAbsolutePercent": 36.35099043767529,
+      "errors": [
+        {
+          "routeId": "YBBN--YMML",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 4739.538516991888,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 36.35099043767529
+        },
+        {
+          "routeId": "YBBN--YSSY",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 7079.350226143299,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 8.714677143270134
+        },
+        {
+          "routeId": "KATL--KJFK",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 6429.052108421924,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 0.5188261210066658
+        },
+        {
+          "routeId": "KSEA--KSFO",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 7254.003770107203,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 10.912539958632506
+        },
+        {
+          "routeId": "EGLL--LEMD",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 7103.198901099831,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 9.021163562054657
+        },
+        {
+          "routeId": "WMKK--WSSS",
+          "sampleCount": 6,
+          "requiredRadialScaleKm": 5837.710433013831,
+          "fittedRadialScaleKm": 6462.4077100935465,
+          "absolutePercent": 10.701066526816462
+        }
+      ]
+    },
+    "leaveOneOut": {
+      "routeCount": 26,
+      "meanAbsolutePercent": 16.216858673453917,
+      "maxAbsolutePercent": 117.13340268106775
+    },
+    "selectedExponentObjective": 31.54425666949875,
+    "exponentCandidatesTested": 29,
+    "usableProjectedPathCoverage": {
+      "trainingRouteCount": 26,
+      "holdoutRouteCount": 6,
+      "trainingRoutesSouthOf30S": 4,
+      "holdoutRoutesSouthOf30S": 2,
+      "trainingRoutesSouthOf45S": 0,
+      "holdoutRoutesSouthOf45S": 0,
+      "trainingRoutesSouthOf60S": 0,
+      "holdoutRoutesSouthOf60S": 0
+    }
+  },
+  "routeCoverage": {
+    "trainingRouteCount": 26,
+    "holdoutRouteCount": 6,
+    "trainingRoutesSouthOf30S": 4,
+    "holdoutRoutesSouthOf30S": 2,
+    "trainingRoutesSouthOf45S": 0,
+    "holdoutRoutesSouthOf45S": 0,
+    "trainingRoutesSouthOf60S": 0,
+    "holdoutRoutesSouthOf60S": 0,
+    "trainingFlightsWithPaths": 149,
+    "holdoutFlightsWithPaths": 36,
+    "totalTrajectoryPoints": 30287
+  }
+}
