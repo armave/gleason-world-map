@@ -24,6 +24,7 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   maximumTrainingMapePercent: 8,
   maximumHoldoutMapePercent: 10,
   maximumHoldoutPairErrorPercent: 20,
+  minimumHoldoutImprovementPercentagePoints: 0.25,
   minimumJacobianDeterminant: 0.2,
   maximumAnchorDisplacementFraction: 0.12,
   maximumWarpDisplacementFraction: 0.12,
@@ -718,8 +719,11 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     failures.push('Interpolated warp extends beyond the circular disk boundary');
   if (topology.maximumBoundaryDisplacementKm > 1e-5)
     failures.push('Candidate deformation does not exactly preserve the pole and Antarctic rim');
-  if (holdoutMetrics.meanAbsolutePercent >= baselineHoldout.meanAbsolutePercent - 0.25)
-    failures.push('Candidate does not improve independent holdout MAPE by at least 0.25 percentage points');
+  if (holdoutMetrics.meanAbsolutePercent >= baselineHoldout.meanAbsolutePercent -
+      limits.minimumHoldoutImprovementPercentagePoints) {
+    failures.push('Candidate does not improve independent holdout MAPE by at least ' +
+      limits.minimumHoldoutImprovementPercentagePoints + ' percentage points');
+  }
 
   model.trainingAnchorCount = coverage.trainingAnchorCount;
   model.trainingObservationCount = training.length;
