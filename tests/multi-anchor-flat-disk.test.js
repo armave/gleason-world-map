@@ -158,14 +158,24 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   const truth = {
     diskRadiusKm: DISK_RADIUS_KM,
     sigmaKm,
-    controls: seed.map((point, index) => ({
-      id: anchors[index].id,
-      xKm: point[0],
-      yKm: point[1],
-      envelope: envelopeAt(point),
-      alphaX: 130 * Math.sin(index * 0.73),
-      alphaY: 130 * Math.cos(index * 0.61)
-    }))
+    controls: [
+      [0.32, 0.18, 400, -150],
+      [-0.30, 0.12, -320, 180],
+      [0.05, -0.45, 120, 360]
+    ].map(([xFraction, yFraction, alphaX, alphaY], index) => {
+      const point = [
+        xFraction * DISK_RADIUS_KM,
+        yFraction * DISK_RADIUS_KM
+      ];
+      return {
+        id: 'smooth-truth-' + index,
+        xKm: point[0],
+        yKm: point[1],
+        envelope: envelopeAt(point),
+        alphaX,
+        alphaY
+      };
+    })
   };
   const transformed = seed.map(point =>
     applyMultiAnchorWarpXY(point[0], point[1], truth)
@@ -216,9 +226,9 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   }
 
   const result = fitMultiAnchorFlatDisk(observations, {
-    iterations: 4000,
-    learningRateKm: 6,
-    anchorWeight: 0.005,
+    iterations: 3000,
+    learningRateKm: 4,
+    anchorWeight: 0.03,
     sigmaKm,
     regularization: 1e-3
   });
