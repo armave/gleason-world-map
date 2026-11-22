@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "accepted": true,
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-22T10:18:46.871Z",
+  "sourceRetrievedAt": "2026-11-22T10:57:11.685Z",
   "method": {
     "target": "Median observed ADS-B ground-speed/time mileage by airport pair",
     "geometry": "Current displayed 12-circle radial and anchored longitude-warped flat disk",
-    "predictor": "Four nearest training route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios",
+    "predictor": "Four nearest route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios",
     "features": [
       "meanRadialFraction",
       "radialShareOfChord",
@@ -25,9 +25,9 @@
     "holdoutRouteCount": 6,
     "trainingSupportedLeaveOneOutRouteCount": 20,
     "holdoutSupportedRouteCount": 4,
-    "trainingLeaveOneRouteOutMapePercent": 7.062596403914466,
-    "trainingLeaveOneRouteOutMaxErrorPercent": 18.357365001950974,
-    "holdoutMapePercent": 1.1511279211889103,
+    "trainingLeaveOneRouteOutMapePercent": 7.06259640391433,
+    "trainingLeaveOneRouteOutMaxErrorPercent": 18.357365001950797,
+    "holdoutMapePercent": 1.1511279211890102,
     "holdoutMaxErrorPercent": 2.5644076510512592,
     "limits": {
       "minimumTrainingRoutes": 20,
@@ -49,7 +49,7 @@
     "independentHoldout": {
       "total": 6,
       "supported": 4,
-      "coveragePercent": 66.66666666666667
+      "coveragePercent": 66.66666666666666
     }
   },
   "excludedTrainingRoutes": [
@@ -62,8 +62,181 @@
   ],
   "importantLimitations": [
     "The supported accuracy figures apply only to held-out routes within the route-feature and chord-length support radius.",
-    "Two of six independent holdout pairs are outside support and are not included in the supported holdout error metrics.",
-    "No qualifying training airport-pair chord exceeds about 2,314 km; Santiago–Canberra has a displayed chord of about 23,894 km and is therefore an extrapolation.",
+    "2 of 6 independent holdout pairs are outside support and are not included in the supported holdout error metrics.",
+    "No qualifying training airport-pair chord exceeds about 2,314 km; materially longer query chords are extrapolations.",
     "This is a typical observed flight-mileage estimate, not a selected flight's path or a shortest point-to-point distance."
-  ]
+  ],
+  "metrics": {
+    "trainingLeaveOneRouteOut": {
+      "routeCount": 25,
+      "supportedRouteCount": 20,
+      "supportedCoveragePercent": 80,
+      "meanAbsolutePercent": 7.06259640391433,
+      "maxAbsolutePercent": 18.357365001950797,
+      "supportedRouteErrors": [
+        {
+          "routeId": "EGLL--LFPG",
+          "errorPercent": 11.116693688685286,
+          "nearestFeatureDistance": 0.5646474554622123
+        },
+        {
+          "routeId": "EDDF--EGLL",
+          "errorPercent": -6.349152523425405,
+          "nearestFeatureDistance": 0.7793381750889323
+        },
+        {
+          "routeId": "KJFK--KMIA",
+          "errorPercent": 4.686598432924782,
+          "nearestFeatureDistance": 0.656484212160401
+        },
+        {
+          "routeId": "KJFK--KORD",
+          "errorPercent": -8.570418835375781,
+          "nearestFeatureDistance": 0.4452040580762867
+        },
+        {
+          "routeId": "EDDF--EHAM",
+          "errorPercent": -11.083794067317076,
+          "nearestFeatureDistance": 0.5017329012089504
+        },
+        {
+          "routeId": "OMDB--OOMS",
+          "errorPercent": 12.912742164889423,
+          "nearestFeatureDistance": 0.551767499110001
+        },
+        {
+          "routeId": "OBBI--OMDB",
+          "errorPercent": 13.226089627798942,
+          "nearestFeatureDistance": 0.8475210983748044
+        },
+        {
+          "routeId": "YMML--YSSY",
+          "errorPercent": -5.650913163086091,
+          "nearestFeatureDistance": 0.5803889627032812
+        },
+        {
+          "routeId": "YMML--YPAD",
+          "errorPercent": 6.008738387699464,
+          "nearestFeatureDistance": 0.5848425096100808
+        },
+        {
+          "routeId": "KBOS--KJFK",
+          "errorPercent": -14.624310880330892,
+          "nearestFeatureDistance": 0.5018276918970725
+        },
+        {
+          "routeId": "KDEN--KORD",
+          "errorPercent": 7.337375471394014,
+          "nearestFeatureDistance": 0.4526950044030126
+        },
+        {
+          "routeId": "KATL--KORD",
+          "errorPercent": -4.276212937293266,
+          "nearestFeatureDistance": 0.6457361333464203
+        },
+        {
+          "routeId": "KLAX--KSFO",
+          "errorPercent": -2.4429901005882604,
+          "nearestFeatureDistance": 0.8931970084357702
+        },
+        {
+          "routeId": "KLAS--KLAX",
+          "errorPercent": 18.357365001950797,
+          "nearestFeatureDistance": 0.550128881959709
+        },
+        {
+          "routeId": "KATL--KMIA",
+          "errorPercent": -3.371218351398919,
+          "nearestFeatureDistance": 0.5378381364368383
+        },
+        {
+          "routeId": "EDDM--EGLL",
+          "errorPercent": -0.06808848882099428,
+          "nearestFeatureDistance": 0.7759644268785526
+        },
+        {
+          "routeId": "EGLL--LIRF",
+          "errorPercent": -2.9253129125692667,
+          "nearestFeatureDistance": 0.46877590613889436
+        },
+        {
+          "routeId": "EHAM--LEMD",
+          "errorPercent": 0.8825600408293832,
+          "nearestFeatureDistance": 0.6480834620508719
+        },
+        {
+          "routeId": "LFPG--LIRF",
+          "errorPercent": 5.636171407668389,
+          "nearestFeatureDistance": 0.46130847678018333
+        },
+        {
+          "routeId": "EDDF--LIRF",
+          "errorPercent": 1.725181594240155,
+          "nearestFeatureDistance": 0.5413554677793043
+        }
+      ],
+      "unsupportedRoutes": [
+        {
+          "routeId": "EGLL--EHAM",
+          "nearestFeatureDistance": 1.0606600538972377
+        },
+        {
+          "routeId": "EHAM--LFPG",
+          "nearestFeatureDistance": 1.0579459882647642
+        },
+        {
+          "routeId": "YPAD--YSSY",
+          "nearestFeatureDistance": 1.5066758729382481
+        },
+        {
+          "routeId": "YBCG--YSSY",
+          "nearestFeatureDistance": 2.42171902915775
+        },
+        {
+          "routeId": "LFPG--LTFM",
+          "nearestFeatureDistance": 1.1148121495965941
+        }
+      ]
+    },
+    "independentHoldout": {
+      "routeCount": 6,
+      "supportedRouteCount": 4,
+      "supportedCoveragePercent": 66.66666666666666,
+      "meanAbsolutePercent": 1.1511279211890102,
+      "maxAbsolutePercent": 2.5644076510512592,
+      "supportedRouteErrors": [
+        {
+          "routeId": "YBBN--YSSY",
+          "errorPercent": 0.544458826465033,
+          "nearestFeatureDistance": 0.4132362550025926
+        },
+        {
+          "routeId": "KATL--KJFK",
+          "errorPercent": 2.5644076510512592,
+          "nearestFeatureDistance": 0.6440315366304382
+        },
+        {
+          "routeId": "KSEA--KSFO",
+          "errorPercent": 1.3330117626882076,
+          "nearestFeatureDistance": 0.3079813386342967
+        },
+        {
+          "routeId": "EGLL--LEMD",
+          "errorPercent": 0.16263344455154094,
+          "nearestFeatureDistance": 0.5161022542093707
+        }
+      ],
+      "unsupportedRoutes": [
+        {
+          "routeId": "YBBN--YMML",
+          "nearestFeatureDistance": 1.7390440725816305
+        },
+        {
+          "routeId": "WMKK--WSSS",
+          "nearestFeatureDistance": 1.2974742523502705
+        }
+      ]
+    }
+  },
+  "supportedDomainOnly": true
 }
