@@ -61,9 +61,9 @@ Each `MultiLineString` component is treated as its own observed sequence. The pr
 
 ### Projection of recorded track points
 
-The target mileage is still calculated exclusively from recorded ground speed and elapsed time. Flight coordinates are used separately to test whether the candidate flat-disk drawing corresponds to the observed track geometry.
+The target mileage is calculated exclusively from recorded ground speed and elapsed time. Flight coordinates are used separately to test whether the candidate flat-disk drawing corresponds to the observed track geometry.
 
-For each recorded position `(longitude, latitude)`, calculate the candidate base radial fraction `q` using the regularized-power latitude warp. Apply the same continuous 12-circle radial profile displayed by the map:
+For each recorded position `(longitude, latitude)`, calculate the candidate base radial fraction `q` using the regularized-power latitude warp, then apply the integrated 12-circle profile and the fitted longitude shear:
 
 ```text
 t = (90° - latitude) / 180°
@@ -71,11 +71,16 @@ q(t) = regularized_power(t, exponent, epsilon)
 m(q) = outer + (inner - outer) * (1 - q)^a
 I(q) = integral(0..q, m(u) du)
      = outer*q + (inner - outer) * [1 - (1 - q)^(a + 1)] / (a + 1)
-mu = I(1)
 r_unit = π * I(q)
-x_unit = r_unit * cos(longitude)
-y_unit = -r_unit * sin(longitude)
+g(q) = 4q(1 - q)
+F(λ) = a1 sin(λ) + b1(1 - cos(λ))
+     + a2 sin(2λ) + b2(1 - cos(2λ))
+λ_display = λ + g(q) * F(λ)
+x_unit = r_unit * cos(λ_display)
+y_unit = -r_unit * sin(λ_display)
 ```
+
+The four Fourier coefficients are fitted on training routes only. The radial envelope `g(q)` is zero at both the North Pole (`q=0`) and Ice Wall (`q=1`), so the centre and complete circular rim keep their anchors. The longitude function is periodic; its angular derivative is constrained to remain at least 0.35 across the full disk, preventing longitude lines from crossing or folding over. The inverse projection solves the same monotonic angle mapping at the recovered radial fraction.
 
 For each adjacent pair of vertices within one source sequence, calculate the Euclidean segment length in the candidate flat disk. The unit-scale path length for a flight is the sum of those segment lengths across all source sequences:
 
@@ -100,17 +105,20 @@ route_scale_ratio = median(flight_scale_ratio for that airport pair)
 R_base = median(route_scale_ratio across training airport pairs)
 ```
 
-Each airport pair contributes one route-level observation, regardless of how many flights that route contains. The fitter searches the regularized-power latitude exponent from 0.65 through 1.35 in 0.025 increments and a constrained radial-profile exponent from 0.70, 0.85, 1.00, 1.15 and 1.30. The inner and outer multipliers remain 1.00× and 0.50×. It chooses both shape parameters using training-route error plus nested leave-one-route-out error. Entire airport pairs are excluded from fitting and used as independent holdouts.
+Each airport pair contributes one route-level observation, regardless of how many flights that route contains. The fitter jointly selects the regularized-power latitude exponent, integrated radial-profile exponent, four periodic longitude coefficients and one global radial scale. Candidate longitude coefficients are regularized and bounded, and the minimum angular stretch must remain at least 0.35. The objective uses route-level leave-one-out error within the training split; the outer leave-one-route-out validation refits the complete geometry after excluding each training airport pair. The six preassigned holdout airport pairs are not used to fit the final model.
 
-A path candidate is rejected unless it has at least 20 usable training airport pairs and 6 usable holdout pairs, 4 training and 2 holdout pairs with an endpoint south of 30°S, at least 2 training and 1 holdout pair south of 45°S, and at least 1 training and 1 holdout pair south of 60°S. A route is usable only when at least three quality-qualified flights produce non-zero projected path lengths. The 30°S, 45°S and 60°S route-coverage gates are re-counted after projection, so unusable trajectories cannot satisfy the spatial requirements. These spatial and usable-route gates apply in addition to these error limits:
+A path candidate requires at least 20 usable training airport pairs and 6 usable holdout pairs, plus 4 training and 2 holdout pairs with an endpoint south of 30°S. A route is usable only when at least three quality-qualified flights produce non-zero projected path lengths. The route counts are rechecked after projection. The current archive has 26 training and 6 holdout routes, including 4 and 2 respectively south of 30°S, but no qualified routes south of 45°S or 60°S. Those deeper southern bands are reported as explicit extrapolation warnings rather than hidden behind a false validation claim. The shear itself fades to identity at the Ice Wall, but that anchor does not empirically validate the intervening Antarctic geometry.
+
+The fitted model is judged against these error and geometry limits:
 
 - Training-route MAPE no greater than 10%.
 - Independent holdout MAPE no greater than 12%.
 - Worst independent holdout route error no greater than 20%.
-- Leave-one-route-out MAPE no greater than 15%.
-- Worst leave-one-route-out route error no greater than 45%.
+- Nested leave-one-route-out MAPE no greater than 15%.
+- Worst nested leave-one-route-out route error no greater than 45%.
+- Minimum angular stretch no less than 0.35.
 
-A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. If a candidate passes, the workflow writes the accepted radial scale and warp to that file, and the displayed projection, inverse lookup, scale bar and planar measurements all use that same geometry.
+A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. An accepted candidate writes radial scale, latitude warp, radial profile and longitude warp to that file. The renderer, inverse lookup, coastlines, markers, map-click coordinates, ruler, scale bar and planar measurements all use the same forward/inverse geometry.
 
 The previous endpoint-chord fitter still creates `data/flight-calibration-summary.json` and `src/core/flight-calibration-parameters.js`. Its local route-neighbour estimate remains a secondary reference for typical flown mileage only; it does not control the visible projection.
 
