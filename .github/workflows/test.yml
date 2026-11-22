@@ -15,5 +15,7 @@ jobs:
         with:
           node-version: 24
       - run: npm install --no-audit --no-fund
+      - run: npm run fit:endpoint-distance-calibration -- --require-accepted
+      - run: git diff --exit-code -- src/core/endpoint-distance-calibration-parameters.js
       - run: npm run build
       - run: npm test
