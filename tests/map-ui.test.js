@@ -163,7 +163,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /flightEmpiricalDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The connector and its map label report Euclidean distance along the straight projected chord/);
+  assert.match(app, /The primary A–B readout multiplies the straight projected chord by a smoothly interpolated 12-circle radial factor/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -213,11 +213,14 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('the projected chord is primary and ADS-B flight mileage is a separate reference',()=>{
- assert.match(html,/Straight projected A–B distance/);
+test('the radial-corrected A–B readout and ADS-B flight mileage remain separate references',()=>{
+ assert.match(html,/Radially calibrated A–B distance/);
+ assert.match(html,/12-circle distance multiplier/);
+ assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
- assert.match(app,/The connector and its map label report Euclidean distance along the straight projected chord/);
+ assert.match(app,/Raw disk chord × .* radial factor/);
+ assert.match(app,/radialCirclePosition/);
 });
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
