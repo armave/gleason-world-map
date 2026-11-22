@@ -40,6 +40,22 @@ export function visualRadialFractionFromBaseFraction(baseFraction) {
   return q + q * (1 - q) / 3;
 }
 
+/**
+ * Shared 12 reference positions for both the calibration table and map overlay.
+ * Circle 1 is the North Pole (centre); circle 12 is the Antarctic rim.
+ */
+export const RADIAL_DISTANCE_VISUAL_CIRCLES = Object.freeze(
+  Array.from({ length: RADIAL_DISTANCE_CIRCLE_COUNT }, (_, index) => {
+    const baseFraction = index / (RADIAL_DISTANCE_CIRCLE_COUNT - 1);
+    return Object.freeze({
+      circle: index + 1,
+      baseFraction,
+      visualFraction: visualRadialFractionFromBaseFraction(baseFraction),
+      factor: RADIAL_DISTANCE_CIRCLE_FACTORS[index]
+    });
+  })
+);
+
 /** Exact inverse of visualRadialFractionFromBaseFraction. */
 export function baseRadialFractionFromVisualFraction(visualFraction) {
   if (!Number.isFinite(visualFraction)) return NaN;
