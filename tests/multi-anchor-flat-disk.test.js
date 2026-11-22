@@ -139,6 +139,12 @@ test('malformed model controls fail closed rather than throwing', () => {
   };
   assert.equal(applyMultiAnchorWarpXY(100, 200, malformed), null);
   assert.equal(invertMultiAnchorWarpXY(100, 200, malformed), null);
+  const valid = {
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm: DISK_RADIUS_KM * 0.2,
+    controls: []
+  };
+  assert.equal(invertMultiAnchorWarpXY(100, 200, valid, null), null);
   const diagnostics = inspectMultiAnchorTopology(malformed);
   assert.equal(diagnostics.minimumJacobianDeterminant, -Infinity);
   assert.equal(diagnostics.topologySampleCount, 0);
