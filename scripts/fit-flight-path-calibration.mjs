@@ -9,7 +9,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import {
   FLIGHT_PATH_CALIBRATION_FILTERS,
   fitFlightPathCalibration,
-  summarizeFlightPathCoverage
+  summarizeFlightPathCoverage,
+  summarizeUsableProjectedPathCoverage
 } from '../src/core/flight-path-calibration.js';
 
 const DATA_PATH = 'data/flight-calibration.json';
@@ -27,6 +28,7 @@ function asJavaScript(model) {
 async function main() {
   const dataset = JSON.parse(await readFile(DATA_PATH, 'utf8'));
   const routeCoverage = summarizeFlightPathCoverage(dataset);
+  const usableProjectedPathCoverage = summarizeUsableProjectedPathCoverage(dataset);
   let fitted = null;
   let rejectionReason = null;
 
@@ -52,6 +54,7 @@ async function main() {
     leaveOneOutMaxRouteErrorPercent,
     usableTrainingRouteCount: metrics?.training?.routeCount ?? 0,
     usableHoldoutRouteCount: metrics?.holdout?.routeCount ?? 0,
+    usableProjectedPathCoverage,
     limits: {
       minimumTrainingRoutes: limits.minimumTrainingRoutes,
       minimumHoldoutRoutes: limits.minimumHoldoutRoutes,
@@ -85,7 +88,15 @@ async function main() {
     routeCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
     routeCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
     routeCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
-    routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
+    routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S &&
+    usableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
+    usableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+    usableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
+    usableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    usableProjectedPathCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    usableProjectedPathCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    usableProjectedPathCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    usableProjectedPathCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 
   const summary = {
     schemaVersion: 1,
