@@ -97,7 +97,9 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
   const a = point(40, 10), b = point(40, 20);
   const visual = flatDiskDistanceMeters(a, b);
   const base = baseFlatDiskDistanceMeters(a, b);
-  assert.ok(visual > base);
+  const q = baseRadialFraction(40);
+  close(visual / base, 1 - 0.25 * q, 1e-12);
+  assert.ok(visual < base);
 });
 
 test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {
