@@ -8,6 +8,10 @@
  * equations, coordinate-derived route lengths, or external math libraries.
  */
 import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from './radial-warp.js';
+import {
+  RADIAL_DISTANCE_PROFILE_MEAN,
+  visualRadialFractionFromBaseFraction
+} from './visual-radial-calibration.js';
 
 const DEG = Math.PI / 180;
 const FACTOR_BOUNDS = [0.5, 2.5];
@@ -15,8 +19,8 @@ const NEIGHBOR_COUNT = 2;
 const INVERSE_DISTANCE_POWER = 1;
 const MIN_TRAIN_ROUTES = 10;
 const MIN_HOLDOUT_ROUTES = 4;
-const MIN_ROUTE_TELEMETRY_COVERAGE = 0.35;
-const MAX_ROUTE_TELEMETRY_GAP_MINUTES = 300;
+const MIN_ROUTE_TELEMETRY_COVERAGE = 0.98;
+const MAX_ROUTE_TELEMETRY_GAP_MINUTES = 15;
 
 function median(values) {
   if (!values.length) return NaN;
@@ -50,15 +54,24 @@ function wrappedLongitudeSpanRadians(first, second) {
  * Exact chord components in the warped radial disk when R=1. Multiplication
  * by pi keeps the unit-chord units aligned with the nominal scale R.
  */
-function diskChordComponents(first, second, radialWarp = DEFAULT_RADIAL_WARP) {
+function diskChordComponents(
+  first,
+  second,
+  radialWarp = DEFAULT_RADIAL_WARP,
+  chordGeometry = 'visual-12-circle'
+) {
   const tA = (90 - first.lat) / 180;
   const tB = (90 - second.lat) / 180;
-  const qA = radialFractionFromUnitColatitude(tA, radialWarp);
-  const qB = radialFractionFromUnitColatitude(tB, radialWarp);
-  const radialComponent = Math.PI * Math.abs(qA - qB);
+  const baseA = radialFractionFromUnitColatitude(tA, radialWarp);
+  const baseB = radialFractionFromUnitColatitude(tB, radialWarp);
+  const useVisualChord = chordGeometry === 'visual-12-circle';
+  const qA = useVisualChord ? visualRadialFractionFromBaseFraction(baseA) : baseA;
+  const qB = useVisualChord ? visualRadialFractionFromBaseFraction(baseB) : baseB;
+  const profileScale = useVisualChord ? RADIAL_DISTANCE_PROFILE_MEAN : 1;
+  const radialComponent = profileScale * Math.PI * Math.abs(qA - qB);
   const longitudeSpan = wrappedLongitudeSpanRadians(first, second);
   const tangentialComponent =
-    Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
+    profileScale * Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   return {
     meanRadialFraction: (qA + qB) / 2,
     radialComponent,
@@ -67,16 +80,18 @@ function diskChordComponents(first, second, radialWarp = DEFAULT_RADIAL_WARP) {
   };
 }
 
-export function unitDiskChord(first, second, radialWarp = DEFAULT_RADIAL_WARP) {
+export function unitDiskChord(
+  first, second, radialWarp = DEFAULT_RADIAL_WARP, chordGeometry = 'visual-12-circle'
+) {
   if (!validAirport(first) || !validAirport(second)) return NaN;
-  return diskChordComponents(first, second, radialWarp).chord;
+  return diskChordComponents(first, second, radialWarp, chordGeometry).chord;
 }
 
 export function flightCalibrationFeatures(
-  first, second, radialWarp = DEFAULT_RADIAL_WARP
+  first, second, radialWarp = DEFAULT_RADIAL_WARP, chordGeometry = 'visual-12-circle'
 ) {
   if (!validAirport(first) || !validAirport(second)) return null;
-  const components = diskChordComponents(first, second, radialWarp);
+  const components = diskChordComponents(first, second, radialWarp, chordGeometry);
   if (components.chord <= 1e-9) {
     return [components.meanRadialFraction, 0, 0];
   }
@@ -88,6 +103,11 @@ export function flightCalibrationFeatures(
 }
 
 function routeObservations(dataset, split, radialWarp) {
+  const hasStrictObservedOnlyPolicy =
+    dataset?.schemaVersion >= 3 &&
+    dataset?.measurement?.coverageDenominator === 'full-flight-duration' &&
+    dataset?.measurement?.distancePolicy === 'observed-only';
+  if (!hasStrictObservedOnlyPolicy) return [];
   return (dataset?.routes || []).flatMap(route => {
     if (route.split !== split || !validAirport(route.airportA) ||
         !validAirport(route.airportB) ||
@@ -99,8 +119,8 @@ function routeObservations(dataset, split, radialWarp) {
     const observations = hasObservationRecords
       ? route.observations.filter(observation =>
           observation?.accepted !== false &&
-          Number.isFinite(observation?.trackKm ?? observation?.estimatedTrackKm) &&
-          (observation.trackKm ?? observation.estimatedTrackKm) > 0 &&
+          Number.isFinite(observation?.observedTrackKm ?? observation?.trackKm) &&
+          (observation.observedTrackKm ?? observation.trackKm) > 0 &&
           Number.isFinite(observation.coverage) &&
           observation.coverage >= MIN_ROUTE_TELEMETRY_COVERAGE &&
           Number.isFinite(observation.maxGapMinutes) &&
@@ -115,7 +135,7 @@ function routeObservations(dataset, split, radialWarp) {
     )) return [];
 
     const trackValues = observations.map(observation =>
-      observation.trackKm ?? observation.estimatedTrackKm
+      observation.observedTrackKm ?? observation.trackKm
     );
     return [{
       ...route,
@@ -163,8 +183,10 @@ export function summarizeFlightCalibrationCoverage(dataset) {
   return {
     trainingRouteCount: training.length,
     holdoutRouteCount: holdout.length,
+    trainingRoutesSouthOf30S: southernCount(training, -30),
     trainingRoutesSouthOf45S: southernCount(training, -45),
     trainingRoutesSouthOf60S: southernCount(training, -60),
+    holdoutRoutesSouthOf30S: southernCount(holdout, -30),
     holdoutRoutesSouthOf45S: southernCount(holdout, -45),
     holdoutRoutesSouthOf60S: southernCount(holdout, -60)
   };
@@ -215,10 +237,11 @@ function radialScale(examples) {
 function modelFromExamples(examples, sourceDatasetVersion, radialWarp) {
   const stats = featureStatistics(examples);
   return {
-    schemaVersion: 4,
+    schemaVersion: 6,
     sourceDatasetVersion,
+    chordGeometry: 'visual-12-circle',
     radialWarp: { ...radialWarp },
-    target: 'median observed ADS-B flight-track mileage from ground-speed × time integration',
+    target: 'median directly observed ADS-B flown mileage calibrated against the displayed 12-circle flat-disk chord',
     radialScaleKm: radialScale(examples),
     featureNames: ['meanRadialFraction', 'radialShareOfChord', 'tangentialShareOfChord'],
     featureMeans: stats.means,
@@ -297,9 +320,11 @@ export function predictFlightScaleRatio(features, model, { excludeRouteId = null
 export function predictFlightCalibratedKm(first, second, model) {
   if (!model || !validAirport(first) || !validAirport(second)) return null;
   const radialWarp = model.radialWarp || DEFAULT_RADIAL_WARP;
-  const chord = unitDiskChord(first, second, radialWarp);
+  const chordGeometry = model.chordGeometry === 'visual-12-circle'
+    ? 'visual-12-circle' : 'base';
+  const chord = unitDiskChord(first, second, radialWarp, chordGeometry);
   if (!Number.isFinite(chord)) return null;
-  const features = flightCalibrationFeatures(first, second, radialWarp);
+  const features = flightCalibrationFeatures(first, second, radialWarp, chordGeometry);
   const prediction = predictFlightScaleRatio(features, model);
   if (!prediction) return null;
 
@@ -313,8 +338,12 @@ export function predictFlightCalibratedKm(first, second, model) {
 
 function routeError(route, model, excludeRouteId = null) {
   const radialWarp = model.radialWarp || DEFAULT_RADIAL_WARP;
-  const chord = unitDiskChord(route.airportA, route.airportB, radialWarp);
-  const features = flightCalibrationFeatures(route.airportA, route.airportB, radialWarp);
+  const chordGeometry = model.chordGeometry === 'visual-12-circle'
+    ? 'visual-12-circle' : 'base';
+  const chord = unitDiskChord(route.airportA, route.airportB, radialWarp, chordGeometry);
+  const features = flightCalibrationFeatures(
+    route.airportA, route.airportB, radialWarp, chordGeometry
+  );
   const scale = predictFlightScaleRatio(features, model, { excludeRouteId });
   if (!scale) return NaN;
   const predicted = chord * clamp(
@@ -346,6 +375,20 @@ function summarizeErrors(routes, errors) {
   };
 }
 
+/**
+ * Error of the actual primary map measurement: its displayed 12-circle chord
+ * multiplied only by the map's one radial scale. This excludes the local
+ * route-neighbour correction used for the secondary flight-mileage estimate.
+ */
+function visualProjectionError(route, radialScaleKm, radialWarp) {
+  const chord = unitDiskChord(
+    route.airportA, route.airportB, radialWarp, 'visual-12-circle'
+  );
+  if (!Number.isFinite(chord) || !Number.isFinite(radialScaleKm) ||
+      !(radialScaleKm > 0) || !(route.medianTrackKm > 0)) return NaN;
+  return (chord * radialScaleKm / route.medianTrackKm - 1) * 100;
+}
+
 export function fitFlightCalibration(dataset) {
   const radialWarp = DEFAULT_RADIAL_WARP;
   const training = routeObservations(dataset, 'train', radialWarp);
@@ -374,12 +417,28 @@ export function fitFlightCalibration(dataset) {
   const trainingMetrics = summarizeErrors(training, leaveOneOutErrors);
   const holdoutMetrics = summarizeErrors(holdout, holdoutErrors);
 
+  // Independent route-level validation for the primary displayed map chord.
+  // LOO folds refit only the one global radial scale on the remaining routes.
+  const visualProjectionTrainingErrors = training.map(route => {
+    const subset = examples.filter(example => example.routeId !== route.routeId);
+    const looModel = modelFromExamples(subset, dataset.schemaVersion, radialWarp);
+    return visualProjectionError(route, looModel.radialScaleKm, radialWarp);
+  });
+  const visualProjectionHoldoutErrors = holdout.map(route =>
+    visualProjectionError(route, model.radialScaleKm, radialWarp)
+  );
+  const visualProjection = {
+    training: summarizeErrors(training, visualProjectionTrainingErrors),
+    holdout: summarizeErrors(holdout, visualProjectionHoldoutErrors)
+  };
+
   return {
     model,
     metrics: {
       training: trainingMetrics,
       holdout: holdoutMetrics,
       leaveOneOut: trainingMetrics,
+      visualProjection,
       spatialCoverage
     }
   };

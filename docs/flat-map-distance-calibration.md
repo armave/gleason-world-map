@@ -24,28 +24,14 @@ The source's flight detail contains `path_gs`, a time series of pairs `[unix_tim
 
 ### Mileage calculation
 
-Within each contiguous `path_gs` subsequence, a speed sample is treated as step-interpolated until the next timestamp in that same subsequence. Missing-data gaps between subsequences are never joined with a fabricated speed.
-
-For each accepted interval:
+Within each contiguous `path_gs` subsequence, a speed sample is integrated only to the next timestamp in that same sequence. Coverage is measured against the full flight duration from `start_ts` to `end_ts`, including missing time before the first and after the last sample. Each accepted interval contributes:
 
 ```text
 interval_nautical_miles = ground_speed_knots * elapsed_seconds / 3600
-```
-
-The intervals are summed and converted using the unit conversion:
-
-```text
 observed_track_km = sum(interval_nautical_miles) * 1.852
 ```
 
-The archive can have gaps in an otherwise valid telemetry span. Speed observations are used only when the next timestamp is no more than 15 minutes away; longer intervals are excluded and recorded as gaps rather than carrying a stale speed forward. To estimate mileage over the first-to-last observed speed timestamp, the collector expands the observed integral using the **measured time coverage**:
-
-```text
-time_coverage = accepted_speed_interval_seconds / telemetry_span_seconds
-estimated_track_km = observed_track_km / time_coverage
-```
-
-This is a measured-mean-speed estimate across missing intervals, not a claim that the aircraft maintained one exact speed during the gaps. Each flight stores both the observed-only integral and the coverage-expanded estimate, plus coverage, largest contiguous gap, elapsed flight time, telemetry-span time, interval count and mean measured ground speed. The route reference is the median estimated track mileage across accepted flights for that airport pair.
+The calibration accepts only directly observed integrals with at least 98% full-flight coverage, no unsupported gap longer than 15 minutes, at least eight valid intervals and at least 35 minutes of recorded flight. Missing intervals are never filled, and a partial observation is never divided by coverage to create an estimated full-flight total.
 
 ### Data-quality filters
 
@@ -54,15 +40,15 @@ The filters are defined once in `src/core/flight-telemetry.js` and copied into t
 - Ground-speed samples below 40 knots or above 750 knots are excluded from the airborne integration.
 - Telemetry span must be at least 35 minutes.
 - At least 8 valid speed intervals are required.
-- Valid speed intervals must cover at least 35% of the first-to-last telemetry span.
+- Valid speed intervals must cover at least 98% of the complete flight start-to-end duration.
 - No single ground-speed sample is held across an interval longer than 15 minutes; such intervals are excluded and counted as telemetry gaps.
-- No time is inferred outside the first and last speed timestamps.
+- Time missing before the first or after the last speed timestamp counts against coverage.
 
-The minimum coverage threshold is a collection-quality floor, not a guarantee of high accuracy. Coverage and largest-gap statistics remain in the dataset so a reviewer can decide whether a route observation is sufficiently representative.
+Coverage is an explicit acceptance gate, not an expansion factor. The observed-only distance policy is versioned in the dataset metadata; legacy datasets with a different or ambiguous coverage policy are ineligible for the strict fitter.
 
 ## Route sampling and validation
 
-Routes are collected by airport-pair identifier. The collector tries to fill a target of 8 accepted flights per route and stores every accepted observation. It uses the airport's published terminal boundary when available, or a 20 km airport-centred fallback search circle, only to ask the source API for flights with the requested origin and destination. It then checks the flight's own departure/arrival identifiers against the requested pair.
+Routes are collected by airport-pair identifier. The collector searches historical seven-day windows for up to 180 days and tries to fill a target of 6 accepted flights per route and stores every accepted observation. It uses the airport's published terminal boundary when available, or a 20 km airport-centred fallback search circle, only to ask the source API for flights with the requested origin and destination. It then checks the flight's own departure/arrival identifiers against the requested pair.
 
 The calibration split is at the **airport-pair level**:
 
@@ -70,11 +56,11 @@ The calibration split is at the **airport-pair level**:
 - Holdout routes are not used during fitting. They are evaluated only after the model has been fitted.
 - Leave-one-route-out validation refits the model after removing each training route in turn.
 
-A route needs at least 3 accepted flights before it can be used as a calibration observation. The fitter recomputes each route target from individual observations and retains only flights with at least 35% telemetry coverage and a largest gap no greater than 5 hours. Route examples with better coverage, shorter gaps and more accepted flights receive greater model weight. The candidate fitter requires at least 10 training routes and 4 holdout routes to calculate validation metrics; the production acceptance gate is stricter: at least 30 training routes, 4 holdout routes, 4 training routes south of 45°S, at least one training and one holdout route south of 60°S, and at least one southern holdout route. Existing error limits also have to pass. If any requirement fails, it does not write a production parameter file and the last approved coefficients remain active.
+A route needs at least three accepted high-coverage flights. Each route contributes one median observed-only mileage value. Entire airport pairs are held out from fitting. The refreshed production gate requires at least 20 training routes, 6 holdout routes, 4 training routes with an endpoint south of 30°S and 2 holdout routes with an endpoint south of 30°S, in addition to the existing error limits. Polar regions remain unvalidated unless suitable independent records become available. If any gate fails, the last accepted production coefficients remain active.
 
 ## Flat-disk model
 
-The map remains a circular radial disk, but the latitude-to-radius relation is now smoothly warped using the ADS-B route sample. This changes the map's latitude-ring spacing as well as the numeric radial scale; it is not merely a multiplier applied to a distance readout.
+The map remains a circular radial disk. Its current latitude-to-radius relation and 12-circle profile are carried forward from the last accepted calibration; a replacement based on the stricter observed-only records is not promoted until its independent holdout gates pass. This changes the map's latitude-ring spacing as well as the numeric radial scale; it is not merely a multiplier applied to a distance readout.
 
 For latitude `phi`, define colatitude `theta = pi/2 - phi` and normalized colatitude `t = theta / pi`. The current radial warp is a regularized power curve:
 
@@ -89,7 +75,7 @@ x_base = r_base * cos(longitude)
 y_base = -r_base * sin(longitude)
 ```
 
-The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale `R_base` is regenerated from the approved training routes. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the fitted base scale until its measured observations pass the independent acceptance gate.
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The currently deployed `R_base` is frozen from the last accepted legacy calibration. The strict observed-only refresh creates a separate candidate and does not change the production scale unless its route coverage, Southern Hemisphere and visual-projection validation gates all pass. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the deployed scale until its measured observations pass the independent acceptance gate.
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
@@ -167,9 +153,9 @@ The base scale `R_base` is an empirical flat-disk calibration derived from ADS-B
 
 **Antarctic rim convention:** when `φ = −90°`, `q_visual = 1` and the radial coordinate is the disk boundary. Longitude `λ` continues to set the angular position around that boundary. Thus two coordinates at 90°S with different longitudes are different disk points. This deliberate convention preserves the circular Antarctic rim rather than collapsing it to one spherical pole.
 
-A separate ADS-B flight-mileage estimate is retained as an empirical reference. It uses the original fitted base chord and local route-neighbour correction to estimate typical flown mileage for sampled airport pairs. It does not define or alter the primary flat-disk distance and is not a specific flight path.
+A separate ADS-B flight-mileage estimate is retained as an empirical reference. The active legacy model uses its original fitted base chord. New strict model versions are tagged `chordGeometry: visual-12-circle` and use the same displayed 12-circle chord as the map. In either case, the local route-neighbour correction estimates typical flown mileage only; it does not alter map coordinates or the primary A–B connector. It is not a specific flight path.
 
-For the ADS-B fit, let `qA` and `qB` remain the original fitted radial fractions (before the visual redistribution), and let `deltaLambda` be the wrapped longitude span. The exact Euclidean chord components in the warped unit disk are:
+The legacy ADS-B model used the unmodified base radial fraction. Strict candidate model version 6 instead uses the displayed 12-circle radial positions. For that geometry, calculate `q_visual = (q - 0.25q²) / 0.75` at both endpoints, then use the wrapped longitude span. The physical chord is the following unit chord multiplied by the 0.75 disk-radius factor and the fitted radial scale:
 
 ```text
 radial_component = pi * abs(qA - qB)
@@ -194,18 +180,17 @@ The radial/tangential split distinguishes movement across concentric rings from 
 
 **Important southern-limit note:** the currently approved production snapshot has no training or holdout airport pair with an endpoint south of 60°S; its southernmost accepted endpoint is about 37.7°S. Therefore estimates near the Antarctic rim are still bounded extrapolations, not polar-validated predictions. The new southern/Antarctic airport pairs are collection candidates only. The model will keep the existing approved coefficients until actual ADS-B observations produce sufficient independent southern training and polar holdout coverage and the error gate passes.
 
-The latest collection attempt (retrieved 21 November 2026 at 12:17 UTC) contains 61 candidate airport pairs and 253 accepted flight records. After the 35% coverage and 5-hour maximum-gap filters, 32 training routes and 2 holdout routes remain—below the minimum 4 holdouts needed even to score a candidate. The eight added southern/polar candidates were each scanned for 24 pages but produced zero exact-route flight candidates. None of the accepted routes reaches 45°S. The generated fit summary now records this as a rejected candidate with current route counts and candidate diagnostics instead of leaving the previous run's `accepted: true` metrics beside the newer dataset.
+The figures in the schema-2 dataset snapshot are now historical diagnostics only. That snapshot used a 35% telemetry-coverage floor, expanded incomplete mileage, and had only two usable holdout route pairs. It is deliberately ineligible for the strict schema-3 fitter. The updated collector now searches historical seven-day windows for up to 180 days across an expanded route set; its new result must be evaluated under the observed-only policy below before any coefficients are considered.
 
 The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the flight-estimate neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
-The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for:
+The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for two separate models:
 
-- Training routes (in-sample fit).
-- Independent holdout routes.
-- Leave-one-route-out training validation.
+- The route-neighbour model, which estimates typical flown mileage as a secondary empirical reference.
+- The primary visual projection, which uses only the one global radial scale multiplied by the same displayed 12-circle chord used by the map. It is scored using leave-one-route-out training validation and independent holdout routes.
 
-Production parameters are emitted only when there are enough training/holdout route pairs and all configured error thresholds pass. A rejected fit still writes the summary for review, but removes/does not write the production parameter file. This prevents a poor or sparse sample from silently replacing the current map calibration.
+Production parameters are emitted only when both models, route-count and Southern Hemisphere coverage gates pass. In particular, the primary visual projection must meet its own MAPE and worst-route limits without relying on the local route-neighbour correction. A rejected fit still writes the summary for review and preserves the last approved production parameter file. This prevents a good secondary flight-mileage estimate from masking a poorly calibrated map visual scale.
 
 The summary and raw source records are:
 

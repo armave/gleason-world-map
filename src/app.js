@@ -639,7 +639,7 @@ function updateMeasurement(){
   const factor=measurement.calibrationFactor;
   const correction=measurement.correctionPercent;
   $('flightDistanceSub').textContent=Number.isFinite(factor)
-   ?'Empirical ×'+factor.toFixed(3)+' vs original fitted chord · '+(correction>=0?'+':'')+correction.toFixed(1)+'%'
+   ?'Empirical ×'+factor.toFixed(3)+' vs '+(measurement.calibrationChordGeometry==='visual-12-circle'?'displayed 12-circle chord':'legacy base chord')+' · '+(correction>=0?'+':'')+correction.toFixed(1)+'%'
    :'Flight-mileage model unavailable';
 
   $('measureHelp').textContent='The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints in the displayed flat disk. Both endpoint positions use the complete 12-circle warp qᵥ = q + q(1 − q)/3, and the scale bar uses the same map-plane kilometre metric. No globe, sphere or geodesic model is used. On this disk, longitude remains the angular position all the way to 90°S, so the Antarctic rim is a circular boundary rather than one collapsed South Pole point. The ADS-B flight-mileage estimate remains a separate empirical reference.';
@@ -652,7 +652,7 @@ function updateMeasurement(){
     ?'Polar extrapolation · endpoint is near the southern rim and is not validated by nearby routes.'
     :status==='extrapolated'
      ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
-     :'Within sampled route-feature range.';
+     :'Within sampled route-feature range · legacy profile; strict observed-only refresh pending validation.';
   const routeIds=calibration?.neighbourRouteIds||[];
   const routeWeights=calibration?.neighbourWeights||[];
   routes.textContent='Nearest reference routes: '+(routeIds.length

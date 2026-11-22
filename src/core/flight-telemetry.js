@@ -1,12 +1,9 @@
 /**
- * Flight-mileage estimation from ADS-B ground-speed telemetry.
+ * Calibration mileage from recorded ADS-B ground-speed telemetry.
  *
- * Observed distance is the integral of recorded ground speed over short,
- * measured intervals. Intervals longer than 15 minutes are left uncovered,
- * rather than forward-filling a stale speed. The observed integral is still
- * expanded by 1/coverage for the telemetry-span estimate, with coverage and
- * largest gaps retained on every observation.
- *
+ * Only the actually observed speed × time integral is eligible for fitting.
+ * Missing intervals are never expanded or imputed. Flights are rejected if
+ * full-flight coverage is below 98% or any unsupported gap exceeds 15 minutes.
  * Geographic coordinates and route geometry are absent from this module.
  */
 export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
@@ -14,7 +11,8 @@ export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
   minSpeedKnots: 40,
   maxSpeedKnots: 750,
   minFlightMinutes: 35,
-  minCoverage: 0.35,
+  minCoverage: 0.98,
+  maxTelemetryGapMinutes: 15,
   maxSpeedSampleIntervalSeconds: 900,
   minSpeedIntervals: 8
 });
@@ -34,9 +32,8 @@ function epochSeconds(value) {
 
 /**
  * Integrate step-interpolated ADS-B ground speed within each contiguous
- * subsequence. No gap between subsequences is directly filled with invented
- * speed. To estimate the full telemetry-span distance, observed mean ground
- * speed is expanded across the full timestamp span and reported with coverage.
+ * subsequence. No gap between subsequences is filled with invented speed.
+ * Coverage is measured against the full flight start-to-end duration.
  *
  * pathGs[i][j] is [unixSeconds, knots], forward-filled to the next timestamp.
  */
@@ -58,8 +55,8 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
     return { accepted: false, reason: 'missing-ground-speed-or-duration' };
   }
 
-  const telemetryStart = Math.min(...timestamps);
-  const telemetryEnd = Math.max(...timestamps);
+  const telemetryStart = Math.max(flightStart, Math.min(...timestamps));
+  const telemetryEnd = Math.min(flightEnd, Math.max(...timestamps));
   const telemetrySpanSeconds = telemetryEnd - telemetryStart;
   if (!(telemetrySpanSeconds > 0)) {
     return { accepted: false, reason: 'invalid-telemetry-span' };
@@ -87,9 +84,11 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       const intervalEnd = Math.min(telemetryEnd, nextTimestamp);
       const deltaSeconds = intervalEnd - intervalStart;
       if (!(deltaSeconds > 0)) continue;
-      if (deltaSeconds > FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds) {
+      const recordedIntervalSeconds = nextTimestamp - timestamp;
+      if (recordedIntervalSeconds > FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds) {
         // A single speed sample must not be treated as representative across
-        // a long blind interval. Leave it uncovered and report the gap.
+        // a long recorded interval, even when only part of that gap overlaps
+        // the flight window. Leave the in-flight overlap uncovered.
         maxGapSeconds = Math.max(maxGapSeconds, deltaSeconds);
         continue;
       }
@@ -112,9 +111,14 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
     }
   }
 
-  const coverage = Math.min(1, coveredSeconds / telemetrySpanSeconds);
+  maxGapSeconds = Math.max(
+    maxGapSeconds,
+    telemetryStart - flightStart,
+    flightEnd - telemetryEnd,
+    0
+  );
+  const coverage = Math.min(1, coveredSeconds / flightDurationSeconds);
   const observedTrackKm = observedNauticalMiles * KNOT_TO_KM;
-  const estimatedTrackKm = coverage > 0 ? observedTrackKm / coverage : NaN;
   const telemetrySpanMinutes = telemetrySpanSeconds / 60;
   const flightDurationMinutes = flightDurationSeconds / 60;
   const orderedBounds = sequenceBounds.sort((a, b) => a[0] - b[0]);
@@ -124,38 +128,43 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       orderedBounds[index][0] - orderedBounds[index - 1][1]
     );
   }
+  const maxGapMinutes = maxGapSeconds / 60;
+  const diagnostics = {
+    coverage,
+    intervalCount,
+    flightDurationMinutes,
+    telemetrySpanMinutes,
+    coveredMinutes: coveredSeconds / 60,
+    maxGapMinutes
+  };
 
   if (intervalCount < MIN_SPEED_INTERVALS) {
-    return { accepted: false, reason: 'too-few-speed-intervals', coverage, intervalCount };
+    return { accepted: false, reason: 'too-few-speed-intervals', ...diagnostics };
   }
   if (telemetrySpanMinutes < MIN_FLIGHT_MINUTES) {
-    return { accepted: false, reason: 'flight-too-short', coverage, intervalCount };
+    return { accepted: false, reason: 'flight-too-short', ...diagnostics };
+  }
+  if (maxGapMinutes > FLIGHT_TELEMETRY_FILTERS.maxTelemetryGapMinutes) {
+    return { accepted: false, reason: 'telemetry-gap-too-large', ...diagnostics };
   }
   if (coverage < MIN_TELEMETRY_COVERAGE) {
-    return {
-      accepted: false,
-      reason: 'low-telemetry-coverage',
-      coverage,
-      intervalCount,
-      telemetrySpanMinutes
-    };
+    return { accepted: false, reason: 'low-telemetry-coverage', ...diagnostics };
   }
-  if (!Number.isFinite(estimatedTrackKm) || estimatedTrackKm <= 0) {
-    return { accepted: false, reason: 'invalid-integrated-distance', coverage, intervalCount };
+  if (!Number.isFinite(observedTrackKm) || observedTrackKm <= 0) {
+    return { accepted: false, reason: 'invalid-integrated-distance', ...diagnostics };
   }
 
   return {
     accepted: true,
-    trackKm: estimatedTrackKm,
-    estimatedTrackKm,
+    trackKm: observedTrackKm,
     observedTrackKm,
     flightDurationMinutes,
     telemetrySpanMinutes,
     coveredMinutes: coveredSeconds / 60,
     coverage,
-    maxGapMinutes: maxGapSeconds / 60,
+    maxGapMinutes,
     meanGroundSpeedKnots: observedNauticalMiles / (coveredSeconds / 3600),
     speedIntervals: intervalCount,
-    distanceMethod: 'observed-ground-speed-integral-expanded-by-measured-coverage'
+    distanceMethod: 'observed-ground-speed-integral-only'
   };
 }

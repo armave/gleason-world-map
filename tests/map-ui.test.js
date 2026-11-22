@@ -179,7 +179,7 @@ test('map orientation is display-only, pointer-safe and included in share links'
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\)\)/);
- assert.match(html,/12-circle distance multiplier calibration/);assert.match(html,/id="visualRadialRows"/);
+ assert.match(html,/12-circle display profile · provisional/);assert.match(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
 
@@ -190,10 +190,10 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(app,/baseR\*circle\.visualFraction/);
  assert.match(calibrationUi,/RADIAL_DISTANCE_VISUAL_CIRCLES\.map/);
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
- assert.match(html,/Distance multiplier/);
- assert.match(html,/reducing by exactly 0\.04545× per interval/);
+ assert.match(html,/Display multiplier/);
+ assert.match(html,/not yet validated against the new observed-only ADS-B sample/);
  assert.match(html,/Euclidean length of the visible connector/);
- assert.match(html,/ten interior positions are drawn as fine dotted guide rings/);
+ assert.match(html,/profile is provisional/);
 });
 
 test('direct A/B coordinate entry and calibration route support are available',()=>{
@@ -231,7 +231,7 @@ test('distance connector is one straight projected segment measured in the map p
 
 test('the flat-disk A–B readout and ADS-B flight mileage remain separate references',()=>{
  assert.match(html,/Flat-disk A–B distance/);
- assert.match(html,/12-circle distance multiplier calibration/);
+ assert.match(html,/12-circle display profile · provisional/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);

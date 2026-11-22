@@ -65,7 +65,11 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
 export function directLineCalibrationDiagnostics(first, second) {
   if (!validPoint(first) || !validPoint(second)) return null;
 
-  const features = flightCalibrationFeatures(first, second, FLIGHT_CALIBRATION.radialWarp);
+  const chordGeometry = FLIGHT_CALIBRATION.chordGeometry === 'visual-12-circle'
+    ? 'visual-12-circle' : 'base';
+  const features = flightCalibrationFeatures(
+    first, second, FLIGHT_CALIBRATION.radialWarp, chordGeometry
+  );
   const prediction = predictFlightScaleRatio(features, FLIGHT_CALIBRATION);
   if (!prediction) return null;
 
@@ -127,8 +131,8 @@ export function directLineCalibrationFactor(first, second) {
  * the visible connector and local flat-disk scale bar. No globe, sphere,
  * ellipsoid, great-circle or geodesic model is involved.
  *
- * The ADS-B estimate is a separate empirical reference based on the original
- * fitted calibration chord; it does not alter the primary displayed distance.
+ * The ADS-B estimate is based on the chord geometry stored in the accepted
+ * calibration model. New model versions use the displayed 12-circle chord;
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
@@ -149,11 +153,15 @@ export function measureDirectDistance(first, second) {
 
   const flatDistance = flatDiskDistanceMeters(first, second);
   const baseChordDistance = baseFlatDiskDistanceMeters(first, second);
+  const chordGeometry = FLIGHT_CALIBRATION.chordGeometry === 'visual-12-circle'
+    ? 'visual-12-circle' : 'base';
+  const calibrationChordDistance = chordGeometry === 'visual-12-circle'
+    ? flatDistance : baseChordDistance;
   const calibration = directLineCalibrationDiagnostics(first, second);
   const calibrationFactor = calibration?.calibrationFactor ?? null;
-  const flightEmpiricalDistance = Number.isFinite(baseChordDistance) &&
+  const flightEmpiricalDistance = Number.isFinite(calibrationChordDistance) &&
     Number.isFinite(calibrationFactor)
-    ? baseChordDistance * calibrationFactor
+    ? calibrationChordDistance * calibrationFactor
     : null;
 
   const safeFlatDistance = Number.isFinite(flatDistance) ? flatDistance : null;
@@ -166,6 +174,8 @@ export function measureDirectDistance(first, second) {
     distanceMeters: safeFlatDistance,
     flatDiskDistanceMeters: safeFlatDistance,
     baseChordDistanceMeters: safeBaseChord,
+    calibrationChordGeometry: FLIGHT_CALIBRATION.chordGeometry === 'visual-12-circle'
+      ? 'visual-12-circle' : 'base',
     flightEmpiricalDistanceMeters: safeFlightEstimate,
     calibratedDistanceMeters: safeFlightEstimate,
     calibrationFactor,

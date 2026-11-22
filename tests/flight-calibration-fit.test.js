@@ -8,6 +8,10 @@ import {
   summarizeFlightCalibrationCoverage
 } from '../src/core/flight-calibration-fit.js';
 import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from '../src/core/radial-warp.js';
+import {
+  RADIAL_DISTANCE_PROFILE_MEAN,
+  visualRadialFractionFromBaseFraction
+} from '../src/core/visual-radial-calibration.js';
 
 const airports = [
   { lat: 51.47, lon: -0.45 }, { lat: 40.64, lon: -73.78 },
@@ -39,7 +43,11 @@ function syntheticDataset() {
       medianTrackKm: chord * 2450 * correction
     });
   }
-  return { schemaVersion: 2, routes };
+  return {
+    schemaVersion: 3,
+    measurement: { coverageDenominator: 'full-flight-duration', distancePolicy: 'observed-only' },
+    routes
+  };
 }
 
 test('unit disk chord and radial/tangential endpoint features are symmetric', () => {
@@ -53,12 +61,15 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   const features = flightCalibrationFeatures(a, b);
   const tA = (90 - a.lat) / 180;
   const tB = (90 - b.lat) / 180;
-  const qA = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
-  const qB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
+  const baseA = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
+  const baseB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
+  const qA = visualRadialFractionFromBaseFraction(baseA);
+  const qB = visualRadialFractionFromBaseFraction(baseB);
   const longitudeDelta = (Math.max(a.lon, b.lon) - Math.min(a.lon, b.lon)) % 360;
   const longitudeSpan = Math.min(longitudeDelta, 360 - longitudeDelta) * Math.PI / 180;
-  const radial = Math.PI * Math.abs(qA - qB);
-  const tangential = Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
+  const radial = RADIAL_DISTANCE_PROFILE_MEAN * Math.PI * Math.abs(qA - qB);
+  const tangential = RADIAL_DISTANCE_PROFILE_MEAN * Math.PI * 2 *
+    Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   const chord = unitDiskChord(a, b);
   assert.ok(chord > 0);
   assert.ok(Math.abs(features[0] - (qA + qB) / 2) < 1e-12);
@@ -66,14 +77,17 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   assert.ok(Math.abs(features[2] - tangential / chord) < 1e-12);
   assert.ok(Math.abs(features[1] ** 2 + features[2] ** 2 - 1) < 1e-12);
   assert.equal(unitDiskChord(a, a), 0);
-  const samePointQ = radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP);
+  const samePointQ = visualRadialFractionFromBaseFraction(
+    radialFractionFromUnitColatitude(tA, DEFAULT_RADIAL_WARP)
+  );
   assert.deepEqual(flightCalibrationFeatures(a, a), [samePointQ, 0, 0]);
 });
 
 test('flight telemetry calibration fits a radial scale and direction-aware route model', () => {
   const result = fitFlightCalibration(syntheticDataset());
   assert.ok(result.model.radialScaleKm > 0);
-  assert.equal(result.model.schemaVersion, 4);
+  assert.equal(result.model.schemaVersion, 6);
+  assert.equal(result.model.chordGeometry, 'visual-12-circle');
   assert.deepEqual(result.model.radialWarp, DEFAULT_RADIAL_WARP);
   assert.equal(result.model.trainingRouteCount, 12);
   assert.equal(result.model.holdoutRouteCount, 4);
@@ -88,6 +102,11 @@ test('flight telemetry calibration fits a radial scale and direction-aware route
   assert.equal(result.metrics.training.routeCount, 12);
   assert.equal(result.metrics.holdout.routeCount, 4);
   assert.equal(result.metrics.leaveOneOut.routeCount, 12);
+  assert.equal(result.metrics.visualProjection.training.routeCount, 12);
+  // The training-side map score is leave-one-route-out, not in-sample fit.
+  assert.equal(result.metrics.visualProjection.holdout.routeCount, 4);
+  assert.ok(Number.isFinite(result.metrics.visualProjection.training.meanAbsolutePercent));
+  assert.ok(Number.isFinite(result.metrics.visualProjection.holdout.maxAbsolutePercent));
   const prediction = predictFlightCalibratedKm(
     airports[1], airports[8], result.model
   );
@@ -101,7 +120,7 @@ test('route targets exclude low-coverage and long-gap observations before fittin
     observations: Array.from({ length: 4 }, (_, sample) => ({
       accepted: true,
       trackKm: route.medianTrackKm * (1 + (sample - 1.5) * 0.002),
-      coverage: index === 0 ? 0.2 : 0.55,
+      coverage: index === 0 ? 0.2 : 0.99,
       maxGapMinutes: index === 1 ? 360 : 15
     }))
   }));
@@ -109,20 +128,21 @@ test('route targets exclude low-coverage and long-gap observations before fittin
   assert.equal(result.model.trainingRouteCount, 10);
   assert.equal(result.metrics.holdout.routeCount, 4);
   assert.ok(result.model.trainingExamples.every(example => example.qualityWeight > 0 && example.qualityWeight <= 1));
-  assert.ok(result.model.trainingExamples.every(example => example.medianTelemetryCoverage >= 0.35));
-  assert.ok(result.model.trainingExamples.every(example => example.medianMaxGapMinutes <= 300));
-  assert.ok(result.model.trainingExamples.some(example => example.qualityWeight < 0.5));
+  assert.ok(result.model.trainingExamples.every(example => example.medianTelemetryCoverage >= 0.98));
+  assert.ok(result.model.trainingExamples.every(example => example.medianMaxGapMinutes <= 15));
 });
 
-test('coverage summary reports southern training and independent polar holdout routes', () => {
+test('coverage summary reports southern training and independent southern holdout routes', () => {
   const dataset = syntheticDataset();
   dataset.routes[0].airportA = { lat: -53, lon: -70 };
   dataset.routes[12].airportB = { lat: -77, lon: 167 };
   const coverage = summarizeFlightCalibrationCoverage(dataset);
   assert.equal(coverage.trainingRouteCount, 12);
   assert.equal(coverage.holdoutRouteCount, 4);
+  assert.equal(coverage.trainingRoutesSouthOf30S, 3);
   assert.equal(coverage.trainingRoutesSouthOf45S, 1);
   assert.equal(coverage.trainingRoutesSouthOf60S, 0);
+  assert.equal(coverage.holdoutRoutesSouthOf30S, 4);
   assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
   assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
 });
