@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import {
-  DISK_RADIAL_SCALE_KM, DISK_RADIUS_KM,
+  DISK_RADIAL_SCALE_KM, DISK_BASE_RADIUS_KM, DISK_RADIUS_KM,
   colatitudeRadians, radialDistanceFromNorthKm, baseRadialDistanceFromNorthKm,
   radialFraction, baseRadialFraction,
   latitudeFromRadialDistanceKm, project, unproject,
@@ -12,6 +12,7 @@ import {
   DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
 import { radialWarpDerivative } from '../src/core/radial-warp.js';
+import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction } from '../src/core/visual-radial-calibration.js';
 
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
@@ -19,7 +20,8 @@ const point = (lat, lon) => ({lat, lon});
 
 test('radial scale and disk radius use the fitted ADS-B flight-mileage parameters', () => {
   close(DISK_RADIAL_SCALE_KM, FLIGHT_CALIBRATION.radialScaleKm, 1e-12);
-  close(DISK_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM, 1e-10);
+  close(DISK_BASE_RADIUS_KM, Math.PI * DISK_RADIAL_SCALE_KM, 1e-10);
+  close(DISK_RADIUS_KM, DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN, 1e-10);
   assert.equal(FLIGHT_CALIBRATION.target,
     'median observed ADS-B flight-track mileage from ground-speed × time integration');
   assert.equal(FLIGHT_CALIBRATION.trainingRouteCount, 33);
@@ -48,6 +50,19 @@ test('smooth radial warp preserves the pole and rim while recalibrating latitude
   assert.ok(Number.isFinite(radialWarpDerivative(1, FLIGHT_CALIBRATION.radialWarp)));
 });
 
+test('the displayed kilometre radius integrates the requested unnormalized multiplier profile', () => {
+  close(DISK_RADIUS_KM, DISK_BASE_RADIUS_KM * 0.75, 1e-10);
+  for (let index = 0; index <= 11; index++) {
+    const q = index / 11;
+    const physicalRadius = DISK_RADIUS_KM *
+      visualRadialFractionFromBaseFraction(q);
+    const integratedRadius = DISK_BASE_RADIUS_KM *
+      integratedRadialDistanceMultiplier(q);
+    close(physicalRadius, integratedRadius, 1e-8);
+  }
+  close(radialDistanceFromNorthKm(-90), DISK_BASE_RADIUS_KM * 0.75, 1e-8);
+});
+
 test('smooth 12-circle visual calibration preserves both anchors and has no hard ring joins', () => {
   assert.equal(radialFraction(90), 0);
   assert.equal(radialFraction(-90), 1);
@@ -61,7 +76,9 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
     assert.ok(visual > previousVisual);
     previousVisual = visual;
     close(visual, base + base * (1 - base) / 3, 1e-12);
-    close(baseRadialDistanceFromNorthKm(lat), base * DISK_RADIUS_KM, 1e-8);
+    close(baseRadialDistanceFromNorthKm(lat), base * DISK_BASE_RADIUS_KM, 1e-8);
+    close(radialDistanceFromNorthKm(lat),
+      DISK_BASE_RADIUS_KM * integratedRadialDistanceMultiplier(base), 1e-8);
     close(radialDistanceFromNorthKm(lat), visual * DISK_RADIUS_KM, 1e-8);
     close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat, 1e-8);
     if (base > 0 && base < 1) assert.ok(visual > base);
