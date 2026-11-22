@@ -242,7 +242,15 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
       )) +
       '; failures ' + JSON.stringify(result.failures)
   );
-  assert.ok(result.metrics.minimumJacobianDeterminant > 0);
+  assert.ok(result.metrics.training.meanAbsolutePercent <= 8);
+  assert.ok(result.metrics.holdout.meanAbsolutePercent <= 10);
+  assert.ok(result.metrics.holdout.maxAbsolutePercent <= 20);
+  assert.ok(result.metrics.minimumJacobianDeterminant >= 0.2);
+  assert.equal(
+    result.accepted,
+    true,
+    'synthetic fit did not pass all promotion gates: ' + JSON.stringify(result.failures)
+  );
   assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumRadialOvershootFraction <= 1e-5);
