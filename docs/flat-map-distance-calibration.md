@@ -151,7 +151,7 @@ The radial warp moves interior rings relative to a linear `r = R * theta` disk w
 
 ## 12-circle radial distance multipliers
 
-The 12 values are the local radial-distance multipliers used by the map itself. They taper linearly from 1.00× at circle 1 to 0.50× at circle 12. The exact step is `0.50 / 11 = 0.0454545…`; the table rounds each multiplier to two decimals.
+The 12 values are local radial-distance multipliers sampled at the 12 equally spaced base-ring anchors. The active production profile currently has exponent `a = 1`, which produces the familiar linear taper from 1.00× at circle 1 to 0.50× at circle 12. Candidate fits can change the smooth curve's exponent while preserving those endpoint multipliers; their actual sampled values and spacing are generated from the active profile.
 
 Let `q` be the original fitted radial fraction, from 0 at the North Pole to 1 at the Ice Wall. The continuous local multiplier profile is:
 
@@ -192,7 +192,7 @@ The physical spacing between two adjacent reference circles is the integral of `
 
 The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. All latitude circles, coastlines, country boundaries, labels, map clicks, inverse lookup and the scale bar use the same transformed coordinates.
 
-**Measurement correspondence:** The local profile controls radial spacing: along a fixed meridian, `dr/dq = πR_base·m(q)`, so each radial interval uses the average of its endpoint multipliers. For arbitrary A–B endpoints, the map projects both coordinates through the profile and reports the Euclidean chord between their final radius-and-longitude positions. A diagonal or tangential component is therefore governed by the cumulative radius `r(q) = πR_base·I(q)` and the longitude span; it is not valid to multiply the entire chord by one circle's local radial factor. The A–B number is exactly the length of the visible connector. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion.
+**Measurement correspondence:** The local profile controls radial spacing: along a fixed meridian, `dr/dq = πR_base·m(q)`, so each radial interval is the integral of that local multiplier over the interval. For arbitrary A–B endpoints, the map projects both coordinates through the same profile and reports the Euclidean chord between their final radius-and-longitude positions. A diagonal or tangential component is therefore governed by the cumulative radius `r(q) = πR_base·I(q)` and the longitude span; it is not valid to multiply the entire chord by one circle's local radial factor. The A–B number is exactly the length of the visible connector. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion.
 
 ## Primary flat-disk Euclidean distance
 
