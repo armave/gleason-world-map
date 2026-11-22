@@ -31,7 +31,7 @@ Copy data/multi-anchor-distance-observations.template.json to data/multi-anchor-
 
 Do not use airline mileage, ADS-B track length, travel time multiplied by speed, or a route's flown mileage as a straight-line target. Do not calculate a distance from a globe, sphere, ellipsoid, great-circle, or geodesic formula for this project.
 
-The calibration requires at least 30 training and 12 independent holdout pairs, at least 12 distinct training anchors, coverage across four training latitude bands and four training longitude sectors, and a connected training anchor graph. Holdout data must cover at least eight distinct anchors, three latitude bands and four longitude sectors; at least four holdout anchors must be absent from the training anchor set. A pair may appear only once and in only one split. The fitter also reports how many holdout anchors overlap training so pair-level validation is not mistaken for geographic extrapolation validation.
+The calibration requires at least 30 training and 12 independent holdout pairs, at least 12 distinct training anchors, coverage across four training latitude bands and four training longitude sectors, and a 3-vertex-connected training anchor graph with minimum degree three. It also computes the planar distance-constraint rigidity matrix at the seed positions and requires rank 2N−3, where N is the number of training anchors; a graph that is connected but geometrically flexible is rejected. Holdout data must cover at least eight distinct anchors, three latitude bands and four longitude sectors; at least four holdout anchors must be absent from the training anchor set. A pair may appear only once and in only one split. The fitter also reports how many holdout anchors overlap training so pair-level validation is not mistaken for geographic extrapolation validation.
 
 ## Run
 
@@ -43,7 +43,9 @@ Run npm run fit:multi-anchor to produce a candidate summary. Run npm test for th
 - Independent holdout MAPE no greater than 10%.
 - Maximum holdout pair error no greater than 20%.
 - Holdout MAPE improves over the current flat-disk baseline by at least 0.25 percentage points.
+- Planar rigidity matrix rank exactly 2N−3.
 - Minimum sampled Jacobian determinant at least 0.2.
+- Forward/inverse coordinate round-trip validation across the disk.
 - Maximum training-anchor and interpolated-warp displacement no greater than 12% of disk radius.
 - No sampled radial overshoot beyond the circular rim and numerical pole/rim displacement below 1e-5 km.
 - At least eight independent holdout anchors, three holdout latitude bands, four holdout longitude sectors, and four holdout anchors never used for fitting.
