@@ -102,11 +102,19 @@ async function main() {
     (metrics?.leaveOneOut?.routeCount ?? 0) >= (metrics?.training?.routeCount ?? Infinity) &&
     routeCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
     routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    routeCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    routeCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    routeCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S &&
     Number.isFinite(minimumAngularStretch) && minimumAngularStretch >= 0.35 &&
     candidateUsableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     candidateUsableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
     candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes;
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    candidateUsableProjectedPathCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    candidateUsableProjectedPathCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 
   const acceptanceFailures = [];
   if (!fitted) {
@@ -139,6 +147,27 @@ async function main() {
         (metrics?.leaveOneOut?.routeCount ?? 0) < (metrics?.training?.routeCount ?? Infinity))
       acceptanceFailures.push('not every usable training route completed a leave-one-route-out fold');
   }
+  if (routeCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+      routeCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S) {
+    acceptanceFailures.push(
+      'independent route coverage south of 45°S is below the required training/holdout minimum'
+    );
+  }
+  if (routeCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+      routeCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S) {
+    acceptanceFailures.push(
+      'independent route coverage south of 60°S is below the required training/holdout minimum'
+    );
+  }
+  if (candidateUsableProjectedPathCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+      candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S ||
+      candidateUsableProjectedPathCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+      candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S) {
+    acceptanceFailures.push(
+      'candidate geometry lacks qualifying projected-path coverage south of 45°S and 60°S'
+    );
+  }
+
   const finalRejectionReason = accepted
     ? null
     : [rejectionReason, ...acceptanceFailures]
@@ -154,10 +183,12 @@ async function main() {
     sourceDataset: DATA_PATH,
     sourceRetrievedAt: dataset.source?.retrievedAt ?? null,
     extrapolationWarnings: [
-      ...(routeCoverage.trainingRoutesSouthOf45S === 0 || routeCoverage.holdoutRoutesSouthOf45S === 0
-        ? ['No qualified independent airport-pair coverage south of 45°S; map geometry there is extrapolated.'] : []),
-      ...(routeCoverage.trainingRoutesSouthOf60S === 0 || routeCoverage.holdoutRoutesSouthOf60S === 0
-        ? ['No qualified independent airport-pair coverage south of 60°S; polar geometry is not empirically validated.'] : [])
+      ...(routeCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+          routeCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S
+        ? ['Independent training/holdout route coverage south of 45°S is below the acceptance minimum; the outer southern disk remains extrapolated.'] : []),
+      ...(routeCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+          routeCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S
+        ? ['Independent training/holdout route coverage south of 60°S is below the acceptance minimum; polar geometry is not validated.'] : [])
     ],
     method: {
       target: 'Independently observed ADS-B ground-speed/time mileage for each flight',

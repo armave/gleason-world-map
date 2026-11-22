@@ -1,5 +1,7 @@
 import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
 import {FLIGHT_PATH_CALIBRATION} from '../core/flight-path-calibration-parameters.js';
+import {FLIGHT_PATH_CALIBRATION_FILTERS} from '../core/flight-path-calibration.js';
+import FLIGHT_PATH_CALIBRATION_SUMMARY from '../../data/flight-path-calibration-summary.json';
 import {
  ACTIVE_VISUAL_LONGITUDE_WARP,
  maximumLongitudeWarpDisplacementRadians,
@@ -14,7 +16,15 @@ import {
 } from '../core/visual-radial-calibration.js';
 
 export function renderRadialCalibration(radialRows,visualRows,formulaElement,statusElement){
- const pending=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion===0;
+ const quality=FLIGHT_PATH_CALIBRATION_SUMMARY.qualityGate||{};
+ const limits=FLIGHT_PATH_CALIBRATION_FILTERS;
+ const hasGlobalRouteCoverage=
+  (quality.trainingRoutesSouthOf45S||0)>=limits.minimumTrainingRoutesSouthOf45S&&
+  (quality.holdoutRoutesSouthOf45S||0)>=limits.minimumHoldoutRoutesSouthOf45S&&
+  (quality.trainingRoutesSouthOf60S||0)>=limits.minimumTrainingRoutesSouthOf60S&&
+  (quality.holdoutRoutesSouthOf60S||0)>=limits.minimumHoldoutRoutesSouthOf60S;
+ const pending=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion===0||
+  FLIGHT_PATH_CALIBRATION_SUMMARY.accepted!==true||!hasGlobalRouteCoverage;
  const baseScale=FLIGHT_PATH_CALIBRATION.radialScaleKm.toLocaleString('en-US',{maximumFractionDigits:3});
  const exponent=FLIGHT_PATH_CALIBRATION.radialWarp.exponent.toFixed(3);
  const epsilon=FLIGHT_PATH_CALIBRATION.radialWarp.epsilon.toFixed(3);
@@ -48,8 +58,8 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
  }
  if(statusElement){
   statusElement.textContent=pending
-   ? 'No observed-path candidate has passed validation yet. The last approved flat-disk scale and latitude warp remain active; the endpoint-based ADS-B mileage estimate is shown separately.'
-   : 'Active visible-map fit: '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+
+   ? 'The latest observed-path candidate has not passed the global validation gates, including independent southern coverage. The last approved flat-disk scale and latitude warp remain active; southern and polar geometry remains extrapolated, and the endpoint-based ADS-B mileage estimate is shown separately.'
+   : 'Latest accepted visible-map fit: '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+
     ' training airport pairs and '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+
     ' independent holdout pairs. The scale, latitude warp, 12-circle radial spacing and smooth longitude shear were fitted against projected ADS-B paths and observed ground-speed/time mileage. The shear returns to zero at the pole and Ice Wall; deep-southern rings remain an extrapolation where this archive has no routes.';
  }

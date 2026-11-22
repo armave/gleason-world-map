@@ -182,6 +182,16 @@ test('latitude grid includes intermediate parallels, an emphasized equator, long
 });
 
 
+test('calibration panel reports pending when the latest visual fit misses southern coverage gates',()=>{
+ assert.match(calibrationUi,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
+ assert.match(calibrationUi,/FLIGHT_PATH_CALIBRATION_FILTERS/);
+ assert.match(calibrationUi,/minimumTrainingRoutesSouthOf45S/);
+ assert.match(calibrationUi,/minimumHoldoutRoutesSouthOf60S/);
+ assert.match(calibrationUi,/The latest observed-path candidate has not passed the global validation gates/);
+ assert.match(calibrationUi,/last approved flat-disk scale and latitude warp remain active/);
+ assert.match(calibrationUi,/Latest accepted visible-map fit/);
+});
+
 test('map draws the same 12 radial reference circles listed in the calibration panel',()=>{
  assert.match(app,/RADIAL_DISTANCE_VISUAL_CIRCLES/);
  assert.match(app,/for\(const circle of RADIAL_DISTANCE_VISUAL_CIRCLES\)/);

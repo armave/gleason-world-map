@@ -5,6 +5,7 @@ import {
   normalizeFlightTrack,
   unitProjectedFlightPathLength,
   summarizeFlightPathCoverage,
+  summarizeUsableProjectedPathCoverage,
   fitFlightPathCalibration
 } from '../src/core/flight-path-calibration.js';
 import { DEFAULT_RADIAL_WARP } from '../src/core/radial-warp.js';
@@ -58,7 +59,7 @@ function syntheticDataset() {
     const split = index < trainingCount ? 'train' : 'holdout';
     const localIndex = split === 'train' ? index : index - trainingCount;
     const southern = split === 'train' ? localIndex < 5 : localIndex < 3;
-    const polar = split === 'train' ? localIndex < 2 : localIndex === 0;
+    const polar = localIndex < 2;
     const startLat = polar
       ? -64 - (localIndex % 2) * 2
       : southern ? -34 - (localIndex % 4) * 1.5 : 12 + (localIndex % 8) * 4.5;
@@ -112,9 +113,9 @@ test('path coverage counts independent route splits and southern observations', 
   assert.equal(coverage.trainingRoutesSouthOf30S, 5);
   assert.equal(coverage.holdoutRoutesSouthOf30S, 3);
   assert.equal(coverage.trainingRoutesSouthOf45S, 2);
-  assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
+  assert.equal(coverage.holdoutRoutesSouthOf45S, 2);
   assert.equal(coverage.trainingRoutesSouthOf60S, 2);
-  assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
+  assert.equal(coverage.holdoutRoutesSouthOf60S, 2);
   assert.equal(coverage.trainingFlightsWithPaths, 72);
   assert.equal(coverage.holdoutFlightsWithPaths, 21);
   assert.equal(coverage.totalTrajectoryPoints, 372);
@@ -182,26 +183,41 @@ test('path fit rejects routes that pass timestamp checks but have zero projected
   );
 });
 
-test('usable projected-path coverage independently enforces southern and polar route coverage', () => {
+test('candidate is rejected when southern holdout routes have no usable projected paths', () => {
   const dataset = syntheticDataset();
-  const polarHoldout = dataset.routes.find(route =>
+  const polarHoldouts = dataset.routes.filter(route =>
     route.split === 'holdout' &&
     Math.min(route.airportA.lat, route.airportB.lat) <= -60
   );
-  assert.ok(polarHoldout);
-  for (const observation of polarHoldout.observations) {
-    const coordinate = observation.trackCoordinates[0][0];
-    observation.trackCoordinates = [[
-      [...coordinate], [...coordinate], [...coordinate], [...coordinate]
-    ]];
+  assert.equal(polarHoldouts.length, 2);
+  for (const route of polarHoldouts) {
+    for (const observation of route.observations) {
+      const coordinate = observation.trackCoordinates[0][0];
+      observation.trackCoordinates = [[
+        [...coordinate], [...coordinate], [...coordinate], [...coordinate]
+      ]];
+    }
   }
 
-  const candidate = fitFlightPathCalibration(dataset);
-  assert.equal(candidate.metrics.spatialCoverage.holdoutRoutesSouthOf60S, 1);
-  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRouteCount, 6);
-  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRoutesSouthOf30S, 2);
-  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRoutesSouthOf45S, 0);
-  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRoutesSouthOf60S, 0);
+  const coverage = summarizeUsableProjectedPathCoverage(dataset);
+  assert.equal(coverage.holdoutRoutesSouthOf45S, 0);
+  assert.equal(coverage.holdoutRoutesSouthOf60S, 0);
+  assert.throws(
+    () => fitFlightPathCalibration(dataset),
+    /Insufficient usable projected-path airport-pair coverage after fitting/
+  );
+});
+
+test('global path calibration refuses a dataset without independently held-out deep-southern routes', () => {
+  const dataset = syntheticDataset();
+  for (const route of dataset.routes) {
+    route.airportA.lat = 10;
+    route.airportB.lat = 20;
+  }
+  assert.throws(
+    () => fitFlightPathCalibration(dataset),
+    /Insufficient independent ADS-B flight-path geographic coverage for global calibration.*south-of-45/
+  );
 });
 
 test('path fit refuses legacy or non-observed-only datasets', () => {
