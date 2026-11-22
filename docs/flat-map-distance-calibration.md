@@ -99,7 +99,7 @@ R_base = median(route_scale_ratio across training airport pairs)
 
 Each airport pair contributes one route-level observation, regardless of how many flights that route contains. The fitter searches the regularized-power exponent from 0.65 through 1.35 in 0.025 increments; the epsilon and the 1.00×→0.50× continuous radial profile remain fixed. It chooses the candidate using training-route error plus leave-one-route-out error. Entire airport pairs are excluded from fitting and used as independent holdouts.
 
-A path candidate is rejected unless it has at least 20 training airport pairs, 6 holdout pairs, 4 southern training pairs and 2 southern holdout pairs (an endpoint south of 30°S), in addition to these limits:
+A path candidate is rejected unless it has at least 20 usable training airport pairs and 6 usable holdout pairs, 4 training and 2 holdout pairs with an endpoint south of 30°S, at least 2 training and 1 holdout pair south of 45°S, and at least 1 training and 1 holdout pair south of 60°S. A route is usable only when at least three quality-qualified flights produce non-zero projected path lengths. These spatial and usable-route gates apply in addition to these error limits:
 
 - Training-route MAPE no greater than 10%.
 - Independent holdout MAPE no greater than 12%.
@@ -121,7 +121,7 @@ The calibration split is at the **airport-pair level**:
 - Holdout routes are not used during fitting. They are evaluated only after the model has been fitted.
 - Leave-one-route-out validation refits the model after removing each training route in turn.
 
-A route needs at least three accepted high-coverage flights. Each route contributes one median observed-only mileage value. Entire airport pairs are held out from fitting. The refreshed production gate requires at least 20 training routes, 6 holdout routes, 4 training routes with an endpoint south of 30°S and 2 holdout routes with an endpoint south of 30°S, in addition to the existing error limits. Polar regions remain unvalidated unless suitable independent records become available. If any gate fails, the last accepted production coefficients remain active.
+A route needs at least three accepted high-coverage flights. Each route contributes one median observed-only mileage value. Entire airport pairs are held out from fitting. The refreshed path-fit production gate requires at least 20 usable training routes, 6 usable holdout routes, 4 training and 2 holdout routes with an endpoint south of 30°S, at least 2 training and 1 holdout route south of 45°S, and at least 1 training and 1 holdout route south of 60°S, in addition to the error limits. Polar regions remain unvalidated until suitable independent records are collected. If any gate fails, the last accepted production coefficients remain active.
 
 ## Flat-disk model
 
