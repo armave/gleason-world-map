@@ -5,6 +5,8 @@ import {
   segmentCrossesRestrictedParallel,
   polylineCrossesRestrictedParallel,
   measureDirectDistance,
+  radialDistanceCorrectionFactor,
+  radialDistanceCorrectionDiagnostics,
   directLineCalibrationFactor,
   directLineCalibrationDiagnostics
 } from '../src/core/measurement-engine.js';
@@ -64,20 +66,48 @@ test('the restricted line remains the 60th parallel south', () => {
   assert.equal(RESTRICTED_PARALLEL_LATITUDE, -60);
 });
 
-test('A–B primary distance matches the visible chord and keeps ADS-B mileage as a separate estimate', () => {
+test('12-circle radial factors taper linearly from 1.00× at the centre to 0.50× at the Ice Wall', () => {
+  const expected = [1.00, 0.95, 0.91, 0.86, 0.82, 0.77, 0.73, 0.68, 0.64, 0.59, 0.55, 0.50];
+  expected.forEach((factor, index) => {
+    assert.ok(Math.abs(radialDistanceCorrectionFactor(index / 11) - factor) <= 0.005);
+  });
+  assert.equal(radialDistanceCorrectionFactor(0), 1);
+  assert.equal(radialDistanceCorrectionFactor(1), 0.5);
+});
+
+test('A–B primary readout applies the radial factor while retaining the raw chord and ADS-B estimate', () => {
   const a = point(40.17, 44.5), b = point(51.5, -0.12);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'flat-disk-chord');
+  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
   assert.equal(result.restricted, false);
   assert.equal(result.chordDistanceMeters, flatDiskDistanceMeters(a, b));
   assert.equal(result.rawDistanceMeters, result.chordDistanceMeters);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters);
+  assert.equal(result.radiallyCorrectedDistanceMeters, result.distanceMeters);
+  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
+  assert.equal(result.radialCorrectionFactor, radialDistanceCorrectionDiagnostics(a, b).factor);
+  assert.equal(result.radialCirclePosition, radialDistanceCorrectionDiagnostics(a, b).circlePosition);
   assert.equal(result.flightEmpiricalDistanceMeters,
     result.chordDistanceMeters * result.calibrationFactor);
   assert.equal(result.calibratedDistanceMeters, result.flightEmpiricalDistanceMeters);
+  assert.ok(result.radialCorrectionFactor >= 0.5 && result.radialCorrectionFactor <= 1);
   assert.ok(result.calibrationFactor >= 0.5 && result.calibrationFactor <= 2.5);
   assert.ok(result.distanceMeters > 0);
   assert.ok(result.flightEmpiricalDistanceMeters > 0);
+});
+
+test('same-circle chord measurements use the same smoothly interpolated radial factor', () => {
+  const shorter = measureDirectDistance(point(40.17, 44.5), point(40.17, 45.5));
+  const longer = measureDirectDistance(point(40.17, 44.5), point(40.17, 50.5));
+  assert.equal(shorter.radialCorrectionFactor, longer.radialCorrectionFactor);
+  assert.ok(shorter.chordDistanceMeters < longer.chordDistanceMeters);
+  assert.ok(shorter.distanceMeters < longer.distanceMeters);
+});
+
+test('outer-rim endpoint pairs receive the full 0.50× correction', () => {
+  const result = measureDirectDistance(point(-90, 0), point(-90, 180));
+  assert.equal(result.radialCorrectionFactor, 0.5);
+  assert.equal(result.radialCorrection.circlePosition, 12);
+  assert.equal(result.distanceMeters, result.chordDistanceMeters * 0.5);
 });
 
 test('the flight-mileage factor is symmetric and longitude-wrap safe', () => {
@@ -89,8 +119,8 @@ test('the flight-mileage factor is symmetric and longitude-wrap safe', () => {
 test('the separate flight-mileage estimate remains available in the Antarctic band', () => {
   const a = point(-70, 10), b = point(-70, 20);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'flat-disk-chord');
-  assert.equal(result.distanceMeters, result.chordDistanceMeters);
+  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
+  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
   assert.equal(result.flightEmpiricalDistanceMeters,
     result.chordDistanceMeters * directLineCalibrationFactor(a, b));
 });
@@ -99,25 +129,25 @@ test('crossing the 60°S reference line does not switch the direct-line metric',
   const a = point(-59.9, 20), b = point(-60.1, 110);
   const result = measureDirectDistance(a, b);
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
-  assert.equal(result.metric, 'flat-disk-chord');
+  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
   assert.equal(result.restricted, false);
-  assert.equal(result.distanceMeters, result.chordDistanceMeters);
+  assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
   const a = point(-60, 0), b = point(-60, 180);
   assert.equal(segmentCrossesRestrictedParallel(a, b), true);
   const result = measureDirectDistance(a, b);
-  assert.equal(result.metric, 'flat-disk-chord');
+  assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
   assert.ok(result.distanceMeters > 0);
 });
 
 test('southern local segments and one restricted-line touch remain measurable', () => {
   const a = point(-70, 10), b = point(-70, 20);
   assert.equal(segmentCrossesRestrictedParallel(a, b), false);
-  assert.equal(measureDirectDistance(a, b).metric, 'flat-disk-chord');
+  assert.equal(measureDirectDistance(a, b).metric, 'radially-corrected-flat-disk-chord');
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric,
-    'flat-disk-chord');
+    'radially-corrected-flat-disk-chord');
 });
 
 for (const route of heldOutFlightMileageRoutes) {
@@ -127,7 +157,7 @@ for (const route of heldOutFlightMileageRoutes) {
     const errorPercent = (predictedKm / route.medianTrackKm - 1) * 100;
     assert.ok(Math.abs(errorPercent) <= 20,
       `${route.route}: ${predictedKm.toFixed(1)} km vs observed median ${route.medianTrackKm.toFixed(1)} km (${errorPercent.toFixed(1)}%)`);
-    assert.equal(result.metric, 'flat-disk-chord');
+    assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
     assert.ok(Number.isFinite(result.calibration.radialShareOfChord));
     assert.ok(Number.isFinite(result.calibration.tangentialShareOfChord));
     assert.ok(Math.abs(
@@ -161,6 +191,8 @@ test('invalid coordinates fail safely', () => {
   const result = measureDirectDistance(point(91, 0), point(0, 0));
   assert.equal(result.distanceMeters, null);
   assert.equal(result.chordDistanceMeters, null);
+  assert.equal(result.radialCorrectionFactor, null);
+  assert.equal(result.radialCorrection, null);
   assert.equal(result.calibrationFactor, null);
   assert.equal(result.metric, 'unavailable');
   assert.equal(directLineCalibrationFactor(point(91, 0), point(0, 0)), null);
