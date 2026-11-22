@@ -194,7 +194,7 @@ test('sector area uses Euclidean disk geometry', () => {
   close(flatDiskSectorAreaKm2(0, 100, Math.PI / 2), 2500 * Math.PI, 1e-10);
 });
 
-test('polygon uses shoelace area and straight-edge perimeter', () => {
+test('polygon uses shoelace area and the supplied canonical perimeter metric', () => {
   const triangle = [point(0, 0), point(0, 3), point(4, 0)];
   const result = flatDiskPolygonMetrics(triangle, (lon, lat) => [lon, lat], DISK_RADIUS_KM, identityEdgeDistance(1000));
   assert.ok(result);
