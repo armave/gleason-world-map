@@ -16,12 +16,12 @@ theta = pi/2 - phi
 t = theta / pi
 q = ((t + epsilon)^exponent - epsilon^exponent) /
     ((1 + epsilon)^exponent - epsilon^exponent)
-r = pi * R * q
-x = r cos(lambda)
-y = -r sin(lambda)
+r_base = pi * R_base * q
+x_base = r_base cos(lambda)
+y_base = -r_base sin(lambda)
 ```
 
-The fitted latitude warp uses exponent 0.9 and epsilon 0.005. The 12-circle distance multipliers form one continuous local radial-spacing profile, tapering linearly from **1.00×** at circle 1 to **0.50×** at circle 12 in steps of **0.04545×** (the displayed table rounds to two decimals). For original fitted radial fraction q, the profile is m(q) = 1 − 0.5q. Its integral is normalized by the 0.75 mean so the North Pole stays at the centre and the Antarctic Ice Wall stays at the outer rim: **q_visual = q + q(1-q)/3**. The derivative, m(q)/0.75 = (4-2q)/3, remains continuous and positive, so there are no hard joins between circle sections. Inner radial intervals gain spacing while outer intervals progressively compress. The outer disk radius remains **pi * R**. R is regenerated from the current ADS-B training sample; it is a flat-map empirical scale, not a globe radius. Coastlines, capitals, grid lines, labels, clicks and inverse lookup all use the same transformed coordinates. The table and the map's dotted reference rings share the same 12 circle positions and local multipliers. The primary A–B result projects both endpoints through this profile first, then measures the Euclidean length of the visible connector; polygon edge lengths and the scale bar use the same final map-plane metric. No single circle multiplier is applied again to a completed A–B chord. A separate ADS-B flight-mileage estimate uses the original fitted calibration coordinates.
+The fitted latitude warp uses exponent 0.9 and epsilon 0.005. The 12-circle distance multipliers are the **actual local radial-distance scale**, tapering linearly from **1.00×** at circle 1 to **0.50×** at circle 12 in steps of **0.04545×** (rounded to two decimals in the table). For original fitted radial fraction q, the local profile is m(q) = 1 − 0.5q and its integral is I(q) = q − 0.25q². Physical radius is **r = πR_base·I(q)**, so the local radial derivative is exactly **dr/dq = πR_base·m(q)**. The dimensionless screen radius is q_visual = I(q)/0.75 = q + q(1-q)/3, preserving the same displayed circle positions and placing the Ice Wall at the canvas edge. Crucially, only screen positioning uses this normalized fraction: the measured disk radius is **0.75πR_base**, not πR_base. This removes the previous 4/3 inflation in measured radial distances. There are no hard joins between circle sections. R_base is regenerated from the ADS-B training sample and remains the original base calibration scale; the unmodified base chord is kept separately for the ADS-B flight-mileage reference. Coastlines, capitals, grid lines, labels, clicks and inverse lookup use the shared projection. The table and dotted map rings share the same 12 positions and multipliers. Primary A–B distance is the Euclidean length of the visible connector after both endpoints are projected through this profile; polygon edge lengths and the scale bar use the same final map-plane kilometre metric.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
@@ -33,7 +33,7 @@ The A–B tool draws one straight projected segment on the visually calibrated d
 
 **Direct A–B distance**
 
-The primary A–B readout is the Euclidean straight-line distance between the two final projected points. For an endpoint with longitude λ and latitude φ, the current map first computes `t = (π/2 − φ)/π`, then the fitted base fraction `q(t)`, then the visual radial fraction `qᵥ = q + q(1−q)/3`. The final projected point is `x = πR qᵥ cos(λ)`, `y = −πR qᵥ sin(λ)`, where `R` is the empirically fitted flat-disk radial scale. The reported distance is `sqrt((x₂−x₁)² + (y₂−y₁)²)`. This is exactly the Euclidean length of the straight connector drawn between those same points. There is no globe, sphere, ellipsoid, great-circle or geodesic distance formula in the primary measurement path, and the 12-circle warp is not applied a second time as a distance multiplier.
+The primary A–B readout is the Euclidean straight-line distance between the two final projected points. For an endpoint with longitude λ and latitude φ, the map computes `t = (π/2 − φ)/π`, then fitted base fraction `q(t)`, then `I(q) = q − 0.25q²`. The final physical radial coordinate is `r = πR_base·I(q)`; equivalently, the screen-normalized radius is `qᵥ = I(q)/0.75` and the physical disk radius is `R_disk = 0.75πR_base`. The final projected point in kilometre coordinates is `x = r cos(λ)`, `y = −r sin(λ)`. The reported distance is `sqrt((x₂−x₁)² + (y₂−y₁)²)`. This is exactly the Euclidean length of the straight connector drawn between those same points. The radial derivative is `dr/dq = πR_base·m(q)`, so the listed multiplier is the actual local radial-distance multiplier—not a normalized `m(q)/0.75`. There is no globe, sphere, ellipsoid, great-circle or geodesic distance formula in the primary measurement path.
 
 At 90°S, the radial fraction is 1 and longitude continues to determine angular position on the outer circle. Thus `(−90°, 0°)` and `(−90°, 180°)` are opposite points on the disk rim, not one collapsed spherical South Pole. This is a deliberate flat-disk boundary convention that keeps the Antarctic Ice Wall circular and measurable; it is not a claim about a physical South Pole.
 
@@ -75,7 +75,7 @@ For two radii r1 and r2 and longitude span delta-lambda:
 
 A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
-The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
+The complete disk area in this model is pi * (0.75 * pi * R_base)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
 The scale bar reports map-plane kilometres using the same visibly calibrated projection and Euclidean metric as the primary A–B measurement. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the observed-flight data and limitations.
 

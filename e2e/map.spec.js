@@ -98,7 +98,7 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
   await page.locator('#coordBLon').fill('180');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('#distanceValue')).toContainText('33,835');
+  await expect(page.locator('#distanceValue')).toContainText('25,376');
   await expect(page.locator('#measureHelp')).toContainText('longitude remains the angular position');
 });
 

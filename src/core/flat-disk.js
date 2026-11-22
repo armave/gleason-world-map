@@ -2,19 +2,24 @@
  * Flat-disk geometry engine for the Gleason-style north-polar map.
  * Latitude is mapped through the fitted base fraction q(t), then through the
  * integrated 1.00×→0.50× local radial-distance multiplier profile:
- * qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
+ * Screen fraction qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
+ * Physical radius is pi*R_base*integral(m); final disk radius is 0.75*pi*R_base.
  * Projection, A–B distance, polygon edges and scale bar share this geometry.
  * R is fitted from observed ADS-B ground-speed × elapsed-time mileage.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { radialFractionFromUnitColatitude, unitColatitudeFromRadialFraction } from './radial-warp.js';
 import {
+  RADIAL_DISTANCE_PROFILE_MEAN,
   baseRadialFractionFromVisualFraction,
   visualRadialFractionFromBaseFraction
 } from './visual-radial-calibration.js';
 
 export const DISK_RADIAL_SCALE_KM = FLIGHT_CALIBRATION.radialScaleKm;
-export const DISK_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
+/** Original fitted radius used only by the secondary ADS-B calibration chord. */
+export const DISK_BASE_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
+/** Final measured disk radius after integrating the 12-circle profile (mean 0.75). */
+export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
 
 const DEG = Math.PI / 180;
@@ -58,7 +63,7 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
 /** Radius in the original fitted projection, retained only for ADS-B calibration. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = baseRadialFraction(latitudeDegrees);
-  return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
+  return Number.isFinite(fraction) ? DISK_BASE_RADIUS_KM * fraction : NaN;
 }
 
 /** Inverse of the final visual flat-disk radial transform. */
