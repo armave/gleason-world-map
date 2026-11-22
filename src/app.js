@@ -631,18 +631,18 @@ function updateMeasurement(){
   const measurement=measureDirectDistance(points[0],points[1]);
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent=Number.isFinite(measurement.greatCircleDistanceMeters)
-   ?'Spherical great-circle arc · map chord '+formatDistance(measurement.visualChordDistanceMeters)+' is display-only'
-   :'Great-circle distance unavailable';
+  $('distanceSub').textContent=Number.isFinite(measurement.distanceMeters)
+   ?'Euclidean length of the displayed connector · 12-circle warped disk'
+   :'Flat-disk distance unavailable';
   $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
    ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
   const factor=measurement.calibrationFactor;
   const correction=measurement.correctionPercent;
   $('flightDistanceSub').textContent=Number.isFinite(factor)
-   ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs base chord'
+   ?'Empirical ×'+factor.toFixed(3)+' vs original fitted chord · '+(correction>=0?'+':'')+correction.toFixed(1)+'%'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula. The visible connector remains a straight projected display line, not the great-circle arc; the 12-circle warp changes the map display only. ADS-B mileage is shown separately as an empirical flight-route reference.';
+  $('measureHelp').textContent='The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints in the displayed flat disk. Both endpoint positions use the complete 12-circle warp qᵥ = q + q(1 − q)/3, and the scale bar uses the same map-plane kilometre metric. No globe, sphere or geodesic model is used. On this disk, longitude remains the angular position all the way to 90°S, so the Antarctic rim is a circular boundary rather than one collapsed South Pole point. The ADS-B flight-mileage estimate remains a separate empirical reference.';
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
@@ -664,7 +664,7 @@ function updateMeasurement(){
   $('flightDistanceValue').textContent='—';
   $('flightDistanceSub').textContent='Empirical ADS-B estimate relative to the map chord';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='12-circle radial multiplier · 1.00× North Pole to 0.50× Ice Wall';
+  $('distanceSub').textContent='A–B distance will equal the displayed straight connector in the 12-circle warped disk';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -913,7 +913,7 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  measurementText='Great-circle A–B '+formatDistance(measurement.distanceMeters)+' · projected map chord '+formatDistance(measurement.visualChordDistanceMeters)+' (display only)';
+  measurementText='Flat-disk A–B '+formatDistance(measurement.distanceMeters)+' · exact length of the displayed connector';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
