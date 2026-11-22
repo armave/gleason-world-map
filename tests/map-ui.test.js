@@ -164,7 +164,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
   assert.match(app, /The map geometry uses a smooth, edge-anchored radial warp across all 12 circles/);
-  assert.match(app, /The A–B readout keeps the separate calibration chord and 12-circle factor/);
+  assert.match(app, /The A–B distance uses only endpoint coordinates and a spherical great-circle formula/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
