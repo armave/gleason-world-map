@@ -171,7 +171,7 @@ test('path fit rejects routes that pass timestamp checks but have zero projected
 
   const reportedCoverage = summarizeFlightPathCoverage(dataset);
   assert.equal(reportedCoverage.trainingRouteCount, 24);
-  assert.equal(reportedCoverage.holdoutRouteCount, 6);
+  assert.equal(reportedCoverage.holdoutRouteCount, 7);
   assert.throws(
     () => fitFlightPathCalibration(dataset),
     /Insufficient usable projected-path airport-pair coverage/
