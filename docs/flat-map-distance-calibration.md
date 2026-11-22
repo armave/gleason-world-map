@@ -129,6 +129,20 @@ The calibration split is at the **airport-pair level**:
 
 A route needs at least three accepted high-coverage flights. Each route contributes one median observed-only mileage value. Entire airport pairs are held out from fitting. The refreshed path-fit production gate requires at least 20 usable training routes, 6 usable holdout routes, 4 training and 2 holdout routes with an endpoint south of 30°S, at least 2 training and 2 independent holdout routes south of 45°S, and at least 1 training and 1 independent holdout route south of 60°S. These counts must also remain true after projection; a route whose flights have zero projected path length does not count. These deeper-southern counts are mandatory acceptance gates, not informational warnings. The gate applies in addition to the error limits. Polar regions remain unvalidated until suitable independent records are collected. If any gate fails, the last accepted production coefficients remain active.
 
+### Expanded deep-southern route search
+
+The collector now includes additional route candidates backed by published Antarctic air operations:
+
+- `SCCI–EGAR` (Punta Arenas–Rothera), training. The British Antarctic Survey describes regular Dash-7 shuttle flights between Rothera and Punta Arenas.
+- `SCCI–SCGC` (Punta Arenas–Union Glacier), training. Antarctic Logistics & Expeditions publishes seasonal passenger and cargo flights on this air bridge.
+- `NZCH–NZIR` (Christchurch–McMurdo Ice Runway), training. The Australian Antarctic Program lists Christchurch–McMurdo A319 operations; the McMurdo Ice Runway identifier is NZIR.
+- `SCCI–SCRM`, `SCCI–SAWB` and `NZCH–NZWD`, holdout candidates. Their complete airport pairs remain excluded from fitting.
+- `YMHB–YWKS` (Hobart–Wilkins Aerodrome), a future holdout candidate. The published 2026–27 Australian Antarctic Program schedule lists flights beginning 25 November 2026; this pair cannot contribute until those flights are present in the historical archive.
+
+Operational schedules and airport listings justify searching these pairs; they do **not** prove that ADS-B telemetry is available or of sufficient quality. A route contributes to calibration only after the collector finds at least three flights meeting all observed-only mileage and timestamped-path quality filters. The same route's entire pair remains assigned to a single training or holdout split. A zero-sample candidate is diagnostic only and cannot satisfy any coverage gate.
+
+Sources: [British Antarctic Survey — Rothera Air Facility](https://www.bas.ac.uk/polar-operations/sites-and-facilities/facility/rothera/), [Antarctic Logistics & Expeditions — Air Transport](https://antarctic-logistics.com/services/air-transport/), [ALE flight schedule](https://antarctic-logistics.com/services/air-transport/flight-schedule/), [Australian Antarctic Program — 2026–27 flight schedule](https://www.antarctica.gov.au/antarctic-operations/travel-and-logistics/shipping-and-air-schedules/2627/), and [Antarctic airport identifiers](https://www.flightradar24.com/data/airports/antarctica).
+
 ## Flat-disk model
 
 The map remains a circular radial disk. Its current latitude-to-radius relation and 12-circle profile are carried forward from the last accepted calibration; a replacement based on the stricter observed-only records is not promoted until its independent holdout gates pass. This changes the map's latitude-ring spacing as well as the numeric radial scale; it is not merely a multiplier applied to a distance readout.
