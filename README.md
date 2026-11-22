@@ -29,7 +29,7 @@ The warped Gleason-style disk remains the measurement plane for the A–B tool. 
 
 ## Flat-disk mileage estimates and planar area measurements
 
-The A–B tool draws one straight projected segment. Its primary readout is the raw Euclidean chord multiplied by the 12-circle radial factor; the raw chord is retained as a diagnostic and the ADS-B flight-mileage estimate remains a separate reference. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
+The A–B tool draws one straight projected segment on the visually calibrated disk. Its primary readout uses the original fitted-projection chord multiplied by the 12-circle radial factor; both the original calibration chord and the actual visual chord are retained as diagnostics, and the ADS-B flight-mileage estimate remains a separate reference. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
 
 **Direct A–B distance**
 
@@ -107,7 +107,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: 12-circle radial readout correction (1.00× centre to 0.50× Ice Wall), with the raw flat-disk chord and separate ADS-B flight-mileage reference retained
+- A–B distance: smooth 12-circle visual radial redistribution plus the separate 1.00× to 0.50× calibrated readout, with original/visual chords and ADS-B flight-mileage reference shown separately
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -115,7 +115,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar uses the same fixed map-plane chord metric as A–B
+- View-centred scale bar uses the visually calibrated map-plane chord metric; the A–B readout multiplier is separate
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
