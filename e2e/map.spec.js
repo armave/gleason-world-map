@@ -24,14 +24,17 @@ test('loads the map canvas and geographic reference data', async ({ page }) => {
   expect(dimensions.cssHeight).toBeGreaterThan(280);
 });
 
-test('renders the 12 visual calibration circles as one smooth anchored radial profile', async ({ page }) => {
+test('renders all 12 requested distance multipliers at the same radii used by the map', async ({ page }) => {
   await openLoadedMap(page);
 
   const circles = page.locator('#visualRadialRows tr');
   await expect(circles).toHaveCount(12);
-  await expect(circles.first()).toContainText('1.00×');
+  const multipliers = await circles.locator('td:nth-child(2)').allTextContents();
+  expect(multipliers).toEqual([
+    '1.00×', '0.95×', '0.91×', '0.86×', '0.82×', '0.77×',
+    '0.73×', '0.68×', '0.64×', '0.59×', '0.55×', '0.50×'
+  ]);
   await expect(circles.first()).toContainText('0.0%');
-  await expect(circles.last()).toContainText('0.50×');
   await expect(circles.last()).toContainText('100.0%');
 });
 
