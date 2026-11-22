@@ -84,12 +84,12 @@ q(t) = ((t + epsilon)^exponent - epsilon^exponent) /
 
 exponent = 0.9
 epsilon = 0.005
-r = pi * R * q(t)
-x = r * cos(longitude)
-y = -r * sin(longitude)
+r_base = pi * R_base * q(t)
+x_base = r_base * cos(longitude)
+y_base = -r_base * sin(longitude)
 ```
 
-The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale is regenerated from the approved training routes; the outer disk radius is `pi * R`. Adding a candidate airport pair does not change this value until its measured observations pass the independent acceptance gate.
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale `R_base` is regenerated from the approved training routes. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the fitted base scale until its measured observations pass the independent acceptance gate.
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
@@ -106,16 +106,19 @@ m(q) = 1.00 - 0.50q
 mean multiplier = integral(0..1, m(u) du) = 0.75
 ```
 
-The profile is integrated—not applied as twelve separate bands—so the map remains smooth. It is normalized by its 0.75 mean to preserve the centre and the full outer-rim radius:
+The profile is integrated—not applied as twelve separate bands—so the map remains smooth. Its physical radial integral is:
 
 ```text
-q_visual = integral(0..q, m(u) du) / 0.75
-         = (q - 0.25q²) / 0.75
-         = q + q(1 - q) / 3
-dq_visual/dq = m(q) / 0.75 = (4 - 2q) / 3
+I(q) = integral(0..q, m(u) du) = q - 0.25q²
+r_km = pi * R_base * I(q)
+dr_km/dq = pi * R_base * m(q)
+R_disk = pi * R_base * integral(0..1, m(u) du)
+       = 0.75 * pi * R_base
 ```
 
-This means the radial spacing between any two adjacent reference circles is the average of their endpoint multipliers, normalized by 0.75. The inner radial intervals are wider and the outer intervals progressively narrower. The derivative remains positive and continuous, with no hard joins, while `q_visual(0) = 0` and `q_visual(1) = 1` keep the North Pole at the centre and the Ice Wall at the outer edge.
+For screen positioning only, the normalized radial fraction is `q_visual = I(q) / 0.75 = q + q(1 - q) / 3`. This preserves the visible disk boundary and the 12 ring positions on the canvas. The normalization is **not** used as an extra multiplier in the measured kilometre coordinates. Consequently the physical local radial-distance multiplier is exactly `m(q)`: 1.00× at the centre, 0.50× at the Ice Wall. The derivative stays positive and continuous, with no hard joins, while `q_visual(0) = 0` and `q_visual(1) = 1` keep the North Pole at the centre and the Ice Wall at the display edge.
+
+The physical spacing between two adjacent reference circles is the average of their endpoint multipliers times `pi * R_base / 11`. There is no division by 0.75 in this measured radial interval.
 
 | Circle | Distance multiplier |
 |---:|---:|
@@ -144,10 +147,12 @@ The primary measurement operates entirely in the displayed flat-disk coordinate 
 t = (π/2 − φ) / π
 q(t) = ((t + epsilon)^exponent − epsilon^exponent) /
        ((1 + epsilon)^exponent − epsilon^exponent)
-q_visual = q + q(1 − q) / 3
-r = π * R * q_visual
-x = r * cos(λ)
-y = −r * sin(λ)
+I(q) = q − 0.25q²
+q_visual = I(q) / 0.75 = q + q(1 − q) / 3
+R_disk = 0.75 * π * R_base
+r_km = π * R_base * I(q) = R_disk * q_visual
+x = r_km * cos(λ)
+y = −r_km * sin(λ)
 ```
 
 For projected endpoints `A=(x₁,y₁)` and `B=(x₂,y₂)`, the reported A–B distance is:
@@ -158,7 +163,7 @@ d_flat = sqrt((x₂ − x₁)^2 + (y₂ − y₁)^2)
 
 This is exactly the length of the straight connector drawn between those same projected points. The canvas connector label and the primary numeric readout therefore describe the same segment. The scale bar and polygon edge lengths use the same final projected-plane metric. The 12-circle function is already included in `q_visual`; no additional 12-circle multiplier is applied after measuring the chord.
 
-The scale `R` is an empirical flat-disk calibration derived from ADS-B ground-speed/time observations. It is not a globe radius, sphere radius or universal physical constant. The resulting kilometre values are map-plane kilometres under this model, not a claim of survey-grade ground distance. There is no sphere, ellipsoid, great-circle or geodesic calculation in the primary measurement path.
+The base scale `R_base` is an empirical flat-disk calibration derived from ADS-B ground-speed/time observations. It is not a globe radius, sphere radius or universal physical constant. The 12-circle profile makes the final physical disk radius `R_disk = 0.75πR_base`; the original `πR_base` base radius is retained only for the separate ADS-B calibration chord. The resulting kilometre values are map-plane kilometres under this model, not a claim of survey-grade ground distance. There is no sphere, ellipsoid, great-circle or geodesic calculation in the primary measurement path.
 
 **Antarctic rim convention:** when `φ = −90°`, `q_visual = 1` and the radial coordinate is the disk boundary. Longitude `λ` continues to set the angular position around that boundary. Thus two coordinates at 90°S with different longitudes are different disk points. This deliberate convention preserves the circular Antarctic rim rather than collapsing it to one spherical pole.
 
