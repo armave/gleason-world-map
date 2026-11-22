@@ -18,7 +18,7 @@ q = ((t + epsilon)^exponent - epsilon^exponent) /
     ((1 + epsilon)^exponent - epsilon^exponent)
 r_base = pi * R_base * q
 x_base = r_base cos(lambda)
-y = -r sin(lambda)
+y_base = -r_base sin(lambda)
 ```
 
 The fitted latitude warp uses exponent 0.9 and epsilon 0.005. The 12-circle distance multipliers are the **actual local radial-distance scale**, tapering linearly from **1.00×** at circle 1 to **0.50×** at circle 12 in steps of **0.04545×** (rounded to two decimals in the table). For original fitted radial fraction q, the local profile is m(q) = 1 − 0.5q and its integral is I(q) = q − 0.25q². Physical radius is **r = πR_base·I(q)**, so the local radial derivative is exactly **dr/dq = πR_base·m(q)**. The dimensionless screen radius is q_visual = I(q)/0.75 = q + q(1-q)/3, preserving the same displayed circle positions and placing the Ice Wall at the canvas edge. Crucially, only screen positioning uses this normalized fraction: the measured disk radius is **0.75πR_base**, not πR_base. This removes the previous 4/3 inflation in measured radial distances. There are no hard joins between circle sections. R_base is regenerated from the ADS-B training sample and remains the original base calibration scale; the unmodified base chord is kept separately for the ADS-B flight-mileage reference. Coastlines, capitals, grid lines, labels, clicks and inverse lookup use the shared projection. The table and dotted map rings share the same 12 positions and multipliers. Primary A–B distance is the Euclidean length of the visible connector after both endpoints are projected through this profile; polygon edge lengths and the scale bar use the same final map-plane kilometre metric.
