@@ -182,6 +182,14 @@ test('opposite points on the 60°S parallel retain a straight, measurable connec
   assert.ok(result.distanceMeters > 0);
 });
 
+test('restricted-parallel crossing checks use the fitted longitude-deformed endpoints', () => {
+  const first = point(-65, -180);
+  const second = point(-75, -145);
+  // With the legacy unwarped longitude chord this segment stays outside the
+  // 60°S circle; after the accepted visual shear it crosses that circle.
+  assert.equal(segmentCrossesRestrictedParallel(first, second), true);
+});
+
 test('southern local segments and one restricted-line touch remain measurable', () => {
   const a = point(-70, 10), b = point(-70, 20);
   assert.equal(segmentCrossesRestrictedParallel(a, b), false);
