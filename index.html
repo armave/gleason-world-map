@@ -188,7 +188,7 @@
 <template id="calibration-panel-template">
 <section class="panel">
       <h2>Flat-disk radial calibration</h2>
-      <div class="formula">R_base = fitted ADS-B radial scale<br>φ = latitude · π / 180<br>t = (π/2 − φ) / π<br>q = ((t + ε)^p − ε^p) / ((1 + ε)^p − ε^p)<br>p = 0.9 · ε = 0.005<br>m(q) = 1 − 0.5q<br>I(q) = q − 0.25q²<br>qᵥ = I(q) / 0.75<br>R_disk = 0.75πR_base<br>r = πR_base · I(q) = R_disk · qᵥ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = 0.75πR_base</div>
+      <div class="formula">R_base = last accepted ADS-B scale (provisional)<br>φ = latitude · π / 180<br>t = (π/2 − φ) / π<br>q = ((t + ε)^p − ε^p) / ((1 + ε)^p − ε^p)<br>p = 0.9 · ε = 0.005<br>m(q) = 1 − 0.5q<br>I(q) = q − 0.25q²<br>qᵥ = I(q) / 0.75<br>R_disk = 0.75πR_base<br>r = πR_base · I(q) = R_disk · qᵥ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = 0.75πR_base</div>
       <p class="note" style="margin:8px 0 0">The radial scale R and display warp are carried forward from the last accepted calibration. A stricter ADS-B refresh now uses only directly observed full-flight mileage; its candidate must pass independent route and holdout validation before it can replace the current map profile. The displayed A–B value remains the Euclidean length in this flat disk and should not be interpreted as the measured path of a particular flight.</p>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>

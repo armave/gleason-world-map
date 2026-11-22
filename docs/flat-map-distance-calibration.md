@@ -75,7 +75,7 @@ x_base = r_base * cos(longitude)
 y_base = -r_base * sin(longitude)
 ```
 
-The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The current fitted nominal radial scale `R_base` is regenerated from the approved training routes. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the fitted base scale until its measured observations pass the independent acceptance gate.
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The currently deployed `R_base` is frozen from the last accepted legacy calibration. The strict observed-only refresh creates a separate candidate and does not change the production scale unless its route coverage, Southern Hemisphere and visual-projection validation gates all pass. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the deployed scale until its measured observations pass the independent acceptance gate.
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
