@@ -49,7 +49,17 @@
       "minimumHoldoutRoutesSouthOf60S": 1
     },
     "usableTrainingRouteCount": 26,
-    "usableHoldoutRouteCount": 6
+    "usableHoldoutRouteCount": 6,
+    "usableProjectedPathCoverage": {
+      "trainingRouteCount": 26,
+      "holdoutRouteCount": 6,
+      "trainingRoutesSouthOf30S": 4,
+      "holdoutRoutesSouthOf30S": 2,
+      "trainingRoutesSouthOf45S": 0,
+      "holdoutRoutesSouthOf45S": 0,
+      "trainingRoutesSouthOf60S": 0,
+      "holdoutRoutesSouthOf60S": 0
+    }
   },
   "model": {
     "schemaVersion": 1,
@@ -329,7 +339,17 @@
       "maxAbsolutePercent": 117.13340268106775
     },
     "selectedExponentObjective": 31.54425666949875,
-    "exponentCandidatesTested": 29
+    "exponentCandidatesTested": 29,
+    "usableProjectedPathCoverage": {
+      "trainingRouteCount": 26,
+      "holdoutRouteCount": 6,
+      "trainingRoutesSouthOf30S": 4,
+      "holdoutRoutesSouthOf30S": 2,
+      "trainingRoutesSouthOf45S": 0,
+      "holdoutRoutesSouthOf45S": 0,
+      "trainingRoutesSouthOf60S": 0,
+      "holdoutRoutesSouthOf60S": 0
+    }
   },
   "routeCoverage": {
     "trainingRouteCount": 26,
