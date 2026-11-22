@@ -28,12 +28,13 @@ export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   minimumHoldoutRoutes: 6,
   minimumSouthernTrainingRoutes: 4,
   minimumSouthernHoldoutRoutes: 2,
-  // Deep-southern coverage is recorded as an extrapolation warning. The
-  // fitted angular warp is fixed at the circular rim and cannot fold the disk.
-  minimumTrainingRoutesSouthOf45S: 0,
-  minimumHoldoutRoutesSouthOf45S: 0,
-  minimumTrainingRoutesSouthOf60S: 0,
-  minimumHoldoutRoutesSouthOf60S: 0,
+  // A global visual calibration must be supported by actual high-southern
+  // route measurements in both training and independent holdout splits.
+  // A fixed map rim is a geometric constraint, not empirical validation.
+  minimumTrainingRoutesSouthOf45S: 2,
+  minimumHoldoutRoutesSouthOf45S: 2,
+  minimumTrainingRoutesSouthOf60S: 1,
+  minimumHoldoutRoutesSouthOf60S: 1,
   maxTrainingMapePercent: 10,
   maxHoldoutMapePercent: 12,
   maxHoldoutRouteErrorPercent: 20,
@@ -281,7 +282,11 @@ function hasMinimumProjectedCoverage(coverage, limits) {
   return coverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     coverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
     coverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    coverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes;
+    coverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    coverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    coverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    coverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    coverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 }
 
 export function summarizeUsableProjectedPathCoverage(
@@ -519,8 +524,22 @@ export function fitFlightPathCalibration(dataset) {
   if (coverage.trainingRouteCount < limits.minimumTrainingRoutes ||
       coverage.holdoutRouteCount < limits.minimumHoldoutRoutes ||
       coverage.trainingRoutesSouthOf30S < limits.minimumSouthernTrainingRoutes ||
-      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes) {
-    throw new Error('Insufficient independent ADS-B flight-path coverage for production calibration.');
+      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes ||
+      coverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+      coverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S ||
+      coverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+      coverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S) {
+    throw new Error(
+      'Insufficient independent ADS-B flight-path geographic coverage for global calibration. ' +
+      'Required south-of-45°S routes (training/holdout): ' +
+      limits.minimumTrainingRoutesSouthOf45S + '/' + limits.minimumHoldoutRoutesSouthOf45S +
+      '; observed: ' + coverage.trainingRoutesSouthOf45S + '/' +
+      coverage.holdoutRoutesSouthOf45S +
+      '. Required south-of-60°S routes (training/holdout): ' +
+      limits.minimumTrainingRoutesSouthOf60S + '/' + limits.minimumHoldoutRoutesSouthOf60S +
+      '; observed: ' + coverage.trainingRoutesSouthOf60S + '/' +
+      coverage.holdoutRoutesSouthOf60S + '.'
+    );
   }
 
   const records = routeFlightRecords(dataset).filter(({ route, flights }) =>
