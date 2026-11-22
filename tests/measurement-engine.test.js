@@ -14,7 +14,8 @@ import {
   flatDiskDistanceMeters,
   baseFlatDiskDistanceMeters,
   flatDiskLinePath,
-  project
+  project,
+  radialDistanceFromNorthKm
 } from '../src/core/flat-disk.js';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import { radialDistanceCorrectionFactor } from '../src/core/visual-radial-calibration.js';
@@ -113,6 +114,22 @@ test('same-circle distances use the visible warped-disk chord for both short and
   assert.ok(shorter.distanceMeters < longer.distanceMeters);
   assert.equal(shorter.distanceMeters, shorter.flatDiskDistanceMeters);
   assert.equal(longer.distanceMeters, longer.flatDiskDistanceMeters);
+});
+
+test('north-south measurements include the radial multiplier profile used to position map rings', () => {
+  for (const [latitudeA, latitudeB] of [
+    [90, 75], [75, 60], [60, 45], [45, 30],
+    [30, 15], [15, 0], [0, -15], [-15, -30],
+    [-30, -45], [-45, -60], [-60, -75], [-75, -90]
+  ]) {
+    const a = point(latitudeA, 23), b = point(latitudeB, 23);
+    const result = measureDirectDistance(a, b);
+    const projectedRadialLength = Math.abs(
+      radialDistanceFromNorthKm(latitudeB) -
+      radialDistanceFromNorthKm(latitudeA)
+    ) * 1000;
+    assert.ok(Math.abs(result.distanceMeters - projectedRadialLength) < 1e-6);
+  }
 });
 
 test('the Antarctic rim preserves longitude-indexed positions around the flat-disk boundary', () => {
