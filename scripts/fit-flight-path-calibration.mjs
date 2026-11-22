@@ -111,8 +111,8 @@ async function main() {
       visualMeasurement: 'Sum the Euclidean lengths of the recorded flight path segments after projecting each timestamped ADS-B position into the custom 12-circle flat-disk plane.',
       coordinatesUsedFor: 'Visual path geometry only; never used to calculate observed flight mileage.',
       sequenceHandling: 'Preserve and measure each source MultiLineString sequence independently; never draw or measure a connector across a sequence break.',
-      radialProfile: 'Fixed requested 12-circle continuous profile: local multiplier tapers linearly from 1.00 at the North Pole to 0.50 at the Ice Wall.',
-      fit: 'Search the regularized-power latitude warp exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length.',
+      radialProfile: 'Smooth positive power taper m(q)=outer+(inner-outer)(1-q)^a, integrated continuously and normalized to preserve the North Pole centre and Antarctic Ice Wall radius. Twelve reference circles sample the fitted curve.',
+      fit: 'Jointly search the regularized-power latitude warp exponent and constrained radial-profile exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length. The profile exponent is selected inside nested route-level validation.',
       validation: 'Leave-one-airport-pair-out training validation plus fully independent airport-pair holdouts.'
     },
     rejectionReason,
