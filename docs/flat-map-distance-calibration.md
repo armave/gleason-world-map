@@ -137,7 +137,7 @@ The physical spacing between two adjacent reference circles is the average of th
 
 The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. All latitude circles, coastlines, country boundaries, labels, map clicks, inverse lookup and the scale bar use the same transformed coordinates.
 
-**Measurement correspondence:** A–B endpoints are projected through this exact radial multiplier profile first. The primary distance is then the Euclidean length of the straight connector between those displayed points. Thus the A–B number and visible line correspond exactly; the radial multiplier is not applied a second time to the finished chord. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion. For a segment spanning several circles, its measured length reflects the full transform across both endpoint positions, not one arbitrarily selected circle's multiplier.
+**Measurement correspondence:** The local profile controls radial spacing: along a fixed meridian, `dr/dq = πR_base·m(q)`, so each radial interval uses the average of its endpoint multipliers. For arbitrary A–B endpoints, the map projects both coordinates through the profile and reports the Euclidean chord between their final radius-and-longitude positions. A diagonal or tangential component is therefore governed by the cumulative radius `r(q) = πR_base·I(q)` and the longitude span; it is not valid to multiply the entire chord by one circle's local radial factor. The A–B number is exactly the length of the visible connector. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion.
 
 ## Primary flat-disk Euclidean distance
 
