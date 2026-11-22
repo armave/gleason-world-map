@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FLIGHT_PATH_PROFILE,
+  FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES,
   normalizeFlightTrack,
   unitProjectedFlightPathLength,
   summarizeFlightPathCoverage,
@@ -146,6 +147,12 @@ test('path fit recovers a known radial scale and warp on independent held-out ro
   const result = fitFlightPathCalibration(syntheticDataset());
   assert.equal(result.model.radialProfile.innerFactor, FLIGHT_PATH_PROFILE.innerFactor);
   assert.equal(result.model.radialProfile.outerFactor, FLIGHT_PATH_PROFILE.outerFactor);
+  assert.ok(Math.abs(result.model.radialProfile.exponent - 1) < 1e-12);
+  assert.equal(result.metrics.selectedProfileExponent, 1);
+  assert.equal(
+    result.metrics.profileExponentCandidatesTested,
+    FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES.length
+  );
   assert.ok(Math.abs(result.model.radialWarp.exponent - 0.9) <= 0.025);
   close(result.model.radialScaleKm, 5200, 3);
   assert.ok(result.metrics.training.meanAbsolutePercent < 0.1);
@@ -207,4 +214,23 @@ test('path fit refuses legacy or non-observed-only datasets', () => {
   dataset.schemaVersion = 4;
   dataset.measurement.distancePolicy = 'imputed';
   assert.throws(() => fitFlightPathCalibration(dataset), /schema-4 observed-only/);
+});
+
+
+test('candidate radial-profile exponents alter the projected track, not just its reported scale', () => {
+  const dataset = syntheticDataset();
+  const coordinates = dataset.routes[0].observations[0].trackCoordinates;
+  const base = unitProjectedFlightPathLength(coordinates, DEFAULT_RADIAL_WARP, FLIGHT_PATH_PROFILE);
+  const shallow = unitProjectedFlightPathLength(coordinates, DEFAULT_RADIAL_WARP, {
+    ...FLIGHT_PATH_PROFILE, exponent: 0.7
+  });
+  const steep = unitProjectedFlightPathLength(coordinates, DEFAULT_RADIAL_WARP, {
+    ...FLIGHT_PATH_PROFILE, exponent: 1.3
+  });
+  assert.ok(Number.isFinite(base) && base > 0);
+  assert.ok(Number.isFinite(shallow) && shallow > 0);
+  assert.ok(Number.isFinite(steep) && steep > 0);
+  assert.notEqual(shallow, base);
+  assert.notEqual(steep, base);
+  assert.notEqual(shallow, steep);
 });
