@@ -5,9 +5,11 @@
  * Screen fraction qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
  * Physical radius is pi*R_base*integral(m); final disk radius is 0.75*pi*R_base.
  * Projection, A–B distance, polygon edges and scale bar share this geometry.
- * R is fitted from observed ADS-B ground-speed × elapsed-time mileage.
+ * The displayed latitude warp and scale are fitted against projected observed ADS-B paths.
+ * A separate endpoint-chord model remains available only for empirical flight-mileage estimates.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
+import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
 import { radialFractionFromUnitColatitude, unitColatitudeFromRadialFraction } from './radial-warp.js';
 import {
   RADIAL_DISTANCE_PROFILE_MEAN,
@@ -15,8 +17,8 @@ import {
   visualRadialFractionFromBaseFraction
 } from './visual-radial-calibration.js';
 
-export const DISK_RADIAL_SCALE_KM = FLIGHT_CALIBRATION.radialScaleKm;
-/** Original fitted radius used only by the secondary ADS-B calibration chord. */
+export const DISK_RADIAL_SCALE_KM = FLIGHT_PATH_CALIBRATION.radialScaleKm;
+/** Base radius used by the visible path-calibrated projection, before the 12-circle integral. */
 export const DISK_BASE_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
 /** Final measured disk radius after integrating the 12-circle profile (mean 0.75). */
 export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN;
@@ -39,18 +41,31 @@ export function colatitudeRadians(latitudeDegrees) {
   return Math.PI / 2 - rad(latitudeDegrees);
 }
 
-/** Original ADS-B-fitted radial fraction, before the visual 12-circle warp. */
+/** Base radial fraction fitted from observed ADS-B trajectory paths. */
 export function baseRadialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
   if (!Number.isFinite(theta)) return NaN;
-  return radialFractionFromUnitColatitude(theta / Math.PI, FLIGHT_CALIBRATION.radialWarp);
+  return radialFractionFromUnitColatitude(
+    theta / Math.PI,
+    FLIGHT_PATH_CALIBRATION.radialWarp
+  );
+}
+
+/** Original chord-model fraction, retained only for the secondary flight-mileage estimate. */
+function secondaryBaseRadialFraction(latitudeDegrees) {
+  const theta = colatitudeRadians(latitudeDegrees);
+  if (!Number.isFinite(theta)) return NaN;
+  return radialFractionFromUnitColatitude(
+    theta / Math.PI,
+    FLIGHT_CALIBRATION.radialWarp
+  );
 }
 
 /** Final radial fraction used to draw the map, including the smooth circle warp. */
 export function radialFraction(latitudeDegrees) {
-  const baseFraction = baseRadialFraction(latitudeDegrees);
-  return Number.isFinite(baseFraction)
-    ? visualRadialFractionFromBaseFraction(baseFraction)
+  const pathBaseFraction = baseRadialFraction(latitudeDegrees);
+  return Number.isFinite(pathBaseFraction)
+    ? visualRadialFractionFromBaseFraction(pathBaseFraction)
     : NaN;
 }
 
@@ -62,8 +77,9 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
 
 /** Radius in the original fitted projection, retained only for ADS-B calibration. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
-  const fraction = baseRadialFraction(latitudeDegrees);
-  return Number.isFinite(fraction) ? DISK_BASE_RADIUS_KM * fraction : NaN;
+  const fraction = secondaryBaseRadialFraction(latitudeDegrees);
+  const secondaryBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
+  return Number.isFinite(fraction) ? secondaryBaseRadiusKm * fraction : NaN;
 }
 
 /** Inverse of the final visual flat-disk radial transform. */
@@ -71,7 +87,7 @@ export function latitudeFromRadialDistanceKm(radiusKm) {
   if (!Number.isFinite(radiusKm)) return NaN;
   const visualFraction = clamp(radiusKm / DISK_RADIUS_KM, 0, 1);
   const baseFraction = baseRadialFractionFromVisualFraction(visualFraction);
-  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_CALIBRATION.radialWarp);
+  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_PATH_CALIBRATION.radialWarp);
   return (Math.PI / 2 - t * Math.PI) * RAD;
 }
 
