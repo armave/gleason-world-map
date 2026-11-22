@@ -216,12 +216,11 @@ export function measureDirectDistance(first, second) {
     : null;
 
   return {
-    // Primary readout receives the user-defined 12-circle radial adjustment.
-    // Primary distance is a coordinate-only spherical great-circle calculation;
-    // neither telemetry nor the map's visual radial calibration affects it.
+    // Keep the legacy radial correction as a diagnostic alongside the primary
+    // coordinate-only distance, which is independent of telemetry and map warp.
     distanceMeters: safeGreatCircleDistance,
     greatCircleDistanceMeters: safeGreatCircleDistance,
-    radiallyCorrectedDistanceMeters: safeGreatCircleDistance,
+    radiallyCorrectedDistanceMeters: safeRadiallyCorrectedDistance,
     calibratedDistanceMeters: safeFlightEmpiricalDistance,
     flightEmpiricalDistanceMeters: safeFlightEmpiricalDistance,
     // Preserve the actual geometric chord as an independent reference.
