@@ -630,7 +630,9 @@ function updateMeasurement(){
   const measurement=measureDirectDistance(points[0],points[1]);
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent='Straight projected chord · matches the drawn connector';
+  $('distanceSub').textContent=Number.isFinite(measurement.radialCorrectionFactor)
+   ?'Raw disk chord × '+measurement.radialCorrectionFactor.toFixed(3)+' radial factor · circle '+measurement.radialCirclePosition.toFixed(1)+'/12'
+   :'Radial correction unavailable';
   $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
    ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
   const factor=measurement.calibrationFactor;
@@ -639,7 +641,7 @@ function updateMeasurement(){
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The connector and its map label report Euclidean distance along the straight projected chord. The ADS-B estimate is a separate empirical flight-mileage reference; it can differ because it models observed aircraft routes rather than the length of the displayed line.';
+  $('measureHelp').textContent='The primary A–B readout multiplies the straight projected chord by a smoothly interpolated 12-circle radial factor: 1.00× at the North Pole, tapering to 0.50× at the Ice Wall. The connector and scale bar retain the unadjusted map geometry. The ADS-B estimate remains a separate empirical flight-mileage reference.';
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
@@ -661,7 +663,7 @@ function updateMeasurement(){
   $('flightDistanceValue').textContent='—';
   $('flightDistanceSub').textContent='Empirical ADS-B estimate relative to the map chord';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='Straight projected chord · matches the drawn connector';
+  $('distanceSub').textContent='12-circle radial multiplier · 1.00× North Pole to 0.50× Ice Wall';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -910,7 +912,7 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  measurementText='ADS-B estimate '+formatDistance(measurement.distanceMeters)+' · raw disk chord '+formatDistance(measurement.chordDistanceMeters);
+  measurementText='Radially adjusted A–B '+formatDistance(measurement.distanceMeters)+' ('+(Number.isFinite(measurement.radialCorrectionFactor)?measurement.radialCorrectionFactor.toFixed(3)+'×':'factor unavailable')+') · raw disk chord '+formatDistance(measurement.chordDistanceMeters);
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
