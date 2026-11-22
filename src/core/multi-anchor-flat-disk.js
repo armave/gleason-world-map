@@ -227,7 +227,7 @@ function solveLinearSystem(matrix, vector) {
 
 function buildWarp(seed, fitted, anchorIds, options = {}) {
   const sigmaKm = options.sigmaKm ?? DISK_RADIUS_KM * 0.2;
-  const regularization = options.regularization ?? 1e-5;
+  const regularization = options.regularization ?? 1e-3;
   if (!Number.isFinite(sigmaKm) || sigmaKm <= 0) {
     throw new Error('RBF sigmaKm must be a positive finite number');
   }
