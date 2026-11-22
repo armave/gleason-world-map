@@ -40,8 +40,8 @@ export function createProjectedMeasurementSegments(points,projectPoint,closed=fa
 
 /**
  * Compute label anchors and measurements for straight projected polygon edges.
- * The supplied metric selects the displayed distance convention (the area tool
- * passes flatDiskDistanceMeters so labels match its planar perimeter).
+ * The supplied callback is the canonical distance function also used by the
+ * A–B readout, scale bar and polygon perimeter.
  */
 export function createProjectedSegmentLabels(points,projectPoint,measureDistanceMeters,closed=false){
  if(!Array.isArray(points)||points.length<2||
