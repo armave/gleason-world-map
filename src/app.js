@@ -647,7 +647,7 @@ function updateMeasurement(){
    ?'Euclidean chord in the displayed flat-disk map plane · not flown route mileage'
    :'Displayed flat-disk chord unavailable';
 
-  $('measureHelp').textContent='The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support. Outside that domain, the numeric estimate is withheld and the panel says Not validated. The secondary value is the exact Euclidean chord in the displayed flat-disk map plane; it is not a flown route mileage. The projection, connector and scale bar continue to use the project’s flat-disk geometry. No globe, sphere, ellipsoid, great-circle or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point.';
+  $('measureHelp').textContent='The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support. Outside that domain, the numeric estimate is withheld and the panel says Not validated. The secondary value is the exact Euclidean chord in the displayed flat-disk map plane; it is not a flown route mileage. The projection, connector and scale bar continue to use the project’s flat-disk geometry. The project’s flat-disk geometry is used throughout; no external Earth-shape distance formula is introduced. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point.';
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   if(routeCalibration){
    const validation=routeCalibration.validation||{};
