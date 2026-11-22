@@ -2,25 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { integrateGroundSpeedSeries } from '../src/core/flight-telemetry.js';
 
-test('integrates ground speed and expands the observed mean over telemetry-span gaps', () => {
-  const pathGs = [
-    [
-      [0, 360], [300, 360], [600, 360],
-      [900, 420], [1200, 420], [1500, 420],
-      [1800, 400], [2100, 400], [2400, 400], [2700, 500]
-    ],
-    [[3000, 480], [3300, 480], [3600, 500]]
-  ];
+test('uses only the measured ground-speed integral when telemetry covers the entire flight', () => {
+  const pathGs = [[
+    [0, 360], [300, 360], [600, 360],
+    [900, 420], [1200, 420], [1500, 420],
+    [1800, 400], [2100, 400], [2400, 400], [2700, 500],
+    [3000, 480], [3300, 480], [3600, 500]
+  ]];
   const result = integrateGroundSpeedSeries(pathGs, 0, 3600);
+  const expectedTrackKm = [360, 360, 360, 420, 420, 420, 400, 400, 400, 500, 480, 480]
+    .reduce((sum, speed) => sum + speed * (300 / 3600) * 1.852, 0);
   assert.equal(result.accepted, true);
-  assert.ok(Math.abs(result.observedTrackKm - 694.5) < 1e-9);
-  assert.ok(Math.abs(result.coverage - 55 / 60) < 1e-12);
-  assert.ok(Math.abs(result.estimatedTrackKm - 694.5 / (55 / 60)) < 1e-9);
-  assert.equal(result.trackKm, result.estimatedTrackKm);
-  assert.equal(result.telemetrySpanMinutes, 60);
-  assert.equal(result.coveredMinutes, 55);
-  assert.equal(result.speedIntervals, 11);
-  assert.equal(result.distanceMethod, 'observed-ground-speed-integral-expanded-by-measured-coverage');
+  assert.equal(result.coverage, 1);
+  assert.ok(Math.abs(result.observedTrackKm - expectedTrackKm) < 1e-9);
+  assert.equal(result.trackKm, result.observedTrackKm);
+  assert.equal(result.coveredMinutes, 60);
+  assert.equal(result.speedIntervals, 12);
+  assert.equal(result.distanceMethod, 'observed-ground-speed-integral-only');
 });
 
 test('does not bridge large gaps and rejects records with insufficient telemetry coverage', () => {
@@ -30,22 +28,22 @@ test('does not bridge large gaps and rejects records with insufficient telemetry
   ];
   const result = integrateGroundSpeedSeries(pathGs, 0, 8400);
   assert.equal(result.accepted, false);
-  assert.equal(result.reason, 'low-telemetry-coverage');
+  assert.equal(result.reason, 'telemetry-gap-too-large');
   assert.equal(result.intervalCount, 8);
   assert.ok(Math.abs(result.coverage - 2400 / 8400) < 1e-12);
 });
 
-test('uses the airborne telemetry span rather than ground time in the full flight record', () => {
+test('uses full flight duration as the coverage denominator, not just the first-to-last telemetry span', () => {
   const pathGs = [[
     [900, 400], [1200, 400], [1500, 400], [1800, 400], [2100, 400],
     [2400, 400], [2700, 400], [3000, 400], [3300, 400], [3600, 400]
   ]];
   const result = integrateGroundSpeedSeries(pathGs, 0, 4500);
-  assert.equal(result.accepted, true);
+  assert.equal(result.accepted, false);
+  assert.equal(result.reason, 'low-telemetry-coverage');
   assert.equal(result.flightDurationMinutes, 75);
   assert.equal(result.telemetrySpanMinutes, 45);
-  assert.equal(result.coverage, 1);
-  assert.ok(Math.abs(result.trackKm - 400 * 0.75 * 1.852) < 1e-9);
+  assert.equal(result.coverage, 0.6);
 });
 
 test('ignores non-airborne or invalid speed samples', () => {
@@ -65,11 +63,11 @@ test('does not forward-fill a ground-speed sample across a long interval in one 
     [5400, 400], [6000, 400], [6600, 400], [7200, 400], [7800, 400]
   ]];
   const result = integrateGroundSpeedSeries(pathGs, 0, 7800);
-  assert.equal(result.accepted, true);
+  assert.equal(result.accepted, false);
+  assert.equal(result.reason, 'telemetry-gap-too-large');
   assert.equal(result.speedIntervals, 8);
   assert.ok(Math.abs(result.coverage - 4800 / 7800) < 1e-12);
   assert.equal(result.maxGapMinutes, 50);
-  assert.ok(Math.abs(result.observedTrackKm - 400 * (8 / 6) * 1.852) < 1e-9);
 });
 
 test('rejects missing series and invalid observation windows', () => {

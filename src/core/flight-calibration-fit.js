@@ -15,8 +15,8 @@ const NEIGHBOR_COUNT = 2;
 const INVERSE_DISTANCE_POWER = 1;
 const MIN_TRAIN_ROUTES = 10;
 const MIN_HOLDOUT_ROUTES = 4;
-const MIN_ROUTE_TELEMETRY_COVERAGE = 0.35;
-const MAX_ROUTE_TELEMETRY_GAP_MINUTES = 300;
+const MIN_ROUTE_TELEMETRY_COVERAGE = 0.98;
+const MAX_ROUTE_TELEMETRY_GAP_MINUTES = 15;
 
 function median(values) {
   if (!values.length) return NaN;
@@ -88,6 +88,11 @@ export function flightCalibrationFeatures(
 }
 
 function routeObservations(dataset, split, radialWarp) {
+  const hasStrictObservedOnlyPolicy =
+    dataset?.schemaVersion >= 3 &&
+    dataset?.measurement?.coverageDenominator === 'full-flight-duration' &&
+    dataset?.measurement?.distancePolicy === 'observed-only';
+  if (!hasStrictObservedOnlyPolicy) return [];
   return (dataset?.routes || []).flatMap(route => {
     if (route.split !== split || !validAirport(route.airportA) ||
         !validAirport(route.airportB) ||
@@ -99,8 +104,8 @@ function routeObservations(dataset, split, radialWarp) {
     const observations = hasObservationRecords
       ? route.observations.filter(observation =>
           observation?.accepted !== false &&
-          Number.isFinite(observation?.trackKm ?? observation?.estimatedTrackKm) &&
-          (observation.trackKm ?? observation.estimatedTrackKm) > 0 &&
+          Number.isFinite(observation?.observedTrackKm ?? observation?.trackKm) &&
+          (observation.observedTrackKm ?? observation.trackKm) > 0 &&
           Number.isFinite(observation.coverage) &&
           observation.coverage >= MIN_ROUTE_TELEMETRY_COVERAGE &&
           Number.isFinite(observation.maxGapMinutes) &&
@@ -115,7 +120,7 @@ function routeObservations(dataset, split, radialWarp) {
     )) return [];
 
     const trackValues = observations.map(observation =>
-      observation.trackKm ?? observation.estimatedTrackKm
+      observation.observedTrackKm ?? observation.trackKm
     );
     return [{
       ...route,
@@ -163,8 +168,10 @@ export function summarizeFlightCalibrationCoverage(dataset) {
   return {
     trainingRouteCount: training.length,
     holdoutRouteCount: holdout.length,
+    trainingRoutesSouthOf30S: southernCount(training, -30),
     trainingRoutesSouthOf45S: southernCount(training, -45),
     trainingRoutesSouthOf60S: southernCount(training, -60),
+    holdoutRoutesSouthOf30S: southernCount(holdout, -30),
     holdoutRoutesSouthOf45S: southernCount(holdout, -45),
     holdoutRoutesSouthOf60S: southernCount(holdout, -60)
   };
@@ -215,7 +222,7 @@ function radialScale(examples) {
 function modelFromExamples(examples, sourceDatasetVersion, radialWarp) {
   const stats = featureStatistics(examples);
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     sourceDatasetVersion,
     radialWarp: { ...radialWarp },
     target: 'median observed ADS-B flight-track mileage from ground-speed × time integration',

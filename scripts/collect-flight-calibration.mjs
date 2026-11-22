@@ -91,7 +91,53 @@ const ROUTES = [
   // Entire route pairs are held out from fitting.
   { from: 'OMDB', to: 'WSSS', split: 'holdout' },
   { from: 'OTHH', to: 'RJAA', split: 'holdout' },
-  { from: 'LTFM', to: 'OJAI', split: 'holdout' }
+  { from: 'LTFM', to: 'OJAI', split: 'holdout' },
+
+  // Additional high-frequency regional and long-haul pairs for wider validation.
+  { from: 'KJFK', to: 'KBOS', split: 'train' },
+  { from: 'KJFK', to: 'KATL', split: 'holdout' },
+  { from: 'KJFK', to: 'KSFO', split: 'train' },
+  { from: 'KORD', to: 'KDEN', split: 'train' },
+  { from: 'KORD', to: 'KATL', split: 'train' },
+  { from: 'KDFW', to: 'KLAX', split: 'train' },
+  { from: 'KDFW', to: 'KMIA', split: 'train' },
+  { from: 'KLAX', to: 'KSFO', split: 'train' },
+  { from: 'KLAX', to: 'KLAS', split: 'train' },
+  { from: 'KSEA', to: 'KSFO', split: 'train' },
+  { from: 'KATL', to: 'KMIA', split: 'train' },
+  { from: 'EGLL', to: 'LEMD', split: 'holdout' },
+  { from: 'EGLL', to: 'EDDM', split: 'train' },
+  { from: 'EGLL', to: 'LIRF', split: 'train' },
+  { from: 'EHAM', to: 'LEMD', split: 'train' },
+  { from: 'LFPG', to: 'LIRF', split: 'train' },
+  { from: 'EDDF', to: 'LIRF', split: 'train' },
+  { from: 'LTFM', to: 'LFPG', split: 'train' },
+  { from: 'LTFM', to: 'OOMS', split: 'train' },
+  { from: 'WSSS', to: 'WMKK', split: 'holdout' },
+  { from: 'WSSS', to: 'RPLL', split: 'train' },
+  { from: 'VHHH', to: 'RCTP', split: 'train' },
+  { from: 'VHHH', to: 'RJAA', split: 'train' },
+  { from: 'RJAA', to: 'WSSS', split: 'train' },
+  { from: 'VIDP', to: 'OMDB', split: 'holdout' },
+  { from: 'VIDP', to: 'VABB', split: 'train' },
+  { from: 'YSSY', to: 'NZAA', split: 'holdout' },
+  { from: 'YSSY', to: 'NZCH', split: 'train' },
+  { from: 'YSSY', to: 'YPDN', split: 'train' },
+  { from: 'YSSY', to: 'YPPH', split: 'train' },
+  { from: 'YBBN', to: 'YBCG', split: 'train' },
+  { from: 'YPAD', to: 'YPPH', split: 'train' },
+  { from: 'SCEL', to: 'SCFA', split: 'train' },
+  { from: 'SCEL', to: 'SPJC', split: 'train' },
+  { from: 'SCEL', to: 'SKBO', split: 'train' },
+  { from: 'SAEZ', to: 'SBGR', split: 'train' },
+  { from: 'SAEZ', to: 'SACO', split: 'train' },
+  { from: 'SCEL', to: 'SAEZ', split: 'holdout' },
+  { from: 'FAOR', to: 'FADN', split: 'train' },
+  { from: 'FACT', to: 'FADN', split: 'train' },
+  { from: 'FAOR', to: 'FQMA', split: 'train' },
+  { from: 'FAOR', to: 'HKJK', split: 'train' },
+  { from: 'FACT', to: 'FQMA', split: 'train' },
+  { from: 'FAOR', to: 'FACT', split: 'holdout' }
 ];
 
 function option(name, fallback) {
@@ -102,9 +148,10 @@ function option(name, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
-const MAX_PAGES_PER_ROUTE = option('max-pages-per-route', 24);
-const SAMPLES_PER_ROUTE = option('samples-per-route', 8);
-const MAX_DETAILS_PER_ROUTE = SAMPLES_PER_ROUTE * 8;
+const MAX_PAGES_PER_ROUTE = option('max-pages-per-route', 120);
+const SAMPLES_PER_ROUTE = option('samples-per-route', 6);
+const HISTORY_DAYS = option('history-days', 180);
+const MAX_DETAILS_PER_ROUTE = SAMPLES_PER_ROUTE * 12;
 const ROUTE_PAGE_LIMIT = 1000;
 
 const routeKey = (a, b) =>
@@ -215,6 +262,7 @@ async function fetchFlightDetail(candidate, airportA, airportB, counters) {
     }
     return {
       flightId: detail.flight_id,
+      sourceRecordUrl: API_ROOT + '/flights/' + encodeURIComponent(detail.flight_id),
       callsign: detail.callsign || null,
       icaoType: detail.icao_type || null,
       operator: detail.operator || null,
@@ -235,13 +283,16 @@ async function fetchFlightDetail(candidate, airportA, airportB, counters) {
   }
 }
 
-async function collectRoute(route, airports, endDate) {
+async function collectRoute(route, airports, endDate, historyStart) {
   const airportA = airports.get(route.from);
   const airportB = airports.get(route.to);
   const counters = {};
   const observations = [];
   const seen = new Set();
   let cursor = null;
+  let windowEnd = endDate;
+  const historyFloor = Date.parse(historyStart);
+  let windowsScanned = 0;
   let pagesScanned = 0;
   let candidatesSeen = 0;
   let detailsTried = 0;
@@ -270,9 +321,10 @@ async function collectRoute(route, airports, endDate) {
   };
 
   for (let pageNumber = 0; pageNumber < MAX_PAGES_PER_ROUTE; pageNumber++) {
+    if (!(Date.parse(windowEnd) > historyFloor)) break;
     const body = {
       match,
-      end_date: endDate,
+      end_date: windowEnd,
       window_days: 7,
       limit: ROUTE_PAGE_LIMIT,
       include_path: false,
@@ -313,12 +365,22 @@ async function collectRoute(route, airports, endDate) {
       ', candidates ' + candidates.length +
       ', accepted telemetry ' + observations.length + '/' + SAMPLES_PER_ROUTE
     );
-    if (observations.length >= SAMPLES_PER_ROUTE || detailsTried >= MAX_DETAILS_PER_ROUTE || !page.cursor) break;
-    cursor = page.cursor;
+    if (observations.length >= SAMPLES_PER_ROUTE || detailsTried >= MAX_DETAILS_PER_ROUTE) break;
+    if (page.cursor) {
+      cursor = page.cursor;
+      continue;
+    }
+    const proposedWindowEnd = page.window_from && Date.parse(page.window_from) < Date.parse(windowEnd)
+      ? page.window_from
+      : new Date(Date.parse(windowEnd) - 7 * 24 * 60 * 60 * 1000).toISOString();
+    if (!(Date.parse(proposedWindowEnd) < Date.parse(windowEnd))) break;
+    windowEnd = proposedWindowEnd;
+    cursor = null;
+    windowsScanned++;
   }
 
   observations.sort((a, b) => String(a.startTs).localeCompare(String(b.startTs)));
-  return { route, airportA, airportB, observations, counters, pagesScanned, candidatesSeen };
+  return { route, airportA, airportB, observations, counters, pagesScanned, candidatesSeen, windowsScanned };
 }
 
 async function collect() {
@@ -350,9 +412,15 @@ async function collect() {
   });
 
   const endDate = dataRange.last_date + 'T23:59:59Z';
+  const requestedHistoryStart = new Date(
+    Date.parse(endDate) - HISTORY_DAYS * 24 * 60 * 60 * 1000
+  ).toISOString();
+  const historyStart = Date.parse(requestedHistoryStart) > Date.parse(dataRange.first_date)
+    ? requestedHistoryStart
+    : dataRange.first_date + 'T00:00:00Z';
   const results = [];
   for (const route of ROUTES) {
-    const result = await collectRoute(route, airports, endDate);
+    const result = await collectRoute(route, airports, endDate, historyStart);
     results.push(result);
     const counterSummary = Object.entries(result.counters)
       .map(([key, count]) => key + '=' + count).join(', ') || 'none';
@@ -364,7 +432,7 @@ async function collect() {
   }
 
   const outputRoutes = results.map(result => {
-    const distances = result.observations.map(item => item.trackKm);
+    const distances = result.observations.map(item => item.observedTrackKm);
     return {
       routeId: routeKey(result.route.from, result.route.to),
       directionListed: result.route.from + '-' + result.route.to,
@@ -396,6 +464,7 @@ async function collect() {
       medianMaxGapMinutes: percentile(result.observations.map(item => item.maxGapMinutes), 0.5),
       telemetryDiagnostics: result.counters,
       pagesScanned: result.pagesScanned,
+      windowsScanned: result.windowsScanned,
       candidatesSeen: result.candidatesSeen,
       observations: result.observations
     };
@@ -404,8 +473,8 @@ async function collect() {
   const trainRoutes = outputRoutes.filter(route => route.split === 'train' && route.sampleCount >= 3);
   const holdoutRoutes = outputRoutes.filter(route => route.split === 'holdout' && route.sampleCount >= 3);
   const result = {
-    schemaVersion: 2,
-    dataset: 'Flight-track distance benchmarks for the Gleason flat-disk map',
+    schemaVersion: 3,
+    dataset: 'Observed-only ADS-B ground-speed flight mileage benchmarks for the Gleason flat-disk map',
     source: {
       provider: 'adsb.lol historical ADS-B archive',
       accessApi: 'https://adsb.aero/api/docs',
@@ -417,15 +486,18 @@ async function collect() {
       availableRange: dataRange
     },
     measurement: {
-      target: 'Estimated flown-path length from recorded ADS-B ground speed and the active telemetry time span',
-      method: 'Integrate step-interpolated path_gs values within each contiguous time-series sequence. Do not bridge missing-data gaps; estimate the full telemetry-span mileage by dividing the observed integral by the measured time-coverage fraction. Store observed integral, coverage, and largest gap for every flight.',
-      formula: 'track_km = sum(speed_knots * delta_seconds / 3600) * 1.852',
+      target: 'Directly observed flown mileage from recorded ADS-B ground speed and timestamps',
+      method: 'Integrate step-interpolated path_gs values only across accepted contiguous intervals. Coverage is measured against the complete flight start_ts-to-end_ts duration, including missing time before the first and after the last telemetry sample. Do not bridge gaps, expand partial observations, or impute missing speed.',
+      formula: 'observed_track_km = sum(speed_knots * delta_seconds / 3600) * 1.852',
       units: 'ground speed in knots; elapsed time in seconds; nautical miles converted to kilometres using 1.852',
+      coverageDenominator: 'full-flight-duration',
+      distancePolicy: 'observed-only',
       filters: {
         minSpeedKnots: FLIGHT_TELEMETRY_FILTERS.minSpeedKnots,
         maxSpeedKnots: FLIGHT_TELEMETRY_FILTERS.maxSpeedKnots,
         minFlightMinutes: FLIGHT_TELEMETRY_FILTERS.minFlightMinutes,
         minTelemetryCoverage: FLIGHT_TELEMETRY_FILTERS.minCoverage,
+        maxTelemetryGapMinutes: FLIGHT_TELEMETRY_FILTERS.maxTelemetryGapMinutes,
         maxSpeedSampleIntervalSeconds: FLIGHT_TELEMETRY_FILTERS.maxSpeedSampleIntervalSeconds,
         minSpeedIntervals: FLIGHT_TELEMETRY_FILTERS.minSpeedIntervals
       },
@@ -439,6 +511,8 @@ async function collect() {
     },
     collection: {
       endDate,
+      historyStart,
+      historyDays: HISTORY_DAYS,
       maxPagesPerRoute: MAX_PAGES_PER_ROUTE,
       samplesPerRouteTarget: SAMPLES_PER_ROUTE,
       routesWithAtLeastThreeTrainFlights: trainRoutes.length,

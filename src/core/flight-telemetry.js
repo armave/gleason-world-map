@@ -1,12 +1,9 @@
 /**
- * Flight-mileage estimation from ADS-B ground-speed telemetry.
+ * Calibration mileage from recorded ADS-B ground-speed telemetry.
  *
- * Observed distance is the integral of recorded ground speed over short,
- * measured intervals. Intervals longer than 15 minutes are left uncovered,
- * rather than forward-filling a stale speed. The observed integral is still
- * expanded by 1/coverage for the telemetry-span estimate, with coverage and
- * largest gaps retained on every observation.
- *
+ * Only the actually observed speed × time integral is eligible for fitting.
+ * Missing intervals are never expanded or imputed. Flights are rejected if
+ * full-flight coverage is below 98% or any unsupported gap exceeds 15 minutes.
  * Geographic coordinates and route geometry are absent from this module.
  */
 export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
@@ -14,7 +11,8 @@ export const FLIGHT_TELEMETRY_FILTERS = Object.freeze({
   minSpeedKnots: 40,
   maxSpeedKnots: 750,
   minFlightMinutes: 35,
-  minCoverage: 0.35,
+  minCoverage: 0.98,
+  maxTelemetryGapMinutes: 15,
   maxSpeedSampleIntervalSeconds: 900,
   minSpeedIntervals: 8
 });
@@ -112,9 +110,15 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
     }
   }
 
-  const coverage = Math.min(1, coveredSeconds / telemetrySpanSeconds);
+  maxGapSeconds = Math.max(
+    maxGapSeconds,
+    telemetryStart - flightStart,
+    flightEnd - telemetryEnd,
+    0
+  );
+  const coverage = Math.min(1, coveredSeconds / flightDurationSeconds);
   const observedTrackKm = observedNauticalMiles * KNOT_TO_KM;
-  const estimatedTrackKm = coverage > 0 ? observedTrackKm / coverage : NaN;
+  const maxGapMinutes = maxGapSeconds / 60;
   const telemetrySpanMinutes = telemetrySpanSeconds / 60;
   const flightDurationMinutes = flightDurationSeconds / 60;
   const orderedBounds = sequenceBounds.sort((a, b) => a[0] - b[0]);
@@ -131,31 +135,41 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
   if (telemetrySpanMinutes < MIN_FLIGHT_MINUTES) {
     return { accepted: false, reason: 'flight-too-short', coverage, intervalCount };
   }
+  if (maxGapMinutes > FLIGHT_TELEMETRY_FILTERS.maxTelemetryGapMinutes) {
+    return {
+      accepted: false,
+      reason: 'telemetry-gap-too-large',
+      coverage,
+      intervalCount,
+      telemetrySpanMinutes,
+      maxGapMinutes
+    };
+  }
   if (coverage < MIN_TELEMETRY_COVERAGE) {
     return {
       accepted: false,
       reason: 'low-telemetry-coverage',
       coverage,
       intervalCount,
-      telemetrySpanMinutes
+      telemetrySpanMinutes,
+      maxGapMinutes
     };
   }
-  if (!Number.isFinite(estimatedTrackKm) || estimatedTrackKm <= 0) {
+  if (!Number.isFinite(observedTrackKm) || observedTrackKm <= 0) {
     return { accepted: false, reason: 'invalid-integrated-distance', coverage, intervalCount };
   }
 
   return {
     accepted: true,
-    trackKm: estimatedTrackKm,
-    estimatedTrackKm,
+    trackKm: observedTrackKm,
     observedTrackKm,
     flightDurationMinutes,
     telemetrySpanMinutes,
     coveredMinutes: coveredSeconds / 60,
     coverage,
-    maxGapMinutes: maxGapSeconds / 60,
+    maxGapMinutes,
     meanGroundSpeedKnots: observedNauticalMiles / (coveredSeconds / 3600),
     speedIntervals: intervalCount,
-    distanceMethod: 'observed-ground-speed-integral-expanded-by-measured-coverage'
+    distanceMethod: 'observed-ground-speed-integral-only'
   };
 }

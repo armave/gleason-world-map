@@ -39,7 +39,11 @@ function syntheticDataset() {
       medianTrackKm: chord * 2450 * correction
     });
   }
-  return { schemaVersion: 2, routes };
+  return {
+    schemaVersion: 3,
+    measurement: { coverageDenominator: 'full-flight-duration', distancePolicy: 'observed-only' },
+    routes
+  };
 }
 
 test('unit disk chord and radial/tangential endpoint features are symmetric', () => {
@@ -73,7 +77,7 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
 test('flight telemetry calibration fits a radial scale and direction-aware route model', () => {
   const result = fitFlightCalibration(syntheticDataset());
   assert.ok(result.model.radialScaleKm > 0);
-  assert.equal(result.model.schemaVersion, 4);
+  assert.equal(result.model.schemaVersion, 5);
   assert.deepEqual(result.model.radialWarp, DEFAULT_RADIAL_WARP);
   assert.equal(result.model.trainingRouteCount, 12);
   assert.equal(result.model.holdoutRouteCount, 4);
@@ -101,7 +105,7 @@ test('route targets exclude low-coverage and long-gap observations before fittin
     observations: Array.from({ length: 4 }, (_, sample) => ({
       accepted: true,
       trackKm: route.medianTrackKm * (1 + (sample - 1.5) * 0.002),
-      coverage: index === 0 ? 0.2 : 0.55,
+      coverage: index === 0 ? 0.2 : 0.99,
       maxGapMinutes: index === 1 ? 360 : 15
     }))
   }));
@@ -114,15 +118,17 @@ test('route targets exclude low-coverage and long-gap observations before fittin
   assert.ok(result.model.trainingExamples.some(example => example.qualityWeight < 0.5));
 });
 
-test('coverage summary reports southern training and independent polar holdout routes', () => {
+test('coverage summary reports southern training and independent southern holdout routes', () => {
   const dataset = syntheticDataset();
   dataset.routes[0].airportA = { lat: -53, lon: -70 };
   dataset.routes[12].airportB = { lat: -77, lon: 167 };
   const coverage = summarizeFlightCalibrationCoverage(dataset);
   assert.equal(coverage.trainingRouteCount, 12);
   assert.equal(coverage.holdoutRouteCount, 4);
+  assert.equal(coverage.trainingRoutesSouthOf30S, 1);
   assert.equal(coverage.trainingRoutesSouthOf45S, 1);
   assert.equal(coverage.trainingRoutesSouthOf60S, 0);
+  assert.equal(coverage.holdoutRoutesSouthOf30S, 1);
   assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
   assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
 });

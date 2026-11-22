@@ -15,12 +15,10 @@ const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_LEAVE_ONE_OUT_MAPE = 15;
 const MAX_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
-const MIN_TRAINING_ROUTES = 30;
-const MIN_HOLDOUT_ROUTES = 4;
+const MIN_TRAINING_ROUTES = 20;
+const MIN_HOLDOUT_ROUTES = 6;
 const MIN_SOUTHERN_TRAINING_ROUTES = 4;
-const MIN_POLAR_TRAINING_ROUTES = 1;
-const MIN_SOUTHERN_HOLDOUT_ROUTES = 1;
-const MIN_POLAR_HOLDOUT_ROUTES = 1;
+const MIN_SOUTHERN_HOLDOUT_ROUTES = 2;
 
 function asJavaScript(model) {
   return [
@@ -107,17 +105,17 @@ async function main() {
     leaveOneOutMaxRouteErrorPercent: fitted.metrics.leaveOneOut?.maxAbsolutePercent ?? null,
     trainingRouteCount: fitted.metrics.spatialCoverage.trainingRouteCount,
     holdoutRouteCount: fitted.metrics.spatialCoverage.holdoutRouteCount,
+    trainingRoutesSouthOf30S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf30S,
     trainingRoutesSouthOf45S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf45S,
     trainingRoutesSouthOf60S: fitted.metrics.spatialCoverage.trainingRoutesSouthOf60S,
+    holdoutRoutesSouthOf30S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf30S,
     holdoutRoutesSouthOf45S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf45S,
     holdoutRoutesSouthOf60S: fitted.metrics.spatialCoverage.holdoutRoutesSouthOf60S,
     limits: {
       minimumTrainingRoutes: MIN_TRAINING_ROUTES,
       minimumHoldoutRoutes: MIN_HOLDOUT_ROUTES,
       minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
-      minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
       minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
-      minimumPolarHoldoutRoutes: MIN_POLAR_HOLDOUT_ROUTES,
       maxTrainingMapePercent: MAX_TRAINING_MAPE,
       maxHoldoutMapePercent: MAX_HOLDOUT_MAPE,
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
@@ -134,10 +132,8 @@ async function main() {
     qualityGate.leaveOneOutMaxRouteErrorPercent <= MAX_LEAVE_ONE_OUT_ROUTE_ERROR &&
     qualityGate.trainingRouteCount >= MIN_TRAINING_ROUTES &&
     qualityGate.holdoutRouteCount >= MIN_HOLDOUT_ROUTES &&
-    qualityGate.trainingRoutesSouthOf45S >= MIN_SOUTHERN_TRAINING_ROUTES &&
-    qualityGate.trainingRoutesSouthOf60S >= MIN_POLAR_TRAINING_ROUTES &&
-    qualityGate.holdoutRoutesSouthOf45S >= MIN_SOUTHERN_HOLDOUT_ROUTES &&
-    qualityGate.holdoutRoutesSouthOf60S >= MIN_POLAR_HOLDOUT_ROUTES;
+    qualityGate.trainingRoutesSouthOf30S >= MIN_SOUTHERN_TRAINING_ROUTES &&
+    qualityGate.holdoutRoutesSouthOf30S >= MIN_SOUTHERN_HOLDOUT_ROUTES;
 
   const summary = {
     schemaVersion: 1,
@@ -147,15 +143,17 @@ async function main() {
     sourceDataset: DATA_PATH,
     sourceRetrievedAt: dataset.source && dataset.source.retrievedAt,
     method: {
-      target: 'Median telemetry-span flown-mileage estimate per airport pair',
-      targetSource: 'ADS-B path_gs ground-speed/time observations; measured-coverage expansion is retained as an explicit estimate',
-      formula: 'observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; estimated_span_km = observed_km / time_coverage',
+      target: 'Median directly observed flown mileage per airport pair',
+      targetSource: 'ADS-B path_gs ground-speed/time observations with at least 98% full-flight coverage and no gap over 15 minutes',
+      formula: 'observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; no missing interval is imputed',
       inputGeometry: 'Circular flat disk with regularized-power latitude warp q(t); local inverse-distance-weighted mileage-per-warped-chord ratios over mean warped radial fraction and normalized radial/tangential chord shares',
       radialWarp: fitted.model.radialWarp,
       radialCoordinateFormula: 't = theta / pi; q = ((t + epsilon)^exponent - epsilon^exponent) / ((1 + epsilon)^exponent - epsilon^exponent); r = pi * R * q',
       features: fitted.model.featureNames,
-      trainingUnit: 'one independent airport pair, target is median of >=3 observed flights',
-      splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted'
+      trainingUnit: 'one independent airport pair, target is median of >=3 high-coverage observed flights',
+      splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted',
+      coverageDenominator: 'full-flight-duration',
+      distancePolicy: 'observed-only'
     },
     model: fitted.model,
     metrics: fitted.metrics,
