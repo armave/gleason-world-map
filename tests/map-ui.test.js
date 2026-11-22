@@ -242,7 +242,9 @@ test('the empirical route estimate and flat-disk connector remain separate measu
  assert.match(app,/routeCalibration\.neighborRouteIds/);
  assert.match(app,/Exact Euclidean length of the straight connector in the displayed flat disk/);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
- assert.match(app,/flightEmpiricalDistanceMeters/);
+ assert.match(app,/endpointDistanceCalibration/);
+ assert.match(app,/routeCalibration\.supportStatus/);
+ assert.match(app,/routeCalibration\.validation/);
 });
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
