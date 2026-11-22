@@ -65,7 +65,7 @@ test('searches for a capital and shows its geographic details', async ({ page })
   await expect(page.locator('#selectionCoords')).not.toHaveText('—');
 });
 
-test('shows flat-disk A–B distance matching the displayed connector and separate ADS-B reference', async ({ page }) => {
+test('shows empirical route estimate separately from the displayed flat-disk connector', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
@@ -78,10 +78,10 @@ test('shows flat-disk A–B distance matching the displayed connector and separa
   await page.locator('#coordBLon').fill('-0.1276');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('.primary-distance-reading')).toContainText('Flat-disk A–B distance');
-  await expect(page.locator('.primary-distance-reading')).toContainText('Euclidean length of the displayed connector');
-  await expect(page.locator('.primary-distance-reading')).toContainText('12-circle warped disk');
-  await expect(page.locator('.secondary-distance-reading')).toContainText('ADS-B flight-mileage estimate');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Empirical route-distance estimate');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Empirical estimate of typical flown mileage');
+  await expect(page.locator('.primary-distance-reading')).toContainText('not a specific flight path');
+  await expect(page.locator('.secondary-distance-reading')).toContainText('Flat-disk connector length');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
   await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
   await expect(page.locator('#calibrationRoutes')).toContainText('Nearest reference routes:');
@@ -98,8 +98,10 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
   await page.locator('#coordBLon').fill('180');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('#distanceValue')).toContainText('36,527.2');
-  await expect(page.locator('#measureHelp')).toContainText('longitude remains the angular position');
+  await expect(page.locator('#flightDistanceValue')).toContainText('36,527.2');
+  await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('#calibrationSupport')).toContainText('Extrapolated');
+  await expect(page.locator('#measureHelp')).toContainText('Antarctic rim retains longitude-indexed positions');
 });
 
 test('calculates a planar polygon area from three map clicks', async ({ page }) => {
