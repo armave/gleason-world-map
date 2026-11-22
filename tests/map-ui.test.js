@@ -191,9 +191,9 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/RADIAL_DISTANCE_VISUAL_CIRCLES\.map/);
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
- assert.match(html,/reducing by exactly 0\.04545× per interval/);
+ assert.match(html,/not yet validated against the new observed-only ADS-B sample/);
  assert.match(html,/Euclidean length of the visible connector/);
- assert.match(html,/ten interior positions are drawn as fine dotted guide rings/);
+ assert.match(html,/profile is provisional/);
 });
 
 test('direct A/B coordinate entry and calibration route support are available',()=>{
