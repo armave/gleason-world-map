@@ -233,6 +233,13 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
     'synthetic holdout MAPE ' + result.metrics.holdout.meanAbsolutePercent +
       ' did not beat baseline ' + result.metrics.baselineHoldout.meanAbsolutePercent +
       '; training MAPE ' + result.metrics.training.meanAbsolutePercent +
+      '; max holdout error ' + result.metrics.holdout.maxAbsolutePercent +
+      '; anchor displacement ' + result.metrics.maximumDisplacementFraction +
+      '; interpolated displacement ' + result.metrics.maximumWarpDisplacementFraction +
+      '; radial overshoot ' + result.metrics.maximumRadialOvershootFraction +
+      '; max RBF coefficient ' + Math.max(0, ...result.candidateModel.controls.map(
+        control => Math.hypot(control.alphaX, control.alphaY)
+      )) +
       '; failures ' + JSON.stringify(result.failures)
   );
   assert.ok(result.metrics.minimumJacobianDeterminant > 0);
