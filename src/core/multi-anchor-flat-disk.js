@@ -29,6 +29,7 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   maximumAnchorDisplacementFraction: 0.12,
   maximumWarpDisplacementFraction: 0.12,
   maximumRadialOvershootFraction: 1e-5,
+  maximumRoundTripErrorKm: 0.01,
   maximumControlPoints: 256
 });
 
@@ -571,6 +572,82 @@ export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
     toleranceKm * 10 ? [x, y] : null;
 }
 
+/**
+ * Sample forward/inverse round trips across the disk and at every RBF control.
+ * The error is measured in drawing-plane kilometres, not via any Earth-distance
+ * formula. This is a numerical invertibility check for the candidate transform.
+ */
+export function inspectMultiAnchorRoundTrips(model, options = {}) {
+  if (!isValidWarpModel(model) || !options || typeof options !== 'object') {
+    return {
+      roundTripSampleCount: 0,
+      roundTripFailureCount: Infinity,
+      maximumRoundTripErrorKm: Infinity
+    };
+  }
+  const toleranceKm = options.toleranceKm ?? 1e-3;
+  const maximumIterations = options.maximumIterations ?? 40;
+  if (!Number.isFinite(toleranceKm) || toleranceKm <= 0 ||
+      !Number.isInteger(maximumIterations) ||
+      maximumIterations < 1 || maximumIterations > 200) {
+    return {
+      roundTripSampleCount: 0,
+      roundTripFailureCount: Infinity,
+      maximumRoundTripErrorKm: Infinity
+    };
+  }
+
+  const samples = new Map();
+  const addSample = (x, y) => {
+    const key = x.toFixed(6) + ',' + y.toFixed(6);
+    if (!samples.has(key)) samples.set(key, [x, y]);
+  };
+  const radialSamples = 12;
+  const angularSamples = 48;
+  for (let radial = 0; radial <= radialSamples; radial++) {
+    const fraction = radial / radialSamples;
+    if (radial === 0) {
+      addSample(0, 0);
+      continue;
+    }
+    for (let angular = 0; angular < angularSamples; angular++) {
+      const angle = 2 * Math.PI * angular / angularSamples;
+      addSample(
+        model.diskRadiusKm * fraction * Math.cos(angle),
+        model.diskRadiusKm * fraction * Math.sin(angle)
+      );
+    }
+  }
+  for (const control of model.controls) {
+    addSample(control.xKm, control.yKm);
+  }
+
+  let roundTripFailureCount = 0;
+  let maximumRoundTripErrorKm = 0;
+  for (const [x, y] of samples.values()) {
+    const forward = applyMultiAnchorWarpXY(x, y, model);
+    const inverse = forward
+      ? invertMultiAnchorWarpXY(forward[0], forward[1], model, {
+          toleranceKm,
+          maximumIterations
+        })
+      : null;
+    if (!inverse) {
+      roundTripFailureCount++;
+      continue;
+    }
+    maximumRoundTripErrorKm = Math.max(
+      maximumRoundTripErrorKm,
+      Math.hypot(inverse[0] - x, inverse[1] - y)
+    );
+  }
+  return {
+    roundTripSampleCount: samples.size,
+    roundTripFailureCount,
+    maximumRoundTripErrorKm
+  };
+}
+
 function measureDistance(a, b, model = null) {
   const first = pointOnDisk(a);
   const second = pointOnDisk(b);
@@ -826,6 +903,7 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
   const holdoutMetrics = summarizeErrors(holdout, model);
   const baselineHoldout = summarizeErrors(holdout);
   const topology = topologyMetrics(model);
+  const roundTrips = inspectMultiAnchorRoundTrips(model);
   const maximumDisplacementFraction = optimized.maximumDisplacementKm / DISK_RADIUS_KM;
 
   if (trainingMetrics.meanAbsolutePercent > limits.maximumTrainingMapePercent)
@@ -844,6 +922,10 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     failures.push('Interpolated warp extends beyond the circular disk boundary');
   if (topology.maximumBoundaryDisplacementKm > 1e-5)
     failures.push('Candidate deformation does not exactly preserve the pole and Antarctic rim');
+  if (roundTrips.roundTripFailureCount > 0 ||
+      roundTrips.maximumRoundTripErrorKm > limits.maximumRoundTripErrorKm) {
+    failures.push('Candidate fails the forward/inverse round-trip gate');
+  }
   if (holdoutMetrics.meanAbsolutePercent >= baselineHoldout.meanAbsolutePercent -
       limits.minimumHoldoutImprovementPercentagePoints) {
     failures.push('Candidate does not improve independent holdout MAPE by at least ' +
@@ -871,6 +953,7 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
       holdoutImprovementPercentagePoints:
         baselineHoldout.meanAbsolutePercent - holdoutMetrics.meanAbsolutePercent,
       ...topology,
+      ...roundTrips,
       rigidityMatrixRank: optimized.rigidityMatrixRank,
       requiredRigidityRank: optimized.requiredRigidityRank,
       maximumDisplacementFraction
