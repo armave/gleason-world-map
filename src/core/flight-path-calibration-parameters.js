@@ -3,6 +3,8 @@ export const FLIGHT_PATH_CALIBRATION = Object.freeze({
   schemaVersion: 1,
   sourceDatasetVersion: 0,
   source: 'legacy-approved-radial-scale-carried-forward; observed-path validation pending',
+  trainingRouteCount: 0,
+  holdoutRouteCount: 0,
   radialScaleKm: 5385.144981733761,
   radialWarp: {
     kind: 'regularized-power',
