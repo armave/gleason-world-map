@@ -8,6 +8,7 @@ import {
   summarizeFlightCalibrationCoverage
 } from '../src/core/flight-calibration-fit.js';
 import { DEFAULT_RADIAL_WARP, radialFractionFromUnitColatitude } from '../src/core/radial-warp.js';
+import { warpLongitudeRadians } from '../src/core/visual-longitude-calibration.js';
 import {
   RADIAL_DISTANCE_PROFILE_MEAN,
   visualRadialFractionFromBaseFraction
@@ -65,8 +66,11 @@ test('unit disk chord and radial/tangential endpoint features are symmetric', ()
   const baseB = radialFractionFromUnitColatitude(tB, DEFAULT_RADIAL_WARP);
   const qA = visualRadialFractionFromBaseFraction(baseA);
   const qB = visualRadialFractionFromBaseFraction(baseB);
-  const longitudeDelta = (Math.max(a.lon, b.lon) - Math.min(a.lon, b.lon)) % 360;
-  const longitudeSpan = Math.min(longitudeDelta, 360 - longitudeDelta) * Math.PI / 180;
+  const longitudeA = warpLongitudeRadians(a.lon * Math.PI / 180, baseA);
+  const longitudeB = warpLongitudeRadians(b.lon * Math.PI / 180, baseB);
+  const fullTurn = 2 * Math.PI;
+  const rawLongitudeSpan = Math.abs((longitudeB - longitudeA) % fullTurn);
+  const longitudeSpan = Math.min(rawLongitudeSpan, fullTurn - rawLongitudeSpan);
   const radial = RADIAL_DISTANCE_PROFILE_MEAN * Math.PI * Math.abs(qA - qB);
   const tangential = RADIAL_DISTANCE_PROFILE_MEAN * Math.PI * 2 *
     Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
