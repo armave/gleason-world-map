@@ -55,8 +55,8 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
     return { accepted: false, reason: 'missing-ground-speed-or-duration' };
   }
 
-  const telemetryStart = Math.min(...timestamps);
-  const telemetryEnd = Math.max(...timestamps);
+  const telemetryStart = Math.max(flightStart, Math.min(...timestamps));
+  const telemetryEnd = Math.min(flightEnd, Math.max(...timestamps));
   const telemetrySpanSeconds = telemetryEnd - telemetryStart;
   if (!(telemetrySpanSeconds > 0)) {
     return { accepted: false, reason: 'invalid-telemetry-span' };

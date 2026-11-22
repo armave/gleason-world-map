@@ -55,7 +55,6 @@ const ROUTES = [
   { from: 'OTHH', to: 'OOMS', split: 'train' },
   { from: 'OTHH', to: 'OBBI', split: 'train' },
   { from: 'WSSS', to: 'VTBS', split: 'train' },
-  { from: 'WSSS', to: 'RPLL', split: 'train' },
   { from: 'WSSS', to: 'VRMM', split: 'train' },
   { from: 'WMKK', to: 'VTBS', split: 'train' },
   { from: 'YSSY', to: 'YMML', split: 'train' },
@@ -64,11 +63,8 @@ const ROUTES = [
   { from: 'YBBN', to: 'YPPH', split: 'train' },
   { from: 'YMML', to: 'YPAD', split: 'train' },
   { from: 'YSSY', to: 'YPAD', split: 'train' },
-  { from: 'YPAD', to: 'YPPH', split: 'train' },
-  { from: 'YSSY', to: 'YPDN', split: 'train' },
   { from: 'YBBN', to: 'YPDN', split: 'train' },
   { from: 'YSSY', to: 'YBCG', split: 'train' },
-  { from: 'SCEL', to: 'SCFA', split: 'train' },
   { from: 'SCEL', to: 'SAAR', split: 'train' },
 
   { from: 'YSSY', to: 'YBBN', split: 'holdout' },
@@ -118,7 +114,6 @@ const ROUTES = [
   { from: 'VHHH', to: 'RCTP', split: 'train' },
   { from: 'VHHH', to: 'RJAA', split: 'train' },
   { from: 'RJAA', to: 'WSSS', split: 'train' },
-  { from: 'VIDP', to: 'OMDB', split: 'holdout' },
   { from: 'VIDP', to: 'VABB', split: 'train' },
   { from: 'YSSY', to: 'NZAA', split: 'holdout' },
   { from: 'YSSY', to: 'NZCH', split: 'train' },
@@ -131,7 +126,6 @@ const ROUTES = [
   { from: 'SCEL', to: 'SKBO', split: 'train' },
   { from: 'SAEZ', to: 'SBGR', split: 'train' },
   { from: 'SAEZ', to: 'SACO', split: 'train' },
-  { from: 'SCEL', to: 'SAEZ', split: 'holdout' },
   { from: 'FAOR', to: 'FADN', split: 'train' },
   { from: 'FACT', to: 'FADN', split: 'train' },
   { from: 'FAOR', to: 'FQMA', split: 'train' },
@@ -156,6 +150,20 @@ const ROUTE_PAGE_LIMIT = 1000;
 
 const routeKey = (a, b) =>
   [String(a).toUpperCase(), String(b).toUpperCase()].sort().join('--');
+
+const routeAssignments = new Map();
+for (const route of ROUTES) {
+  const key = routeKey(route.from, route.to);
+  const previous = routeAssignments.get(key);
+  if (previous) {
+    throw new Error(
+      'Duplicate airport-pair calibration route ' + key +
+      ' (' + previous + ' and ' + route.split + '). ' +
+      'Each route must appear exactly once in either training or holdout.'
+    );
+  }
+  routeAssignments.set(key, route.split);
+}
 const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 async function requestJson(url, init = {}, label = url) {

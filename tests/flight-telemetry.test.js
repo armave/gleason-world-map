@@ -91,3 +91,18 @@ test('rejects short telemetry spans even when their speed samples are complete',
   assert.equal(result.accepted, false);
   assert.equal(result.reason, 'flight-too-short');
 });
+
+
+test('samples outside the recorded flight window cannot inflate telemetry coverage', () => {
+  const pathGs = [[
+    [-600, 400], [0, 400], [300, 400], [600, 400], [900, 400],
+    [1200, 400], [1500, 400], [1800, 400], [2100, 400], [2400, 400],
+    [2700, 400], [3000, 400], [4200, 400]
+  ]];
+  const result = integrateGroundSpeedSeries(pathGs, 0, 3600);
+  assert.equal(result.accepted, false);
+  assert.equal(result.reason, 'low-telemetry-coverage');
+  assert.equal(result.coverage, 0.8333333333333334);
+  assert.equal(result.flightDurationMinutes, 60);
+  assert.equal(result.telemetrySpanMinutes, 60);
+});
