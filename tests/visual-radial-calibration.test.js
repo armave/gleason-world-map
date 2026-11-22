@@ -2,13 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RADIAL_DISTANCE_CIRCLE_COUNT,
+  RADIAL_DISTANCE_CIRCLE_FACTORS,
+  RADIAL_DISTANCE_CIRCLE_STEP,
+  RADIAL_DISTANCE_PROFILE_MEAN,
   RADIAL_DISTANCE_VISUAL_CIRCLES,
   radialDistanceCorrectionFactor,
+  integratedRadialDistanceMultiplier,
   visualRadialFractionFromBaseFraction,
-  baseRadialFractionFromVisualFraction
+  baseRadialFractionFromVisualFraction,
+  visualRadialSpacingScale
 } from '../src/core/visual-radial-calibration.js';
 
-test('the 12 shared reference circles follow the continuous radial warp', () => {
+const expectedFactors = [
+  1.00, 0.95, 0.91, 0.86, 0.82, 0.77,
+  0.73, 0.68, 0.64, 0.59, 0.55, 0.50
+];
+
+test('the 12 circle distance multipliers match the requested linear taper', () => {
+  assert.equal(RADIAL_DISTANCE_CIRCLE_COUNT, 12);
+  assert.deepEqual(
+    RADIAL_DISTANCE_CIRCLE_FACTORS.map(value => Number(value.toFixed(2))),
+    expectedFactors
+  );
+  assert.ok(Math.abs(RADIAL_DISTANCE_CIRCLE_STEP - 0.5 / 11) < 1e-15);
+  assert.ok(Math.abs(RADIAL_DISTANCE_PROFILE_MEAN - 0.75) < 1e-15);
+
+  for (let index = 1; index < RADIAL_DISTANCE_CIRCLE_FACTORS.length; index++) {
+    const step = RADIAL_DISTANCE_CIRCLE_FACTORS[index - 1] -
+      RADIAL_DISTANCE_CIRCLE_FACTORS[index];
+    assert.ok(Math.abs(step - RADIAL_DISTANCE_CIRCLE_STEP) < 1e-15);
+  }
+});
+
+test('the 12 shared reference circles use the same multipliers and projected radii', () => {
   const circles = RADIAL_DISTANCE_VISUAL_CIRCLES;
   assert.equal(circles.length, RADIAL_DISTANCE_CIRCLE_COUNT);
   assert.ok(Object.isFrozen(circles));
@@ -17,15 +43,14 @@ test('the 12 shared reference circles follow the continuous radial warp', () => 
 
   for (const [index, circle] of circles.entries()) {
     const expectedBaseFraction = index / (RADIAL_DISTANCE_CIRCLE_COUNT - 1);
+    const expectedMultiplier = radialDistanceCorrectionFactor(expectedBaseFraction);
     assert.equal(circle.circle, index + 1);
     assert.ok(Math.abs(circle.baseFraction - expectedBaseFraction) < 1e-12);
+    assert.ok(Math.abs(circle.distanceMultiplier - expectedMultiplier) < 1e-12);
     assert.ok(Math.abs(
       circle.visualFraction -
       visualRadialFractionFromBaseFraction(expectedBaseFraction)
     ) < 1e-12);
-    assert.ok(Math.abs(
-      circle.factor - radialDistanceCorrectionFactor(expectedBaseFraction)
-    ) <= 0.005);
     assert.ok(Math.abs(
       baseRadialFractionFromVisualFraction(circle.visualFraction) -
       expectedBaseFraction
@@ -35,5 +60,52 @@ test('the 12 shared reference circles follow the continuous radial warp', () => 
     if (index > 0) {
       assert.ok(circle.visualFraction > circles[index - 1].visualFraction);
     }
+  }
+});
+
+test('each ring interval is positioned by the average multiplier across that interval', () => {
+  const circles = RADIAL_DISTANCE_VISUAL_CIRCLES;
+  for (let index = 0; index < circles.length - 1; index++) {
+    const first = circles[index];
+    const second = circles[index + 1];
+    const baseGap = second.baseFraction - first.baseFraction;
+    const visualGap = second.visualFraction - first.visualFraction;
+    const meanMultiplier = (
+      first.distanceMultiplier + second.distanceMultiplier
+    ) / 2;
+    const normalizedIntervalScale = meanMultiplier / RADIAL_DISTANCE_PROFILE_MEAN;
+    assert.ok(Math.abs(visualGap / baseGap - normalizedIntervalScale) < 1e-12);
+  }
+});
+
+test('the continuous local radial scale is the linear multiplier normalized to keep the rim fixed', () => {
+  for (const q of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
+    const expected = radialDistanceCorrectionFactor(q) / RADIAL_DISTANCE_PROFILE_MEAN;
+    assert.ok(Math.abs(visualRadialSpacingScale(q) - expected) < 1e-12);
+  }
+
+  const h = 1e-6;
+  for (const q of [0.1, 0.25, 0.5, 0.75, 0.9]) {
+    const derivative = (
+      visualRadialFractionFromBaseFraction(q + h) -
+      visualRadialFractionFromBaseFraction(q - h)
+    ) / (2 * h);
+    assert.ok(Math.abs(derivative - visualRadialSpacingScale(q)) < 1e-9);
+  }
+});
+
+test('integrated multiplier profile keeps both disk anchors fixed and monotonic', () => {
+  assert.equal(visualRadialFractionFromBaseFraction(0), 0);
+  assert.equal(visualRadialFractionFromBaseFraction(1), 1);
+  assert.equal(integratedRadialDistanceMultiplier(0), 0);
+  assert.equal(integratedRadialDistanceMultiplier(1), RADIAL_DISTANCE_PROFILE_MEAN);
+
+  let previous = 0;
+  for (let index = 0; index <= 1000; index++) {
+    const q = index / 1000;
+    const visual = visualRadialFractionFromBaseFraction(q);
+    assert.ok(visual >= previous);
+    assert.ok(visual >= 0 && visual <= 1);
+    previous = visual;
   }
 });
