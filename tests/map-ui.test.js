@@ -225,8 +225,11 @@ test('direct A/B coordinate entry and calibration route support are available',(
 test('PNG exports include date, measurement and model/source metadata',()=>{
  assert.match(app,/function exportPNG\(\)/);
  assert.match(app,/outputCtx\.fillText\('GLEASON-STYLE FLAT-DISK MAP/);
- assert.match(app,/Visible map · ADS-B projected-path fit/);
- assert.match(app,/ADS-B projected-path fit pending/);
+ assert.match(app,/globally validated ADS-B projected-path fit/);
+ assert.match(app,/latest ADS-B path candidate not globally validated/);
+ assert.match(app,/last approved flat-disk parameters retained/);
+ assert.match(app,/isGloballyValidatedFlightPathCalibration/);
+ assert.match(app,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
  assert.match(app,/SCAR Antarctic Digital Database v7\.13/);
  assert.match(app,/FLIGHT_PATH_CALIBRATION\.schemaVersion/);
  assert.match(app,/FLIGHT_PATH_CALIBRATION\.trainingRouteCount/);
