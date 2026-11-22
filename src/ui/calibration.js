@@ -1,6 +1,6 @@
 import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
 import {FLIGHT_PATH_CALIBRATION} from '../core/flight-path-calibration-parameters.js';
-import {FLIGHT_PATH_CALIBRATION_FILTERS} from '../core/flight-path-calibration.js';
+import {isGloballyValidatedFlightPathCalibration} from '../core/flight-path-calibration.js';
 import FLIGHT_PATH_CALIBRATION_SUMMARY from '../../data/flight-path-calibration-summary.json';
 import {
  ACTIVE_VISUAL_LONGITUDE_WARP,
@@ -16,15 +16,8 @@ import {
 } from '../core/visual-radial-calibration.js';
 
 export function renderRadialCalibration(radialRows,visualRows,formulaElement,statusElement){
- const quality=FLIGHT_PATH_CALIBRATION_SUMMARY.qualityGate||{};
- const limits=FLIGHT_PATH_CALIBRATION_FILTERS;
- const hasGlobalRouteCoverage=
-  (quality.trainingRoutesSouthOf45S||0)>=limits.minimumTrainingRoutesSouthOf45S&&
-  (quality.holdoutRoutesSouthOf45S||0)>=limits.minimumHoldoutRoutesSouthOf45S&&
-  (quality.trainingRoutesSouthOf60S||0)>=limits.minimumTrainingRoutesSouthOf60S&&
-  (quality.holdoutRoutesSouthOf60S||0)>=limits.minimumHoldoutRoutesSouthOf60S;
  const pending=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion===0||
-  FLIGHT_PATH_CALIBRATION_SUMMARY.accepted!==true||!hasGlobalRouteCoverage;
+  !isGloballyValidatedFlightPathCalibration(FLIGHT_PATH_CALIBRATION_SUMMARY);
  const baseScale=FLIGHT_PATH_CALIBRATION.radialScaleKm.toLocaleString('en-US',{maximumFractionDigits:3});
  const exponent=FLIGHT_PATH_CALIBRATION.radialWarp.exponent.toFixed(3);
  const epsilon=FLIGHT_PATH_CALIBRATION.radialWarp.epsilon.toFixed(3);
