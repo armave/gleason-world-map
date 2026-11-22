@@ -5,8 +5,9 @@
  * distances. Flight mileage is explicitly ineligible. Production files are
  * never changed by this script.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, unlink } from 'node:fs/promises';
 import {
+  MULTI_ANCHOR_FILTERS,
   fitMultiAnchorFlatDisk,
   summarizeMultiAnchorCoverage
 } from '../src/core/multi-anchor-flat-disk.js';
@@ -31,6 +32,7 @@ async function main() {
     coverage: fit.coverage || summarizeMultiAnchorCoverage(observations),
     metrics: fit.metrics,
     candidateModel: fit.candidateModel ?? null,
+    acceptanceLimits: MULTI_ANCHOR_FILTERS,
     productionActivation: 'MANUAL ONLY: candidate fitting never changes production parameters'
   };
 
@@ -45,6 +47,11 @@ async function main() {
     await writeFile(PARAMETERS_PATH, moduleText, 'utf8');
     console.log('Accepted candidate parameters written to ' + PARAMETERS_PATH);
   } else {
+    try {
+      await unlink(PARAMETERS_PATH);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
     console.warn('Candidate not promoted. Production projection and measurements were not changed.');
     fit.failures.forEach(reason => console.warn('- ' + reason));
   }
