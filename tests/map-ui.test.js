@@ -164,8 +164,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /flightEmpiricalDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The map geometry uses a smooth, edge-anchored radial warp across all 12 circles/);
-  assert.match(app, /The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula/);
+  assert.match(app, /The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints/);
+  assert.match(app, /The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -225,15 +225,16 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('the coordinate-only great-circle readout and ADS-B flight mileage remain separate references',()=>{
- assert.match(html,/Great-circle A–B distance/);
+test('the flat-disk A–B readout and ADS-B flight mileage remain separate references',()=>{
+ assert.match(html,/Flat-disk A–B distance/);
  assert.match(html,/12-circle visual radial calibration/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
- assert.match(app,/Spherical great-circle arc .*map chord .*is display-only/);
- assert.match(app,/The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula/);
+ assert.match(app,/Euclidean length of the displayed connector · 12-circle warped disk/);
+ assert.match(app,/scale bar uses the same map-plane kilometre metric/);
+ assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
  assert.match(app,/flightEmpiricalDistanceMeters/);
 });
 

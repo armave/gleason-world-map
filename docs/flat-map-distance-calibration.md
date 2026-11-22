@@ -4,12 +4,12 @@
 
 The distance tool shows two distinct values for the same pair of endpoints:
 
-1. **Primary A–B distance** — a coordinate-only spherical great-circle calculation using the endpoints' latitude and longitude and a fixed mean Earth radius of 6,371,008.8 m. It uses the haversine formula and does not depend on ADS-B telemetry, the fitted radial map scale, or the 12-circle visual warp.
+1. **Primary A–B distance** — the Euclidean length of the straight segment between the two final projected points in the visibly warped flat-disk plane. The number is calculated from exactly the same projected coordinates used to draw the connector.
 2. **ADS-B flight-empirical estimate** — a separate estimate of typical flown mileage, calculated from the original fitted-projection chord and the ADS-B radial scale / endpoint-feature correction.
 
-The connector is still drawn as one straight segment in the visually warped flat disk. That line is display geometry and is not the great-circle arc represented by the primary numeric distance. The visually warped chord, original fitted chord, and ADS-B estimate remain diagnostics/references; none of them changes the primary great-circle result.
+The primary distance, its visible connector, the scale bar and polygon edge lengths share the same flat-disk coordinate geometry. There is no globe, sphere, ellipsoid, great-circle or geodesic formula in the primary measurement path. The 12-circle transform is applied to endpoint positions before their Euclidean separation is measured; it is not applied a second time as a post-measurement multiplier.
 
-The ADS-B estimate is not a shortest path, a great-circle distance, an airline schedule estimate, or a guaranteed prediction of the track an aircraft will fly. Real flights may route around weather, restricted airspace, traffic flows or operational constraints. The great-circle result is the direct spherical distance between endpoints; the empirical estimate attempts to describe typical flown mileage for sampled airport pairs.
+The ADS-B estimate is not a shortest path, a globe distance, an airline schedule estimate, or a guaranteed prediction of the track an aircraft will fly. Real flights may route around weather, restricted airspace, traffic flows or operational constraints. It is an empirical estimate of typical flown mileage for sampled airport pairs, not the length of the displayed segment or the actual track of a selected flight.
 
 ## Empirical source
 
@@ -93,7 +93,7 @@ The positive epsilon makes the derivative finite at the North Pole. The warp is 
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
-The radial warp moves interior rings relative to a linear `r = R * theta` disk while retaining the same pole/rim topology. With the current fit, the 45°N ring is about 592 km farther from the centre than it would be in a linear disk using the same fitted `R`; the maximum shift among the sampled 15° latitude markers is about 621 km. The outer rim and North Pole do not move. This adjustment changes coastline, capital, grid and map-click coordinates consistently because all are rendered through the same transform.
+The radial warp moves interior rings relative to a linear `r = R * theta` disk while retaining the same centre/rim topology. With the current fit, the 45°N ring is about 592 km farther from the centre than it would be in a linear disk using the same fitted `R`; the maximum shift among the sampled 15° latitude markers is about 621 km. The outer rim and North Pole do not move. This adjustment changes coastline, capital, grid, map-click coordinates and the primary A–B distance consistently because all are rendered or measured through the same final transform. At 90°S, longitude remains the angular coordinate of a point on the outer circle. Different longitudes therefore indicate different positions on the disk rim; they are not collapsed into a single globe South Pole.
 
 ## Smooth 12-circle visual radial calibration
 
@@ -126,19 +126,33 @@ The forward projection, inverse map-click lookup, latitude circles, country/coas
 | 11 | 0.55× |
 | 12 (Ice Wall) | 0.50× |
 
-## Primary coordinate-only great-circle distance
+## Primary flat-disk Euclidean distance
 
-For endpoint latitudes `φ₁`, `φ₂` and wrapped longitude difference `Δλ`, the runtime uses the haversine formula:
+The primary measurement operates entirely in the displayed flat-disk coordinate plane. For each endpoint longitude `λ` and latitude `φ`:
 
 ```text
-a = sin²(Δφ / 2) + cos(φ₁) cos(φ₂) sin²(Δλ / 2)
-d = 2 R asin(√a)
-R = 6,371,008.8 metres
+t = (π/2 − φ) / π
+q(t) = ((t + epsilon)^exponent − epsilon^exponent) /
+       ((1 + epsilon)^exponent − epsilon^exponent)
+q_visual = q + q(1 − q) / 3
+r = π * R * q_visual
+x = r * cos(λ)
+y = −r * sin(λ)
 ```
 
-The inputs are only the two endpoint coordinates. The mean Earth radius is a fixed constant in `src/core/great-circle.js`; the result does not read or depend on the telemetry-fitted map parameters, flat-disk chords, the 12-circle factors, or the ADS-B route-fit model. Longitude wrapping and invalid-coordinate checks are handled by the same helper.
+For projected endpoints `A=(x₁,y₁)` and `B=(x₂,y₂)`, the reported A–B distance is:
 
-The drawn A–B connector remains a straight segment in the flat-disk display, while the number and connector label report the great-circle arc distance. Those are deliberately different geometries. The secondary ADS-B estimate remains available to compare the great-circle distance with typical flown mileage on sampled routes.
+```text
+d_flat = sqrt((x₂ − x₁)^2 + (y₂ − y₁)^2)
+```
+
+This is exactly the length of the straight connector drawn between those same projected points. The canvas connector label and the primary numeric readout therefore describe the same segment. The scale bar and polygon edge lengths use the same final projected-plane metric. The 12-circle function is already included in `q_visual`; no additional 12-circle multiplier is applied after measuring the chord.
+
+The scale `R` is an empirical flat-disk calibration derived from ADS-B ground-speed/time observations. It is not a globe radius, sphere radius or universal physical constant. The resulting kilometre values are map-plane kilometres under this model, not a claim of survey-grade ground distance. There is no sphere, ellipsoid, great-circle or geodesic calculation in the primary measurement path.
+
+**Antarctic rim convention:** when `φ = −90°`, `q_visual = 1` and the radial coordinate is the disk boundary. Longitude `λ` continues to set the angular position around that boundary. Thus two coordinates at 90°S with different longitudes are different disk points. This deliberate convention preserves the circular Antarctic rim rather than collapsing it to one spherical pole.
+
+A separate ADS-B flight-mileage estimate is retained as an empirical reference. It uses the original fitted base chord and local route-neighbour correction to estimate typical flown mileage for sampled airport pairs. It does not define or alter the primary flat-disk distance and is not a specific flight path.
 
 For the ADS-B fit, let `qA` and `qB` remain the original fitted radial fractions (before the visual redistribution), and let `deltaLambda` be the wrapped longitude span. The exact Euclidean chord components in the warped unit disk are:
 
@@ -161,7 +175,7 @@ predicted_ratio = weighted_geometric_mean(two_nearest_route_ratios)
 flight_empirical_estimate = unit_chord * clamp(predicted_ratio, 0.5 * R, 2.5 * R)
 ```
 
-The radial/tangential split distinguishes movement across concentric rings from movement around a ring. This local correction is used only by the ADS-B flight-mileage estimate on the original fitted projection; it does not change the primary great-circle distance, either radial transform, or the visually calibrated scale bar. On the current 33-route training / 4-route holdout snapshot, the smooth warp plus local route model reports **7.59% leave-one-route-out MAPE** and **4.10% independent holdout MAPE**; the worst holdout route error is **8.96%**. The previous unwarped radial geometry on the same sample reported 8.61%, 4.66%, and 7.59%, respectively. The worst leave-one-out route error remains 29.28%, so accuracy is not uniform. These are route-sample results, not proof of universal map or physical-distance accuracy.
+The radial/tangential split distinguishes movement across concentric rings from movement around a ring. This local correction is used only by the secondary ADS-B flight-mileage estimate on the original fitted projection; it does not change the primary flat-disk Euclidean distance, either radial transform, or the visually calibrated scale bar. On the current 33-route training / 4-route holdout snapshot, the smooth warp plus local route model reports **7.59% leave-one-route-out MAPE** and **4.10% independent holdout MAPE**; the worst holdout route error is **8.96%**. The previous unwarped radial geometry on the same sample reported 8.61%, 4.66%, and 7.59%, respectively. The worst leave-one-out route error remains 29.28%, so accuracy is not uniform. These are route-sample results, not proof of universal map or physical-distance accuracy.
 
 **Important southern-limit note:** the currently approved production snapshot has no training or holdout airport pair with an endpoint south of 60°S; its southernmost accepted endpoint is about 37.7°S. Therefore estimates near the Antarctic rim are still bounded extrapolations, not polar-validated predictions. The new southern/Antarctic airport pairs are collection candidates only. The model will keep the existing approved coefficients until actual ADS-B observations produce sufficient independent southern training and polar holdout coverage and the error gate passes.
 
