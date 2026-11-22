@@ -21,7 +21,7 @@ x = r cos(lambda)
 y = -r sin(lambda)
 ```
 
-The fitted latitude warp uses exponent 0.9 and epsilon 0.005. A second, visually applied 12-circle calibration redistributes the intermediate rings with one smooth function while preserving the North Pole at the centre and the Antarctic Ice Wall at the outer rim. Let q be the original fitted radial fraction; the displayed fraction is **q_visual = q + q(1-q)/3**. Its derivative, (4-2q)/3, remains continuous and positive from centre to rim, so there are no hard joins between circle sections. Inner sections gradually gain radial spacing while outer sections gradually compress. The outer disk radius remains **pi * R**. R is regenerated from the current ADS-B training sample; it is a flat-map empirical scale, not a globe radius. Coastlines, capitals, grid lines, labels, clicks and inverse lookup all use the same visually calibrated transform. Polygon area and perimeter are planar measurements on the displayed, rewarped disk. The separate A–B readout and ADS-B estimate continue using the original fitted calibration coordinates; the scale bar follows the displayed visual projection.
+The fitted latitude warp uses exponent 0.9 and epsilon 0.005. A second, visually applied 12-circle calibration redistributes the intermediate rings with one smooth function while preserving the North Pole at the centre and the Antarctic Ice Wall at the outer rim. Let q be the original fitted radial fraction; the displayed fraction is **q_visual = q + q(1-q)/3**. Its derivative, (4-2q)/3, remains continuous and positive from centre to rim, so there are no hard joins between circle sections. Inner sections gradually gain radial spacing while outer sections gradually compress. The outer disk radius remains **pi * R**. R is regenerated from the current ADS-B training sample; it is a flat-map empirical scale, not a globe radius. Coastlines, capitals, grid lines, labels, clicks and inverse lookup all use the same visually calibrated transform. Polygon area and perimeter are planar measurements on the displayed, rewarped disk. The ADS-B flight-mileage estimate uses the original fitted calibration coordinates; the primary A–B great-circle result is independent of them. The scale bar follows the displayed visual projection.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
@@ -73,7 +73,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar reports map-plane kilometres using the visually calibrated projection and fixed chord-to-pixel conversion; it applies neither the separate A–B readout multiplier nor the route-specific ADS-B correction. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the observed-flight data and limitations.
+The scale bar reports map-plane kilometres using the visually calibrated projection and fixed chord-to-pixel conversion; it is a visual map scale, not the formula used for the primary great-circle distance or the route-specific ADS-B correction. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the observed-flight data and limitations.
 
 ## Antarctica / Ice Wall
 
@@ -107,7 +107,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: smooth 12-circle visual radial redistribution plus the separate 1.00× to 0.50× calibrated readout, with original/visual chords and ADS-B flight-mileage reference shown separately
+- A–B distance: coordinate-only spherical great-circle formula; smooth 12-circle warp affects display only; ADS-B flight-mileage estimate remains a separate empirical reference
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -115,7 +115,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar uses the visually calibrated map-plane chord metric; the A–B readout multiplier is separate
+- View-centred scale bar uses the visually calibrated map-plane chord metric; the A–B great-circle value is calculated independently from endpoint coordinates
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
