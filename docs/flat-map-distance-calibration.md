@@ -193,7 +193,7 @@ The physical spacing between two adjacent reference circles is the integral of `
 | 11 | 0.55× |
 | 12 (Ice Wall) | 0.50× |
 
-The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. All latitude circles, coastlines, country boundaries, labels, map clicks, inverse lookup and the scale bar use the same transformed coordinates.
+The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. Latitude circles, coastlines, country boundaries, labels, map clicks and inverse lookup use the display transform. The scale bar samples coordinates through that transform and evaluates the reading with the one canonical distance function.
 
 **Measurement correspondence:** Every displayed distance uses one canonical formula implemented by `measureDistanceMeters()`. The projected endpoints are encoded using the flat disk's base radial warp; the direct base-disk chord is multiplied by one bounded ADS-B route-feature correction. The same function supplies A–B, the on-map distance label, scale-bar sampling, polygon edge labels, polygon perimeter and PNG metadata. The visual map renderer remains unchanged; the number shown is the calibrated map distance, not a separate measurement of the screen-pixel chord.
 ## One canonical distance formula
