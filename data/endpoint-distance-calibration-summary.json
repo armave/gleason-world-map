@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "sourceDataset": "data/flight-calibration.json",
+  "sourceRetrievedAt": "2026-11-22T10:18:46.871Z",
+  "method": {
+    "target": "Median observed ADS-B ground-speed/time mileage by airport pair",
+    "geometry": "Current displayed 12-circle radial and anchored longitude-warped flat disk",
+    "predictor": "Four nearest training route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios",
+    "features": [
+      "meanRadialFraction",
+      "radialShareOfChord",
+      "tangentialShareOfChord",
+      "logChordDistanceKm"
+    ],
+    "trainingQualityFilter": "At least three accepted flights and (p90TrackKm - p10TrackKm) / medianTrackKm <= 0.60",
+    "supportRule": "Nearest standardized feature distance <= 0.90",
+    "factorBounds": [
+      0.75,
+      1.5
+    ]
+  },
+  "qualityGate": {
+    "trainingRouteCount": 25,
+    "holdoutRouteCount": 6,
+    "trainingSupportedLeaveOneOutRouteCount": 20,
+    "holdoutSupportedRouteCount": 4,
+    "trainingLeaveOneRouteOutMapePercent": 7.062596403914466,
+    "trainingLeaveOneRouteOutMaxErrorPercent": 18.357365001950974,
+    "holdoutMapePercent": 1.1511279211889103,
+    "holdoutMaxErrorPercent": 2.5644076510512592,
+    "limits": {
+      "minimumTrainingRoutes": 20,
+      "minimumHoldoutRoutes": 6,
+      "minimumSupportedTrainingLeaveOneOutRoutes": 20,
+      "minimumSupportedHoldoutRoutes": 4,
+      "maximumTrainingLeaveOneRouteOutMapePercent": 15,
+      "maximumTrainingLeaveOneRouteOutMaxErrorPercent": 20,
+      "maximumHoldoutMapePercent": 12,
+      "maximumHoldoutMaxErrorPercent": 20
+    }
+  },
+  "coverage": {
+    "trainingLeaveOneRouteOut": {
+      "total": 25,
+      "supported": 20,
+      "coveragePercent": 80
+    },
+    "independentHoldout": {
+      "total": 6,
+      "supported": 4,
+      "coveragePercent": 66.66666666666667
+    }
+  },
+  "excludedTrainingRoutes": [
+    {
+      "routeId": "YBBN--YBCG",
+      "sampleCount": 3,
+      "spreadFraction": 1.6015598122918413,
+      "reason": "p90/p10 spread relative to median exceeds 0.60; one observed flight is a strong mileage outlier"
+    }
+  ],
+  "importantLimitations": [
+    "The supported accuracy figures apply only to held-out routes within the route-feature and chord-length support radius.",
+    "Two of six independent holdout pairs are outside support and are not included in the supported holdout error metrics.",
+    "No qualifying training airport-pair chord exceeds about 2,314 km; Santiago–Canberra has a displayed chord of about 23,894 km and is therefore an extrapolation.",
+    "This is a typical observed flight-mileage estimate, not a selected flight's path or a shortest point-to-point distance."
+  ]
+}
