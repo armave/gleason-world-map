@@ -84,7 +84,15 @@ export function minimumLongitudeWarpStretch(warp = ACTIVE_VISUAL_LONGITUDE_WARP)
       2 * config.secondCosine * Math.sin(2 * longitude);
     minimumHarmonicDerivative = Math.min(minimumHarmonicDerivative, derivative);
   }
-  return 1 + minimumHarmonicDerivative;
+  // Bound the unsampled minimum using a global Lipschitz bound for the
+  // derivative. This makes the reported minimum conservative rather than
+  // merely the smallest value on a finite grid.
+  const derivativeLipschitz = Math.abs(config.firstSine) +
+    Math.abs(config.firstCosine) +
+    4 * Math.abs(config.secondSine) +
+    4 * Math.abs(config.secondCosine);
+  const halfSampleWidth = Math.PI / samples;
+  return 1 + minimumHarmonicDerivative - derivativeLipschitz * halfSampleWidth;
 }
 
 export function maximumLongitudeWarpDisplacementRadians(warp = ACTIVE_VISUAL_LONGITUDE_WARP) {
