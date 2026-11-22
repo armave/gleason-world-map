@@ -150,14 +150,30 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   const transformed = seed.map(point =>
     applyMultiAnchorWarpXY(point[0], point[1], truth)
   );
-  const observation = (i, j, split) => ({
-    id: split + '-' + i + '-' + j,
+  const holdoutAnchors = [
+    { id: 'H0', lat: -66, lon: -135 },
+    { id: 'H1', lat: -42, lon: -90 },
+    { id: 'H2', lat: -18, lon: -45 },
+    { id: 'H3', lat: 6, lon: 0 },
+    { id: 'H4', lat: 30, lon: 45 },
+    { id: 'H5', lat: 55, lon: 95 },
+    { id: 'H6', lat: 78, lon: 135 },
+    { id: 'H7', lat: -6, lon: 180 }
+  ];
+  const holdoutSeed = holdoutAnchors.map(point =>
+    project(point.lon, point.lat, DISK_RADIUS_KM)
+  );
+  const holdoutTransformed = holdoutSeed.map(point =>
+    applyMultiAnchorWarpXY(point[0], point[1], truth)
+  );
+  const observation = (from, to, split, projected, prefix) => ({
+    id: split + '-' + prefix + '-' + from + '-' + to,
     split,
-    a: anchors[i],
-    b: anchors[j],
+    a: (split === 'train' ? anchors : holdoutAnchors)[from],
+    b: (split === 'train' ? anchors : holdoutAnchors)[to],
     distanceKm: Math.hypot(
-      transformed[j][0] - transformed[i][0],
-      transformed[j][1] - transformed[i][1]
+      projected[to][0] - projected[from][0],
+      projected[to][1] - projected[from][1]
     ),
     measurementType: 'direct-straight-line',
     source: sampleSource
@@ -166,12 +182,17 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   for (let index = 0; index < anchors.length; index++) {
     for (const offset of [1, 3, 5]) {
       observations.push(observation(
-        index, (index + offset) % anchors.length, 'train'
+        index, (index + offset) % anchors.length, 'train', transformed, 'T'
       ));
     }
-    observations.push(observation(
-      index, (index + 7) % anchors.length, 'holdout'
-    ));
+  }
+  for (let index = 0; index < holdoutAnchors.length; index++) {
+    for (const offset of [1, 3]) {
+      observations.push(observation(
+        index, (index + offset) % holdoutAnchors.length,
+        'holdout', holdoutTransformed, 'H'
+      ));
+    }
   }
 
   const result = fitMultiAnchorFlatDisk(observations, {
