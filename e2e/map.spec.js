@@ -24,6 +24,17 @@ test('loads the map canvas and geographic reference data', async ({ page }) => {
   expect(dimensions.cssHeight).toBeGreaterThan(280);
 });
 
+test('renders the 12 visual calibration circles as one smooth anchored radial profile', async ({ page }) => {
+  await openLoadedMap(page);
+
+  const circles = page.locator('#visualRadialRows tr');
+  await expect(circles).toHaveCount(12);
+  await expect(circles.first()).toContainText('1.00×');
+  await expect(circles.first()).toContainText('0.0%');
+  await expect(circles.last()).toContainText('0.50×');
+  await expect(circles.last()).toContainText('100.0%');
+});
+
 test('zooms and rotates the map using the visible controls', async ({ page }) => {
   await openLoadedMap(page);
 
