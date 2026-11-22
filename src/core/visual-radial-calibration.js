@@ -17,10 +17,6 @@ export const RADIAL_DISTANCE_PROFILE_EXPONENT =
   FLIGHT_PATH_CALIBRATION.radialProfile.exponent > 0
     ? FLIGHT_PATH_CALIBRATION.radialProfile.exponent
     : 1;
-export const RADIAL_DISTANCE_PROFILE_MEAN =
-  FLIGHT_PATH_CALIBRATION.radialProfile?.innerFactor * 0 +
-  FLIGHT_PATH_CALIBRATION.radialProfile?.outerFactor * 0 +
-  integratedRadialDistanceMultiplier(1);
 
 const clampUnit = value => Math.max(0, Math.min(1, value));
 
