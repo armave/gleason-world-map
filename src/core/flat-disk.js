@@ -6,6 +6,10 @@
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { radialFractionFromUnitColatitude, unitColatitudeFromRadialFraction } from './radial-warp.js';
+import {
+  baseRadialFractionFromVisualFraction,
+  visualRadialFractionFromBaseFraction
+} from './visual-radial-calibration.js';
 
 export const DISK_RADIAL_SCALE_KM = FLIGHT_CALIBRATION.radialScaleKm;
 export const DISK_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
@@ -28,28 +32,48 @@ export function colatitudeRadians(latitudeDegrees) {
   return Math.PI / 2 - rad(latitudeDegrees);
 }
 
-export function radialFraction(latitudeDegrees) {
+/** Original ADS-B-fitted radial fraction, before the visual 12-circle warp. */
+export function baseRadialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
   if (!Number.isFinite(theta)) return NaN;
   return radialFractionFromUnitColatitude(theta / Math.PI, FLIGHT_CALIBRATION.radialWarp);
 }
 
+/** Final radial fraction used to draw the map, including the smooth circle warp. */
+export function radialFraction(latitudeDegrees) {
+  const baseFraction = baseRadialFraction(latitudeDegrees);
+  return Number.isFinite(baseFraction)
+    ? visualRadialFractionFromBaseFraction(baseFraction)
+    : NaN;
+}
+
+/** Radius used by the visual map projection, in the calibrated disk plane. */
 export function radialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = radialFraction(latitudeDegrees);
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
+/** Radius in the original fitted projection, retained for the A–B/ADS-B model. */
+export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
+  const fraction = baseRadialFraction(latitudeDegrees);
+  return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
+}
+
+/** Inverse of the final visual flat-disk radial transform. */
 export function latitudeFromRadialDistanceKm(radiusKm) {
   if (!Number.isFinite(radiusKm)) return NaN;
-  const fraction = clamp(radiusKm / DISK_RADIUS_KM, 0, 1);
-  const t = unitColatitudeFromRadialFraction(fraction, FLIGHT_CALIBRATION.radialWarp);
+  const visualFraction = clamp(radiusKm / DISK_RADIUS_KM, 0, 1);
+  const baseFraction = baseRadialFractionFromVisualFraction(visualFraction);
+  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_CALIBRATION.radialWarp);
   return (Math.PI / 2 - t * Math.PI) * RAD;
 }
 
-function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees) {
+function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees, useBaseProjection = false) {
   if (!Number.isFinite(longitudeDegrees) || !Number.isFinite(latitudeDegrees) ||
       latitudeDegrees < -90 || latitudeDegrees > 90) return null;
-  const radius = radialDistanceFromNorthKm(latitudeDegrees);
+  const radius = useBaseProjection
+    ? baseRadialDistanceFromNorthKm(latitudeDegrees)
+    : radialDistanceFromNorthKm(latitudeDegrees);
   const longitude = rad(wrapLongitude(longitudeDegrees));
   return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
 }
@@ -78,14 +102,21 @@ export function unproject(x, y, baseRadius) {
   return { lat, lon };
 }
 
-function pointInDiskKm(point) {
+function pointInDiskKm(point, useBaseProjection = false) {
   if (!point) return null;
-  return geographicPointInDiskKm(point.lon, point.lat);
+  return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
 }
 
-/** Euclidean chord length in the projected disk only; not geographic ground distance. */
+/** Euclidean chord length in the visually calibrated disk; not ground distance. */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
+  if (!first || !second) return null;
+  return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
+}
+
+/** Original fitted-projection chord, retained by the A–B and ADS-B readout models. */
+export function baseFlatDiskDistanceMeters(a, b) {
+  const first = pointInDiskKm(a, true), second = pointInDiskKm(b, true);
   if (!first || !second) return null;
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
