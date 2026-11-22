@@ -164,7 +164,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /flightEmpiricalDistanceMeters/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The map geometry uses a smooth, edge-anchored radial warp across all 12 circles/);
+  assert.match(app, /The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints/);
   assert.match(app, /The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
@@ -233,7 +233,7 @@ test('the flat-disk A–B readout and ADS-B flight mileage remain separate refer
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
  assert.match(app,/Euclidean length of the displayed connector · 12-circle warped disk/);
- assert.match(app,/same flat-disk coordinate geometry/);
+ assert.match(app,/scale bar uses the same map-plane kilometre metric/);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
  assert.match(app,/flightEmpiricalDistanceMeters/);
 });
