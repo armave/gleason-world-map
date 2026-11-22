@@ -165,8 +165,8 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(app, /endpointDistanceCalibration/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
-  assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
+  assert.match(app, /The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support/);
+  assert.match(app, /The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -193,7 +193,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Exact Euclidean length of the displayed straight connector/);
+ assert.match(html,/Euclidean map-plane chord · not flown route mileage/);
   assert.match(html,/continuous radial profile used by both the map and the path fitter/);
 });
 
