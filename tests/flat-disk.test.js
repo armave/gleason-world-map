@@ -14,6 +14,7 @@ import {
 } from '../src/core/flat-disk.js';
 import { radialFractionFromUnitColatitude, radialWarpDerivative } from '../src/core/radial-warp.js';
 import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction, visualRadialSpacingScale } from '../src/core/visual-radial-calibration.js';
+import { warpLongitudeRadians, wrapRadians } from '../src/core/visual-longitude-calibration.js';
 
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
@@ -113,6 +114,22 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
     1e-7
   );
   assert.notEqual(visual, base);
+});
+
+test('flat-disk map projection applies the fitted longitude shear and anchors the pole and rim', () => {
+  const longitude = 80;
+  const latitude = 25;
+  const q = baseRadialFraction(latitude);
+  const projected = project(longitude, latitude, 1000);
+  const projectedAngle = Math.atan2(-projected[1], projected[0]);
+  const expectedAngle = warpLongitudeRadians(rad(longitude), q);
+  close(wrapRadians(projectedAngle - expectedAngle), 0, 1e-10);
+  assert.ok(Math.abs(wrapRadians(projectedAngle - rad(longitude))) > 0.05);
+
+  const pole = project(longitude, 90, 1000);
+  close(Math.hypot(pole[0], pole[1]), 0, 1e-10);
+  const rim = project(longitude, -90, 1000);
+  close(wrapRadians(Math.atan2(-rim[1], rim[0]) - rad(longitude)), 0, 1e-10);
 });
 
 test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {
