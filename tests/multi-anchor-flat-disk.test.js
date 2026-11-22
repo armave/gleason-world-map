@@ -100,6 +100,49 @@ test('topology diagnostics detect a deliberately folded and oversized disk warp'
   assert.ok(diagnostics.maximumBoundaryDisplacementKm < 1e-5);
 });
 
+test('adaptive topology sampling detects a narrow off-grid foldover', () => {
+  // This control is halfway between the old 32-ring / 144-spoke samples.
+  // Its small Gaussian support used to fit entirely between those samples.
+  const radiusKm = DISK_RADIUS_KM;
+  const controlRadius = radiusKm * (0.5 + 1 / 64);
+  const angle = Math.PI / 144;
+  const xKm = controlRadius * Math.cos(angle);
+  const yKm = controlRadius * Math.sin(angle);
+  const envelope = 16 * (controlRadius / radiusKm) ** 2 *
+    (1 - controlRadius / radiusKm) ** 2;
+  const model = {
+    diskRadiusKm: radiusKm,
+    sigmaKm: radiusKm * 0.00025,
+    controls: [{
+      id: 'off-grid-control',
+      xKm,
+      yKm,
+      envelope,
+      alphaX: 30,
+      alphaY: 0
+    }]
+  };
+  const diagnostics = inspectMultiAnchorTopology(model);
+  assert.ok(diagnostics.topologySampleCount > 18000);
+  assert.ok(
+    diagnostics.minimumJacobianDeterminant < 0.2,
+    'narrow foldover escaped adaptive sampling: ' + diagnostics.minimumJacobianDeterminant
+  );
+});
+
+test('malformed model controls fail closed rather than throwing', () => {
+  const malformed = {
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm: DISK_RADIUS_KM * 0.2,
+    controls: [null]
+  };
+  assert.equal(applyMultiAnchorWarpXY(100, 200, malformed), null);
+  assert.equal(invertMultiAnchorWarpXY(100, 200, malformed), null);
+  const diagnostics = inspectMultiAnchorTopology(malformed);
+  assert.equal(diagnostics.minimumJacobianDeterminant, -Infinity);
+  assert.equal(diagnostics.topologySampleCount, 0);
+});
+
 test('the numerical inverse recovers an interior point after candidate warping', () => {
   const model = {
     diskRadiusKm: DISK_RADIUS_KM,
