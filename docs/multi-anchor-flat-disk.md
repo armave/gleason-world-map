@@ -14,7 +14,7 @@ The current repository contains observed ADS-B ground-speed/time mileage and tim
 4. Adjust training-anchor positions with a confidence-weighted Huber loss to reduce relative distance error while regularizing movement from the seed map.
 5. Fit a regularized Gaussian radial-basis field to the optimized anchor displacements, excluding fixed centre/rim controls from the solve.
 6. Multiply the field by a smooth radial envelope that is zero at the North Pole and at the full Antarctic rim.
-7. Test independent holdout errors, dense sampled Jacobian determinants, maximum interpolated displacement, and radial-boundary overshoot.
+7. Test independent holdout errors, a denser full-disk Jacobian grid plus adaptive samples around every RBF control point, forward/inverse round trips across the disk, maximum interpolated displacement, and radial-boundary overshoot. The local stencils specifically check narrow Gaussian features that can fall between uniform grid nodes.
 
 This is a constrained two-dimensional drawing-plane fit. It does not infer or assert the physical shape of the Earth.
 
@@ -45,7 +45,7 @@ Run npm run fit:multi-anchor to produce a candidate summary. Run npm test for th
 - Holdout MAPE improves over the current flat-disk baseline by at least 0.25 percentage points.
 - Planar rigidity matrix rank exactly 2N−3.
 - Minimum sampled Jacobian determinant at least 0.2.
-- Forward/inverse coordinate round-trip validation across the disk.
+- Forward/inverse coordinate round-trip validation across a 12-ring / 48-spoke disk sample and every RBF control point, with maximum drawing-plane error no greater than 0.01 km and no failed inversions.
 - Maximum training-anchor and interpolated-warp displacement no greater than 12% of disk radius.
 - No sampled radial overshoot beyond the circular rim and numerical pole/rim displacement below 1e-5 km.
 - At least eight independent holdout anchors, three holdout latitude bands, four holdout longitude sectors, and four holdout anchors never used for fitting.
