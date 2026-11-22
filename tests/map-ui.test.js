@@ -192,7 +192,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Euclidean length of the visible connector/);
+ assert.match(html,/Euclidean length of the displayed connector/);
   assert.match(html,/continuous radial profile used by both the map and the path fitter/);
 });
 
