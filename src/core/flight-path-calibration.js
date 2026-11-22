@@ -333,6 +333,47 @@ function summarizeErrors(examples, radialScaleKm) {
   };
 }
 
+/** Build route-level observed-mileage/projected-path ratios for one candidate geometry. */
+function makeRouteExamplesFromRecords(
+  records,
+  radialWarp,
+  radialProfile = FLIGHT_PATH_PROFILE,
+  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP
+) {
+  return records.flatMap(({ route, flights }) => {
+    const measured = [];
+    const projected = [];
+    const pairedScaleRatios = [];
+    for (const flight of flights) {
+      const measuredKm = flight.observedTrackKm ?? flight.trackKm;
+      const unitPathLength = unitProjectedFlightPathLength(
+        flight.trackCoordinates,
+        radialWarp,
+        radialProfile,
+        longitudeWarp
+      );
+      if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
+        measured.push(measuredKm);
+        projected.push(unitPathLength);
+        pairedScaleRatios.push(measuredKm / unitPathLength);
+      }
+    }
+    if (pairedScaleRatios.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) {
+      return [];
+    }
+    return [{
+      routeId: route.routeId,
+      split: route.split,
+      airportA: route.airportA,
+      airportB: route.airportB,
+      sampleCount: pairedScaleRatios.length,
+      medianObservedTrackKm: median(measured),
+      medianUnitPathLength: median(projected),
+      requiredRadialScaleKm: median(pairedScaleRatios)
+    }];
+  });
+}
+
 const GEOMETRY_START = Object.freeze([1, 1, 0, 0, 0, 0]);
 const GEOMETRY_STEPS = Object.freeze([0.1, 0.1, 0.1, 0.1, 0.06, 0.06]);
 const GEOMETRY_BOUNDS = Object.freeze([
