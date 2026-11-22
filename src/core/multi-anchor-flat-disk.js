@@ -21,6 +21,10 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   minimumHoldoutLatitudeBands: 3,
   minimumHoldoutLongitudeSectors: 4,
   minimumUnseenHoldoutAnchors: 4,
+  minimumTrainingAnchorsSouthOf45S: 2,
+  minimumHoldoutAnchorsSouthOf45S: 2,
+  minimumTrainingAnchorsSouthOf60S: 1,
+  minimumHoldoutAnchorsSouthOf60S: 1,
   maximumTrainingMapePercent: 8,
   maximumHoldoutMapePercent: 10,
   maximumHoldoutPairErrorPercent: 20,
@@ -155,7 +159,17 @@ function anchorCoverage(observations) {
       ));
     }
   }
-  return { anchors, latitudeBands, longitudeSectors };
+  const southernAnchorCount = [...anchors.values()]
+    .filter(point => point.lat <= -45).length;
+  const deepSouthernAnchorCount = [...anchors.values()]
+    .filter(point => point.lat <= -60).length;
+  return {
+    anchors,
+    latitudeBands,
+    longitudeSectors,
+    southernAnchorCount,
+    deepSouthernAnchorCount
+  };
 }
 
 function coverageFor(training, holdout, errors = []) {
@@ -177,6 +191,10 @@ function coverageFor(training, holdout, errors = []) {
     holdoutAnchorCount: holdoutCoverage.anchors.size,
     holdoutLatitudeBandCount: holdoutCoverage.latitudeBands.size,
     holdoutLongitudeSectorCount: holdoutCoverage.longitudeSectors.size,
+    trainingAnchorsSouthOf45S: trainingCoverage.southernAnchorCount,
+    holdoutAnchorsSouthOf45S: holdoutCoverage.southernAnchorCount,
+    trainingAnchorsSouthOf60S: trainingCoverage.deepSouthernAnchorCount,
+    holdoutAnchorsSouthOf60S: holdoutCoverage.deepSouthernAnchorCount,
     holdoutAnchorOverlapCount: overlap.length,
     unseenHoldoutAnchorCount: unseen.length,
     trainingGraph,
@@ -862,6 +880,14 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     failures.push('Insufficient holdout longitude-sector coverage');
   if (coverage.unseenHoldoutAnchorCount < limits.minimumUnseenHoldoutAnchors)
     failures.push('Insufficient geographically unseen holdout anchors');
+  if (coverage.trainingAnchorsSouthOf45S < limits.minimumTrainingAnchorsSouthOf45S)
+    failures.push('Insufficient training anchors south of 45 degrees south');
+  if (coverage.holdoutAnchorsSouthOf45S < limits.minimumHoldoutAnchorsSouthOf45S)
+    failures.push('Insufficient independent holdout anchors south of 45 degrees south');
+  if (coverage.trainingAnchorsSouthOf60S < limits.minimumTrainingAnchorsSouthOf60S)
+    failures.push('Insufficient deep-southern training anchors south of 60 degrees south');
+  if (coverage.holdoutAnchorsSouthOf60S < limits.minimumHoldoutAnchorsSouthOf60S)
+    failures.push('Insufficient deep-southern holdout anchors south of 60 degrees south');
   if (coverage.trainingAnchorCount >= limits.minimumTrainingAnchors &&
       !coverage.trainingGraph.threeVertexConnected) {
     failures.push(
