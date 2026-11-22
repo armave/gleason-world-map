@@ -13,7 +13,8 @@ import {
 import {
   DISK_RADIAL_SCALE_KM,
   DISK_RADIUS_KM,
-  flatDiskDistanceMeters
+  flatDiskDistanceMeters,
+  baseFlatDiskDistanceMeters
 } from '../src/core/flat-disk.js';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 
@@ -80,10 +81,12 @@ test('A–B primary readout applies the radial factor while retaining the raw ch
   const result = measureDirectDistance(a, b);
   assert.equal(result.metric, 'radially-corrected-flat-disk-chord');
   assert.equal(result.restricted, false);
-  assert.equal(result.chordDistanceMeters, flatDiskDistanceMeters(a, b));
+  assert.equal(result.chordDistanceMeters, baseFlatDiskDistanceMeters(a, b));
+  assert.equal(result.visualChordDistanceMeters, flatDiskDistanceMeters(a, b));
   assert.equal(result.rawDistanceMeters, result.chordDistanceMeters);
   assert.equal(result.radiallyCorrectedDistanceMeters, result.distanceMeters);
   assert.equal(result.distanceMeters, result.chordDistanceMeters * result.radialCorrectionFactor);
+  assert.notEqual(result.visualChordDistanceMeters, result.chordDistanceMeters);
   assert.equal(result.radialCorrectionFactor, radialDistanceCorrectionDiagnostics(a, b).factor);
   assert.equal(result.radialCirclePosition, radialDistanceCorrectionDiagnostics(a, b).circlePosition);
   assert.equal(result.flightEmpiricalDistanceMeters,
@@ -209,6 +212,7 @@ test('invalid coordinates fail safely', () => {
   const result = measureDirectDistance(point(91, 0), point(0, 0));
   assert.equal(result.distanceMeters, null);
   assert.equal(result.chordDistanceMeters, null);
+  assert.equal(result.visualChordDistanceMeters, null);
   assert.equal(result.radialCorrectionFactor, null);
   assert.equal(result.radialCorrection, null);
   assert.equal(result.calibrationFactor, null);
@@ -231,7 +235,7 @@ test('near-south-rim endpoints warn about longitude sensitivity without changing
   const first = point(-89.99, 0), second = point(-89.99, 180);
   const result = measureDirectDistance(first, second);
   assert.ok(result.rawDistanceMeters > 17_000_000);
-  assert.equal(result.rawDistanceMeters, flatDiskDistanceMeters(first, second));
+  assert.equal(result.rawDistanceMeters, baseFlatDiskDistanceMeters(first, second));
   assert.equal(result.calibration.nearSouthRim, true);
   assert.ok(result.warnings.includes('near-south-rim'));
   assert.equal(result.calibration.status, 'bounded-extrapolation');
