@@ -205,7 +205,7 @@ test('direct A/B coordinate entry and calibration route support are available',(
  assert.match(html,/id="calibrationSupport"/);
  assert.match(html,/id="calibrationRoutes"/);
  assert.match(app,/function applyCoordinateEndpoint\(index\)/);
- assert.match(app,/routeCalibration\.neighborRouteIds/);
+ assert.match(app,/calibration\.neighbourRouteIds/);
  assert.match(app,/loadAntarcticAddDataset\(\)\.then/);
  assert.match(app,/Natural Earth outline remains active/);
 });
@@ -251,7 +251,7 @@ test('distance and area drawings render km labels on their measurement geometry'
  assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
  assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
- assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
+ assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,measureDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
  assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
  assert.match(app,/function formatMeasurementSquareKilometres\(/);
@@ -328,7 +328,7 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/The scale bar uses the same uncorrected map-plane chord metric as A–B/);
+ assert.match(app,/The scale bar uses the same canonical calibrated metric as A–B and area edges/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
@@ -353,8 +353,8 @@ test('pointer, hover and wheel interactions coalesce expensive work to animation
 
 test('scale-bar measurement uses the same geometric chord metric as A–B',()=>{
  const scaleMetric=app.slice(app.indexOf('function flatDiskDistanceForScalePixels'),app.indexOf('function scaleBarReadingKm'));
- assert.match(scaleMetric,/flatDiskDistanceMeters\(first,second\)/);
- assert.doesNotMatch(scaleMetric,/measureDirectDistance/);
+ assert.match(scaleMetric,/measureDistanceMeters\(first,second\)/);
+ assert.doesNotMatch(scaleMetric,/flatDiskDistanceMeters/);
 });
 test('scale-bar measurement is calculated once per frame and uses a pixel-accurate search',()=>{
  assert.match(app,/const scaleLayout=calculateScaleBarLayout\(\)/);
