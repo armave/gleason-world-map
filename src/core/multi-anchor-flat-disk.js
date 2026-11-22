@@ -163,6 +163,9 @@ function coverageFor(training, holdout, errors = []) {
     .filter(id => trainingCoverage.anchors.has(id));
   const unseen = [...holdoutCoverage.anchors.keys()]
     .filter(id => !trainingCoverage.anchors.has(id));
+  const trainingGraph = graphRigidityDiagnostics(
+    [...trainingCoverage.anchors.keys()], training
+  );
   return {
     trainingObservationCount: training.length,
     holdoutObservationCount: holdout.length,
@@ -174,6 +177,7 @@ function coverageFor(training, holdout, errors = []) {
     holdoutLongitudeSectorCount: holdoutCoverage.longitudeSectors.size,
     holdoutAnchorOverlapCount: overlap.length,
     unseenHoldoutAnchorCount: unseen.length,
+    trainingGraph,
     validationErrors: errors
   };
 }
@@ -654,6 +658,13 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     failures.push('Insufficient holdout longitude-sector coverage');
   if (coverage.unseenHoldoutAnchorCount < limits.minimumUnseenHoldoutAnchors)
     failures.push('Insufficient geographically unseen holdout anchors');
+  if (coverage.trainingAnchorCount >= limits.minimumTrainingAnchors &&
+      !coverage.trainingGraph.threeVertexConnected) {
+    failures.push(
+      'Training anchor network must be 3-vertex-connected with minimum degree 3 ' +
+      'and at least 2N-2 distinct pairs'
+    );
+  }
   if (failures.length) {
     return {
       accepted: false,
