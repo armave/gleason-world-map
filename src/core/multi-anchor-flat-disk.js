@@ -740,10 +740,11 @@ function optimizePositions(training, anchors, options = {}) {
   const positions = seed.map(point => [...point]);
   const rigidityMatrixRank = planarRigidityMatrixRank(anchorIds, training, seed);
   const requiredRigidityRank = Math.max(0, 2 * anchorIds.length - 3);
-  if (rigidityMatrixRank < requiredRigidityRank) {
+  if (rigidityMatrixRank !== requiredRigidityRank) {
     throw new Error(
-      'Training distance constraints are not infinitesimally rigid in the seed disk: ' +
-      'rank ' + rigidityMatrixRank + '; required ' + requiredRigidityRank
+      'Training distance constraints do not have the required planar rigidity rank ' +
+      'at the seed disk: rank ' + rigidityMatrixRank + '; required exactly ' +
+      requiredRigidityRank
     );
   }
   const edges = training.map(item => ({
