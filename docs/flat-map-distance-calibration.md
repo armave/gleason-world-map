@@ -109,7 +109,7 @@ dq_visual/dq = (4 - 2q) / 3
 
 The derivative stays positive and continuous throughout the disk. Each section blends into the next without a visible join; inner rings are progressively spread and outer rings progressively compressed. Since `q_visual(0) = 0` and `q_visual(1) = 1`, the North Pole remains at the exact centre and the Ice Wall remains on the exact outer circle.
 
-The forward projection, inverse map-click lookup, latitude circles, country/coastline paths, labels, area/perimeter geometry and scale bar all use this visual transform. The calibration panel lists the 12 reference circles and their local radial-spacing factors. These factors describe the visual warp only; they are **not distance multipliers** and they do not change the primary A–B distance.
+The forward projection, inverse map-click lookup, latitude circles, country/coastline paths, labels, area/perimeter geometry and scale bar all use this visual transform. The calibration panel and map overlay share one set of 12 reference-circle positions: the ten interior positions are drawn as fine dotted guide rings, while circle 1 is the North Pole at the centre and circle 12 is the Antarctic rim. The panel lists the same positions with their local radial-spacing factors. These factors describe the visual warp only; they are **not distance multipliers** and they do not change the primary A–B distance.
 
 | Circle | Local radial-spacing factor |
 |---:|---:|

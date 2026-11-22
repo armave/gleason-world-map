@@ -1,9 +1,5 @@
 import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
-import {
- RADIAL_DISTANCE_CIRCLE_COUNT,
- RADIAL_DISTANCE_CIRCLE_FACTORS,
- visualRadialFractionFromBaseFraction
-} from '../core/visual-radial-calibration.js';
+import {RADIAL_DISTANCE_VISUAL_CIRCLES} from '../core/visual-radial-calibration.js';
 
 export function renderRadialCalibration(radialRows,visualRows){
  const rows=[90,60,30,0,-30,-60,-90].map(lat=>{
@@ -16,14 +12,12 @@ export function renderRadialCalibration(radialRows,visualRows){
  radialRows.innerHTML=rows.join('');
 
  if(visualRows){
-  const circleRows=Array.from({length:RADIAL_DISTANCE_CIRCLE_COUNT},(_,index)=>{
-   const baseFraction=index/(RADIAL_DISTANCE_CIRCLE_COUNT-1);
-   const visualFraction=visualRadialFractionFromBaseFraction(baseFraction);
-   const factor=RADIAL_DISTANCE_CIRCLE_FACTORS[index].toFixed(2)+'×';
+  const circleRows=RADIAL_DISTANCE_VISUAL_CIRCLES.map(({circle,factor,visualFraction})=>{
+   const radialFactor=factor.toFixed(2)+'×';
    const visualRadiusPercent=(visualFraction*100).toFixed(1)+'%';
    const visualRadiusKm=(DISK_RADIUS_KM*visualFraction)
     .toLocaleString('en-US',{maximumFractionDigits:0})+' km';
-   return '<tr><td>'+(index+1)+'</td><td>'+factor+'</td><td>'+visualRadiusPercent+'</td><td>'+visualRadiusKm+'</td></tr>';
+   return '<tr><td>'+circle+'</td><td>'+radialFactor+'</td><td>'+visualRadiusPercent+'</td><td>'+visualRadiusKm+'</td></tr>';
   });
   visualRows.innerHTML=circleRows.join('');
  }
