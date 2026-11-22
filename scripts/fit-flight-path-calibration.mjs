@@ -81,8 +81,10 @@ async function main() {
     leaveOneOutMaxRouteErrorPercent <= limits.maxLeaveOneOutRouteErrorPercent &&
     routeCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     routeCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+
     (metrics?.training?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
     (metrics?.holdout?.routeCount ?? 0) >= limits.minimumHoldoutRoutes &&
+    (metrics?.leaveOneOut?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
     routeCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
     routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
     routeCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
@@ -131,6 +133,8 @@ async function main() {
     if ((metrics?.training?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
         (metrics?.holdout?.routeCount ?? 0) < limits.minimumHoldoutRoutes)
       acceptanceFailures.push('minimum usable projected training/holdout route gate failed');
+    if ((metrics?.leaveOneOut?.routeCount ?? 0) < limits.minimumTrainingRoutes)
+      acceptanceFailures.push('not enough successful leave-one-route-out training folds');
   }
   const finalRejectionReason = accepted
     ? null
