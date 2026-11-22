@@ -117,7 +117,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: Euclidean length of the straight connector in the final 12-circle-warped flat disk; ADS-B flight-mileage estimate remains a separate empirical reference
+- A–B measurement: empirical estimate of typical ADS-B route mileage, with an explicit supported/extrapolated status; exact flat-disk connector length is displayed separately
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -125,7 +125,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar and primary A–B measurement use the same visually calibrated map-plane Euclidean metric
+- View-centred scale bar and connector-length readout use the same visually calibrated map-plane Euclidean metric
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
@@ -229,7 +229,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 ## Important limitations
 
 - The map is a custom radial disk with a nonlinear latitude warp, not the standard azimuthal-equidistant formula. It is a mathematical map construction, not a claim about Earth's physical shape. The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp; a local nearest-route correction is applied only to the separate ADS-B flight-mileage estimate. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well the flight estimate generalizes to new route pairs.
-- The primary A–B result is a flat-disk Euclidean distance: it is the exact length of the straight connector between the endpoints after the fitted latitude warp and integrated smooth 12-circle radial profile. Its map-plane kilometre scale is empirically calibrated and is not a universal physical ground-distance law. The secondary result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight or a guaranteed prediction of an airline route. Performance outside the sampled airport-pair domain is not guaranteed.
+- The primary A–B result is an empirical estimate of typical flown mileage inferred from observed ADS-B ground-speed/time data. It is calibrated only within the route-feature and chord-length support of the sampled airport pairs; unsupported pairs are explicitly labelled extrapolated and should be treated as provisional. It is not the actual path of a selected flight, a shortest point-to-point distance or a guaranteed airline route. The exact Euclidean length of the displayed connector is available separately as a flat-disk map-plane measurement.
 - The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
 - Latest ADS-B collection (21 November 2026, 12:17 UTC): 61 candidate airport pairs, 253 flight records, 32 qualifying training routes and 2 qualifying holdouts. The eight southern/polar candidate pairs returned no matching flight records, so no polar calibration is promoted.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
