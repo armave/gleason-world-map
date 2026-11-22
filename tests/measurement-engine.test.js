@@ -293,6 +293,16 @@ test('polygon edges including closure are still checked for restricted-line cros
 });
 
 
+
+test('great-circle distance is symmetric and longitude-wrap safe for unbounded coordinates', () => {
+  const first = point(-33.4489, -70.6693);
+  const second = point(-35.2809, 149.13);
+  const expected = greatCircleDistanceMeters(first, second);
+  assert.equal(expected, greatCircleDistanceMeters(second, first));
+  assert.equal(expected, greatCircleDistanceMeters(first, point(second.lat, second.lon + 720)));
+  assert.equal(expected, greatCircleDistanceMeters(first, point(second.lat, second.lon - 1080)));
+});
+
 test('Santiago to Canberra uses coordinate-only great-circle distance', () => {
   const santiago = point(-33.4489, -70.6693);
   const canberra = point(-35.2809, 149.1300);
