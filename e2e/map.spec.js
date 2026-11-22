@@ -156,7 +156,6 @@ test('restores measurement endpoints and map orientation from a share URL', asyn
   await expect(page.locator('#endpointRows')).toContainText('Shared point A');
   await expect(page.locator('#endpointRows')).toContainText('Shared point B');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
-  await expect(page.locator('#distanceValue')).not.toHaveText('—');
 });
 
 test('opens the tools drawer on a narrow mobile viewport', async ({ page }) => {
