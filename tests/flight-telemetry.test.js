@@ -30,6 +30,7 @@ test('does not bridge large gaps and rejects records with insufficient telemetry
   assert.equal(result.accepted, false);
   assert.equal(result.reason, 'telemetry-gap-too-large');
   assert.equal(result.intervalCount, 8);
+  assert.equal(result.maxGapMinutes, 100);
   assert.ok(Math.abs(result.coverage - 2400 / 8400) < 1e-12);
 });
 
@@ -65,7 +66,7 @@ test('does not forward-fill a ground-speed sample across a long interval in one 
   const result = integrateGroundSpeedSeries(pathGs, 0, 7800);
   assert.equal(result.accepted, false);
   assert.equal(result.reason, 'telemetry-gap-too-large');
-  assert.equal(result.speedIntervals, 8);
+  assert.equal(result.intervalCount, 8);
   assert.ok(Math.abs(result.coverage - 4800 / 7800) < 1e-12);
   assert.equal(result.maxGapMinutes, 50);
 });

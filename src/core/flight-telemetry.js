@@ -32,9 +32,8 @@ function epochSeconds(value) {
 
 /**
  * Integrate step-interpolated ADS-B ground speed within each contiguous
- * subsequence. No gap between subsequences is directly filled with invented
- * speed. To estimate the full telemetry-span distance, observed mean ground
- * speed is expanded across the full timestamp span and reported with coverage.
+ * subsequence. No gap between subsequences is filled with invented speed.
+ * Coverage is measured against the full flight start-to-end duration.
  *
  * pathGs[i][j] is [unixSeconds, knots], forward-filled to the next timestamp.
  */
@@ -118,7 +117,6 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
   );
   const coverage = Math.min(1, coveredSeconds / flightDurationSeconds);
   const observedTrackKm = observedNauticalMiles * KNOT_TO_KM;
-  const maxGapMinutes = maxGapSeconds / 60;
   const telemetrySpanMinutes = telemetrySpanSeconds / 60;
   const flightDurationMinutes = flightDurationSeconds / 60;
   const orderedBounds = sequenceBounds.sort((a, b) => a[0] - b[0]);
@@ -128,35 +126,30 @@ export function integrateGroundSpeedSeries(pathGs, startTs, endTs) {
       orderedBounds[index][0] - orderedBounds[index - 1][1]
     );
   }
+  const maxGapMinutes = maxGapSeconds / 60;
+  const diagnostics = {
+    coverage,
+    intervalCount,
+    flightDurationMinutes,
+    telemetrySpanMinutes,
+    coveredMinutes: coveredSeconds / 60,
+    maxGapMinutes
+  };
 
   if (intervalCount < MIN_SPEED_INTERVALS) {
-    return { accepted: false, reason: 'too-few-speed-intervals', coverage, intervalCount };
+    return { accepted: false, reason: 'too-few-speed-intervals', ...diagnostics };
   }
   if (telemetrySpanMinutes < MIN_FLIGHT_MINUTES) {
-    return { accepted: false, reason: 'flight-too-short', coverage, intervalCount };
+    return { accepted: false, reason: 'flight-too-short', ...diagnostics };
   }
   if (maxGapMinutes > FLIGHT_TELEMETRY_FILTERS.maxTelemetryGapMinutes) {
-    return {
-      accepted: false,
-      reason: 'telemetry-gap-too-large',
-      coverage,
-      intervalCount,
-      telemetrySpanMinutes,
-      maxGapMinutes
-    };
+    return { accepted: false, reason: 'telemetry-gap-too-large', ...diagnostics };
   }
   if (coverage < MIN_TELEMETRY_COVERAGE) {
-    return {
-      accepted: false,
-      reason: 'low-telemetry-coverage',
-      coverage,
-      intervalCount,
-      telemetrySpanMinutes,
-      maxGapMinutes
-    };
+    return { accepted: false, reason: 'low-telemetry-coverage', ...diagnostics };
   }
   if (!Number.isFinite(observedTrackKm) || observedTrackKm <= 0) {
-    return { accepted: false, reason: 'invalid-integrated-distance', coverage, intervalCount };
+    return { accepted: false, reason: 'invalid-integrated-distance', ...diagnostics };
   }
 
   return {

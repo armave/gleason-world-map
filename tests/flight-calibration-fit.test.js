@@ -113,9 +113,8 @@ test('route targets exclude low-coverage and long-gap observations before fittin
   assert.equal(result.model.trainingRouteCount, 10);
   assert.equal(result.metrics.holdout.routeCount, 4);
   assert.ok(result.model.trainingExamples.every(example => example.qualityWeight > 0 && example.qualityWeight <= 1));
-  assert.ok(result.model.trainingExamples.every(example => example.medianTelemetryCoverage >= 0.35));
-  assert.ok(result.model.trainingExamples.every(example => example.medianMaxGapMinutes <= 300));
-  assert.ok(result.model.trainingExamples.some(example => example.qualityWeight < 0.5));
+  assert.ok(result.model.trainingExamples.every(example => example.medianTelemetryCoverage >= 0.98));
+  assert.ok(result.model.trainingExamples.every(example => example.medianMaxGapMinutes <= 15));
 });
 
 test('coverage summary reports southern training and independent southern holdout routes', () => {
@@ -125,7 +124,7 @@ test('coverage summary reports southern training and independent southern holdou
   const coverage = summarizeFlightCalibrationCoverage(dataset);
   assert.equal(coverage.trainingRouteCount, 12);
   assert.equal(coverage.holdoutRouteCount, 4);
-  assert.equal(coverage.trainingRoutesSouthOf30S, 1);
+  assert.equal(coverage.trainingRoutesSouthOf30S, 3);
   assert.equal(coverage.trainingRoutesSouthOf45S, 1);
   assert.equal(coverage.trainingRoutesSouthOf60S, 0);
   assert.equal(coverage.holdoutRoutesSouthOf30S, 1);

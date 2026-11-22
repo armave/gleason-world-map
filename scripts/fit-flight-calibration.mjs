@@ -70,9 +70,7 @@ async function main() {
             minimumTrainingRoutes: MIN_TRAINING_ROUTES,
             minimumHoldoutRoutes: MIN_HOLDOUT_ROUTES,
             minimumSouthernTrainingRoutes: MIN_SOUTHERN_TRAINING_ROUTES,
-            minimumPolarTrainingRoutes: MIN_POLAR_TRAINING_ROUTES,
-            minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES,
-            minimumPolarHoldoutRoutes: MIN_POLAR_HOLDOUT_ROUTES
+            minimumSouthernHoldoutRoutes: MIN_SOUTHERN_HOLDOUT_ROUTES
           }
         },
         model: null,
