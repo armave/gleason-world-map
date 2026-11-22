@@ -95,23 +95,29 @@ Airport latitude/longitude values are only the endpoint encoding required to pos
 
 The radial warp moves interior rings relative to a linear `r = R * theta` disk while retaining the same centre/rim topology. With the current fit, the 45°N ring is about 592 km farther from the centre than it would be in a linear disk using the same fitted `R`; the maximum shift among the sampled 15° latitude markers is about 621 km. The outer rim and North Pole do not move. This adjustment changes coastline, capital, grid, map-click coordinates and the primary A–B distance consistently because all are rendered or measured through the same final transform. At 90°S, longitude remains the angular coordinate of a point on the outer circle. Different longitudes therefore indicate different positions on the disk rim; they are not collapsed into a single globe South Pole.
 
-## Smooth 12-circle visual radial calibration
+## 12-circle radial distance multipliers
 
-The same 12-circle factor profile redistributes the displayed map geometry. It is not implemented as 12 separate radial transforms or hard-edged annular bands; it is applied as one continuous, edge-anchored function.
+The 12 values are the local radial-distance multipliers used by the map itself. They taper linearly from 1.00× at circle 1 to 0.50× at circle 12. The exact step is `0.50 / 11 = 0.0454545…`; the table rounds each multiplier to two decimals.
 
-Let `q` be the original ADS-B-fitted radial fraction, with 0 at the North Pole and 1 at the Antarctic rim. The local radial-spacing profile is `f(q) = 1 - 0.5q`. Its normalized integral gives the displayed radius:
+Let `q` be the original fitted radial fraction, from 0 at the North Pole to 1 at the Ice Wall. The continuous local multiplier profile is:
 
 ```text
-q_visual = integral(0..q, f(u) du) / integral(0..1, f(u) du)
-         = q + q(1 - q) / 3
-dq_visual/dq = (4 - 2q) / 3
+m(q) = 1.00 - 0.50q
+mean multiplier = integral(0..1, m(u) du) = 0.75
 ```
 
-The derivative stays positive and continuous throughout the disk. Each section blends into the next without a visible join; inner rings are progressively spread and outer rings progressively compressed. Since `q_visual(0) = 0` and `q_visual(1) = 1`, the North Pole remains at the exact centre and the Ice Wall remains on the exact outer circle.
+The profile is integrated—not applied as twelve separate bands—so the map remains smooth. It is normalized by its 0.75 mean to preserve the centre and the full outer-rim radius:
 
-The forward projection, inverse map-click lookup, latitude circles, country/coastline paths, labels, area/perimeter geometry and scale bar all use this visual transform. The calibration panel and map overlay share one set of 12 reference-circle positions: the ten interior positions are drawn as fine dotted guide rings, while circle 1 is the North Pole at the centre and circle 12 is the Antarctic rim. The panel lists the same positions with their local radial-spacing factors. These factors describe the visual warp only; they are **not distance multipliers** and they do not change the primary A–B distance.
+```text
+q_visual = integral(0..q, m(u) du) / 0.75
+         = (q - 0.25q²) / 0.75
+         = q + q(1 - q) / 3
+dq_visual/dq = m(q) / 0.75 = (4 - 2q) / 3
+```
 
-| Circle | Local radial-spacing factor |
+This means the radial spacing between any two adjacent reference circles is the average of their endpoint multipliers, normalized by 0.75. The inner radial intervals are wider and the outer intervals progressively narrower. The derivative remains positive and continuous, with no hard joins, while `q_visual(0) = 0` and `q_visual(1) = 1` keep the North Pole at the centre and the Ice Wall at the outer edge.
+
+| Circle | Distance multiplier |
 |---:|---:|
 | 1 | 1.00× |
 | 2 | 0.95× |
@@ -125,6 +131,10 @@ The forward projection, inverse map-click lookup, latitude circles, country/coas
 | 10 | 0.59× |
 | 11 | 0.55× |
 | 12 (Ice Wall) | 0.50× |
+
+The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. All latitude circles, coastlines, country boundaries, labels, map clicks, inverse lookup and the scale bar use the same transformed coordinates.
+
+**Measurement correspondence:** A–B endpoints are projected through this exact radial multiplier profile first. The primary distance is then the Euclidean length of the straight connector between those displayed points. Thus the A–B number and visible line correspond exactly; the radial multiplier is not applied a second time to the finished chord. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion. For a segment spanning several circles, its measured length reflects the full transform across both endpoint positions, not one arbitrarily selected circle's multiplier.
 
 ## Primary flat-disk Euclidean distance
 

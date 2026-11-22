@@ -1,23 +1,24 @@
 /**
- * Smooth, edge-anchored radial redistribution for the 12-circle map.
+ * One authoritative radial-distance multiplier profile for the 12-circle map.
  *
- * The circle factors decrease linearly from 1.00 at the North Pole to 0.50
- * at the Ice Wall. Integrating that profile and normalizing its total keeps
- * both endpoints fixed while smoothly redistributing every intermediate ring.
- * The resulting single quadratic transform has no per-ring joins or hard bands.
+ * The local radial-spacing multiplier tapers linearly from 1.00× at the
+ * North Pole to 0.50× at the Ice Wall. It is integrated over the base radial
+ * fraction and normalized by its mean (0.75) so the centre and outer rim stay
+ * fixed. The resulting visual radius is used by every projected map feature
+ * and by the flat-disk distance engine.
  */
 export const RADIAL_DISTANCE_CIRCLE_COUNT = 12;
 export const RADIAL_DISTANCE_INNER_FACTOR = 1;
 export const RADIAL_DISTANCE_OUTER_FACTOR = 0.5;
-
-export const RADIAL_DISTANCE_CIRCLE_FACTORS = Object.freeze([
-  1.00, 0.95, 0.91, 0.86, 0.82, 0.77,
-  0.73, 0.68, 0.64, 0.59, 0.55, 0.50
-]);
+export const RADIAL_DISTANCE_PROFILE_MEAN =
+  (RADIAL_DISTANCE_INNER_FACTOR + RADIAL_DISTANCE_OUTER_FACTOR) / 2;
+export const RADIAL_DISTANCE_CIRCLE_STEP =
+  (RADIAL_DISTANCE_INNER_FACTOR - RADIAL_DISTANCE_OUTER_FACTOR) /
+  (RADIAL_DISTANCE_CIRCLE_COUNT - 1);
 
 const clampUnit = value => Math.max(0, Math.min(1, value));
 
-/** Linear calibration profile, sampled by the 12 published circle markers. */
+/** Exact linear multiplier profile, 1.00×→0.50× over the normalized radius. */
 export function radialDistanceCorrectionFactor(radialFraction) {
   if (!Number.isFinite(radialFraction)) return null;
   const q = clampUnit(radialFraction);
@@ -25,23 +26,40 @@ export function radialDistanceCorrectionFactor(radialFraction) {
     (RADIAL_DISTANCE_INNER_FACTOR - RADIAL_DISTANCE_OUTER_FACTOR) * q;
 }
 
-/**
- * Map the original warped-disk radius q to its visual radius q′.
- *
- * q′ = integral(0..q, 1 - 0.5u) du / integral(0..1, 1 - 0.5u) du
- *    = q + q(1-q)/3
- *
- * Its derivative is positive and continuous over the whole disk. All 12
- * reference circles therefore blend into one another without rigid joins.
- */
-export function visualRadialFractionFromBaseFraction(baseFraction) {
+/** Exact 12 circle samples of the continuous linear profile (display rounded). */
+export const RADIAL_DISTANCE_CIRCLE_FACTORS = Object.freeze(
+  Array.from({ length: RADIAL_DISTANCE_CIRCLE_COUNT }, (_, index) =>
+    radialDistanceCorrectionFactor(index / (RADIAL_DISTANCE_CIRCLE_COUNT - 1))
+  )
+);
+
+/** Integral of the local radial multiplier from the centre to q. */
+export function integratedRadialDistanceMultiplier(baseFraction) {
   if (!Number.isFinite(baseFraction)) return NaN;
   const q = clampUnit(baseFraction);
-  return q + q * (1 - q) / 3;
+  const taper = RADIAL_DISTANCE_INNER_FACTOR - RADIAL_DISTANCE_OUTER_FACTOR;
+  return RADIAL_DISTANCE_INNER_FACTOR * q - taper * q * q / 2;
 }
 
 /**
- * Shared 12 reference positions for both the calibration table and map overlay.
+ * Map the original fitted radius q to its displayed radius q′.
+ *
+ * q′ = integral(0..q, m(u) du) / integral(0..1, m(u) du)
+ *    = (q - 0.25q²) / 0.75
+ *    = q + q(1-q)/3
+ *
+ * The normalization preserves the total disk radius. The local visual scale
+ * is m(q)/0.75; therefore the listed 1.00×→0.50× values are the exact relative
+ * radial-spacing profile, not a post-hoc multiplier on an arbitrary A–B chord.
+ */
+export function visualRadialFractionFromBaseFraction(baseFraction) {
+  if (!Number.isFinite(baseFraction)) return NaN;
+  return integratedRadialDistanceMultiplier(baseFraction) /
+    RADIAL_DISTANCE_PROFILE_MEAN;
+}
+
+/**
+ * Shared 12 reference positions for the table and the map's dotted circles.
  * Circle 1 is the North Pole (centre); circle 12 is the Antarctic rim.
  */
 export const RADIAL_DISTANCE_VISUAL_CIRCLES = Object.freeze(
@@ -51,7 +69,7 @@ export const RADIAL_DISTANCE_VISUAL_CIRCLES = Object.freeze(
       circle: index + 1,
       baseFraction,
       visualFraction: visualRadialFractionFromBaseFraction(baseFraction),
-      factor: RADIAL_DISTANCE_CIRCLE_FACTORS[index]
+      distanceMultiplier: RADIAL_DISTANCE_CIRCLE_FACTORS[index]
     });
   })
 );
@@ -63,9 +81,12 @@ export function baseRadialFractionFromVisualFraction(visualFraction) {
   return 2 - Math.sqrt(4 - 3 * visual);
 }
 
-/** Local radial spacing scale relative to the fixed total disk radius. */
+/**
+ * Local radial scale after normalizing the integrated profile to the fixed rim.
+ * This is the derivative dq_visual/dq = multiplier(q) / profile mean.
+ */
 export function visualRadialSpacingScale(baseFraction) {
   if (!Number.isFinite(baseFraction)) return NaN;
-  const q = clampUnit(baseFraction);
-  return (4 - 2 * q) / 3;
+  return radialDistanceCorrectionFactor(baseFraction) /
+    RADIAL_DISTANCE_PROFILE_MEAN;
 }
