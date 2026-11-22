@@ -238,6 +238,61 @@ function graphRigidityDiagnostics(anchorIds, observations) {
   };
 }
 
+function numericalMatrixRank(matrix, relativeTolerance = 1e-9) {
+  if (!Array.isArray(matrix) || matrix.length === 0) return 0;
+  const rows = matrix.map(row => [...row]);
+  const rowCount = rows.length;
+  const columnCount = rows[0]?.length ?? 0;
+  if (!columnCount) return 0;
+  let maximum = 0;
+  for (const row of rows) {
+    for (const value of row) maximum = Math.max(maximum, Math.abs(value));
+  }
+  const tolerance = Math.max(1, maximum) * relativeTolerance;
+  let pivotRow = 0;
+  for (let column = 0; column < columnCount && pivotRow < rowCount; column++) {
+    let pivot = pivotRow;
+    for (let row = pivotRow + 1; row < rowCount; row++) {
+      if (Math.abs(rows[row][column]) > Math.abs(rows[pivot][column])) pivot = row;
+    }
+    if (Math.abs(rows[pivot][column]) <= tolerance) continue;
+    [rows[pivotRow], rows[pivot]] = [rows[pivot], rows[pivotRow]];
+    const divisor = rows[pivotRow][column];
+    for (let row = pivotRow + 1; row < rowCount; row++) {
+      const factor = rows[row][column] / divisor;
+      if (Math.abs(factor) <= tolerance) continue;
+      for (let nextColumn = column + 1; nextColumn < columnCount; nextColumn++) {
+        rows[row][nextColumn] -= factor * rows[pivotRow][nextColumn];
+      }
+      rows[row][column] = 0;
+    }
+    pivotRow++;
+  }
+  return pivotRow;
+}
+
+/** Rank of the planar distance-constraint rigidity matrix at seed positions. */
+function planarRigidityMatrixRank(anchorIds, observations, seedPositions) {
+  const indexes = new Map(anchorIds.map((id, index) => [id, index]));
+  const rows = observations.map(item => {
+    const firstIndex = indexes.get(item.a.id);
+    const secondIndex = indexes.get(item.b.id);
+    const first = seedPositions[firstIndex];
+    const second = seedPositions[secondIndex];
+    const dx = first[0] - second[0];
+    const dy = first[1] - second[1];
+    const length = Math.hypot(dx, dy);
+    if (!(length > 0)) return null;
+    const row = new Array(anchorIds.length * 2).fill(0);
+    row[firstIndex * 2] = dx / length;
+    row[firstIndex * 2 + 1] = dy / length;
+    row[secondIndex * 2] = -dx / length;
+    row[secondIndex * 2 + 1] = -dy / length;
+    return row;
+  }).filter(Boolean);
+  return numericalMatrixRank(rows);
+}
+
 function solveLinearSystem(matrix, vector) {
   const n = vector.length;
   if (n === 0) return [];
@@ -528,6 +583,14 @@ function optimizePositions(training, anchors, options = {}) {
     }
   }
   const positions = seed.map(point => [...point]);
+  const rigidityMatrixRank = planarRigidityMatrixRank(anchorIds, training, seed);
+  const requiredRigidityRank = Math.max(0, 2 * anchorIds.length - 3);
+  if (rigidityMatrixRank < requiredRigidityRank) {
+    throw new Error(
+      'Training distance constraints are not infinitesimally rigid in the seed disk: ' +
+      'rank ' + rigidityMatrixRank + '; required ' + requiredRigidityRank
+    );
+  }
   const edges = training.map(item => ({
     aIndex: nodeIndex.get(item.a.id),
     bIndex: nodeIndex.get(item.b.id),
@@ -619,7 +682,10 @@ function optimizePositions(training, anchors, options = {}) {
     maximumDisplacementKm = Math.max(maximumDisplacementKm,
       Math.hypot(point[0] - seed[index][0], point[1] - seed[index][1]));
   });
-  return { anchorIds, seed, positions, maximumDisplacementKm };
+  return {
+    anchorIds, seed, positions, maximumDisplacementKm,
+    rigidityMatrixRank, requiredRigidityRank
+  };
 }
 
 export function summarizeMultiAnchorCoverage(input) {
@@ -729,6 +795,8 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
   model.trainingObservationCount = training.length;
   model.holdoutObservationCount = holdout.length;
   model.maximumDisplacementKm = optimized.maximumDisplacementKm;
+  model.rigidityMatrixRank = optimized.rigidityMatrixRank;
+  model.requiredRigidityRank = optimized.requiredRigidityRank;
 
   return {
     accepted: failures.length === 0,
@@ -744,6 +812,8 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
       holdoutImprovementPercentagePoints:
         baselineHoldout.meanAbsolutePercent - holdoutMetrics.meanAbsolutePercent,
       ...topology,
+      rigidityMatrixRank: optimized.rigidityMatrixRank,
+      requiredRigidityRank: optimized.requiredRigidityRank,
       maximumDisplacementFraction
     }
   };
