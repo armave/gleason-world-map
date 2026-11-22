@@ -75,10 +75,9 @@ test('shows the radially adjusted A–B readout and ADS-B estimate as separate r
   await page.locator('#coordBLon').fill('-0.1276');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('.primary-distance-reading')).toContainText('Radially calibrated A–B distance');
-  await expect(page.locator('.primary-distance-reading')).toContainText('Base chord');
-  await expect(page.locator('.primary-distance-reading')).toContainText('visual chord');
-  await expect(page.locator('.primary-distance-reading')).toContainText('radial factor');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Great-circle A–B distance');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Spherical great-circle formula');
+  await expect(page.locator('.primary-distance-reading')).toContainText('12-circle warp is display-only');
   await expect(page.locator('.secondary-distance-reading')).toContainText('ADS-B flight-mileage estimate');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
   await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
