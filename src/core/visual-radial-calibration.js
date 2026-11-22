@@ -26,6 +26,13 @@ export function radialDistanceCorrectionFactor(radialFraction) {
     (RADIAL_DISTANCE_INNER_FACTOR - RADIAL_DISTANCE_OUTER_FACTOR) * q;
 }
 
+/** Exact 12 circle samples of the continuous linear profile (display rounded). */
+export const RADIAL_DISTANCE_CIRCLE_FACTORS = Object.freeze(
+  Array.from({ length: RADIAL_DISTANCE_CIRCLE_COUNT }, (_, index) =>
+    radialDistanceCorrectionFactor(index / (RADIAL_DISTANCE_CIRCLE_COUNT - 1))
+  )
+);
+
 /** Integral of the local radial multiplier from the centre to q. */
 export function integratedRadialDistanceMultiplier(baseFraction) {
   if (!Number.isFinite(baseFraction)) return NaN;
@@ -62,7 +69,7 @@ export const RADIAL_DISTANCE_VISUAL_CIRCLES = Object.freeze(
       circle: index + 1,
       baseFraction,
       visualFraction: visualRadialFractionFromBaseFraction(baseFraction),
-      distanceMultiplier: radialDistanceCorrectionFactor(baseFraction)
+      distanceMultiplier: RADIAL_DISTANCE_CIRCLE_FACTORS[index]
     });
   })
 );
