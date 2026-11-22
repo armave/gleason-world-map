@@ -179,7 +179,7 @@ test('map orientation is display-only, pointer-safe and included in share links'
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\)\)/);
- assert.match(html,/12-circle display profile · provisional/);assert.match(html,/id="visualRadialRows"/);
+ assert.match(html,/id="calibrationFormula"/);assert.match(html,/id="pathCalibrationStatus"/);assert.match(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
 
@@ -233,7 +233,7 @@ test('distance connector is one straight projected segment measured in the map p
 
 test('the flat-disk A–B readout and ADS-B flight mileage remain separate references',()=>{
  assert.match(html,/Flat-disk A–B distance/);
- assert.match(html,/12-circle display profile · provisional/);
+ assert.match(html,/timestamped ADS-B path vertices/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
