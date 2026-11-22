@@ -150,19 +150,24 @@ export function unitProjectedFlightPathLength(
 }
 
 function validObservedFlight(observation) {
-  return observation?.accepted !== false &&
+  return observation?.accepted === true &&
     Number.isFinite(observation?.observedTrackKm ?? observation?.trackKm) &&
     (observation.observedTrackKm ?? observation.trackKm) > 0 &&
     Number.isFinite(observation.coverage) && observation.coverage >= 0.98 &&
     Number.isFinite(observation.maxGapMinutes) && observation.maxGapMinutes <= 15 &&
     Array.isArray(observation.trackCoordinates) &&
-    Array.isArray(observation.trackTimestamps) &&
-    observation.trackCoordinates.length === observation.trackTimestamps.length;
+    Array.isArray(observation.trackTimestamps);
 }
 
 function routeFlightRecords(dataset) {
   return (dataset?.routes || []).map(route => {
-    const flights = (route.observations || []).filter(validObservedFlight);
+    const flights = (route.observations || []).filter(validObservedFlight).flatMap(observation => {
+      const normalized = normalizeFlightTrack(
+        { type: 'MultiLineString', coordinates: observation.trackCoordinates },
+        observation.trackTimestamps
+      );
+      return normalized ? [{ ...observation, ...normalized }] : [];
+    });
     return { route, flights };
   });
 }
@@ -204,6 +209,7 @@ function makeRouteExamples(dataset, radialWarp) {
 
     const measured = [];
     const projected = [];
+    const pairedScaleRatios = [];
     for (const flight of flights) {
       const measuredKm = flight.observedTrackKm ?? flight.trackKm;
       const unitPathLength = unitProjectedFlightPathLength(
@@ -212,30 +218,33 @@ function makeRouteExamples(dataset, radialWarp) {
       if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
         measured.push(measuredKm);
         projected.push(unitPathLength);
+        pairedScaleRatios.push(measuredKm / unitPathLength);
       }
     }
-    if (measured.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
+    if (pairedScaleRatios.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
 
     const medianObservedKm = median(measured);
     const medianUnitPathLength = median(projected);
-    if (!(medianObservedKm > 0) || !(medianUnitPathLength > 0)) return [];
+    const requiredRadialScaleKm = median(pairedScaleRatios);
+    if (!(medianObservedKm > 0) || !(medianUnitPathLength > 0) ||
+        !(requiredRadialScaleKm > 0)) return [];
     return [{
       routeId: route.routeId,
       split: route.split,
       airportA: route.airportA,
       airportB: route.airportB,
-      sampleCount: measured.length,
+      sampleCount: pairedScaleRatios.length,
       medianObservedTrackKm: medianObservedKm,
       medianUnitPathLength,
-      requiredRadialScaleKm: medianObservedKm / medianUnitPathLength
+      requiredRadialScaleKm
     }];
   });
 }
 
 function summarizeErrors(examples, radialScaleKm) {
   const errors = examples.map(example => absolutePercentError(
-    example.medianUnitPathLength * radialScaleKm,
-    example.medianObservedTrackKm
+    radialScaleKm,
+    example.requiredRadialScaleKm
   ));
   return {
     routeCount: errors.length,
@@ -247,8 +256,9 @@ function summarizeErrors(examples, radialScaleKm) {
     maxAbsolutePercent: errors.length ? Math.max(...errors) : null,
     errors: examples.map((example, index) => ({
       routeId: example.routeId,
-      observedKm: example.medianObservedTrackKm,
-      projectedKm: example.medianUnitPathLength * radialScaleKm,
+      sampleCount: example.sampleCount,
+      requiredRadialScaleKm: example.requiredRadialScaleKm,
+      fittedRadialScaleKm: radialScaleKm,
       absolutePercent: errors[index]
     }))
   };
@@ -271,8 +281,8 @@ function evaluateExponent(training, holdout, exponent) {
       .map(item => item.requiredRadialScaleKm);
     const leaveOneOutScale = median(otherRatios);
     return absolutePercentError(
-      example.medianUnitPathLength * leaveOneOutScale,
-      example.medianObservedTrackKm
+      leaveOneOutScale,
+      example.requiredRadialScaleKm
     );
   });
   const leaveOneOut = {
@@ -297,6 +307,7 @@ function makeRouteExamplesFromRecords(records, radialWarp) {
   return records.flatMap(({ route, flights }) => {
     const measured = [];
     const projected = [];
+    const pairedScaleRatios = [];
     for (const flight of flights) {
       const measuredKm = flight.observedTrackKm ?? flight.trackKm;
       const unitPathLength = unitProjectedFlightPathLength(
@@ -305,18 +316,19 @@ function makeRouteExamplesFromRecords(records, radialWarp) {
       if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
         measured.push(measuredKm);
         projected.push(unitPathLength);
+        pairedScaleRatios.push(measuredKm / unitPathLength);
       }
     }
-    if (measured.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
+    if (pairedScaleRatios.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
     const medianObservedTrackKm = median(measured);
     const medianUnitPathLength = median(projected);
     return [{
       routeId: route.routeId,
       split: route.split,
-      sampleCount: measured.length,
+      sampleCount: pairedScaleRatios.length,
       medianObservedTrackKm,
       medianUnitPathLength,
-      requiredRadialScaleKm: medianObservedTrackKm / medianUnitPathLength
+      requiredRadialScaleKm: median(pairedScaleRatios)
     }];
   });
 }
