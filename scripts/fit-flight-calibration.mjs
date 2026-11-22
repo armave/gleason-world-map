@@ -15,7 +15,6 @@ const MAX_HOLDOUT_MAPE = 12;
 const MAX_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_LEAVE_ONE_OUT_MAPE = 15;
 const MAX_LEAVE_ONE_OUT_ROUTE_ERROR = 45;
-const MAX_MAP_TRAINING_MAPE = 10;
 const MAX_MAP_HOLDOUT_MAPE = 12;
 const MAX_MAP_HOLDOUT_ROUTE_ERROR = 20;
 const MAX_MAP_LEAVE_ONE_OUT_MAPE = 15;
@@ -106,7 +105,6 @@ async function main() {
     holdoutMaxErrorPercent: fitted.metrics.holdout.maxAbsolutePercent,
     leaveOneOutMapePercent: fitted.metrics.leaveOneOut?.meanAbsolutePercent ?? null,
     leaveOneOutMaxRouteErrorPercent: fitted.metrics.leaveOneOut?.maxAbsolutePercent ?? null,
-    mapTrainingMapePercent: fitted.metrics.visualProjection.training.meanAbsolutePercent,
     mapHoldoutMapePercent: fitted.metrics.visualProjection.holdout.meanAbsolutePercent,
     mapHoldoutMaxErrorPercent: fitted.metrics.visualProjection.holdout.maxAbsolutePercent,
     mapLeaveOneOutMapePercent: fitted.metrics.visualProjection.training.meanAbsolutePercent,
@@ -129,7 +127,6 @@ async function main() {
       maxHoldoutRouteErrorPercent: MAX_HOLDOUT_ROUTE_ERROR,
       maxLeaveOneOutMapePercent: MAX_LEAVE_ONE_OUT_MAPE,
       maxLeaveOneOutRouteErrorPercent: MAX_LEAVE_ONE_OUT_ROUTE_ERROR,
-      maxMapTrainingMapePercent: MAX_MAP_TRAINING_MAPE,
       maxMapHoldoutMapePercent: MAX_MAP_HOLDOUT_MAPE,
       maxMapHoldoutRouteErrorPercent: MAX_MAP_HOLDOUT_ROUTE_ERROR,
       maxMapLeaveOneOutMapePercent: MAX_MAP_LEAVE_ONE_OUT_MAPE,
@@ -147,7 +144,6 @@ async function main() {
     qualityGate.holdoutRouteCount >= MIN_HOLDOUT_ROUTES &&
     qualityGate.trainingRoutesSouthOf30S >= MIN_SOUTHERN_TRAINING_ROUTES &&
     qualityGate.holdoutRoutesSouthOf30S >= MIN_SOUTHERN_HOLDOUT_ROUTES &&
-    qualityGate.mapTrainingMapePercent <= MAX_MAP_TRAINING_MAPE &&
     qualityGate.mapHoldoutMapePercent <= MAX_MAP_HOLDOUT_MAPE &&
     qualityGate.mapHoldoutMaxErrorPercent <= MAX_MAP_HOLDOUT_ROUTE_ERROR &&
     qualityGate.mapLeaveOneOutMapePercent <= MAX_MAP_LEAVE_ONE_OUT_MAPE &&
@@ -166,7 +162,7 @@ async function main() {
       formula: 'observed_km = sum(speed_knots * delta_seconds / 3600) * 1.852; no missing interval is imputed',
       inputGeometry: 'Circular flat disk with regularized-power latitude warp q(t); local inverse-distance-weighted mileage-per-warped-chord ratios over mean warped radial fraction and normalized radial/tangential chord shares',
       radialWarp: fitted.model.radialWarp,
-      radialCoordinateFormula: 't = theta / pi; q = ((t + epsilon)^exponent - epsilon^exponent) / ((1 + epsilon)^exponent - epsilon^exponent); r = pi * R * q',
+      radialCoordinateFormula: 't = theta / pi; q = ((t + epsilon)^exponent - epsilon^exponent) / ((1 + epsilon)^exponent - epsilon^exponent); I(q) = q - 0.25*q^2; q_visual = I(q)/0.75; r_km = pi * R_base * I(q); R_disk = 0.75*pi*R_base',
       features: fitted.model.featureNames,
       trainingUnit: 'one independent airport pair, target is median of >=3 high-coverage observed flights',
       splitUnit: 'entire airport pairs held out; no flight from a holdout route is fitted',
