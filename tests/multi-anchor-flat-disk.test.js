@@ -227,8 +227,14 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   assert.ok(result.candidateModel);
   assert.ok(Number.isFinite(result.metrics.training.meanAbsolutePercent));
   assert.ok(Number.isFinite(result.metrics.holdout.meanAbsolutePercent));
-  assert.ok(result.metrics.holdout.meanAbsolutePercent <
-    result.metrics.baselineHoldout.meanAbsolutePercent);
+  assert.ok(
+    result.metrics.holdout.meanAbsolutePercent <
+      result.metrics.baselineHoldout.meanAbsolutePercent,
+    'synthetic holdout MAPE ' + result.metrics.holdout.meanAbsolutePercent +
+      ' did not beat baseline ' + result.metrics.baselineHoldout.meanAbsolutePercent +
+      '; training MAPE ' + result.metrics.training.meanAbsolutePercent +
+      '; failures ' + JSON.stringify(result.failures)
+  );
   assert.ok(result.metrics.minimumJacobianDeterminant > 0);
   assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
