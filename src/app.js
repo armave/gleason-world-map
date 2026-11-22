@@ -634,8 +634,13 @@ function updateMeasurement(){
   const chordDistance=measurement.distanceMeters;
   $('distanceValue').textContent=Number.isFinite(routeEstimate)
    ?formatDistance(routeEstimate):'Unavailable';
+  const visibleSupportLabel=routeCalibration?.supportStatus==='supported'
+   ?'SUPPORTED'
+   :routeCalibration?.supportStatus==='extrapolated'
+    ?'EXTRAPOLATED · provisional'
+    :'support unavailable';
   $('distanceSub').textContent=Number.isFinite(routeEstimate)
-   ?'Empirical estimate of typical flown mileage · not a specific flight path'
+   ?'Typical flown mileage · '+visibleSupportLabel+' · not a selected flight path'
    :'No empirical route-distance estimate available';
   $('flightDistanceValue').textContent=Number.isFinite(chordDistance)
    ?formatDistance(chordDistance):'Unavailable';
