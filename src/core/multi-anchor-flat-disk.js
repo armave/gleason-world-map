@@ -199,6 +199,7 @@ function graphConnected(anchorIds, observations) {
 
 function solveLinearSystem(matrix, vector) {
   const n = vector.length;
+  if (n === 0) return [];
   const rows = matrix.map((row, index) => [...row, vector[index]]);
   for (let column = 0; column < n; column++) {
     let pivot = column;
@@ -238,7 +239,7 @@ function buildWarp(seed, fitted, anchorIds, options = {}) {
     envelope: envelopeAt(seed[index][0], seed[index][1]),
     dx: fitted[index][0] - seed[index][0],
     dy: fitted[index][1] - seed[index][1]
-  }));
+  })).filter(control => control.envelope > 1e-4);
   const matrix = controls.map((first, row) => controls.map((second, column) => {
     const dx = first.xKm - second.xKm;
     const dy = first.yKm - second.yKm;
@@ -267,8 +268,12 @@ function buildWarp(seed, fitted, anchorIds, options = {}) {
 /** Smoothly warp a point in disk-kilometre coordinates; centre and rim stay fixed. */
 export function applyMultiAnchorWarpXY(xKm, yKm, model) {
   if (!Number.isFinite(xKm) || !Number.isFinite(yKm) ||
-      !model || !Array.isArray(model.controls) ||
-      !Number.isFinite(model.sigmaKm) || model.sigmaKm <= 0) return null;
+      !model || !Number.isFinite(model.diskRadiusKm) || model.diskRadiusKm <= 0 ||
+      !Array.isArray(model.controls) || model.controls.length > MULTI_ANCHOR_FILTERS.maximumControlPoints ||
+      !Number.isFinite(model.sigmaKm) || model.sigmaKm <= 0 ||
+      model.controls.some(control => ![
+        control.xKm, control.yKm, control.envelope, control.alphaX, control.alphaY
+      ].every(Number.isFinite))) return null;
   const envelope = envelopeAt(xKm, yKm, model.diskRadiusKm);
   let dx = 0, dy = 0;
   const denominator = 2 * model.sigmaKm * model.sigmaKm;
@@ -315,6 +320,7 @@ function topologyMetrics(model) {
 /** Damped Newton inverse for previewing a candidate; never used by production. */
 export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY) || !model ||
+      !Number.isFinite(model.diskRadiusKm) || model.diskRadiusKm <= 0 ||
       Math.hypot(targetX, targetY) > model.diskRadiusKm * (1 + 1e-8)) return null;
   let x = targetX, y = targetY;
   const toleranceKm = options.toleranceKm ?? 1e-5;
@@ -369,6 +375,16 @@ function measureDistance(a, b, model = null) {
   return Math.hypot(movedSecond[0] - movedFirst[0], movedSecond[1] - movedFirst[1]);
 }
 
+function percentile(values, fraction) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const position = (sorted.length - 1) * fraction;
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  return lower === upper ? sorted[lower] :
+    sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower);
+}
+
 function summarizeErrors(observations, model = null) {
   const errors = observations.map(item => {
     const predictedKm = measureDistance(item.a, item.b, model);
@@ -380,12 +396,15 @@ function summarizeErrors(observations, model = null) {
       absolutePercent: Math.abs(predictedKm / item.distanceKm - 1) * 100
     };
   });
+  const absoluteErrors = errors.map(item => item.absolutePercent);
   return {
     observationCount: errors.length,
     meanAbsolutePercent: errors.length
-      ? errors.reduce((sum, item) => sum + item.absolutePercent, 0) / errors.length : null,
-    maxAbsolutePercent: errors.length
-      ? Math.max(...errors.map(item => item.absolutePercent)) : null,
+      ? absoluteErrors.reduce((sum, value) => sum + value, 0) / errors.length : null,
+    meanSignedPercent: errors.length
+      ? errors.reduce((sum, item) => sum + item.signedPercent, 0) / errors.length : null,
+    p95AbsolutePercent: percentile(absoluteErrors, 0.95),
+    maxAbsolutePercent: absoluteErrors.length ? Math.max(...absoluteErrors) : null,
     errors
   };
 }
@@ -401,6 +420,17 @@ function optimizePositions(training, anchors, options = {}) {
 
   const nodeIndex = new Map(anchorIds.map((id, index) => [id, index]));
   const seed = anchorIds.map(id => pointOnDisk(anchors.get(id)));
+  for (let first = 0; first < seed.length; first++) {
+    for (let second = first + 1; second < seed.length; second++) {
+      if (Math.hypot(
+        seed[first][0] - seed[second][0],
+        seed[first][1] - seed[second][1]
+      ) < 1e-3) {
+        throw new Error('Distinct anchor IDs map to the same disk position: ' +
+          anchorIds[first] + ' and ' + anchorIds[second]);
+      }
+    }
+  }
   const positions = seed.map(point => [...point]);
   const edges = training.map(item => ({
     aIndex: nodeIndex.get(item.a.id),
