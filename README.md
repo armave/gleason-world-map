@@ -16,9 +16,14 @@ theta = pi/2 - phi
 t = theta / pi
 q = ((t + epsilon)^exponent - epsilon^exponent) /
     ((1 + epsilon)^exponent - epsilon^exponent)
-r_base = pi * R_base * q
-x_base = r_base cos(lambda)
-y_base = -r_base sin(lambda)
+I(q) = 0.5q + 0.5[1 - (1 - q)^(a + 1)]/(a + 1)
+r = pi * R_base * I(q)
+g(q) = 4q(1 - q)
+lambdaPrime = lambda + g(q) * F(lambda)
+F(lambda) = a1 sin(lambda) + b1(1 - cos(lambda))
+          + a2 sin(2lambda) + b2(1 - cos(2lambda))
+x = r cos(lambdaPrime)
+y = -r sin(lambdaPrime)
 ```
 
 The fitted latitude warp currently uses exponent 0.9 and epsilon 0.005. The 12-circle profile is a positive, smooth power taper sampled at 12 equally spaced base-ring anchors: m(q) = 0.5 + 0.5(1 − q)^a, with a = 1 in the currently active legacy profile. The path fitter now searches a constrained set of profile exponents alongside the latitude-warp exponent; both parameters are selected within nested route-level validation. The profile remains monotonic from 1.00× at the North Pole to 0.50× at the Ice Wall, with no hard joins. Its integral is I(q) = 0.5q + 0.5[1 − (1 − q)^(a + 1)]/(a + 1), and its mean is μ = 0.5 + 0.5/(a + 1). Physical radius is **r = πR_base·I(q)**, so the local radial derivative is **dr/dq = πR_base·m(q)**. The normalized screen radius is q_visual = I(q)/μ, preserving the North Pole and Ice Wall anchors. The measured disk radius is **μ·πR_base**, not πR_base. R_base and the profile remain on the last accepted production calibration until a strict observed-only candidate passes the independent accuracy and southern-coverage gates. Coastlines, capitals, grid lines, labels, clicks, inverse lookup, ruler, area tools and scale bar use the same shared projection. The table and dotted map rings sample the same 12 positions and multipliers. Primary A–B distance is the Euclidean length of the visible connector after both endpoints are projected through this profile; polygon edge lengths and the scale bar use the same final map-plane kilometre metric.
