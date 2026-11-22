@@ -6,7 +6,8 @@
  * and observed route mileage; no globe, sphere, ellipsoid or geodesic formula.
  *
  * The exact displayed connector remains available separately as the planar
- * chord. This estimate is a typical route-mileage reference, not a specific
+ * chord. A logarithmic chord-length feature prevents short-route examples from
+ * being treated as support for distances far beyond the observed sample. This estimate is a typical route-mileage reference, not a specific
  * flight path or a guaranteed shortest distance.
  */
 import { DISK_RADIUS_KM, project } from './flat-disk.js';
@@ -45,7 +46,7 @@ export function endpointDistanceFeatures(first, second) {
   const chordKm = Math.hypot(b[0] - a[0], b[1] - a[1]);
   if (!Number.isFinite(chordKm) || chordKm <= MIN_DISTANCE_KM) {
     return {
-      features: [radiusA / DISK_RADIUS_KM, 0, 0],
+      features: [radiusA / DISK_RADIUS_KM, 0, 0, Math.log(1e-6)],
       chordDistanceMeters: 0
     };
   }
@@ -63,7 +64,8 @@ export function endpointDistanceFeatures(first, second) {
     features: [
       (radiusA + radiusB) / (2 * DISK_RADIUS_KM),
       radialComponentKm / chordKm,
-      tangentialComponentKm / chordKm
+      tangentialComponentKm / chordKm,
+      Math.log(chordKm)
     ],
     chordDistanceMeters: chordKm * 1000
   };
@@ -88,7 +90,7 @@ export function predictEndpointDistance(first, second, model = ENDPOINT_DISTANCE
 
   const neighbors = model.trainingExamples
     .filter(route => route && Array.isArray(route.features) &&
-      route.features.length === 3 && Number.isFinite(route.mileagePerUnitChord) &&
+      route.features.length === 4 && Number.isFinite(route.mileagePerUnitChord) &&
       route.mileagePerUnitChord > 0)
     .map(route => ({
       routeId: route.routeId,
