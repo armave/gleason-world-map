@@ -17,6 +17,10 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   minimumTrainingAnchors: 12,
   minimumLatitudeBands: 4,
   minimumLongitudeSectors: 4,
+  minimumHoldoutAnchors: 8,
+  minimumHoldoutLatitudeBands: 3,
+  minimumHoldoutLongitudeSectors: 4,
+  minimumUnseenHoldoutAnchors: 4,
   maximumTrainingMapePercent: 8,
   maximumHoldoutMapePercent: 10,
   maximumHoldoutPairErrorPercent: 20,
@@ -27,6 +31,8 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const pairKey = (a, b) => [a, b].sort().join('|');
+const longitudeDifference = (first, second) =>
+  Math.abs(((first - second + 540) % 360) - 180);
 const validAnchor = point =>
   !!point && typeof point.id === 'string' && point.id.trim() &&
   Number.isFinite(point.lat) && point.lat >= -90 && point.lat <= 90 &&
@@ -37,6 +43,7 @@ function normalizeObservations(input) {
   const observations = [];
   const anchors = new Map();
   const pairSplits = new Map();
+  const observationIds = new Set();
 
   if (!Array.isArray(input)) {
     return { observations, errors: ['observations must be an array'] };
@@ -73,7 +80,7 @@ function normalizeObservations(input) {
     for (const point of [item.a, item.b]) {
       const previous = anchors.get(point.id);
       if (previous && (Math.abs(previous.lat - point.lat) > 1e-7 ||
-          Math.abs(previous.lon - point.lon) > 1e-7)) conflict = true;
+          longitudeDifference(previous.lon, point.lon) > 1e-7)) conflict = true;
     }
     if (conflict) {
       errors.push(label + ' reuses an anchor ID with conflicting coordinates');
@@ -89,9 +96,16 @@ function normalizeObservations(input) {
         ' (previous split: ' + pairSplits.get(key) + ')');
       return;
     }
+    const observationId = typeof item.id === 'string' && item.id
+      ? item.id : 'pair-' + index;
+    if (observationIds.has(observationId)) {
+      errors.push(label + ' duplicates observation ID ' + observationId);
+      return;
+    }
     pairSplits.set(key, item.split);
+    observationIds.add(observationId);
     observations.push({
-      id: typeof item.id === 'string' && item.id ? item.id : 'pair-' + index,
+      id: observationId,
       split: item.split,
       a: { id: item.a.id, lat: item.a.lat, lon: item.a.lon },
       b: { id: item.b.id, lat: item.b.lat, lon: item.b.lon },
@@ -124,11 +138,11 @@ function envelopeAt(x, y, radiusKm = DISK_RADIUS_KM) {
   return 16 * q * q * (1 - q) * (1 - q);
 }
 
-function coverageFor(training, holdout, errors = []) {
+function anchorCoverage(observations) {
   const anchors = new Map();
   const latitudeBands = new Set();
   const longitudeSectors = new Set();
-  for (const item of training) {
+  for (const item of observations) {
     for (const point of [item.a, item.b]) {
       anchors.set(point.id, point);
       latitudeBands.add(clamp(Math.floor((point.lat + 90) / 30), 0, 5));
@@ -137,12 +151,27 @@ function coverageFor(training, holdout, errors = []) {
       ));
     }
   }
+  return { anchors, latitudeBands, longitudeSectors };
+}
+
+function coverageFor(training, holdout, errors = []) {
+  const trainingCoverage = anchorCoverage(training);
+  const holdoutCoverage = anchorCoverage(holdout);
+  const overlap = [...holdoutCoverage.anchors.keys()]
+    .filter(id => trainingCoverage.anchors.has(id));
+  const unseen = [...holdoutCoverage.anchors.keys()]
+    .filter(id => !trainingCoverage.anchors.has(id));
   return {
     trainingObservationCount: training.length,
     holdoutObservationCount: holdout.length,
-    trainingAnchorCount: anchors.size,
-    latitudeBandCount: latitudeBands.size,
-    longitudeSectorCount: longitudeSectors.size,
+    trainingAnchorCount: trainingCoverage.anchors.size,
+    latitudeBandCount: trainingCoverage.latitudeBands.size,
+    longitudeSectorCount: trainingCoverage.longitudeSectors.size,
+    holdoutAnchorCount: holdoutCoverage.anchors.size,
+    holdoutLatitudeBandCount: holdoutCoverage.latitudeBands.size,
+    holdoutLongitudeSectorCount: holdoutCoverage.longitudeSectors.size,
+    holdoutAnchorOverlapCount: overlap.length,
+    unseenHoldoutAnchorCount: unseen.length,
     validationErrors: errors
   };
 }
@@ -194,8 +223,14 @@ function solveLinearSystem(matrix, vector) {
 }
 
 function buildWarp(seed, fitted, anchorIds, options = {}) {
-  const sigmaKm = options.sigmaKm || DISK_RADIUS_KM * 0.2;
+  const sigmaKm = options.sigmaKm ?? DISK_RADIUS_KM * 0.2;
   const regularization = options.regularization ?? 1e-5;
+  if (!Number.isFinite(sigmaKm) || sigmaKm <= 0) {
+    throw new Error('RBF sigmaKm must be a positive finite number');
+  }
+  if (!Number.isFinite(regularization) || regularization < 0) {
+    throw new Error('RBF regularization must be a non-negative finite number');
+  }
   const controls = anchorIds.map((id, index) => ({
     id,
     xKm: seed[index][0],
@@ -263,10 +298,10 @@ function jacobianDeterminant(x, y, model) {
 
 function topologyMetrics(model) {
   let minimum = Infinity;
-  for (let radial = 1; radial < 20; radial++) {
-    const fraction = radial / 20;
-    for (let angular = 0; angular < 72; angular++) {
-      const angle = 2 * Math.PI * angular / 72;
+  for (let radial = 1; radial < 32; radial++) {
+    const fraction = radial / 32;
+    for (let angular = 0; angular < 120; angular++) {
+      const angle = 2 * Math.PI * angular / 120;
       minimum = Math.min(minimum, jacobianDeterminant(
         model.diskRadiusKm * fraction * Math.cos(angle),
         model.diskRadiusKm * fraction * Math.sin(angle),
@@ -277,18 +312,20 @@ function topologyMetrics(model) {
   return { minimumJacobianDeterminant: minimum };
 }
 
-/** Numerical inverse for previewing an accepted candidate; never used by production. */
+/** Damped Newton inverse for previewing a candidate; never used by production. */
 export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
-  if (!Number.isFinite(targetX) || !Number.isFinite(targetY) || !model) return null;
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY) || !model ||
+      Math.hypot(targetX, targetY) > model.diskRadiusKm * (1 + 1e-8)) return null;
   let x = targetX, y = targetY;
   const toleranceKm = options.toleranceKm ?? 1e-5;
-  const maximumIterations = options.maximumIterations ?? 30;
+  const maximumIterations = options.maximumIterations ?? 40;
   for (let iteration = 0; iteration < maximumIterations; iteration++) {
     const mapped = applyMultiAnchorWarpXY(x, y, model);
     if (!mapped) return null;
     const ex = mapped[0] - targetX;
     const ey = mapped[1] - targetY;
-    if (Math.hypot(ex, ey) <= toleranceKm) return [x, y];
+    const residual = Math.hypot(ex, ey);
+    if (residual <= toleranceKm) return [x, y];
     const step = Math.max(0.01, model.diskRadiusKm * 1e-6);
     const left = applyMultiAnchorWarpXY(x - step, y, model);
     const right = applyMultiAnchorWarpXY(x + step, y, model);
@@ -302,9 +339,22 @@ export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
     if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-8) return null;
     const dx = (d * ex - b * ey) / determinant;
     const dy = (-c * ex + a * ey) / determinant;
-    x -= dx;
-    y -= dy;
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+    let accepted = false;
+    for (let damping = 1; damping >= 1 / 256; damping /= 2) {
+      const candidateX = x - damping * dx;
+      const candidateY = y - damping * dy;
+      if (Math.hypot(candidateX, candidateY) > model.diskRadiusKm * (1 + 1e-8)) continue;
+      const candidate = applyMultiAnchorWarpXY(candidateX, candidateY, model);
+      if (!candidate) continue;
+      if (Math.hypot(candidate[0] - targetX, candidate[1] - targetY) < residual) {
+        x = candidateX;
+        y = candidateY;
+        accepted = true;
+        break;
+      }
+    }
+    if (!accepted) return null;
   }
   const finalPoint = applyMultiAnchorWarpXY(x, y, model);
   return finalPoint && Math.hypot(finalPoint[0] - targetX, finalPoint[1] - targetY) <=
@@ -361,9 +411,18 @@ function optimizePositions(training, anchors, options = {}) {
   const totalWeight = edges.reduce((sum, edge) => sum + edge.confidence, 0);
   const firstMoment = positions.map(() => [0, 0]);
   const secondMoment = positions.map(() => [0, 0]);
-  const iterations = options.iterations ?? 1600;
-  const learningRateKm = options.learningRateKm ?? 18;
-  const anchorWeight = options.anchorWeight ?? 0.15;
+  const iterations = options.iterations ?? 2000;
+  const learningRateKm = options.learningRateKm ?? 8;
+  const anchorWeight = options.anchorWeight ?? 0.03;
+  const huberDelta = options.huberDelta ?? 0.08;
+  if (!Number.isInteger(iterations) || iterations < 100 || iterations > 20000) {
+    throw new Error('Optimizer iterations must be an integer from 100 to 20000');
+  }
+  if (!Number.isFinite(learningRateKm) || learningRateKm <= 0 ||
+      !Number.isFinite(anchorWeight) || anchorWeight < 0 ||
+      !Number.isFinite(huberDelta) || huberDelta <= 0) {
+    throw new Error('Optimizer learning rate, anchor weight, or Huber delta is invalid');
+  }
   const beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8;
   const radiusSquared = DISK_RADIUS_KM * DISK_RADIUS_KM;
   const count = Math.max(1, positions.length);
@@ -378,7 +437,10 @@ function optimizePositions(training, anchors, options = {}) {
       const dy = second[1] - first[1];
       const distance = Math.max(1e-8, Math.hypot(dx, dy));
       const error = distance / edge.distanceKm - 1;
-      const scale = 2 * edge.confidence * error /
+      const robustDerivative = Math.abs(error) <= huberDelta
+        ? 2 * error
+        : 2 * huberDelta * Math.sign(error);
+      const scale = edge.confidence * robustDerivative /
         (totalWeight * edge.distanceKm * distance);
       const gx = scale * dx;
       const gy = scale * dy;
@@ -402,7 +464,8 @@ function optimizePositions(training, anchors, options = {}) {
         (positions[index][1] - seed[index][1]) / (radiusSquared * count);
     }
 
-    const rate = learningRateKm * Math.sqrt(1 - iteration / (iterations + 1));
+    const progress = iteration / iterations;
+    const rate = learningRateKm * (0.15 + 0.85 * 0.5 * (1 + Math.cos(Math.PI * progress)));
     for (let index = 0; index < positions.length; index++) {
       if (fixed[index]) continue;
       for (let axis = 0; axis < 2; axis++) {
@@ -462,6 +525,14 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     failures.push('Insufficient latitude-band coverage');
   if (coverage.longitudeSectorCount < limits.minimumLongitudeSectors)
     failures.push('Insufficient longitude-sector coverage');
+  if (coverage.holdoutAnchorCount < limits.minimumHoldoutAnchors)
+    failures.push('Insufficient distinct holdout anchors');
+  if (coverage.holdoutLatitudeBandCount < limits.minimumHoldoutLatitudeBands)
+    failures.push('Insufficient holdout latitude-band coverage');
+  if (coverage.holdoutLongitudeSectorCount < limits.minimumHoldoutLongitudeSectors)
+    failures.push('Insufficient holdout longitude-sector coverage');
+  if (coverage.unseenHoldoutAnchorCount < limits.minimumUnseenHoldoutAnchors)
+    failures.push('Insufficient geographically unseen holdout anchors');
   if (failures.length) {
     return {
       accepted: false,
