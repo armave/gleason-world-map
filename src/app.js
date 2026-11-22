@@ -917,7 +917,11 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  measurementText='Flat-disk A–B '+formatDistance(measurement.distanceMeters)+' · exact length of the displayed connector';
+  const routeEstimate=measurement.endpointDistanceEstimateMeters;
+  const supportLabel=measurement.endpointDistanceCalibration?.supportStatus==='supported'
+   ?'supported' :'EXTRAPOLATED / provisional';
+  measurementText='Route estimate '+(Number.isFinite(routeEstimate)?formatDistance(routeEstimate):'Unavailable')+
+   ' · '+supportLabel+' · connector '+formatDistance(measurement.distanceMeters);
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
