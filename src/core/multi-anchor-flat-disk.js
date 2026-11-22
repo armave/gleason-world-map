@@ -303,6 +303,21 @@ function jacobianDeterminant(x, y, model) {
   return dXdx * dYdy - dXdy * dYdx;
 }
 
+/** Dense numerical topology check for disk-preserving candidate maps. */
+export function inspectMultiAnchorTopology(model) {
+  if (!model || !Number.isFinite(model.diskRadiusKm) || model.diskRadiusKm <= 0 ||
+      !Number.isFinite(model.sigmaKm) || model.sigmaKm <= 0 ||
+      !Array.isArray(model.controls)) {
+    return {
+      minimumJacobianDeterminant: -Infinity,
+      maximumWarpDisplacementFraction: Infinity,
+      maximumRadialOvershootFraction: Infinity,
+      maximumBoundaryDisplacementKm: Infinity
+    };
+  }
+  return topologyMetrics(model);
+}
+
 function topologyMetrics(model) {
   let minimumJacobianDeterminant = Infinity;
   let maximumWarpDisplacementKm = 0;
