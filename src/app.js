@@ -629,42 +629,51 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
-   ?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent=Number.isFinite(measurement.distanceMeters)
-   ?'Euclidean length of the displayed connector · 12-circle warped disk'
-   :'Flat-disk distance unavailable';
-  $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
-   ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
-  const factor=measurement.calibrationFactor;
-  const correction=measurement.correctionPercent;
-  $('flightDistanceSub').textContent=Number.isFinite(factor)
-   ?'Empirical ×'+factor.toFixed(3)+' vs '+(measurement.calibrationChordGeometry==='visual-12-circle'?'displayed 12-circle chord':'legacy base chord')+' · '+(correction>=0?'+':'')+correction.toFixed(1)+'%'
-   :'Flight-mileage model unavailable';
+  const routeEstimate=measurement.endpointDistanceEstimateMeters;
+  const routeCalibration=measurement.endpointDistanceCalibration;
+  const chordDistance=measurement.distanceMeters;
+  $('distanceValue').textContent=Number.isFinite(routeEstimate)
+   ?formatDistance(routeEstimate):'Unavailable';
+  const visibleSupportLabel=routeCalibration?.supportStatus==='supported'
+   ?'SUPPORTED'
+   :routeCalibration?.supportStatus==='extrapolated'
+    ?'EXTRAPOLATED · provisional'
+    :'support unavailable';
+  $('distanceSub').textContent=Number.isFinite(routeEstimate)
+   ?'Typical flown mileage · '+visibleSupportLabel+' · not a selected flight path'
+   :'No empirical route-distance estimate available';
+  $('flightDistanceValue').textContent=Number.isFinite(chordDistance)
+   ?formatDistance(chordDistance):'Unavailable';
+  $('flightDistanceSub').textContent=Number.isFinite(chordDistance)
+   ?'Exact Euclidean length of the straight connector in the displayed flat disk'
+   :'Displayed map connector length unavailable';
 
-  $('measureHelp').textContent='The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints in the displayed flat disk. City markers, country boundaries, grid rings, flight-path fitting, area edges and the scale bar share this radial projection and kilometre coordinate system. The 12-circle spacing is an integrated smooth radial profile, so the ruler measures the actual transformed connector rather than applying a separate correction. The scale bar uses the same map-plane kilometre metric. No globe, sphere or geodesic model is used; longitude remains the angular position around the complete Antarctic Ice Wall, with a fitted latitude-dependent angular shift that returns to the original longitude at the pole and Ice Wall. The ADS-B flight-mileage estimate is a separate prediction, not the displayed connector length.';
-  const calibration=measurement.calibration;
+  $('measureHelp').textContent='The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data, calibrated against nearby airport-pair examples in the current flat-disk projection. It is not a selected flight path or a guaranteed shortest distance. The secondary value is the exact Euclidean length of the straight connector drawn between the two endpoints in the displayed 12-circle-warped disk. The projection and calibration use the project’s flat-disk geometry; no globe, sphere, ellipsoid or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point. Estimates outside the validated route-feature range are explicitly marked as extrapolations.';
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
-  const status=calibration?.status;
-  support.textContent=calibration?.factorWasClamped
-   ?'Bounded extrapolation · correction limited to '+factor.toFixed(2)+'×; this endpoint geometry is outside the sampled route range.'
-   :status==='bounded-extrapolation'
-    ?'Polar extrapolation · endpoint is near the southern rim and is not validated by nearby routes.'
-    :status==='extrapolated'
-     ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
-     :'Within sampled route-feature range · legacy profile; strict observed-only refresh pending validation.';
-  const routeIds=calibration?.neighbourRouteIds||[];
-  const routeWeights=calibration?.neighbourWeights||[];
-  routes.textContent='Nearest reference routes: '+(routeIds.length
-   ?routeIds.map((route,index)=>route+' '+Math.round((routeWeights[index]||0)*100)+'%').join(' · ')
-   :'not available');
+  if(routeCalibration){
+   const validation=routeCalibration.validation||{};
+   const holdout=validation.independentHoldout;
+   const loo=validation.trainingLeaveOneRouteOut;
+   const supported=routeCalibration.supportStatus==='supported';
+   support.textContent=supported
+    ?'Supported by nearby reference routes · nearest feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' · independent supported holdout MAPE '+(Number.isFinite(holdout?.meanAbsolutePercent)?holdout.meanAbsolutePercent.toFixed(1)+'%':'not available')+' ('+(holdout?.supportedRouteCount??'—')+'/'+(holdout?.routeCount??'—')+' pairs).'
+    :'Extrapolated · nearest reference feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' exceeds the validated support limit '+routeCalibration.maxSupportedFeatureDistance.toFixed(2)+'; treat the estimate as provisional.';
+   const routeIds=routeCalibration.neighborRouteIds||[];
+   const routeWeights=routeCalibration.neighborWeights||[];
+   routes.textContent='Nearest reference routes: '+(routeIds.length
+    ?routeIds.map((route,index)=>route+' '+Math.round((routeWeights[index]||0)*100)+'%').join(' · ')
+    :'not available')+(Number.isFinite(loo?.meanAbsolutePercent)?' · leave-one-route-out MAPE '+loo.meanAbsolutePercent.toFixed(1)+'%':'');
+  }else{
+   support.textContent='Endpoint calibration unavailable for these coordinates.';
+   routes.textContent='Nearest reference routes: not available';
+  }
  }else{
-  $('calibrationSupport').textContent='Calibration support appears after both endpoints are set.';
+  $('calibrationSupport').textContent='Empirical route support appears after both endpoints are set.';
   $('calibrationRoutes').textContent='Nearest reference routes: —';
   $('flightDistanceValue').textContent='—';
-  $('flightDistanceSub').textContent='Empirical ADS-B estimate relative to the map chord';
+  $('flightDistanceSub').textContent='Exact map-plane length of the displayed connector';
   $('distanceValue').textContent='—';
-  $('distanceSub').textContent='A–B distance will equal the displayed straight connector in the 12-circle warped disk';
+  $('distanceSub').textContent='Set two endpoints to estimate typical route mileage';
   $('measureHelp').textContent=points.length===1
    ?'Point A set. Click anywhere on the disk to set point B.'
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
@@ -913,7 +922,11 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  measurementText='Flat-disk A–B '+formatDistance(measurement.distanceMeters)+' · exact length of the displayed connector';
+  const routeEstimate=measurement.endpointDistanceEstimateMeters;
+  const supportLabel=measurement.endpointDistanceCalibration?.supportStatus==='supported'
+   ?'supported' :'EXTRAPOLATED / provisional';
+  measurementText='Route estimate '+(Number.isFinite(routeEstimate)?formatDistance(routeEstimate):'Unavailable')+
+   ' · '+supportLabel+' · connector '+formatDistance(measurement.distanceMeters);
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);

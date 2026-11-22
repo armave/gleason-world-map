@@ -161,11 +161,12 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
   assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
   assert.match(app, /flightDistanceValue/);
-  assert.match(app, /flightEmpiricalDistanceMeters/);
+  assert.match(app, /endpointDistanceEstimateMeters/);
+  assert.match(app, /endpointDistanceCalibration/);
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
-  assert.match(app, /The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints/);
-  assert.match(app, /The primary A–B value is the Euclidean length of the same straight segment drawn between the endpoints/);
+  assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
+  assert.match(app, /The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -192,7 +193,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Euclidean length of the displayed connector/);
+ assert.match(html,/Exact Euclidean length of the displayed straight connector/);
   assert.match(html,/continuous radial profile used by both the map and the path fitter/);
 });
 
@@ -206,7 +207,7 @@ test('direct A/B coordinate entry and calibration route support are available',(
  assert.match(html,/id="calibrationSupport"/);
  assert.match(html,/id="calibrationRoutes"/);
  assert.match(app,/function applyCoordinateEndpoint\(index\)/);
- assert.match(app,/calibration\?\.neighbourRouteIds/);
+ assert.match(app,/routeCalibration\.neighborRouteIds/);
  assert.match(app,/loadAntarcticAddDataset\(\)\.then/);
  assert.match(app,/Natural Earth outline remains active/);
 });
@@ -231,24 +232,26 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('the flat-disk A–B readout and ADS-B flight mileage remain separate references',()=>{
- assert.match(html,/Flat-disk A–B distance/);
- assert.match(html,/timestamped ADS-B path vertices/);
+test('the empirical route estimate and flat-disk connector remain separate measurements',()=>{
+ assert.match(html,/Empirical route-distance estimate/);
+ assert.match(html,/Flat-disk connector length/);
+ assert.match(html,/Observed ADS-B mileage estimate from nearby airport-pair references/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
- assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
- assert.match(app,/Euclidean length of the displayed connector · 12-circle warped disk/);
- assert.match(app,/scale bar uses the same map-plane kilometre metric/);
+ assert.match(app,/endpointDistanceEstimateMeters/);
+ assert.match(app,/routeCalibration\.neighborRouteIds/);
+ assert.match(app,/Exact Euclidean length of the straight connector in the displayed flat disk/);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
- assert.match(app,/flightEmpiricalDistanceMeters/);
+ assert.match(app,/endpointDistanceCalibration/);
+ assert.match(app,/routeCalibration\.supportStatus/);
+ assert.match(app,/routeCalibration\.validation/);
 });
-
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
  assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
- assert.match(app,/flightDistanceValue'\)\.textContent=Number\.isFinite\(measurement\.flightEmpiricalDistanceMeters\)/);
+ assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(routeEstimate\)/);
+ assert.match(app,/flightDistanceValue'\)\.textContent=Number\.isFinite\(chordDistance\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,flatDiskDistanceMeters,closed\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);

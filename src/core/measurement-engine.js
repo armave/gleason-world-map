@@ -8,6 +8,7 @@ import {
 } from './flat-disk.js';
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { flightCalibrationFeatures, predictFlightScaleRatio } from './flight-calibration-fit.js';
+import { predictEndpointDistance } from './endpoint-distance-calibration.js';
 
 export const RESTRICTED_PARALLEL_LATITUDE = -60;
 const RESTRICTED_RADIUS_KM = radialDistanceFromNorthKm(RESTRICTED_PARALLEL_LATITUDE);
@@ -141,6 +142,8 @@ export function measureDirectDistance(first, second) {
       baseChordDistanceMeters: null,
       flightEmpiricalDistanceMeters: null,
       calibratedDistanceMeters: null,
+      endpointDistanceEstimateMeters: null,
+      endpointDistanceCalibration: null,
       calibrationFactor: null,
       correctionPercent: null,
       calibration: null,
@@ -168,6 +171,10 @@ export function measureDirectDistance(first, second) {
   const safeFlightEstimate = Number.isFinite(flightEmpiricalDistance)
     ? flightEmpiricalDistance
     : null;
+  const endpointDistanceCalibration = predictEndpointDistance(first, second);
+  const endpointDistanceEstimate = Number.isFinite(endpointDistanceCalibration?.distanceMeters)
+    ? endpointDistanceCalibration.distanceMeters
+    : null;
 
   return {
     distanceMeters: safeFlatDistance,
@@ -177,6 +184,8 @@ export function measureDirectDistance(first, second) {
       ? 'visual-12-circle' : 'base',
     flightEmpiricalDistanceMeters: safeFlightEstimate,
     calibratedDistanceMeters: safeFlightEstimate,
+    endpointDistanceEstimateMeters: endpointDistanceEstimate,
+    endpointDistanceCalibration,
     calibrationFactor,
     correctionPercent: calibration?.correctionPercent ?? null,
     calibration,
