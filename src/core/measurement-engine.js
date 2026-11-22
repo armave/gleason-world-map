@@ -1,4 +1,5 @@
 import { clamp, baseFlatDiskDistanceMeters, flatDiskDistanceMeters, radialDistanceFromNorthKm, baseRadialFraction, rad, wrapLongitude } from './flat-disk.js';
+import { greatCircleDistanceMeters } from './great-circle.js';
 import {
   RADIAL_DISTANCE_CIRCLE_COUNT as RADIAL_CIRCLE_COUNT,
   RADIAL_DISTANCE_INNER_FACTOR as RADIAL_INNER_FACTOR,
@@ -167,6 +168,7 @@ export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
+      greatCircleDistanceMeters: null,
       radiallyCorrectedDistanceMeters: null,
       calibratedDistanceMeters: null,
       flightEmpiricalDistanceMeters: null,
@@ -202,6 +204,8 @@ export function measureDirectDistance(first, second) {
     Number.isFinite(calibrationFactor)
     ? chordDistanceMeters * calibrationFactor
     : null;
+  const greatCircleDistance = greatCircleDistanceMeters(first, second);
+  const safeGreatCircleDistance = Number.isFinite(greatCircleDistance) ? greatCircleDistance : null;
   const safeChordDistance = Number.isFinite(chordDistanceMeters) ? chordDistanceMeters : null;
   const safeVisualChordDistance = Number.isFinite(visualChordDistanceMeters) ? visualChordDistanceMeters : null;
   const safeRadiallyCorrectedDistance = Number.isFinite(radiallyCorrectedDistanceMeters)
@@ -213,8 +217,11 @@ export function measureDirectDistance(first, second) {
 
   return {
     // Primary readout receives the user-defined 12-circle radial adjustment.
-    distanceMeters: safeRadiallyCorrectedDistance,
-    radiallyCorrectedDistanceMeters: safeRadiallyCorrectedDistance,
+    // Primary distance is a coordinate-only spherical great-circle calculation;
+    // neither telemetry nor the map's visual radial calibration affects it.
+    distanceMeters: safeGreatCircleDistance,
+    greatCircleDistanceMeters: safeGreatCircleDistance,
+    radiallyCorrectedDistanceMeters: safeGreatCircleDistance,
     calibratedDistanceMeters: safeFlightEmpiricalDistance,
     flightEmpiricalDistanceMeters: safeFlightEmpiricalDistance,
     // Preserve the actual geometric chord as an independent reference.
@@ -229,7 +236,7 @@ export function measureDirectDistance(first, second) {
     correctionPercent: calibration?.correctionPercent ?? null,
     calibration,
     warnings: calibration?.warnings ?? [],
-    metric: 'radially-corrected-flat-disk-chord',
+    metric: 'spherical-great-circle',
     restricted: false
   };
 }
