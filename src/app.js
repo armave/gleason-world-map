@@ -439,7 +439,7 @@ function drawMeasure(){
    ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
    strokeMeasurementConnector('distance');
    const measurement=measureDirectDistance(points[0],points[1]);
-   const label=formatMeasurementKilometres(measurement.distanceMeters);
+   const label='Disk chord · '+formatMeasurementKilometres(measurement.distanceMeters);
    drawMeasurementLabelAtMap(
     (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
    );
@@ -629,26 +629,25 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const routeEstimate=measurement.endpointDistanceEstimateMeters;
   const routeCalibration=measurement.endpointDistanceCalibration;
+  const routeSupported=routeCalibration?.supportStatus==='supported';
+  const routeEstimate=routeSupported?measurement.endpointDistanceEstimateMeters:null;
   const chordDistance=measurement.distanceMeters;
-  $('distanceValue').textContent=Number.isFinite(routeEstimate)
-   ?formatDistance(routeEstimate):'Unavailable';
-  const visibleSupportLabel=routeCalibration?.supportStatus==='supported'
-   ?'SUPPORTED'
+  $('distanceValue').textContent=routeSupported&&Number.isFinite(routeEstimate)
+   ?formatDistance(routeEstimate)
+   :routeCalibration?.supportStatus==='extrapolated'?'Not validated':'Unavailable';
+  $('distanceSub').textContent=routeSupported&&Number.isFinite(routeEstimate)
+   ?'Supported typical flown mileage from observed ADS-B routes · not a selected flight path'
    :routeCalibration?.supportStatus==='extrapolated'
-    ?'EXTRAPOLATED · provisional'
-    :'support unavailable';
-  $('distanceSub').textContent=Number.isFinite(routeEstimate)
-   ?'Typical flown mileage · '+visibleSupportLabel+' · not a selected flight path'
-   :'No empirical route-distance estimate available';
+    ?'Numeric estimate withheld · outside validated route-feature and chord-length support'
+    :'No supported empirical route-mileage estimate available';
   $('flightDistanceValue').textContent=Number.isFinite(chordDistance)
    ?formatDistance(chordDistance):'Unavailable';
   $('flightDistanceSub').textContent=Number.isFinite(chordDistance)
-   ?'Exact Euclidean length of the straight connector in the displayed flat disk'
-   :'Displayed map connector length unavailable';
+   ?'Euclidean chord in the displayed flat-disk map plane · not flown route mileage'
+   :'Displayed flat-disk chord unavailable';
 
-  $('measureHelp').textContent='The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data, calibrated against nearby airport-pair examples in the current flat-disk projection. It is not a selected flight path or a guaranteed shortest distance. The secondary value is the exact Euclidean length of the straight connector drawn between the two endpoints in the displayed 12-circle-warped disk. The projection and calibration use the project’s flat-disk geometry; no globe, sphere, ellipsoid or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point. Estimates outside the validated route-feature range are explicitly marked as extrapolations.';
+  $('measureHelp').textContent='The primary value is shown only when the endpoint pair is inside the empirical ADS-B route model’s validated feature and chord-length support. Outside that domain, the numeric estimate is withheld and the panel says Not validated. The secondary value is the exact Euclidean chord in the displayed flat-disk map plane; it is not a flown route mileage. The projection, connector and scale bar continue to use the project’s flat-disk geometry. No globe, sphere, ellipsoid, great-circle or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point.';
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   if(routeCalibration){
    const validation=routeCalibration.validation||{};
@@ -657,7 +656,7 @@ function updateMeasurement(){
    const supported=routeCalibration.supportStatus==='supported';
    support.textContent=supported
     ?'Supported by nearby reference routes · nearest feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' · independent supported holdout MAPE '+(Number.isFinite(holdout?.meanAbsolutePercent)?holdout.meanAbsolutePercent.toFixed(1)+'%':'not available')+' ('+(holdout?.supportedRouteCount??'—')+'/'+(holdout?.routeCount??'—')+' pairs).'
-    :'Extrapolated · nearest reference feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' exceeds the validated support limit '+routeCalibration.maxSupportedFeatureDistance.toFixed(2)+'; treat the estimate as provisional.';
+    :'No route-mileage number shown · nearest reference feature distance '+routeCalibration.nearestFeatureDistance.toFixed(2)+' exceeds the validated support limit '+routeCalibration.maxSupportedFeatureDistance.toFixed(2)+';';
    const routeIds=routeCalibration.neighborRouteIds||[];
    const routeWeights=routeCalibration.neighborWeights||[];
    routes.textContent='Nearest reference routes: '+(routeIds.length
@@ -671,7 +670,7 @@ function updateMeasurement(){
   $('calibrationSupport').textContent='Empirical route support appears after both endpoints are set.';
   $('calibrationRoutes').textContent='Nearest reference routes: —';
   $('flightDistanceValue').textContent='—';
-  $('flightDistanceSub').textContent='Exact map-plane length of the displayed connector';
+  $('flightDistanceSub').textContent='Euclidean chord in the flat-disk map plane · not flown route mileage';
   $('distanceValue').textContent='—';
   $('distanceSub').textContent='Set two endpoints to estimate typical route mileage';
   $('measureHelp').textContent=points.length===1
@@ -922,11 +921,15 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const routeEstimate=measurement.endpointDistanceEstimateMeters;
-  const supportLabel=measurement.endpointDistanceCalibration?.supportStatus==='supported'
-   ?'supported' :'EXTRAPOLATED / provisional';
-  measurementText='Route estimate '+(Number.isFinite(routeEstimate)?formatDistance(routeEstimate):'Unavailable')+
-   ' · '+supportLabel+' · connector '+formatDistance(measurement.distanceMeters);
+  const routeCalibration=measurement.endpointDistanceCalibration;
+  const routeEstimate=routeCalibration?.supportStatus==='supported'
+   ?measurement.endpointDistanceEstimateMeters:null;
+  const routeLabel=Number.isFinite(routeEstimate)
+   ?'Supported route-mileage estimate '+formatDistance(routeEstimate)
+   :routeCalibration?.supportStatus==='extrapolated'
+    ?'Route mileage not validated · numeric estimate withheld'
+    :'Route-mileage estimate unavailable';
+  measurementText=routeLabel+' · projected disk chord '+formatDistance(measurement.distanceMeters);
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
