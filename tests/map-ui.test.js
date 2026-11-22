@@ -176,6 +176,8 @@ test('map orientation is display-only, pointer-safe and included in share links'
 });
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
+ assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\)\)/);
+ assert.match(html,/12-circle visual radial calibration/);assert.match(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
 
