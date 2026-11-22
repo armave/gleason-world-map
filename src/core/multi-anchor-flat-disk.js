@@ -361,15 +361,24 @@ function buildWarp(seed, fitted, anchorIds, options = {}) {
   };
 }
 
+function isValidWarpModel(model) {
+  return !!model &&
+    Number.isFinite(model.diskRadiusKm) && model.diskRadiusKm > 0 &&
+    Number.isFinite(model.sigmaKm) && model.sigmaKm > 0 &&
+    Array.isArray(model.controls) &&
+    model.controls.length <= MULTI_ANCHOR_FILTERS.maximumControlPoints &&
+    model.controls.every(control => control && typeof control === 'object' &&
+      [
+        control.xKm, control.yKm, control.envelope, control.alphaX, control.alphaY
+      ].every(Number.isFinite) &&
+      control.envelope >= 0 && control.envelope <= 1 &&
+      Math.hypot(control.xKm, control.yKm) <= model.diskRadiusKm * (1 + 1e-8));
+}
+
 /** Smoothly warp a point in disk-kilometre coordinates; centre and rim stay fixed. */
 export function applyMultiAnchorWarpXY(xKm, yKm, model) {
   if (!Number.isFinite(xKm) || !Number.isFinite(yKm) ||
-      !model || !Number.isFinite(model.diskRadiusKm) || model.diskRadiusKm <= 0 ||
-      !Array.isArray(model.controls) || model.controls.length > MULTI_ANCHOR_FILTERS.maximumControlPoints ||
-      !Number.isFinite(model.sigmaKm) || model.sigmaKm <= 0 ||
-      model.controls.some(control => ![
-        control.xKm, control.yKm, control.envelope, control.alphaX, control.alphaY
-      ].every(Number.isFinite))) return null;
+      !isValidWarpModel(model)) return null;
   const envelope = envelopeAt(xKm, yKm, model.diskRadiusKm);
   let dx = 0, dy = 0;
   const denominator = 2 * model.sigmaKm * model.sigmaKm;
@@ -381,7 +390,8 @@ export function applyMultiAnchorWarpXY(xKm, yKm, model) {
     dx += weight * control.alphaX;
     dy += weight * control.alphaY;
   }
-  return [xKm + dx, yKm + dy];
+  const mapped = [xKm + dx, yKm + dy];
+  return mapped.every(Number.isFinite) ? mapped : null;
 }
 
 function jacobianDeterminant(x, y, model) {
@@ -390,23 +400,24 @@ function jacobianDeterminant(x, y, model) {
   const right = applyMultiAnchorWarpXY(x + step, y, model);
   const up = applyMultiAnchorWarpXY(x, y - step, model);
   const down = applyMultiAnchorWarpXY(x, y + step, model);
+  if (![left, right, up, down].every(Boolean)) return -Infinity;
   const dXdx = (right[0] - left[0]) / (2 * step);
   const dYdx = (right[1] - left[1]) / (2 * step);
   const dXdy = (down[0] - up[0]) / (2 * step);
   const dYdy = (down[1] - up[1]) / (2 * step);
-  return dXdx * dYdy - dXdy * dYdx;
+  const determinant = dXdx * dYdy - dXdy * dYdx;
+  return Number.isFinite(determinant) ? determinant : -Infinity;
 }
 
 /** Dense numerical topology check for disk-preserving candidate maps. */
 export function inspectMultiAnchorTopology(model) {
-  if (!model || !Number.isFinite(model.diskRadiusKm) || model.diskRadiusKm <= 0 ||
-      !Number.isFinite(model.sigmaKm) || model.sigmaKm <= 0 ||
-      !Array.isArray(model.controls)) {
+  if (!isValidWarpModel(model)) {
     return {
       minimumJacobianDeterminant: -Infinity,
       maximumWarpDisplacementFraction: Infinity,
       maximumRadialOvershootFraction: Infinity,
-      maximumBoundaryDisplacementKm: Infinity
+      maximumBoundaryDisplacementKm: Infinity,
+      topologySampleCount: 0
     };
   }
   return topologyMetrics(model);
@@ -417,59 +428,106 @@ function topologyMetrics(model) {
   let maximumWarpDisplacementKm = 0;
   let maximumRadialOvershootKm = 0;
   let maximumBoundaryDisplacementKm = 0;
-  const radialSamples = 32;
-  const angularSamples = 144;
+  const radiusKm = model.diskRadiusKm;
+  const radialSamples = 64;
+  const angularSamples = 288;
+  const samples = new Map();
+  const addSample = (x, y) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y) ||
+        Math.hypot(x, y) > radiusKm * (1 + 1e-10)) return;
+    const key = x.toFixed(6) + ',' + y.toFixed(6);
+    if (!samples.has(key)) samples.set(key, [x, y]);
+  };
 
-  for (let radial = 0; radial <= radialSamples; radial++) {
+  // A denser full-disk grid checks broad deformations and the circular boundary.
+  for (let radial = 0; radial < radialSamples; radial++) {
     const fraction = radial / radialSamples;
     for (let angular = 0; angular < angularSamples; angular++) {
       const angle = 2 * Math.PI * angular / angularSamples;
-      const x = model.diskRadiusKm * fraction * Math.cos(angle);
-      const y = model.diskRadiusKm * fraction * Math.sin(angle);
-      const mapped = applyMultiAnchorWarpXY(x, y, model);
-      if (!mapped) {
-        return {
-          minimumJacobianDeterminant: -Infinity,
-          maximumWarpDisplacementFraction: Infinity,
-          maximumRadialOvershootFraction: Infinity,
-          maximumBoundaryDisplacementKm: Infinity
-        };
-      }
-      const displacement = Math.hypot(mapped[0] - x, mapped[1] - y);
-      maximumWarpDisplacementKm = Math.max(maximumWarpDisplacementKm, displacement);
-      maximumRadialOvershootKm = Math.max(
-        maximumRadialOvershootKm,
-        Math.max(0, Math.hypot(mapped[0], mapped[1]) - model.diskRadiusKm)
+      addSample(
+        radiusKm * fraction * Math.cos(angle),
+        radiusKm * fraction * Math.sin(angle)
       );
-      if (radial === radialSamples) {
-        maximumBoundaryDisplacementKm = Math.max(
-          maximumBoundaryDisplacementKm, displacement
-        );
-      }
-      if (radial > 0 && radial < radialSamples) {
-        minimumJacobianDeterminant = Math.min(
-          minimumJacobianDeterminant, jacobianDeterminant(x, y, model)
+    }
+  }
+
+  // A control-centred adaptive stencil checks narrow RBF features that can sit
+  // entirely between uniform grid points. Gaussian gradients are strongest
+  // around one sigma from a control centre, so sample several local radii.
+  const localRadii = [0.5, 1, 2, 3];
+  const localAngularSamples = 24;
+  for (const control of model.controls) {
+    addSample(control.xKm, control.yKm);
+    for (const radialFactor of localRadii) {
+      const localRadius = model.sigmaKm * radialFactor;
+      for (let angular = 0; angular < localAngularSamples; angular++) {
+        const angle = 2 * Math.PI * (angular + 0.5) / localAngularSamples;
+        addSample(
+          control.xKm + localRadius * Math.cos(angle),
+          control.yKm + localRadius * Math.sin(angle)
         );
       }
     }
   }
 
+  for (const [x, y] of samples.values()) {
+    const mapped = applyMultiAnchorWarpXY(x, y, model);
+    if (!mapped) {
+      return {
+        minimumJacobianDeterminant: -Infinity,
+        maximumWarpDisplacementFraction: Infinity,
+        maximumRadialOvershootFraction: Infinity,
+        maximumBoundaryDisplacementKm: Infinity,
+        topologySampleCount: samples.size
+      };
+    }
+    const displacement = Math.hypot(mapped[0] - x, mapped[1] - y);
+    maximumWarpDisplacementKm = Math.max(maximumWarpDisplacementKm, displacement);
+    maximumRadialOvershootKm = Math.max(
+      maximumRadialOvershootKm,
+      Math.max(0, Math.hypot(mapped[0], mapped[1]) - radiusKm)
+    );
+    minimumJacobianDeterminant = Math.min(
+      minimumJacobianDeterminant, jacobianDeterminant(x, y, model)
+    );
+  }
+
+  // Check the entire rim at a separately sampled angular resolution.
+  for (let angular = 0; angular < angularSamples; angular++) {
+    const angle = 2 * Math.PI * angular / angularSamples;
+    const x = radiusKm * Math.cos(angle);
+    const y = radiusKm * Math.sin(angle);
+    const mapped = applyMultiAnchorWarpXY(x, y, model);
+    if (!mapped) {
+      maximumBoundaryDisplacementKm = Infinity;
+      break;
+    }
+    maximumBoundaryDisplacementKm = Math.max(
+      maximumBoundaryDisplacementKm,
+      Math.hypot(mapped[0] - x, mapped[1] - y)
+    );
+  }
+
   return {
     minimumJacobianDeterminant,
-    maximumWarpDisplacementFraction: maximumWarpDisplacementKm / model.diskRadiusKm,
-    maximumRadialOvershootFraction: maximumRadialOvershootKm / model.diskRadiusKm,
-    maximumBoundaryDisplacementKm
+    maximumWarpDisplacementFraction: maximumWarpDisplacementKm / radiusKm,
+    maximumRadialOvershootFraction: maximumRadialOvershootKm / radiusKm,
+    maximumBoundaryDisplacementKm,
+    topologySampleCount: samples.size
   };
 }
 
 /** Damped Newton inverse for previewing a candidate; never used by production. */
 export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
-  if (!Number.isFinite(targetX) || !Number.isFinite(targetY) || !model ||
-      !Number.isFinite(model.diskRadiusKm) || model.diskRadiusKm <= 0 ||
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY) ||
+      !isValidWarpModel(model) ||
       Math.hypot(targetX, targetY) > model.diskRadiusKm * (1 + 1e-8)) return null;
   let x = targetX, y = targetY;
   const toleranceKm = options.toleranceKm ?? 1e-5;
   const maximumIterations = options.maximumIterations ?? 40;
+  if (!Number.isFinite(toleranceKm) || toleranceKm <= 0 ||
+      !Number.isInteger(maximumIterations) ||
+      maximumIterations < 1 || maximumIterations > 200) return null;
   for (let iteration = 0; iteration < maximumIterations; iteration++) {
     const mapped = applyMultiAnchorWarpXY(x, y, model);
     if (!mapped) return null;
