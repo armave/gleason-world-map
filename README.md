@@ -117,7 +117,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B measurement: empirical ADS-B route mileage is shown only inside validated support; unsupported estimates are withheld, and the exact projected flat-disk chord is labelled as a map-plane measurement
+- A–B distance: one ADS-B-calibrated flat-disk formula is the sole distance source; A–B, map labels, scale bar, polygon edges/perimeter and PNG exports all use the same function
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -125,7 +125,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar and projected disk-chord labels use the same visually calibrated map-plane Euclidean metric
+- View-centred scale bar, A–B labels and polygon perimeter use the same canonical ADS-B-calibrated distance function
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
@@ -195,7 +195,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite covers initial map loading, zoom and rotation, geographic search, flat-disk Euclidean A–B measurement, planar polygon area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
+The browser suite covers initial map loading, zoom and rotation, geographic search, single ADS-B-calibrated flat-disk A–B measurement, calibrated polygon perimeter and planar area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
 
 ## Run locally
 
@@ -224,7 +224,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
-- A–B route estimate: empirical typical flown mileage from observed ADS-B ground-speed/time records is displayed only for endpoint pairs inside validated support. Outside support, the numeric estimate is withheld. The projected flat-disk chord remains available as a clearly labelled map-plane measurement. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
+- A–B distance: the only reported distance is the base flat-disk chord multiplied by one bounded ADS-B route-feature correction fitted to observed ground-speed/time mileage. The same function supplies the ruler, map label, scale bar, polygon edge labels/perimeter and PNG export. The result is a calibrated map distance, not the path of a selected flight or a guarantee of a particular airline routing.
 
 ## Important limitations
 
