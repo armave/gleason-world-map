@@ -82,8 +82,8 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
 /** Radius in the original fitted base projection used by the canonical distance formula. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = calibratedBaseRadialFraction(latitudeDegrees);
-  const secondaryBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
-  return Number.isFinite(fraction) ? secondaryBaseRadiusKm * fraction : NaN;
+  const calibratedBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
+  return Number.isFinite(fraction) ? calibratedBaseRadiusKm * fraction : NaN;
 }
 
 /** Inverse of the final visual flat-disk radial transform. */
