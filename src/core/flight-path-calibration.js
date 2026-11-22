@@ -13,6 +13,8 @@ import {
 
 export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   minimumFlightsPerRoute: 3,
+  minimumPathCoverage: 0.98,
+  maximumPathGapSeconds: 900,
   minimumTrainingRoutes: 20,
   minimumHoldoutRoutes: 6,
   minimumSouthernTrainingRoutes: 4,
@@ -159,6 +161,41 @@ function validObservedFlight(observation) {
     Array.isArray(observation.trackTimestamps);
 }
 
+function pathTimestampQuality(trackTimestamps, startTs, endTs) {
+  const flightStart = Date.parse(startTs) / 1000;
+  const flightEnd = Date.parse(endTs) / 1000;
+  const duration = flightEnd - flightStart;
+  if (!Number.isFinite(flightStart) || !Number.isFinite(flightEnd) || duration <= 0) return null;
+
+  const sequences = trackTimestamps
+    .filter(sequence => Array.isArray(sequence) && sequence.length >= 2)
+    .map(sequence => ({ start: sequence[0], end: sequence.at(-1), times: sequence }))
+    .sort((first, second) => first.start - second.start);
+  if (!sequences.length) return null;
+
+  let previousEnd = flightStart;
+  let coveredSeconds = 0;
+  let maximumGapSeconds = 0;
+  for (const sequence of sequences) {
+    const boundaryGap = sequence.start - previousEnd;
+    if (boundaryGap < 0) return null;
+    maximumGapSeconds = Math.max(maximumGapSeconds, boundaryGap);
+    coveredSeconds += sequence.end - sequence.start;
+    for (let index = 1; index < sequence.times.length; index++) {
+      maximumGapSeconds = Math.max(
+        maximumGapSeconds,
+        sequence.times[index] - sequence.times[index - 1]
+      );
+    }
+    previousEnd = sequence.end;
+  }
+  maximumGapSeconds = Math.max(maximumGapSeconds, flightEnd - previousEnd);
+  const coverage = coveredSeconds / duration;
+  if (coverage < FLIGHT_PATH_CALIBRATION_FILTERS.minimumPathCoverage ||
+      maximumGapSeconds > FLIGHT_PATH_CALIBRATION_FILTERS.maximumPathGapSeconds) return null;
+  return { pathCoverage: coverage, pathMaxGapSeconds: maximumGapSeconds };
+}
+
 function routeFlightRecords(dataset) {
   return (dataset?.routes || []).map(route => {
     const flights = (route.observations || []).filter(validObservedFlight).flatMap(observation => {
@@ -166,7 +203,11 @@ function routeFlightRecords(dataset) {
         { type: 'MultiLineString', coordinates: observation.trackCoordinates },
         observation.trackTimestamps
       );
-      return normalized ? [{ ...observation, ...normalized }] : [];
+      if (!normalized) return [];
+      const quality = pathTimestampQuality(
+        normalized.trackTimestamps, observation.startTs, observation.endTs
+      );
+      return quality ? [{ ...observation, ...normalized, ...quality }] : [];
     });
     return { route, flights };
   });
