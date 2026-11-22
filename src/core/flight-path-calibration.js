@@ -1,0 +1,380 @@
+/**
+ * Calibrate the visible flat-disk geometry against actual ADS-B trajectory paths.
+ *
+ * The measured target remains the independent ground-speed × elapsed-time
+ * integral. Timestamped path coordinates are projected into the map plane and
+ * their planar polyline length is compared with that observed target. No
+ * coordinate-derived Earth distance, sphere, ellipsoid, or geodesic is used.
+ */
+import {
+  DEFAULT_RADIAL_WARP,
+  radialFractionFromUnitColatitude
+} from './radial-warp.js';
+
+export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
+  minimumFlightsPerRoute: 3,
+  minimumTrainingRoutes: 20,
+  minimumHoldoutRoutes: 6,
+  minimumSouthernTrainingRoutes: 4,
+  minimumSouthernHoldoutRoutes: 2,
+  maxTrainingMapePercent: 10,
+  maxHoldoutMapePercent: 12,
+  maxHoldoutRouteErrorPercent: 20,
+  maxLeaveOneOutMapePercent: 15,
+  maxLeaveOneOutRouteErrorPercent: 45
+});
+
+export const FLIGHT_PATH_PROFILE = Object.freeze({
+  innerFactor: 1,
+  outerFactor: 0.5
+});
+
+const DEG = Math.PI / 180;
+const MIN_EXPONENT = 0.65;
+const MAX_EXPONENT = 1.35;
+const EXPONENT_STEP = 0.025;
+const median = values => {
+  if (!values.length) return NaN;
+  const ordered = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(ordered.length / 2);
+  return ordered.length % 2
+    ? ordered[middle]
+    : (ordered[middle - 1] + ordered[middle]) / 2;
+};
+const absolutePercentError = (predicted, observed) =>
+  Math.abs(predicted / observed - 1) * 100;
+
+function validCoordinate(coordinate) {
+  return Array.isArray(coordinate) &&
+    coordinate.length >= 2 &&
+    Number.isFinite(Number(coordinate[0])) &&
+    Number.isFinite(Number(coordinate[1])) &&
+    Number(coordinate[0]) >= -180 &&
+    Number(coordinate[0]) <= 180 &&
+    Number(coordinate[1]) >= -90 &&
+    Number(coordinate[1]) <= 90;
+}
+
+/**
+ * Extract the API's GeoJSON MultiLineString coordinates and matching timestamp
+ * sequences. Sequence boundaries are retained so separate trajectory legs
+ * are never joined by an invented connector.
+ */
+export function normalizeFlightTrack(path, timestamps) {
+  if (path?.type !== 'MultiLineString' ||
+      !Array.isArray(path.coordinates) ||
+      !Array.isArray(timestamps) ||
+      path.coordinates.length !== timestamps.length) return null;
+
+  const trackCoordinates = [];
+  const trackTimestamps = [];
+  let trackPointCount = 0;
+
+  for (let index = 0; index < path.coordinates.length; index++) {
+    const coordinates = path.coordinates[index];
+    const times = timestamps[index];
+    if (!Array.isArray(coordinates) || !Array.isArray(times) ||
+        coordinates.length !== times.length) return null;
+
+    const validCoordinates = [];
+    const validTimes = [];
+    for (let pointIndex = 0; pointIndex < coordinates.length; pointIndex++) {
+      const coordinate = coordinates[pointIndex];
+      const timestamp = Number(times[pointIndex]);
+      if (!validCoordinate(coordinate) || !Number.isFinite(timestamp)) return null;
+      if (validTimes.length && timestamp <= validTimes.at(-1)) return null;
+
+      const altitude = coordinate.length >= 3 && Number.isFinite(Number(coordinate[2]))
+        ? Number(coordinate[2]) : null;
+      validCoordinates.push([
+        Number(coordinate[0]),
+        Number(coordinate[1]),
+        altitude
+      ]);
+      validTimes.push(timestamp);
+    }
+
+    trackCoordinates.push(validCoordinates);
+    trackTimestamps.push(validTimes);
+    trackPointCount += validCoordinates.length;
+  }
+
+  if (trackPointCount < 2) return null;
+  return { trackCoordinates, trackTimestamps, trackPointCount };
+}
+
+function pointInUnitDisk(coordinate, radialWarp) {
+  if (!validCoordinate(coordinate)) return null;
+  const longitude = Number(coordinate[0]) * DEG;
+  const latitude = Number(coordinate[1]);
+  const normalizedColatitude = (90 - latitude) / 180;
+  const q = radialFractionFromUnitColatitude(normalizedColatitude, radialWarp);
+  if (!Number.isFinite(q)) return null;
+
+  const taper = FLIGHT_PATH_PROFILE.innerFactor - FLIGHT_PATH_PROFILE.outerFactor;
+  const integratedFraction =
+    FLIGHT_PATH_PROFILE.innerFactor * q - taper * q * q / 2;
+  const radius = Math.PI * integratedFraction;
+  return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
+}
+
+/**
+ * Length of the observed trajectory after projection into a unit-scale copy
+ * of the current 12-circle flat disk. Multiply by R_base (km) for map-plane km.
+ */
+export function unitProjectedFlightPathLength(
+  trackCoordinates,
+  radialWarp = DEFAULT_RADIAL_WARP
+) {
+  if (!Array.isArray(trackCoordinates)) return NaN;
+  let total = 0;
+  let validSegments = 0;
+
+  for (const sequence of trackCoordinates) {
+    if (!Array.isArray(sequence) || sequence.length < 2) continue;
+    let previous = null;
+    for (const coordinate of sequence) {
+      const current = pointInUnitDisk(coordinate, radialWarp);
+      if (!current) {
+        previous = null;
+        continue;
+      }
+      if (previous) {
+        total += Math.hypot(current[0] - previous[0], current[1] - previous[1]);
+        validSegments++;
+      }
+      previous = current;
+    }
+  }
+  return validSegments && Number.isFinite(total) && total > 0 ? total : NaN;
+}
+
+function validObservedFlight(observation) {
+  return observation?.accepted !== false &&
+    Number.isFinite(observation?.observedTrackKm ?? observation?.trackKm) &&
+    (observation.observedTrackKm ?? observation.trackKm) > 0 &&
+    Number.isFinite(observation.coverage) && observation.coverage >= 0.98 &&
+    Number.isFinite(observation.maxGapMinutes) && observation.maxGapMinutes <= 15 &&
+    Array.isArray(observation.trackCoordinates) &&
+    Array.isArray(observation.trackTimestamps) &&
+    observation.trackCoordinates.length === observation.trackTimestamps.length;
+}
+
+function routeFlightRecords(dataset) {
+  return (dataset?.routes || []).map(route => {
+    const flights = (route.observations || []).filter(validObservedFlight);
+    return { route, flights };
+  });
+}
+
+export function summarizeFlightPathCoverage(dataset) {
+  const routes = routeFlightRecords(dataset).filter(({ route, flights }) =>
+    flights.length >= FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute &&
+    Number.isFinite(route.airportA?.lat) && Number.isFinite(route.airportB?.lat)
+  );
+  const training = routes.filter(item => item.route.split === 'train');
+  const holdout = routes.filter(item => item.route.split === 'holdout');
+  const southernCount = (items, latitude) => items.filter(({ route }) =>
+    Math.min(route.airportA.lat, route.airportB.lat) <= latitude
+  ).length;
+  return {
+    trainingRouteCount: training.length,
+    holdoutRouteCount: holdout.length,
+    trainingRoutesSouthOf30S: southernCount(training, -30),
+    holdoutRoutesSouthOf30S: southernCount(holdout, -30),
+    trainingRoutesSouthOf45S: southernCount(training, -45),
+    holdoutRoutesSouthOf45S: southernCount(holdout, -45),
+    trainingRoutesSouthOf60S: southernCount(training, -60),
+    holdoutRoutesSouthOf60S: southernCount(holdout, -60),
+    trainingFlightsWithPaths: training.reduce((sum, item) => sum + item.flights.length, 0),
+    holdoutFlightsWithPaths: holdout.reduce((sum, item) => sum + item.flights.length, 0),
+    totalTrajectoryPoints: routes.reduce((sum, item) =>
+      sum + item.flights.reduce((flightSum, flight) =>
+        flightSum + (flight.trackPointCount || flight.trackCoordinates
+          .reduce((n, sequence) => n + sequence.length, 0)), 0), 0)
+  };
+}
+
+function makeRouteExamples(dataset, radialWarp) {
+  return routeFlightRecords(dataset).flatMap(({ route, flights }) => {
+    if (!['train', 'holdout'].includes(route.split) ||
+        !Number.isFinite(route.airportA?.lat) ||
+        !Number.isFinite(route.airportB?.lat) ||
+        flights.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
+
+    const measured = [];
+    const projected = [];
+    for (const flight of flights) {
+      const measuredKm = flight.observedTrackKm ?? flight.trackKm;
+      const unitPathLength = unitProjectedFlightPathLength(
+        flight.trackCoordinates, radialWarp
+      );
+      if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
+        measured.push(measuredKm);
+        projected.push(unitPathLength);
+      }
+    }
+    if (measured.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
+
+    const medianObservedKm = median(measured);
+    const medianUnitPathLength = median(projected);
+    if (!(medianObservedKm > 0) || !(medianUnitPathLength > 0)) return [];
+    return [{
+      routeId: route.routeId,
+      split: route.split,
+      airportA: route.airportA,
+      airportB: route.airportB,
+      sampleCount: measured.length,
+      medianObservedTrackKm: medianObservedKm,
+      medianUnitPathLength,
+      requiredRadialScaleKm: medianObservedKm / medianUnitPathLength
+    }];
+  });
+}
+
+function summarizeErrors(examples, radialScaleKm) {
+  const errors = examples.map(example => absolutePercentError(
+    example.medianUnitPathLength * radialScaleKm,
+    example.medianObservedTrackKm
+  ));
+  return {
+    routeCount: errors.length,
+    meanAbsolutePercent: errors.length
+      ? errors.reduce((sum, value) => sum + value, 0) / errors.length : null,
+    rmsPercent: errors.length
+      ? Math.sqrt(errors.reduce((sum, value) => sum + value * value, 0) / errors.length)
+      : null,
+    maxAbsolutePercent: errors.length ? Math.max(...errors) : null,
+    errors: examples.map((example, index) => ({
+      routeId: example.routeId,
+      observedKm: example.medianObservedTrackKm,
+      projectedKm: example.medianUnitPathLength * radialScaleKm,
+      absolutePercent: errors[index]
+    }))
+  };
+}
+
+function evaluateExponent(training, holdout, exponent) {
+  const radialWarp = {
+    ...DEFAULT_RADIAL_WARP,
+    exponent
+  };
+  const trainingExamples = makeRouteExamplesFromRecords(training, radialWarp);
+  const holdoutExamples = makeRouteExamplesFromRecords(holdout, radialWarp);
+  const radialScaleKm = median(trainingExamples.map(item => item.requiredRadialScaleKm));
+  const trainingMetrics = summarizeErrors(trainingExamples, radialScaleKm);
+  const holdoutMetrics = summarizeErrors(holdoutExamples, radialScaleKm);
+
+  const leaveOneOutErrors = trainingExamples.map(example => {
+    const otherRatios = trainingExamples
+      .filter(item => item.routeId !== example.routeId)
+      .map(item => item.requiredRadialScaleKm);
+    const leaveOneOutScale = median(otherRatios);
+    return absolutePercentError(
+      example.medianUnitPathLength * leaveOneOutScale,
+      example.medianObservedTrackKm
+    );
+  });
+  const leaveOneOut = {
+    routeCount: leaveOneOutErrors.length,
+    meanAbsolutePercent: leaveOneOutErrors.length
+      ? leaveOneOutErrors.reduce((sum, value) => sum + value, 0) / leaveOneOutErrors.length
+      : null,
+    maxAbsolutePercent: leaveOneOutErrors.length
+      ? Math.max(...leaveOneOutErrors) : null
+  };
+  return {
+    radialWarp,
+    radialScaleKm,
+    training: trainingMetrics,
+    holdout: holdoutMetrics,
+    leaveOneOut,
+    objective: trainingMetrics.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
+  };
+}
+
+function makeRouteExamplesFromRecords(records, radialWarp) {
+  return records.flatMap(({ route, flights }) => {
+    const measured = [];
+    const projected = [];
+    for (const flight of flights) {
+      const measuredKm = flight.observedTrackKm ?? flight.trackKm;
+      const unitPathLength = unitProjectedFlightPathLength(
+        flight.trackCoordinates, radialWarp
+      );
+      if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
+        measured.push(measuredKm);
+        projected.push(unitPathLength);
+      }
+    }
+    if (measured.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
+    const medianObservedTrackKm = median(measured);
+    const medianUnitPathLength = median(projected);
+    return [{
+      routeId: route.routeId,
+      split: route.split,
+      sampleCount: measured.length,
+      medianObservedTrackKm,
+      medianUnitPathLength,
+      requiredRadialScaleKm: medianObservedTrackKm / medianUnitPathLength
+    }];
+  });
+}
+
+export function fitFlightPathCalibration(dataset) {
+  if (dataset?.schemaVersion < 4 ||
+      dataset?.measurement?.coverageDenominator !== 'full-flight-duration' ||
+      dataset?.measurement?.distancePolicy !== 'observed-only') {
+    throw new Error('Flight-path calibration requires schema-4 observed-only telemetry with stored trajectories.');
+  }
+
+  const coverage = summarizeFlightPathCoverage(dataset);
+  const limits = FLIGHT_PATH_CALIBRATION_FILTERS;
+  if (coverage.trainingRouteCount < limits.minimumTrainingRoutes ||
+      coverage.holdoutRouteCount < limits.minimumHoldoutRoutes ||
+      coverage.trainingRoutesSouthOf30S < limits.minimumSouthernTrainingRoutes ||
+      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes) {
+    throw new Error('Insufficient independent ADS-B flight-path coverage for production calibration.');
+  }
+
+  const records = routeFlightRecords(dataset).filter(({ route, flights }) =>
+    flights.length >= limits.minimumFlightsPerRoute &&
+    Number.isFinite(route.airportA?.lat) && Number.isFinite(route.airportB?.lat)
+  );
+  const training = records.filter(item => item.route.split === 'train');
+  const holdout = records.filter(item => item.route.split === 'holdout');
+  const candidates = [];
+
+  for (let exponent = MIN_EXPONENT; exponent <= MAX_EXPONENT + 1e-9;
+       exponent += EXPONENT_STEP) {
+    const candidate = evaluateExponent(training, holdout, exponent);
+    if (Number.isFinite(candidate.objective)) candidates.push(candidate);
+  }
+  candidates.sort((first, second) => first.objective - second.objective);
+  const best = candidates[0];
+  if (!best || !Number.isFinite(best.radialScaleKm) || best.radialScaleKm <= 0) {
+    throw new Error('No finite flight-path radial calibration candidate could be fitted.');
+  }
+
+  return {
+    model: {
+      schemaVersion: 1,
+      sourceDatasetVersion: dataset.schemaVersion,
+      target: 'Observed ADS-B ground-speed/time mileage compared with the projected polyline of that flight\'s recorded path',
+      radialScaleKm: best.radialScaleKm,
+      radialWarp: best.radialWarp,
+      radialProfile: FLIGHT_PATH_PROFILE,
+      geometry: 'sum-of-sequence-segment-lengths-in-the-displayed-flat-disk',
+      trainingRouteCount: best.training.routeCount,
+      holdoutRouteCount: best.holdout.routeCount
+    },
+    metrics: {
+      spatialCoverage: coverage,
+      training: best.training,
+      holdout: best.holdout,
+      leaveOneOut: best.leaveOneOut,
+      selectedExponentObjective: best.objective,
+      exponentCandidatesTested: candidates.length
+    }
+  };
+}
