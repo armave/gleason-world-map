@@ -212,3 +212,69 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   assert.ok(result.metrics.minimumJacobianDeterminant > 0);
   assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
 });
+
+
+test('longitude aliases at the antimeridian remain the same anchor position', () => {
+  const base = {
+    a: { id: 'A', lat: 0, lon: 180 },
+    b: { id: 'B', lat: 20, lon: 20 },
+    distanceKm: 1000,
+    measurementType: 'direct-straight-line',
+    source: sampleSource
+  };
+  const coverage = summarizeMultiAnchorCoverage([
+    { ...base, split: 'train' },
+    {
+      ...base,
+      split: 'train',
+      a: { id: 'A', lat: 0, lon: -180 },
+      b: { id: 'C', lat: -20, lon: 40 }
+    }
+  ]);
+  assert.deepEqual(coverage.validationErrors, []);
+  assert.equal(coverage.trainingAnchorCount, 3);
+});
+
+test('duplicate observation IDs are rejected before fitting', () => {
+  const base = {
+    id: 'same-id',
+    a: { id: 'A', lat: 0, lon: 0 },
+    b: { id: 'B', lat: 20, lon: 20 },
+    distanceKm: 1000,
+    measurementType: 'direct-straight-line',
+    source: sampleSource
+  };
+  const coverage = summarizeMultiAnchorCoverage([
+    { ...base, split: 'train' },
+    {
+      ...base,
+      split: 'train',
+      a: { id: 'C', lat: -20, lon: 40 },
+      b: { id: 'D', lat: 35, lon: 80 }
+    }
+  ]);
+  assert.ok(coverage.validationErrors.some(item =>
+    item.includes('duplicates observation ID same-id')
+  ));
+});
+
+test('coverage reports unseen holdout anchors separately from pair counts', () => {
+  const trainA = { id: 'TA', lat: -45, lon: -90 };
+  const trainB = { id: 'TB', lat: 0, lon: 0 };
+  const holdoutA = { id: 'HA', lat: 45, lon: 90 };
+  const holdoutB = { id: 'HB', lat: 15, lon: 135 };
+  const base = {
+    distanceKm: 1000,
+    measurementType: 'direct-straight-line',
+    source: sampleSource
+  };
+  const coverage = summarizeMultiAnchorCoverage([
+    { ...base, split: 'train', a: trainA, b: trainB },
+    { ...base, split: 'holdout', a: holdoutA, b: holdoutB }
+  ]);
+  assert.equal(coverage.trainingObservationCount, 1);
+  assert.equal(coverage.holdoutObservationCount, 1);
+  assert.equal(coverage.holdoutAnchorCount, 2);
+  assert.equal(coverage.unseenHoldoutAnchorCount, 2);
+  assert.equal(coverage.holdoutAnchorOverlapCount, 0);
+});
