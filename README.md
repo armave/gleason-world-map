@@ -27,7 +27,7 @@ The fitted latitude warp uses exponent 0.9 and epsilon 0.005. A second, visually
 
 The distance tool draws one straight connector between the endpoints in the visually warped disk, but the primary numeric A–B value is independent of that drawing: it uses a coordinate-only spherical great-circle formula (haversine) with a fixed mean Earth radius of 6,371,008.8 m. The result depends only on endpoint latitude/longitude and does not use ADS-B telemetry, the fitted map scale, or the 12-circle visual warp. The 12-circle transformation affects displayed map geometry only. A separate ADS-B flight-mileage estimate remains available as an empirical reference for typical flown mileage on sampled airport pairs; it is not the actual track of a selected flight and may differ from the great-circle distance because aircraft route around weather, airspace restrictions and operational constraints. Polar/out-of-range support and nearest reference routes are available in the expanded measurement details. The 60°S Restricted Line is a visual reference only.
 
-## Flat-disk mileage estimates and planar area measurements
+## A–B distances and planar area measurements
 
 The A–B tool draws one straight projected segment on the visually calibrated disk. Its primary numeric readout is the coordinate-only spherical great-circle distance between the selected endpoints. The straight connector and its visual chord are display geometry only; the 12-circle warp does not change the great-circle result. A separate ADS-B estimate predicts typical flown mileage from the telemetry-trained route model. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
 
@@ -37,7 +37,7 @@ The primary A–B readout is a spherical great-circle distance calculated only f
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
-The distance tool always uses the straight projected A–B segment, including when either endpoint lies in the Antarctic band. There is no latitude-triggered metric change.
+The visible connector is always one straight projected A–B segment, including when either endpoint lies in the Antarctic band. The numeric primary distance is the coordinate-only spherical great-circle value; there is no latitude-triggered metric change.
 
 **ADS-B flight-telemetry calibration**
 
@@ -185,7 +185,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite covers initial map loading, zoom and rotation, geographic search, A–B measurement, planar polygon area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
+The browser suite covers initial map loading, zoom and rotation, geographic search, coordinate-only great-circle A–B measurement, planar polygon area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
 
 ## Run locally
 
