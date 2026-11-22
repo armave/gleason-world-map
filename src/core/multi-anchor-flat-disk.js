@@ -26,6 +26,8 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   maximumHoldoutPairErrorPercent: 20,
   minimumJacobianDeterminant: 0.2,
   maximumAnchorDisplacementFraction: 0.12,
+  maximumWarpDisplacementFraction: 0.12,
+  maximumRadialOvershootFraction: 1e-5,
   maximumControlPoints: 256
 });
 
@@ -302,19 +304,53 @@ function jacobianDeterminant(x, y, model) {
 }
 
 function topologyMetrics(model) {
-  let minimum = Infinity;
-  for (let radial = 1; radial < 32; radial++) {
-    const fraction = radial / 32;
-    for (let angular = 0; angular < 120; angular++) {
-      const angle = 2 * Math.PI * angular / 120;
-      minimum = Math.min(minimum, jacobianDeterminant(
-        model.diskRadiusKm * fraction * Math.cos(angle),
-        model.diskRadiusKm * fraction * Math.sin(angle),
-        model
-      ));
+  let minimumJacobianDeterminant = Infinity;
+  let maximumWarpDisplacementKm = 0;
+  let maximumRadialOvershootKm = 0;
+  let maximumBoundaryDisplacementKm = 0;
+  const radialSamples = 32;
+  const angularSamples = 144;
+
+  for (let radial = 0; radial <= radialSamples; radial++) {
+    const fraction = radial / radialSamples;
+    for (let angular = 0; angular < angularSamples; angular++) {
+      const angle = 2 * Math.PI * angular / angularSamples;
+      const x = model.diskRadiusKm * fraction * Math.cos(angle);
+      const y = model.diskRadiusKm * fraction * Math.sin(angle);
+      const mapped = applyMultiAnchorWarpXY(x, y, model);
+      if (!mapped) {
+        return {
+          minimumJacobianDeterminant: -Infinity,
+          maximumWarpDisplacementFraction: Infinity,
+          maximumRadialOvershootFraction: Infinity,
+          maximumBoundaryDisplacementKm: Infinity
+        };
+      }
+      const displacement = Math.hypot(mapped[0] - x, mapped[1] - y);
+      maximumWarpDisplacementKm = Math.max(maximumWarpDisplacementKm, displacement);
+      maximumRadialOvershootKm = Math.max(
+        maximumRadialOvershootKm,
+        Math.max(0, Math.hypot(mapped[0], mapped[1]) - model.diskRadiusKm)
+      );
+      if (radial === radialSamples) {
+        maximumBoundaryDisplacementKm = Math.max(
+          maximumBoundaryDisplacementKm, displacement
+        );
+      }
+      if (radial > 0 && radial < radialSamples) {
+        minimumJacobianDeterminant = Math.min(
+          minimumJacobianDeterminant, jacobianDeterminant(x, y, model)
+        );
+      }
     }
   }
-  return { minimumJacobianDeterminant: minimum };
+
+  return {
+    minimumJacobianDeterminant,
+    maximumWarpDisplacementFraction: maximumWarpDisplacementKm / model.diskRadiusKm,
+    maximumRadialOvershootFraction: maximumRadialOvershootKm / model.diskRadiusKm,
+    maximumBoundaryDisplacementKm
+  };
 }
 
 /** Damped Newton inverse for previewing a candidate; never used by production. */
@@ -609,7 +645,13 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
   if (topology.minimumJacobianDeterminant < limits.minimumJacobianDeterminant)
     failures.push('Candidate deformation fails the no-foldover Jacobian gate');
   if (maximumDisplacementFraction > limits.maximumAnchorDisplacementFraction)
-    failures.push('Candidate displacement exceeds the stability limit');
+    failures.push('Training-anchor displacement exceeds the stability limit');
+  if (topology.maximumWarpDisplacementFraction > limits.maximumWarpDisplacementFraction)
+    failures.push('Interpolated warp displacement exceeds the stability limit');
+  if (topology.maximumRadialOvershootFraction > limits.maximumRadialOvershootFraction)
+    failures.push('Interpolated warp extends beyond the circular disk boundary');
+  if (topology.maximumBoundaryDisplacementKm > 1e-5)
+    failures.push('Candidate deformation does not exactly preserve the pole and Antarctic rim');
   if (holdoutMetrics.meanAbsolutePercent >= baselineHoldout.meanAbsolutePercent - 0.25)
     failures.push('Candidate does not improve independent holdout MAPE by at least 0.25 percentage points');
 
