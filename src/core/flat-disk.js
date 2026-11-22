@@ -356,13 +356,29 @@ const clickPointCoordinate = point =>
   point.lat >= -90 && point.lat <= 90
     ? [point.lon, point.lat] : null;
 
-/** Planar shoelace area and straight-edge perimeter for a user polygon. */
-export function flatDiskPolygonMetrics(vertices, projectPoint, baseRadius) {
+/**
+ * Planar shoelace area and canonical calibrated perimeter for a user polygon.
+ * The same distance callback used by the A–B ruler is required for every edge.
+ */
+export function flatDiskPolygonMetrics(
+  vertices, projectPoint, baseRadius, measureDistanceMeters
+) {
   const scale = metersPerProjectedUnit(baseRadius);
-  if (scale == null) return null;
+  if (scale == null || typeof measureDistanceMeters !== 'function') return null;
   const points = projectRing(vertices, clickPointCoordinate, projectPoint, scale);
   const result = ringPlanarMetrics(points, true);
-  return result;
+  if (!result) return null;
+
+  let perimeterM = 0;
+  for (let index = 0; index < vertices.length; index++) {
+    const distance = measureDistanceMeters(
+      vertices[index],
+      vertices[(index + 1) % vertices.length]
+    );
+    if (!Number.isFinite(distance) || distance < 0) return null;
+    perimeterM += distance;
+  }
+  return { ...result, perimeterM };
 }
 
 /** Planar area of GeoJSON Polygon/MultiPolygon geometry, in square metres. */
