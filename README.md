@@ -237,3 +237,6 @@ A separate candidate fitting pipeline is available through `npm run fit:multi-an
 The observation input is intentionally not populated with ADS-B route mileage: flown track length is not direct straight-line endpoint distance. Start from `data/multi-anchor-distance-observations.template.json`, provide source-traceable measurements, and keep complete endpoint pairs disjoint between training and holdout. The minimum coverage, quality gates, and manual promotion procedure are documented in `docs/multi-anchor-flat-disk.md`.
 
 The project currently has no qualifying independent direct-distance observation set for this candidate. Until such data is supplied and passes every holdout/topology gate, the existing production projection remains active.
+
+The experimental fitter uses confidence-weighted robust optimization, geographic holdout-coverage gates (including unseen anchors), a regularized radial-basis deformation, a damped numerical inverse, and denser checks for foldover, displacement and rim preservation. Its automated tests include synthetic recovery and deliberately invalid topology cases. These synthetic cases verify software behavior only; they are not real-world calibration measurements.
+
