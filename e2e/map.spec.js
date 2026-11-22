@@ -31,8 +31,8 @@ test('renders all 12 requested distance multipliers at the same radii used by th
   await expect(circles).toHaveCount(12);
   const multipliers = await circles.locator('td:nth-child(2)').allTextContents();
   expect(multipliers).toEqual([
-    '1.00×', '0.95×', '0.91×', '0.86×', '0.82×', '0.77×',
-    '0.73×', '0.68×', '0.64×', '0.59×', '0.55×', '0.50×'
+    '1.00×', '0.95×', '0.91×', '0.86×', '0.81×', '0.77×',
+    '0.72×', '0.68×', '0.63×', '0.59×', '0.54×', '0.50×'
   ]);
   await expect(circles.first()).toContainText('0.0%');
   await expect(circles.last()).toContainText('100.0%');
@@ -98,7 +98,7 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
   await page.locator('#coordBLon').fill('180');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('#distanceValue')).toContainText('25,376');
+  await expect(page.locator('#distanceValue')).toContainText('36,527.2');
   await expect(page.locator('#measureHelp')).toContainText('longitude remains the angular position');
 });
 

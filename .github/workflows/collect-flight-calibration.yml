@@ -31,10 +31,10 @@ jobs:
           node-version: 22
       - name: Collect observed ground-speed and timestamp samples across the available archive
         run: npm run collect:flight-calibration -- --max-pages-per-route=120 --samples-per-route=6 --history-days=560
-      - name: Fit only when independent route coverage is sufficient
-        run: npm run fit:flight-calibration
       - name: Fit visual geometry against recorded ADS-B trajectories
         run: npm run fit:flight-path-calibration
+      - name: Fit the secondary endpoint mileage model to the active display geometry
+        run: npm run fit:flight-calibration
       - name: Commit reproducible telemetry data and fitted parameters
         if: always()
         run: |

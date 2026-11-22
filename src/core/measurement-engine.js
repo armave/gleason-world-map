@@ -3,8 +3,8 @@ import {
   baseFlatDiskDistanceMeters,
   flatDiskDistanceMeters,
   radialDistanceFromNorthKm,
-  rad,
-  wrapLongitude
+  DISK_RADIUS_KM,
+  project
 } from './flat-disk.js';
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { flightCalibrationFeatures, predictFlightScaleRatio } from './flight-calibration-fit.js';
@@ -20,9 +20,8 @@ function validPoint(point) {
 
 function projectKm(point) {
   if (!validPoint(point)) return null;
-  const radius = radialDistanceFromNorthKm(point.lat);
-  const longitude = rad(wrapLongitude(point.lon));
-  return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
+  const projected = project(point.lon, point.lat, DISK_RADIUS_KM);
+  return projected.every(Number.isFinite) ? projected : null;
 }
 
 /** True when the straight projected connector passes across the 60°S circle. */

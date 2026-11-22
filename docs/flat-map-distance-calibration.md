@@ -61,18 +61,26 @@ Each `MultiLineString` component is treated as its own observed sequence. The pr
 
 ### Projection of recorded track points
 
-The target mileage is still calculated exclusively from recorded ground speed and elapsed time. Flight coordinates are used separately to test whether the candidate flat-disk drawing corresponds to the observed track geometry.
+The target mileage is calculated exclusively from recorded ground speed and elapsed time. Flight coordinates are used separately to test whether the candidate flat-disk drawing corresponds to the observed track geometry.
 
-For each recorded position `(longitude, latitude)`, calculate the candidate base radial fraction `q` using the regularized-power latitude warp. Apply the same continuous 12-circle radial profile displayed by the map:
+For each recorded position `(longitude, latitude)`, calculate the candidate base radial fraction `q` using the regularized-power latitude warp, then apply the integrated 12-circle profile and the fitted longitude shear:
 
 ```text
 t = (90° - latitude) / 180°
 q(t) = regularized_power(t, exponent, epsilon)
-I(q) = q - 0.25q²
+m(q) = outer + (inner - outer) * (1 - q)^a
+I(q) = integral(0..q, m(u) du)
+     = outer*q + (inner - outer) * [1 - (1 - q)^(a + 1)] / (a + 1)
 r_unit = π * I(q)
-x_unit = r_unit * cos(longitude)
-y_unit = -r_unit * sin(longitude)
+g(q) = 4q(1 - q)
+F(λ) = a1 sin(λ) + b1(1 - cos(λ))
+     + a2 sin(2λ) + b2(1 - cos(2λ))
+λ_display = λ + g(q) * F(λ)
+x_unit = r_unit * cos(λ_display)
+y_unit = -r_unit * sin(λ_display)
 ```
+
+The four Fourier coefficients are fitted on training routes only. The radial envelope `g(q)` is zero at both the North Pole (`q=0`) and Ice Wall (`q=1`), so the centre and complete circular rim keep their anchors. The longitude function is periodic; its angular derivative is constrained to remain at least 0.35 across the full disk, preventing longitude lines from crossing or folding over. The inverse projection solves the same monotonic angle mapping at the recovered radial fraction.
 
 For each adjacent pair of vertices within one source sequence, calculate the Euclidean segment length in the candidate flat disk. The unit-scale path length for a flight is the sum of those segment lengths across all source sequences:
 
@@ -97,17 +105,20 @@ route_scale_ratio = median(flight_scale_ratio for that airport pair)
 R_base = median(route_scale_ratio across training airport pairs)
 ```
 
-Each airport pair contributes one route-level observation, regardless of how many flights that route contains. The fitter searches the regularized-power exponent from 0.65 through 1.35 in 0.025 increments; the epsilon and the 1.00×→0.50× continuous radial profile remain fixed. It chooses the candidate using training-route error plus leave-one-route-out error. Entire airport pairs are excluded from fitting and used as independent holdouts.
+Each airport pair contributes one route-level observation, regardless of how many flights that route contains. The fitter jointly selects the regularized-power latitude exponent, integrated radial-profile exponent, four periodic longitude coefficients and one global radial scale. Candidate longitude coefficients are regularized and bounded, and the minimum angular stretch must remain at least 0.35. The objective uses route-level leave-one-out error within the training split; the outer leave-one-route-out validation refits the complete geometry after excluding each training airport pair. The six preassigned holdout airport pairs are not used to fit the final model.
 
-A path candidate is rejected unless it has at least 20 usable training airport pairs and 6 usable holdout pairs, 4 training and 2 holdout pairs with an endpoint south of 30°S, at least 2 training and 1 holdout pair south of 45°S, and at least 1 training and 1 holdout pair south of 60°S. A route is usable only when at least three quality-qualified flights produce non-zero projected path lengths. The 30°S, 45°S and 60°S route-coverage gates are re-counted after projection, so unusable trajectories cannot satisfy the spatial requirements. These spatial and usable-route gates apply in addition to these error limits:
+A path candidate requires at least 20 usable training airport pairs and 6 usable holdout pairs, plus 4 training and 2 holdout pairs with an endpoint south of 30°S. A route is usable only when at least three quality-qualified flights produce non-zero projected path lengths. The route counts are rechecked after projection. The current archive has 26 training and 6 holdout routes, including 4 and 2 respectively south of 30°S, but no qualified routes south of 45°S or 60°S. Those deeper southern bands are reported as explicit extrapolation warnings rather than hidden behind a false validation claim. The shear itself fades to identity at the Ice Wall, but that anchor does not empirically validate the intervening Antarctic geometry.
+
+The fitted model is judged against these error and geometry limits:
 
 - Training-route MAPE no greater than 10%.
 - Independent holdout MAPE no greater than 12%.
 - Worst independent holdout route error no greater than 20%.
-- Leave-one-route-out MAPE no greater than 15%.
-- Worst leave-one-route-out route error no greater than 45%.
+- Nested leave-one-route-out MAPE no greater than 15%.
+- Worst nested leave-one-route-out route error no greater than 45%.
+- Minimum angular stretch no less than 0.35.
 
-A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. If a candidate passes, the workflow writes the accepted radial scale and warp to that file, and the displayed projection, inverse lookup, scale bar and planar measurements all use that same geometry.
+A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. An accepted candidate writes radial scale, latitude warp, radial profile and longitude warp to that file. The renderer, inverse lookup, coastlines, markers, map-click coordinates, ruler, scale bar and planar measurements all use the same forward/inverse geometry.
 
 The previous endpoint-chord fitter still creates `data/flight-calibration-summary.json` and `src/core/flight-calibration-parameters.js`. Its local route-neighbour estimate remains a secondary reference for typical flown mileage only; it does not control the visible projection.
 
@@ -140,7 +151,7 @@ x_base = r_base * cos(longitude)
 y_base = -r_base * sin(longitude)
 ```
 
-The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The currently deployed `R_base` is frozen from the last accepted legacy calibration. The strict observed-only refresh creates a separate candidate and does not change the production scale unless its route coverage, Southern Hemisphere and visual-projection validation gates all pass. Before the 12-circle profile, the base radius is `pi * R_base`; the final measured disk radius after applying the profile is `0.75 * pi * R_base`. Adding a candidate airport pair does not change the deployed scale until its measured observations pass the independent acceptance gate.
+The positive epsilon makes the derivative finite at the North Pole. The warp is strictly increasing, maps the North Pole to the centre, maps 90°S to the outer circle, and keeps every meridian radial and every parallel circular. The currently deployed `R_base` and smooth radial-profile exponent are frozen from the last accepted production calibration. The strict observed-only refresh creates a separate candidate and does not change the production scale or ring spacing unless its route coverage, Southern Hemisphere and visual-projection validation gates all pass. Before the radial profile, the base radius is `pi * R_base`; the final measured disk radius is `mu * pi * R_base`, where `mu` is the integral mean of the local profile. Adding a candidate airport pair does not change deployed geometry until its measurements pass the independent acceptance gate.
 
 Airport latitude/longitude values are only the endpoint encoding required to position observations on this disk. No coordinate-derived route length, globe-distance equation, sphere radius, ellipsoid or geodesic library is used to create the ADS-B mileage targets.
 
@@ -148,28 +159,29 @@ The radial warp moves interior rings relative to a linear `r = R * theta` disk w
 
 ## 12-circle radial distance multipliers
 
-The 12 values are the local radial-distance multipliers used by the map itself. They taper linearly from 1.00× at circle 1 to 0.50× at circle 12. The exact step is `0.50 / 11 = 0.0454545…`; the table rounds each multiplier to two decimals.
+The 12 values are local radial-distance multipliers sampled at the 12 equally spaced base-ring anchors. The active production profile currently has exponent `a = 1`, which produces the familiar linear taper from 1.00× at circle 1 to 0.50× at circle 12. Candidate fits can change the smooth curve's exponent while preserving those endpoint multipliers; their actual sampled values and spacing are generated from the active profile.
 
 Let `q` be the original fitted radial fraction, from 0 at the North Pole to 1 at the Ice Wall. The continuous local multiplier profile is:
 
 ```text
-m(q) = 1.00 - 0.50q
-mean multiplier = integral(0..1, m(u) du) = 0.75
+m(q) = 0.50 + 0.50(1 - q)^a
+mu = integral(0..1, m(u) du) = 0.50 + 0.50/(a + 1)
 ```
 
 The profile is integrated—not applied as twelve separate bands—so the map remains smooth. Its physical radial integral is:
 
 ```text
-I(q) = integral(0..q, m(u) du) = q - 0.25q²
+I(q) = integral(0..q, m(u) du)
+     = 0.50q + 0.50[1 - (1 - q)^(a + 1)]/(a + 1)
 r_km = pi * R_base * I(q)
 dr_km/dq = pi * R_base * m(q)
-R_disk = pi * R_base * integral(0..1, m(u) du)
-       = 0.75 * pi * R_base
+R_disk = pi * R_base * mu
+       = pi * R_base * [0.50 + 0.50/(a + 1)]
 ```
 
-For screen positioning only, the normalized radial fraction is `q_visual = I(q) / 0.75 = q + q(1 - q) / 3`. This preserves the visible disk boundary and the 12 ring positions on the canvas. The normalization is **not** used as an extra multiplier in the measured kilometre coordinates. Consequently the physical local radial-distance multiplier is exactly `m(q)`: 1.00× at the centre, 0.50× at the Ice Wall. The derivative stays positive and continuous, with no hard joins, while `q_visual(0) = 0` and `q_visual(1) = 1` keep the North Pole at the centre and the Ice Wall at the display edge.
+For screen positioning, the normalized radial fraction is `q_visual = I(q) / mu`. This preserves the visible disk boundary and the 12 reference circles on the canvas. The normalization is **not** used as an extra multiplier in measured kilometre coordinates. The physical local radial-distance multiplier is exactly `m(q)`: 1.00× at the centre and 0.50× at the Ice Wall. The derivative remains positive and continuous, with no hard joins, while `q_visual(0) = 0` and `q_visual(1) = 1` preserve the North Pole centre and Antarctic outer rim.
 
-The physical spacing between two adjacent reference circles is the average of their endpoint multipliers times `pi * R_base / 11`. There is no division by 0.75 in this measured radial interval.
+The physical spacing between two adjacent reference circles is the integral of `pi * R_base * m(q)` over that interval. There is no post-measurement multiplier applied to the resulting A–B chord.
 
 | Circle | Distance multiplier |
 |---:|---:|
@@ -188,7 +200,7 @@ The physical spacing between two adjacent reference circles is the average of th
 
 The same shared 12-circle data drives both the calibration table and the ten dotted interior guide rings drawn on the map. All latitude circles, coastlines, country boundaries, labels, map clicks, inverse lookup and the scale bar use the same transformed coordinates.
 
-**Measurement correspondence:** The local profile controls radial spacing: along a fixed meridian, `dr/dq = πR_base·m(q)`, so each radial interval uses the average of its endpoint multipliers. For arbitrary A–B endpoints, the map projects both coordinates through the profile and reports the Euclidean chord between their final radius-and-longitude positions. A diagonal or tangential component is therefore governed by the cumulative radius `r(q) = πR_base·I(q)` and the longitude span; it is not valid to multiply the entire chord by one circle's local radial factor. The A–B number is exactly the length of the visible connector. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion.
+**Measurement correspondence:** The local profile controls radial spacing: along a fixed meridian, `dr/dq = πR_base·m(q)`, so each radial interval is the integral of that local multiplier over the interval. For arbitrary A–B endpoints, the map projects both coordinates through the same profile and reports the Euclidean chord between their final radius-and-longitude positions. A diagonal or tangential component is therefore governed by the cumulative radius `r(q) = πR_base·I(q)` and the longitude span; it is not valid to multiply the entire chord by one circle's local radial factor. The A–B number is exactly the length of the visible connector. Polygon edge lengths and the scale bar use the same final map-plane coordinates and kilometre conversion.
 
 ## Primary flat-disk Euclidean distance
 
@@ -198,9 +210,10 @@ The primary measurement operates entirely in the displayed flat-disk coordinate 
 t = (π/2 − φ) / π
 q(t) = ((t + epsilon)^exponent − epsilon^exponent) /
        ((1 + epsilon)^exponent − epsilon^exponent)
-I(q) = q − 0.25q²
-q_visual = I(q) / 0.75 = q + q(1 − q) / 3
-R_disk = 0.75 * π * R_base
+I(q) = 0.50q + 0.50[1 − (1 − q)^(a + 1)]/(a + 1)
+mu = 0.50 + 0.50/(a + 1)
+q_visual = I(q) / mu
+R_disk = mu * π * R_base
 r_km = π * R_base * I(q) = R_disk * q_visual
 x = r_km * cos(λ)
 y = −r_km * sin(λ)
@@ -214,13 +227,13 @@ d_flat = sqrt((x₂ − x₁)^2 + (y₂ − y₁)^2)
 
 This is exactly the length of the straight connector drawn between those same projected points. The canvas connector label and the primary numeric readout therefore describe the same segment. The scale bar and polygon edge lengths use the same final projected-plane metric. The 12-circle function is already included in `q_visual`; no additional 12-circle multiplier is applied after measuring the chord.
 
-The base scale `R_base` is an empirical flat-disk calibration derived from ADS-B ground-speed/time observations. It is not a globe radius, sphere radius or universal physical constant. The 12-circle profile makes the final physical disk radius `R_disk = 0.75πR_base`; the original `πR_base` base radius is retained only for the separate ADS-B calibration chord. The resulting kilometre values are map-plane kilometres under this model, not a claim of survey-grade ground distance. There is no sphere, ellipsoid, great-circle or geodesic calculation in the primary measurement path.
+The base scale `R_base` is an empirical flat-disk calibration derived from ADS-B ground-speed/time observations. It is not a globe radius, sphere radius or universal physical constant. The integrated profile makes the final physical disk radius `R_disk = mu·πR_base`; `mu` is the integral mean of the active local radial multiplier curve. The resulting kilometre values are map-plane kilometres under this model, not a claim of survey-grade ground distance. There is no sphere, ellipsoid, great-circle or geodesic calculation in the primary measurement path.
 
 **Antarctic rim convention:** when `φ = −90°`, `q_visual = 1` and the radial coordinate is the disk boundary. Longitude `λ` continues to set the angular position around that boundary. Thus two coordinates at 90°S with different longitudes are different disk points. This deliberate convention preserves the circular Antarctic rim rather than collapsing it to one spherical pole.
 
 A separate ADS-B flight-mileage estimate is retained as an empirical reference. The active legacy model uses its original fitted base chord. New strict model versions are tagged `chordGeometry: visual-12-circle` and use the same displayed 12-circle chord as the map. In either case, the local route-neighbour correction estimates typical flown mileage only; it does not alter map coordinates or the primary A–B connector. It is not a specific flight path.
 
-The legacy ADS-B model used the unmodified base radial fraction. Strict candidate model version 6 instead uses the displayed 12-circle radial positions. For that geometry, calculate `q_visual = (q - 0.25q²) / 0.75` at both endpoints, then use the wrapped longitude span. The physical chord is the following unit chord multiplied by the 0.75 disk-radius factor and the fitted radial scale:
+The legacy ADS-B model used the unmodified base radial fraction. Strict candidate model version 6 instead uses the displayed 12-circle radial positions. For that geometry, calculate `q_visual = I(q) / mu` at both endpoints, then use the wrapped longitude span. The physical chord is the resulting unit chord multiplied by `mu·π` and the fitted radial scale:
 
 ```text
 radial_component = pi * abs(qA - qB)
@@ -250,10 +263,10 @@ The figures in the schema-2 dataset snapshot are now historical diagnostics only
 The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the flight-estimate neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
-The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for two separate models:
+The fitter searches a joint latitude-warp/profile-exponent grid using nested leave-one-route-out validation, then reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for the visible map geometry:
 
 - The route-neighbour model, which estimates typical flown mileage as a secondary empirical reference.
-- The primary visual projection, which uses only the one global radial scale multiplied by the same displayed 12-circle chord used by the map. It is scored using leave-one-route-out training validation and independent holdout routes.
+- The primary visual projection, which uses one global radial scale and the fitted smooth 12-circle profile. Its training and holdout scores are computed from projected observed flight paths, not endpoint chord approximations.
 
 Production parameters are emitted only when both models, route-count and Southern Hemisphere coverage gates pass. In particular, the primary visual projection must meet its own MAPE and worst-route limits without relying on the local route-neighbour correction. A rejected fit still writes the summary for review and preserves the last approved production parameter file. This prevents a good secondary flight-mileage estimate from masking a poorly calibrated map visual scale.
 
@@ -263,7 +276,7 @@ The summary and raw source records are:
 - `data/flight-calibration-summary.json` — endpoint-based secondary estimate fit and its acceptance decision.
 - `data/flight-path-calibration-summary.json` — visible path-fit candidate, route coverage, train/holdout/leave-one-route-out metrics and acceptance decision.
 - `src/core/flight-calibration-parameters.js` — parameters for the secondary endpoint-based flight-mileage estimate.
-- `src/core/flight-path-calibration-parameters.js` — active visible map scale and latitude warp, replaced only by an accepted path fit.
+- `src/core/flight-path-calibration-parameters.js` — active visible map scale, latitude warp and radial-profile exponent, replaced only by an accepted path fit.
 
 To collect and fit locally:
 

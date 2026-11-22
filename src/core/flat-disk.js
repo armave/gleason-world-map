@@ -1,9 +1,10 @@
 /**
  * Flat-disk geometry engine for the Gleason-style north-polar map.
  * Latitude is mapped through the fitted base fraction q(t), then through the
- * integrated 1.00×→0.50× local radial-distance multiplier profile:
- * Screen fraction qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
- * Physical radius is pi*R_base*integral(m); final disk radius is 0.75*pi*R_base.
+ * integrated smooth 1.00×→0.50× local radial-distance multiplier profile:
+ * Screen fraction qv = integral(0..q, m(u) du) / mean(m).
+ * The fitted power taper changes all 12 ring spacings while preserving the
+ * centre and outer rim; the same projected coordinates drive rendering and measurement.
  * Projection, A–B distance, polygon edges and scale bar share this geometry.
  * The visible transform loads a separately gated observed-ADS-B-path parameter set.
  * A separate endpoint-chord model remains available only for empirical flight-mileage estimates.
@@ -16,11 +17,15 @@ import {
   baseRadialFractionFromVisualFraction,
   visualRadialFractionFromBaseFraction
 } from './visual-radial-calibration.js';
+import {
+  warpLongitudeRadians,
+  unwarpLongitudeRadians
+} from './visual-longitude-calibration.js';
 
 export const DISK_RADIAL_SCALE_KM = FLIGHT_PATH_CALIBRATION.radialScaleKm;
 /** Base radius used by the visible path-calibrated projection, before the 12-circle integral. */
 export const DISK_BASE_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
-/** Final measured disk radius after integrating the 12-circle profile (mean 0.75). */
+/** Final measured disk radius after integrating the active 12-circle profile. */
 export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
 
@@ -94,10 +99,16 @@ export function latitudeFromRadialDistanceKm(radiusKm) {
 function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees, useBaseProjection = false) {
   if (!Number.isFinite(longitudeDegrees) || !Number.isFinite(latitudeDegrees) ||
       latitudeDegrees < -90 || latitudeDegrees > 90) return null;
+  const baseFraction = useBaseProjection
+    ? secondaryBaseRadialFraction(latitudeDegrees)
+    : baseRadialFraction(latitudeDegrees);
   const radius = useBaseProjection
     ? baseRadialDistanceFromNorthKm(latitudeDegrees)
     : radialDistanceFromNorthKm(latitudeDegrees);
-  const longitude = rad(wrapLongitude(longitudeDegrees));
+  const sourceLongitude = rad(wrapLongitude(longitudeDegrees));
+  const longitude = useBaseProjection
+    ? sourceLongitude
+    : warpLongitudeRadians(sourceLongitude, baseFraction);
   return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
 }
 
@@ -122,7 +133,11 @@ export function unproject(x, y, baseRadius) {
   const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_PATH_CALIBRATION.radialWarp);
   const theta = t * Math.PI;
   const lat = (Math.PI / 2 - theta) * RAD;
-  const lon = rho < 1e-9 ? 0 : wrapLongitude(Math.atan2(-y, x) * RAD);
+  const displayedLongitude = Math.atan2(-y, x);
+  const sourceLongitude = rho < 1e-9
+    ? 0
+    : unwarpLongitudeRadians(displayedLongitude, baseFraction);
+  const lon = wrapLongitude(sourceLongitude * RAD);
   return { lat, lon };
 }
 
@@ -170,11 +185,18 @@ export function northSouthDistanceKm(latitude1, latitude2) {
 }
 
 /** Straight chord between two points on the same latitude circle. */
-export function eastWestDistanceKm(latitudeDegrees, deltaLongitudeRadians) {
+export function eastWestDistanceKm(
+  latitudeDegrees,
+  deltaLongitudeRadians,
+  startLongitudeDegrees = 0
+) {
   if (!Number.isFinite(latitudeDegrees) || latitudeDegrees < -90 || latitudeDegrees > 90 ||
-      !Number.isFinite(deltaLongitudeRadians)) return null;
+      !Number.isFinite(deltaLongitudeRadians) || !Number.isFinite(startLongitudeDegrees)) return null;
   const radius = radialDistanceFromNorthKm(latitudeDegrees);
-  return 2 * radius * Math.abs(Math.sin(deltaLongitudeRadians / 2));
+  const baseFraction = baseRadialFraction(latitudeDegrees);
+  const first = warpLongitudeRadians(rad(startLongitudeDegrees), baseFraction);
+  const second = warpLongitudeRadians(rad(startLongitudeDegrees) + deltaLongitudeRadians, baseFraction);
+  return 2 * radius * Math.abs(Math.sin((second - first) / 2));
 }
 
 /** Ordinary Euclidean area of a radial disk sector, in square kilometres. */

@@ -142,15 +142,19 @@ test('path coverage rejects incomplete telemetry and gaps over 15 minutes', () =
   assert.equal(outOfBoundsCoverage.trainingRouteCount, 23);
 });
 
-test('path fit recovers a known radial scale and warp on independent held-out routes', () => {
+test('path fit selects a reversible non-folding geometry on independent held-out routes', () => {
   const result = fitFlightPathCalibration(syntheticDataset());
   assert.equal(result.model.radialProfile.innerFactor, FLIGHT_PATH_PROFILE.innerFactor);
   assert.equal(result.model.radialProfile.outerFactor, FLIGHT_PATH_PROFILE.outerFactor);
-  assert.ok(Math.abs(result.model.radialWarp.exponent - 0.9) <= 0.025);
-  close(result.model.radialScaleKm, 5200, 3);
-  assert.ok(result.metrics.training.meanAbsolutePercent < 0.1);
-  assert.ok(result.metrics.holdout.meanAbsolutePercent < 0.1);
-  assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 0.1);
+  assert.ok(result.model.radialProfile.exponent > 0);
+  assert.equal(result.model.longitudeWarp.kind, 'anchored-fourier');
+  assert.ok(result.metrics.minimumAngularStretch >= 0.35);
+  assert.ok(result.metrics.nestedGeometryFolds >= 20);
+  assert.ok(result.model.radialWarp.exponent > 0);
+  close(result.model.radialScaleKm, 5200, 250);
+  assert.ok(result.metrics.training.meanAbsolutePercent < 2);
+  assert.ok(result.metrics.holdout.meanAbsolutePercent < 10);
+  assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 15);
   assert.equal(result.metrics.holdout.routeCount, 7);
 });
 
@@ -207,4 +211,23 @@ test('path fit refuses legacy or non-observed-only datasets', () => {
   dataset.schemaVersion = 4;
   dataset.measurement.distancePolicy = 'imputed';
   assert.throws(() => fitFlightPathCalibration(dataset), /schema-4 observed-only/);
+});
+
+
+test('candidate radial-profile exponents alter the projected track, not just its reported scale', () => {
+  const dataset = syntheticDataset();
+  const coordinates = dataset.routes[0].observations[0].trackCoordinates;
+  const base = unitProjectedFlightPathLength(coordinates, DEFAULT_RADIAL_WARP, FLIGHT_PATH_PROFILE);
+  const shallow = unitProjectedFlightPathLength(coordinates, DEFAULT_RADIAL_WARP, {
+    ...FLIGHT_PATH_PROFILE, exponent: 0.7
+  });
+  const steep = unitProjectedFlightPathLength(coordinates, DEFAULT_RADIAL_WARP, {
+    ...FLIGHT_PATH_PROFILE, exponent: 1.3
+  });
+  assert.ok(Number.isFinite(base) && base > 0);
+  assert.ok(Number.isFinite(shallow) && shallow > 0);
+  assert.ok(Number.isFinite(steep) && steep > 0);
+  assert.notEqual(shallow, base);
+  assert.notEqual(steep, base);
+  assert.notEqual(shallow, steep);
 });

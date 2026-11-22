@@ -8,12 +8,13 @@ import {
   radialFraction, baseRadialFraction,
   latitudeFromRadialDistanceKm, project, unproject,
   flatDiskDistanceMeters, baseFlatDiskDistanceMeters, flatDiskLinePath,
-  northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2,
+  northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2, rad,
   flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
   DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
 import { radialFractionFromUnitColatitude, radialWarpDerivative } from '../src/core/radial-warp.js';
-import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction } from '../src/core/visual-radial-calibration.js';
+import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction, visualRadialSpacingScale } from '../src/core/visual-radial-calibration.js';
+import { warpLongitudeRadians, wrapRadians } from '../src/core/visual-longitude-calibration.js';
 
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
@@ -54,7 +55,7 @@ test('smooth radial warp preserves the pole and rim while recalibrating latitude
 });
 
 test('the displayed kilometre radius integrates the requested unnormalized multiplier profile', () => {
-  close(DISK_RADIUS_KM, DISK_BASE_RADIUS_KM * 0.75, 1e-10);
+  close(DISK_RADIUS_KM, DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN, 1e-10);
   for (let index = 0; index <= 11; index++) {
     const q = index / 11;
     const physicalRadius = DISK_RADIUS_KM *
@@ -63,7 +64,7 @@ test('the displayed kilometre radius integrates the requested unnormalized multi
       integratedRadialDistanceMultiplier(q);
     close(physicalRadius, integratedRadius, 1e-8);
   }
-  close(radialDistanceFromNorthKm(-90), DISK_BASE_RADIUS_KM * 0.75, 1e-8);
+  close(radialDistanceFromNorthKm(-90), DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN, 1e-8);
 });
 
 test('smooth 12-circle visual calibration preserves both anchors and has no hard ring joins', () => {
@@ -78,7 +79,7 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
     const visual = radialFraction(lat);
     assert.ok(visual > previousVisual);
     previousVisual = visual;
-    close(visual, base + base * (1 - base) / 3, 1e-12);
+    close(visual, visualRadialFractionFromBaseFraction(base), 1e-12);
     const secondaryBase = radialFractionFromUnitColatitude(
       colatitudeRadians(lat) / Math.PI, FLIGHT_CALIBRATION.radialWarp
     );
@@ -94,19 +95,41 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
   const epsilon = 1e-6;
   for (let circle = 1; circle < 11; circle++) {
     const q = circle / 11;
-    const left = (
-      ((q + epsilon) + (q + epsilon) * (1 - q - epsilon) / 3) -
-      ((q - epsilon) + (q - epsilon) * (1 - q + epsilon) / 3)
+    const derivative = (
+      visualRadialFractionFromBaseFraction(q + epsilon) -
+      visualRadialFractionFromBaseFraction(q - epsilon)
     ) / (2 * epsilon);
-    close(left, (4 - 2 * q) / 3, 1e-8);
+    close(derivative, visualRadialSpacingScale(q), 1e-8);
   }
 
   const a = point(40, 10), b = point(40, 20);
   const visual = flatDiskDistanceMeters(a, b);
   const base = baseFlatDiskDistanceMeters(a, b);
-  close(visual / base,
-    radialDistanceFromNorthKm(40) / baseRadialDistanceFromNorthKm(40), 1e-12);
+  const projectedA = project(a.lon, a.lat, 1);
+  const projectedB = project(b.lon, b.lat, 1);
+  close(
+    visual,
+    Math.hypot(projectedB[0] - projectedA[0], projectedB[1] - projectedA[1]) *
+      DISK_RADIUS_KM * 1000,
+    1e-7
+  );
   assert.notEqual(visual, base);
+});
+
+test('flat-disk map projection applies the fitted longitude shear and anchors the pole and rim', () => {
+  const longitude = 80;
+  const latitude = 25;
+  const q = baseRadialFraction(latitude);
+  const projected = project(longitude, latitude, 1000);
+  const projectedAngle = Math.atan2(-projected[1], projected[0]);
+  const expectedAngle = warpLongitudeRadians(rad(longitude), q);
+  close(wrapRadians(projectedAngle - expectedAngle), 0, 1e-10);
+  assert.ok(Math.abs(wrapRadians(projectedAngle - rad(longitude))) > 0.05);
+
+  const pole = project(longitude, 90, 1000);
+  close(Math.hypot(pole[0], pole[1]), 0, 1e-10);
+  const rim = project(longitude, -90, 1000);
+  close(wrapRadians(Math.atan2(-rim[1], rim[0]) - rad(longitude)), 0, 1e-10);
 });
 
 test('flat-disk projection round-trips, wraps longitude and keeps Gleason orientation', () => {
@@ -124,8 +147,13 @@ test('flat-disk projection round-trips, wraps longitude and keeps Gleason orient
 
 test('distance is the Euclidean straight segment between projected coordinates', () => {
   const a = point(0, 0), b = point(0, 90);
-  const radius = radialDistanceFromNorthKm(0);
-  close(flatDiskDistanceMeters(a, b), Math.SQRT2 * radius * 1000, 1e-6);
+  const projectedA = project(a.lon, a.lat, 1);
+  const projectedB = project(b.lon, b.lat, 1);
+  const expected = Math.hypot(
+    projectedB[0] - projectedA[0],
+    projectedB[1] - projectedA[1]
+  ) * DISK_RADIUS_KM * 1000;
+  close(flatDiskDistanceMeters(a, b), expected, 1e-6);
   const direct = flatDiskDistanceMeters(point(90, -170), point(90, 150));
   close(direct, 0, 1e-9);
   close(flatDiskDistanceMeters(point(0, 180), point(0, -180)), 0, 1e-8);
@@ -147,9 +175,14 @@ test('direct connector contains only the two projected endpoints', () => {
 
 test('radial separation and same-latitude straight chord formulas are planar', () => {
   close(northSouthDistanceKm(90, 0), radialDistanceFromNorthKm(0), 1e-10);
-  const r = radialDistanceFromNorthKm(0);
-  close(eastWestDistanceKm(0, Math.PI / 180),
-    2 * r * Math.sin(Math.PI / 360), 1e-10);
+  const projectedA = project(0, 0, 1);
+  const projectedB = project(1, 0, 1);
+  close(
+    eastWestDistanceKm(0, Math.PI / 180),
+    Math.hypot(projectedB[0] - projectedA[0], projectedB[1] - projectedA[1]) *
+      DISK_RADIUS_KM,
+    1e-7
+  );
 });
 
 test('sector area uses Euclidean disk geometry', () => {

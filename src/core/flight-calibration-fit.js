@@ -12,6 +12,7 @@ import {
   RADIAL_DISTANCE_PROFILE_MEAN,
   visualRadialFractionFromBaseFraction
 } from './visual-radial-calibration.js';
+import { warpLongitudeRadians } from './visual-longitude-calibration.js';
 
 const DEG = Math.PI / 180;
 const FACTOR_BOUNDS = [0.5, 2.5];
@@ -41,13 +42,22 @@ function validAirport(airport) {
     Number.isFinite(airport.lon);
 }
 
-function wrappedLongitudeSpanRadians(first, second) {
-  // Canonical ordering makes the calculation bit-for-bit symmetric when the
-  // two endpoints are supplied in reverse order.
-  const lower = Math.min(first.lon, second.lon);
-  const upper = Math.max(first.lon, second.lon);
-  const delta = (upper - lower) % 360;
-  return Math.min(delta, 360 - delta) * DEG;
+function wrappedLongitudeSpanRadians(
+  first,
+  second,
+  baseFractionA,
+  baseFractionB,
+  useVisualWarp = true
+) {
+  const longitudeA = useVisualWarp
+    ? warpLongitudeRadians(first.lon * DEG, baseFractionA)
+    : first.lon * DEG;
+  const longitudeB = useVisualWarp
+    ? warpLongitudeRadians(second.lon * DEG, baseFractionB)
+    : second.lon * DEG;
+  const fullTurn = Math.PI * 2;
+  const delta = Math.abs((longitudeB - longitudeA) % fullTurn);
+  return Math.min(delta, fullTurn - delta);
 }
 
 /**
@@ -69,7 +79,7 @@ function diskChordComponents(
   const qB = useVisualChord ? visualRadialFractionFromBaseFraction(baseB) : baseB;
   const profileScale = useVisualChord ? RADIAL_DISTANCE_PROFILE_MEAN : 1;
   const radialComponent = profileScale * Math.PI * Math.abs(qA - qB);
-  const longitudeSpan = wrappedLongitudeSpanRadians(first, second);
+  const longitudeSpan = wrappedLongitudeSpanRadians(first, second, baseA, baseB, useVisualChord);
   const tangentialComponent =
     profileScale * Math.PI * 2 * Math.sqrt(qA * qB) * Math.sin(longitudeSpan / 2);
   return {

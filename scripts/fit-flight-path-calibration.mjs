@@ -28,7 +28,7 @@ function asJavaScript(model) {
 async function main() {
   const dataset = JSON.parse(await readFile(DATA_PATH, 'utf8'));
   const routeCoverage = summarizeFlightPathCoverage(dataset);
-  const usableProjectedPathCoverage = summarizeUsableProjectedPathCoverage(dataset);
+  let usableProjectedPathCoverage = summarizeUsableProjectedPathCoverage(dataset);
   let fitted = null;
   let rejectionReason = null;
 
@@ -39,6 +39,17 @@ async function main() {
   }
 
   const metrics = fitted?.metrics ?? null;
+  if (fitted?.model) {
+    usableProjectedPathCoverage = summarizeUsableProjectedPathCoverage(
+      dataset,
+      fitted.model.radialWarp,
+      fitted.model.radialProfile,
+      fitted.model.longitudeWarp
+    );
+  }
+  const candidateUsableProjectedPathCoverage =
+    metrics?.usableProjectedPathCoverage ?? usableProjectedPathCoverage;
+  const minimumAngularStretch = metrics?.minimumAngularStretch ?? null;
   const trainingMapePercent = metrics?.training?.meanAbsolutePercent ?? null;
   const holdoutMapePercent = metrics?.holdout?.meanAbsolutePercent ?? null;
   const holdoutMaxErrorPercent = metrics?.holdout?.maxAbsolutePercent ?? null;
@@ -52,9 +63,11 @@ async function main() {
     holdoutMaxErrorPercent,
     leaveOneOutMapePercent,
     leaveOneOutMaxRouteErrorPercent,
+    minimumAngularStretch,
     usableTrainingRouteCount: metrics?.training?.routeCount ?? 0,
     usableHoldoutRouteCount: metrics?.holdout?.routeCount ?? 0,
-    usableProjectedPathCoverage,
+    activeProfileUsableProjectedPathCoverage: usableProjectedPathCoverage,
+    usableProjectedPathCoverage: candidateUsableProjectedPathCoverage,
     limits: {
       minimumTrainingRoutes: limits.minimumTrainingRoutes,
       minimumHoldoutRoutes: limits.minimumHoldoutRoutes,
@@ -68,7 +81,8 @@ async function main() {
       maxHoldoutMapePercent: limits.maxHoldoutMapePercent,
       maxHoldoutRouteErrorPercent: limits.maxHoldoutRouteErrorPercent,
       maxLeaveOneOutMapePercent: limits.maxLeaveOneOutMapePercent,
-      maxLeaveOneOutRouteErrorPercent: limits.maxLeaveOneOutRouteErrorPercent
+      maxLeaveOneOutRouteErrorPercent: limits.maxLeaveOneOutRouteErrorPercent,
+      minimumAngularStretch: 0.35
     }
   };
 
@@ -81,22 +95,56 @@ async function main() {
     leaveOneOutMaxRouteErrorPercent <= limits.maxLeaveOneOutRouteErrorPercent &&
     routeCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     routeCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+
     (metrics?.training?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
     (metrics?.holdout?.routeCount ?? 0) >= limits.minimumHoldoutRoutes &&
+    (metrics?.leaveOneOut?.routeCount ?? 0) >= limits.minimumTrainingRoutes &&
+    (metrics?.leaveOneOut?.routeCount ?? 0) >= (metrics?.training?.routeCount ?? Infinity) &&
     routeCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
     routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
-    routeCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
-    routeCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
-    routeCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
-    routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S &&
-    usableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
-    usableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
-    usableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    usableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
-    usableProjectedPathCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
-    usableProjectedPathCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
-    usableProjectedPathCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
-    usableProjectedPathCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
+    Number.isFinite(minimumAngularStretch) && minimumAngularStretch >= 0.35 &&
+    candidateUsableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
+    candidateUsableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+    candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes;
+
+  const acceptanceFailures = [];
+  if (!fitted) {
+    acceptanceFailures.push(rejectionReason || 'No candidate was fitted.');
+  } else {
+    if (trainingMapePercent > limits.maxTrainingMapePercent)
+      acceptanceFailures.push(`training MAPE ${trainingMapePercent.toFixed(2)}% exceeds ${limits.maxTrainingMapePercent}%`);
+    if (holdoutMapePercent > limits.maxHoldoutMapePercent)
+      acceptanceFailures.push(`holdout MAPE ${holdoutMapePercent.toFixed(2)}% exceeds ${limits.maxHoldoutMapePercent}%`);
+    if (holdoutMaxErrorPercent > limits.maxHoldoutRouteErrorPercent)
+      acceptanceFailures.push(`maximum holdout route error ${holdoutMaxErrorPercent.toFixed(2)}% exceeds ${limits.maxHoldoutRouteErrorPercent}%`);
+    if (!Number.isFinite(leaveOneOutMapePercent) ||
+        leaveOneOutMapePercent > limits.maxLeaveOneOutMapePercent)
+      acceptanceFailures.push('leave-one-route-out MAPE gate failed');
+    if (leaveOneOutMaxRouteErrorPercent > limits.maxLeaveOneOutRouteErrorPercent)
+      acceptanceFailures.push('maximum leave-one-route-out route error gate failed');
+    if (routeCoverage.trainingRouteCount < limits.minimumTrainingRoutes ||
+        routeCoverage.holdoutRouteCount < limits.minimumHoldoutRoutes)
+      acceptanceFailures.push('minimum independent training/holdout route coverage gate failed');
+    if (!Number.isFinite(minimumAngularStretch) || minimumAngularStretch < 0.35)
+      acceptanceFailures.push('longitude-warp angular stretch gate failed');
+    if (candidateUsableProjectedPathCoverage.trainingRouteCount < limits.minimumTrainingRoutes ||
+        candidateUsableProjectedPathCoverage.holdoutRouteCount < limits.minimumHoldoutRoutes ||
+        candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S < limits.minimumSouthernTrainingRoutes ||
+        candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes ||
+        (metrics?.training?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
+        (metrics?.holdout?.routeCount ?? 0) < limits.minimumHoldoutRoutes)
+      acceptanceFailures.push('minimum usable projected route and 30°S coverage gates failed');
+    if ((metrics?.leaveOneOut?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
+        (metrics?.leaveOneOut?.routeCount ?? 0) < (metrics?.training?.routeCount ?? Infinity))
+      acceptanceFailures.push('not every usable training route completed a leave-one-route-out fold');
+  }
+  const finalRejectionReason = accepted
+    ? null
+    : [rejectionReason, ...acceptanceFailures]
+        .filter(Boolean)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .join('; ');
 
   const summary = {
     schemaVersion: 1,
@@ -105,17 +153,25 @@ async function main() {
     generatedAt: new Date().toISOString(),
     sourceDataset: DATA_PATH,
     sourceRetrievedAt: dataset.source?.retrievedAt ?? null,
+    extrapolationWarnings: [
+      ...(routeCoverage.trainingRoutesSouthOf45S === 0 || routeCoverage.holdoutRoutesSouthOf45S === 0
+        ? ['No qualified independent airport-pair coverage south of 45°S; map geometry there is extrapolated.'] : []),
+      ...(routeCoverage.trainingRoutesSouthOf60S === 0 || routeCoverage.holdoutRoutesSouthOf60S === 0
+        ? ['No qualified independent airport-pair coverage south of 60°S; polar geometry is not empirically validated.'] : [])
+    ],
     method: {
       target: 'Independently observed ADS-B ground-speed/time mileage for each flight',
       targetFormula: 'sum(ground_speed_knots * accepted_interval_seconds / 3600) * 1.852',
       visualMeasurement: 'Sum the Euclidean lengths of the recorded flight path segments after projecting each timestamped ADS-B position into the custom 12-circle flat-disk plane.',
       coordinatesUsedFor: 'Visual path geometry only; never used to calculate observed flight mileage.',
       sequenceHandling: 'Preserve and measure each source MultiLineString sequence independently; never draw or measure a connector across a sequence break.',
-      radialProfile: 'Fixed requested 12-circle continuous profile: local multiplier tapers linearly from 1.00 at the North Pole to 0.50 at the Ice Wall.',
-      fit: 'Search the regularized-power latitude warp exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length.',
-      validation: 'Leave-one-airport-pair-out training validation plus fully independent airport-pair holdouts.'
+      radialProfile: 'Smooth positive power taper m(q)=outer+(inner-outer)(1-q)^a, integrated continuously and normalized to preserve the North Pole centre and Antarctic Ice Wall radius. Twelve reference circles sample the fitted curve.',
+      longitudeWarp: 'lambdaPrime=lambda+4q(1-q)[a1 sin(lambda)+b1(1-cos(lambda))+a2 sin(2lambda)+b2(1-cos(2lambda))]; the periodic shear is identity at the North Pole and Ice Wall.',
+      fit: 'Jointly fit the regularized-power latitude warp, integrated 12-circle profile, four periodic longitude coefficients and one global radial scale using training airport pairs only. Longitude coefficients are regularized and constrained so the minimum angular derivative stays at least 0.35. The nested outer leave-one-route-out score refits the full geometry without each evaluated airport pair.',
+      validation: 'Nested leave-one-airport-pair-out training validation plus the preassigned independent airport-pair holdouts.'
     },
-    rejectionReason,
+    rejectionReason: finalRejectionReason,
+    rejectionDetails: acceptanceFailures,
     qualityGate,
     model: fitted?.model ?? null,
     metrics,
@@ -129,7 +185,7 @@ async function main() {
     console.log('Accepted flight-path calibration parameters written to ' + PARAMETERS_PATH);
   } else {
     console.warn('Flight-path calibration rejected; active visual parameters were preserved.');
-    if (rejectionReason) console.warn(rejectionReason);
+    if (finalRejectionReason) console.warn(finalRejectionReason);
   }
 
   console.log('FLIGHT_PATH_CALIBRATION_SUMMARY_BEGIN');
