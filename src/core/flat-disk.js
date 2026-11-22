@@ -4,10 +4,9 @@
  * integrated smooth 1.00×→0.50× local radial-distance multiplier profile:
  * Screen fraction qv = integral(0..q, m(u) du) / mean(m).
  * The fitted power taper changes all 12 ring spacings while preserving the
- * centre and outer rim; the same projected coordinates drive rendering and measurement.
- * Projection, A–B distance, polygon edges and scale bar share this geometry.
- * The visible transform loads a separately gated observed-ADS-B-path parameter set.
- * A separate endpoint-chord model remains available only for empirical flight-mileage estimates.
+ * centre and outer rim. The visible transform loads a separately gated
+ * observed-ADS-B-path parameter set.
+ * All displayed distances use one ADS-B-calibrated base-chord formula.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
@@ -80,7 +79,7 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
-/** Radius in the original fitted projection, retained only for ADS-B calibration. */
+/** Radius in the original fitted base projection used by the canonical distance formula. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = secondaryBaseRadialFraction(latitudeDegrees);
   const secondaryBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
@@ -146,14 +145,14 @@ function pointInDiskKm(point, useBaseProjection = false) {
   return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
 }
 
-/** Euclidean chord length in the visually calibrated disk; not ground distance. */
+/** Euclidean chord in the visible disk, retained for geometry analysis; not the A–B distance metric. */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
   if (!first || !second) return null;
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** Original fitted-projection chord used only by the secondary ADS-B mileage estimator. */
+/** Base flat-disk chord used as the input to the canonical ADS-B distance formula. */
 export function baseFlatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a, true), second = pointInDiskKm(b, true);
   if (!first || !second) return null;
