@@ -81,7 +81,8 @@ async function main() {
       maxHoldoutMapePercent: limits.maxHoldoutMapePercent,
       maxHoldoutRouteErrorPercent: limits.maxHoldoutRouteErrorPercent,
       maxLeaveOneOutMapePercent: limits.maxLeaveOneOutMapePercent,
-      maxLeaveOneOutRouteErrorPercent: limits.maxLeaveOneOutRouteErrorPercent
+      maxLeaveOneOutRouteErrorPercent: limits.maxLeaveOneOutRouteErrorPercent,
+      minimumAngularStretch: 0.35
     }
   };
 
@@ -101,12 +102,11 @@ async function main() {
     (metrics?.leaveOneOut?.routeCount ?? 0) >= (metrics?.training?.routeCount ?? Infinity) &&
     routeCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
     routeCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
-    minimumAngularStretch >= 0.35 &&
+    Number.isFinite(minimumAngularStretch) && minimumAngularStretch >= 0.35 &&
     candidateUsableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     candidateUsableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
     candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
-    minimumAngularStretch >= 0.35;
+    candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes;
 
   const acceptanceFailures = [];
   if (!fitted) {
