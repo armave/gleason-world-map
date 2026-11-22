@@ -13,6 +13,7 @@ export const FLIGHT_PATH_CALIBRATION = Object.freeze({
   },
   radialProfile: {
     innerFactor: 1,
-    outerFactor: 0.5
+    outerFactor: 0.5,
+    exponent: 1
   }
 });
