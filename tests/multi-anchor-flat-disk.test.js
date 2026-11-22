@@ -163,8 +163,8 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
       xKm: point[0],
       yKm: point[1],
       envelope: envelopeAt(point),
-      alphaX: 85 * Math.sin(index * 0.73),
-      alphaY: 85 * Math.cos(index * 0.61)
+      alphaX: 130 * Math.sin(index * 0.73),
+      alphaY: 130 * Math.cos(index * 0.61)
     }))
   };
   const transformed = seed.map(point =>
@@ -249,7 +249,14 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   assert.equal(
     result.accepted,
     true,
-    'synthetic fit did not pass all promotion gates: ' + JSON.stringify(result.failures)
+    'synthetic fit did not pass all promotion gates: ' + JSON.stringify({
+      failures: result.failures,
+      trainingMape: result.metrics.training.meanAbsolutePercent,
+      holdoutMape: result.metrics.holdout.meanAbsolutePercent,
+      baselineMape: result.metrics.baselineHoldout.meanAbsolutePercent,
+      holdoutImprovement: result.metrics.holdoutImprovementPercentagePoints,
+      maxHoldoutPairError: result.metrics.holdout.maxAbsolutePercent
+    })
   );
   assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
