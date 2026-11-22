@@ -51,13 +51,13 @@ function syntheticDataset() {
   const radialWarp = {...DEFAULT_RADIAL_WARP, exponent:0.9};
   const routes = [];
   const trainingCount = 24;
-  const holdoutCount = 6;
+  const holdoutCount = 7;
   const scaleKm = 5200;
 
   for (let index = 0; index < trainingCount + holdoutCount; index++) {
     const split = index < trainingCount ? 'train' : 'holdout';
     const localIndex = split === 'train' ? index : index - trainingCount;
-    const southern = split === 'train' ? localIndex < 5 : localIndex < 2;
+    const southern = split === 'train' ? localIndex < 5 : localIndex < 3;
     const polar = split === 'train' ? localIndex < 2 : localIndex === 0;
     const startLat = polar
       ? -64 - (localIndex % 2) * 2
@@ -108,16 +108,16 @@ function syntheticDataset() {
 test('path coverage counts independent route splits and southern observations', () => {
   const coverage = summarizeFlightPathCoverage(syntheticDataset());
   assert.equal(coverage.trainingRouteCount, 24);
-  assert.equal(coverage.holdoutRouteCount, 6);
+  assert.equal(coverage.holdoutRouteCount, 7);
   assert.equal(coverage.trainingRoutesSouthOf30S, 5);
-  assert.equal(coverage.holdoutRoutesSouthOf30S, 2);
+  assert.equal(coverage.holdoutRoutesSouthOf30S, 3);
   assert.equal(coverage.trainingRoutesSouthOf45S, 2);
   assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
   assert.equal(coverage.trainingRoutesSouthOf60S, 2);
   assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
   assert.equal(coverage.trainingFlightsWithPaths, 72);
-  assert.equal(coverage.holdoutFlightsWithPaths, 18);
-  assert.equal(coverage.totalTrajectoryPoints, 360);
+  assert.equal(coverage.holdoutFlightsWithPaths, 21);
+  assert.equal(coverage.totalTrajectoryPoints, 372);
 });
 
 test('path coverage rejects incomplete telemetry and gaps over 15 minutes', () => {
@@ -131,6 +131,15 @@ test('path coverage rejects incomplete telemetry and gaps over 15 minutes', () =
   incomplete.routes[1].observations[0].endTs = '1970-01-01T01:06:40Z';
   const incompleteCoverage = summarizeFlightPathCoverage(incomplete);
   assert.equal(incompleteCoverage.trainingRouteCount, 23);
+
+  const outOfBounds = syntheticDataset();
+  for (const observation of outOfBounds.routes[2].observations) {
+    observation.trackTimestamps = observation.trackTimestamps.map(sequence =>
+      sequence.map(timestamp => timestamp + 60)
+    );
+  }
+  const outOfBoundsCoverage = summarizeFlightPathCoverage(outOfBounds);
+  assert.equal(outOfBoundsCoverage.trainingRouteCount, 23);
 });
 
 test('path fit recovers a known radial scale and warp on independent held-out routes', () => {
@@ -142,7 +151,7 @@ test('path fit recovers a known radial scale and warp on independent held-out ro
   assert.ok(result.metrics.training.meanAbsolutePercent < 0.1);
   assert.ok(result.metrics.holdout.meanAbsolutePercent < 0.1);
   assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 0.1);
-  assert.equal(result.metrics.holdout.routeCount, 6);
+  assert.equal(result.metrics.holdout.routeCount, 7);
 });
 
 test('path fit rejects routes that pass timestamp checks but have zero projected length', () => {
@@ -167,6 +176,28 @@ test('path fit rejects routes that pass timestamp checks but have zero projected
     () => fitFlightPathCalibration(dataset),
     /Insufficient usable projected-path airport-pair coverage/
   );
+});
+
+test('usable projected-path coverage independently enforces southern and polar route coverage', () => {
+  const dataset = syntheticDataset();
+  const polarHoldout = dataset.routes.find(route =>
+    route.split === 'holdout' &&
+    Math.min(route.airportA.lat, route.airportB.lat) <= -60
+  );
+  assert.ok(polarHoldout);
+  for (const observation of polarHoldout.observations) {
+    const coordinate = observation.trackCoordinates[0][0];
+    observation.trackCoordinates = [[
+      [...coordinate], [...coordinate], [...coordinate], [...coordinate]
+    ]];
+  }
+
+  const candidate = fitFlightPathCalibration(dataset);
+  assert.equal(candidate.metrics.spatialCoverage.holdoutRoutesSouthOf60S, 1);
+  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRouteCount, 6);
+  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRoutesSouthOf30S, 2);
+  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRoutesSouthOf45S, 0);
+  assert.equal(candidate.metrics.usableProjectedPathCoverage.holdoutRoutesSouthOf60S, 0);
 });
 
 test('path fit refuses legacy or non-observed-only datasets', () => {
