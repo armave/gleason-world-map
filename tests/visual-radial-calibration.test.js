@@ -5,6 +5,7 @@ import {
   RADIAL_DISTANCE_CIRCLE_FACTORS,
   RADIAL_DISTANCE_CIRCLE_STEP,
   RADIAL_DISTANCE_PROFILE_MEAN,
+  RADIAL_DISTANCE_PROFILE_EXPONENT,
   RADIAL_DISTANCE_VISUAL_CIRCLES,
   radialDistanceCorrectionFactor,
   integratedRadialDistanceMultiplier,
@@ -107,5 +108,16 @@ test('integrated multiplier profile keeps both disk anchors fixed and monotonic'
     assert.ok(visual >= previous);
     assert.ok(visual >= 0 && visual <= 1);
     previous = visual;
+  }
+});
+
+
+test('the active 12-circle profile exponent is explicit and has a positive smooth radial scale', () => {
+  assert.equal(RADIAL_DISTANCE_PROFILE_EXPONENT, 1);
+  assert.ok(RADIAL_DISTANCE_PROFILE_MEAN > 0);
+  assert.equal(RADIAL_DISTANCE_VISUAL_CIRCLES.length, 12);
+  for (let index = 1; index < RADIAL_DISTANCE_CIRCLE_FACTORS.length; index++) {
+    assert.ok(RADIAL_DISTANCE_CIRCLE_FACTORS[index] < RADIAL_DISTANCE_CIRCLE_FACTORS[index - 1]);
+    assert.ok(RADIAL_DISTANCE_CIRCLE_FACTORS[index] > 0);
   }
 });
