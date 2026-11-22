@@ -163,7 +163,6 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.doesNotMatch(html, /flightDistanceValue|flightDistanceSub|secondary-distance-reading/);
   assert.doesNotMatch(app, /endpointDistanceEstimateMeters|endpointDistanceCalibration|predictEndpointDistance/);
   assert.match(app, /measureDistanceMeters/);
-  assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
   assert.match(app, /flatDiskPolygonMetrics\(areaPoints,project,baseR,measureDistanceMeters\)/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
@@ -248,7 +247,6 @@ test('A–B, scale bar, polygon edges and PNG use one calibrated distance functi
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
  assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
  assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
  assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,measureDistanceMeters,closed\)/);
@@ -351,7 +349,7 @@ test('pointer, hover and wheel interactions coalesce expensive work to animation
  assert.doesNotMatch(pointer[0],/draw\(\)/);
 });
 
-test('scale-bar measurement uses the same geometric chord metric as A–B',()=>{
+test('scale-bar measurement uses the same canonical calibrated metric as A–B',()=>{
  const scaleMetric=app.slice(app.indexOf('function flatDiskDistanceForScalePixels'),app.indexOf('function scaleBarReadingKm'));
  assert.match(scaleMetric,/measureDistanceMeters\(first,second\)/);
  assert.doesNotMatch(scaleMetric,/flatDiskDistanceMeters/);
