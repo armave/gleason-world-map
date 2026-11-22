@@ -5,7 +5,7 @@
  * Screen fraction qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
  * Physical radius is pi*R_base*integral(m); final disk radius is 0.75*pi*R_base.
  * Projection, A–B distance, polygon edges and scale bar share this geometry.
- * The displayed latitude warp and scale are fitted against projected observed ADS-B paths.
+ * The visible transform loads a separately gated observed-ADS-B-path parameter set.
  * A separate endpoint-chord model remains available only for empirical flight-mileage estimates.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
@@ -41,7 +41,7 @@ export function colatitudeRadians(latitudeDegrees) {
   return Math.PI / 2 - rad(latitudeDegrees);
 }
 
-/** Base radial fraction fitted from observed ADS-B trajectory paths. */
+/** Base radial fraction loaded by the visible flat-disk projection. */
 export function baseRadialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
   if (!Number.isFinite(theta)) return NaN;
