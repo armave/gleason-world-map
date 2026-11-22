@@ -15,7 +15,7 @@
     "fit": "Search the regularized-power latitude warp exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length.",
     "validation": "Leave-one-airport-pair-out training validation plus fully independent airport-pair holdouts."
   },
-  "rejectionReason": null,
+  "rejectionReason": "Candidate metrics are retained as diagnostics, but this snapshot has no qualifying training or holdout routes south of 45°S or 60°S. The stricter Antarctic coverage gate therefore rejects promotion.",
   "qualityGate": {
     "trainingRouteCount": 26,
     "holdoutRouteCount": 6,
@@ -42,8 +42,14 @@
       "maxHoldoutMapePercent": 12,
       "maxHoldoutRouteErrorPercent": 20,
       "maxLeaveOneOutMapePercent": 15,
-      "maxLeaveOneOutRouteErrorPercent": 45
-    }
+      "maxLeaveOneOutRouteErrorPercent": 45,
+      "minimumTrainingRoutesSouthOf45S": 2,
+      "minimumHoldoutRoutesSouthOf45S": 1,
+      "minimumTrainingRoutesSouthOf60S": 1,
+      "minimumHoldoutRoutesSouthOf60S": 1
+    },
+    "usableTrainingRouteCount": 26,
+    "usableHoldoutRouteCount": 6
   },
   "model": {
     "schemaVersion": 1,
