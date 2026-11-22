@@ -7,7 +7,7 @@ The distance tool shows two values for the same pair of endpoints:
 1. **Radially adjusted A–B readout** — the original fitted-projection chord multiplied by the user-defined 12-circle factor. The factor tapers from 1.00× at the North Pole to 0.50× at the Antarctic rim and is interpolated using the endpoints' mean original radial position.
 2. **ADS-B flight-empirical estimate** — a separate estimate of typical flown mileage, calculated from the original fitted-projection chord and the ADS-B radial scale / endpoint-feature correction.
 
-The measurement result retains both the original calibration chord and the visually warped chord. The visible connector and scale bar follow the smooth visual projection; the connector label displays the radially adjusted A–B readout. The ADS-B correction remains a separate empirical reference and does not feed the visual warp or the 12-circle A–B multiplier.
+The measurement result retains both the original calibration chord and the visually warped chord. The visible connector and scale bar follow the smooth visual projection; the connector label displays the radially adjusted A–B readout. The visual chord is a diagnostic of the drawn geometry, not an input to the ADS-B fit. The ADS-B correction remains a separate empirical reference and does not feed the visual warp or the 12-circle A–B multiplier.
 
 
 The new calibration target is **observed aircraft mileage**, estimated from ADS-B ground-speed and timestamp telemetry. It is not a shortest path, a great-circle distance, an airline schedule estimate, or a guaranteed prediction of the track an aircraft will fly. The distinction matters: real flights may route around weather, restricted airspace, traffic flows or operational constraints.
