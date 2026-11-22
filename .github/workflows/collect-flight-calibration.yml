@@ -13,7 +13,7 @@ on:
   # Refresh the historical route sample after new seasonal flight activity
   # has entered the archive. Manual dispatch remains available for diagnostics.
   schedule:
-    - cron: '15 3 * * 1'
+    - cron: '15 3 1 * *'
   workflow_dispatch:
 permissions:
   contents: write
