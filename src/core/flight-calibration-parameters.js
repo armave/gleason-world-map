@@ -8,6 +8,7 @@ export const FLIGHT_CALIBRATION = Object.freeze({
     "epsilon": 0.005
   },
   "target": "median observed ADS-B flight-track mileage from ground-speed × time integration",
+  "chordGeometry": "visual-12-circle",
   "radialScaleKm": 5385.144981733761,
   "featureNames": [
     "meanRadialFraction",
