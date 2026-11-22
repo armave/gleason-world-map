@@ -64,7 +64,7 @@
 <map-historical-panel data-lit-panel></map-historical-panel>
   </aside>
 </div>
-<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. Primary A–B readouts apply a user-defined 12-circle radial multiplier, tapering from 1.00× at the North Pole to 0.50× at the Ice Wall; the raw projected chord remains available as a reference. The separate ADS-B empirical flight-mileage estimate remains available as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the ADS-B distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the unadjusted geometric chord metric. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map uses a flat circular disk with a smooth ADS-B-calibrated latitude-to-radius warp; its North Pole and outer Antarctic rim remain fixed. The map's visual radial spacing uses a smooth, edge-anchored 12-circle warp from 1.00× at the North Pole to 0.50× at the Ice Wall, with no hard joins; the separate A–B readout retains its radial multiplier and raw chord reference. The separate ADS-B empirical flight-mileage estimate remains available as a secondary reference. No coordinate-derived track distances, globe-distance formula or geodesic library is used in the ADS-B distance calibration. Country, coastline, airport and capital coordinates remain location data for rendering and search only. The 60°S Restricted Line is a visual reference only. Polygon areas and perimeters remain planar. The scale bar uses the unadjusted geometric chord metric. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 
 <!-- Lit templates retained as light-DOM-compatible sources during the incremental migration. -->
 <template id="find-panel-template">
@@ -188,31 +188,18 @@
 <template id="calibration-panel-template">
 <section class="panel">
       <h2>Flat-disk radial calibration</h2>
-      <div class="formula">R = fitted ADS-B flight-mileage scale<br>φ = latitude · π / 180<br>θ = π/2 − φ<br>t = θ / π<br>q = ((t + ε)^p − ε^p) / ((1 + ε)^p − ε^p)<br>p = 0.9 · ε = 0.005<br>r = πR · q<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR</div>
+      <div class="formula">R = fitted ADS-B flight-mileage scale<br>φ = latitude · π / 180<br>t = (π/2 − φ) / π<br>q = ((t + ε)^p − ε^p) / ((1 + ε)^p − ε^p)<br>p = 0.9 · ε = 0.005<br>qᵥ = q + q(1 − q) / 3<br>r = πR · qᵥ<br>x = r · cos(λ)<br>y = −r · sin(λ)<br>Flat-disk radius = πR</div>
       <p class="note" style="margin:8px 0 0">The radial scale R is generated from median observed airport-pair flight mileage, estimated by integrating ADS-B ground speed over recorded time. It is not anchored to a published shortest-distance table. The flight-empirical estimate is typical observed flown mileage, not a shortest point-to-point path.</p>
       <table class="cal-table" style="margin-top:9px">
         <thead><tr><th>Latitude</th><th>Colatitude θ</th><th>Disk radius r</th></tr></thead>
         <tbody id="radialRows"></tbody>
       </table>
-      <h3 style="margin:12px 0 5px">12-circle distance multiplier</h3>
+      <h3 style="margin:12px 0 5px">12-circle visual radial calibration</h3>
       <table class="cal-table">
-        <thead><tr><th>Circle · North Pole → Ice Wall</th><th>Multiplier</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>1.00×</td></tr>
-          <tr><td>2</td><td>0.95×</td></tr>
-          <tr><td>3</td><td>0.91×</td></tr>
-          <tr><td>4</td><td>0.86×</td></tr>
-          <tr><td>5</td><td>0.82×</td></tr>
-          <tr><td>6</td><td>0.77×</td></tr>
-          <tr><td>7</td><td>0.73×</td></tr>
-          <tr><td>8</td><td>0.68×</td></tr>
-          <tr><td>9</td><td>0.64×</td></tr>
-          <tr><td>10</td><td>0.59×</td></tr>
-          <tr><td>11</td><td>0.55×</td></tr>
-          <tr><td>12 · Ice Wall</td><td>0.50×</td></tr>
-        </tbody>
+        <thead><tr><th>Circle</th><th>Radial factor</th><th>Visual radius</th><th>Radius km</th></tr></thead>
+        <tbody id="visualRadialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The disk uses a smooth, monotonic radial warp of latitude-ring spacing. The primary A–B readout multiplies the straight projected chord by a factor interpolated linearly from 1.00× at circle 1 (North Pole) to 0.50× at circle 12 (Ice Wall), using the average radial position of endpoints. The map geometry, connector, scale bar, polygon areas/perimeters, and separate ADS-B flight-mileage estimate are not changed by this custom readout adjustment. The ADS-B estimate remains an empirical reference, with polar extrapolation status and nearest supporting routes available in the measurement details. The 60°S Restricted Line is a visual reference only; direct connectors and area polygons may cross it.</p>
+      <p class="note" style="margin:9px 0 0">The 12-circle profile is applied as one continuous radial transformation, not as 12 independent bands. It is the normalized integral of a smooth 1.00×→0.50× radial profile: qᵥ = q + q(1 − q)/3. This spreads inner rings more and progressively compresses outer rings while keeping every transition smooth, the North Pole fixed at the centre, and the Ice Wall fixed at the outer rim. Coastlines, latitude circles, labels, map clicks, inverse lookup and the scale bar all use the same visual projection. The A–B readout and ADS-B reference retain their separate calibration metric; polygon areas and perimeters are calculated on the visibly warped disk.</p>
     </section>
 </template>
 <template id="geometry-panel-template">
@@ -224,7 +211,7 @@
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk. A–B uses one straight projected segment; the primary readout applies the 12-circle radial multiplier to its Euclidean chord, while the raw chord remains available as a reference. This user-defined readout adjustment does not change the connector geometry, scale bar, polygon area/perimeter, or separate ADS-B empirical mileage estimate. The ADS-B estimate is not a shortest path or guaranteed flight track. Calibration support and nearest reference routes are available in the measurement details; polar extrapolation is identified there without a warning panel. The 60°S Restricted Line does not alter the measurement.</p>
+      <p class="note" style="margin:8px 0 0">The map is displayed as a flat Gleason-style disk with a smooth 12-circle radial redistribution. It has no hard band boundaries: all map features, latitude rings, labels, clicks and the scale bar share the same anchored visual warp. The A–B readout and ADS-B empirical mileage reference retain their separate calibration metric; polygon area and perimeter are measured on the visibly warped disk. The 60°S Restricted Line remains a visual reference only.</p>
     </section>
 </template>
 <template id="historical-panel-template">
