@@ -159,9 +159,9 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
     diskRadiusKm: DISK_RADIUS_KM,
     sigmaKm,
     controls: [
-      [0.32, 0.18, 400, -150],
-      [-0.30, 0.12, -320, 180],
-      [0.05, -0.45, 120, 360]
+      [0.32, 0.18, 560, -210],
+      [-0.30, 0.12, -448, 252],
+      [0.05, -0.45, 168, 504]
     ].map(([xFraction, yFraction, alphaX, alphaY], index) => {
       const point = [
         xFraction * DISK_RADIUS_KM,
