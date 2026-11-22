@@ -24,28 +24,14 @@ The source's flight detail contains `path_gs`, a time series of pairs `[unix_tim
 
 ### Mileage calculation
 
-Within each contiguous `path_gs` subsequence, a speed sample is treated as step-interpolated until the next timestamp in that same subsequence. Missing-data gaps between subsequences are never joined with a fabricated speed.
-
-For each accepted interval:
+Within each contiguous `path_gs` subsequence, a speed sample is integrated only to the next timestamp in that same sequence. Coverage is measured against the full flight duration from `start_ts` to `end_ts`, including missing time before the first and after the last sample. Each accepted interval contributes:
 
 ```text
 interval_nautical_miles = ground_speed_knots * elapsed_seconds / 3600
-```
-
-The intervals are summed and converted using the unit conversion:
-
-```text
 observed_track_km = sum(interval_nautical_miles) * 1.852
 ```
 
-The archive can have gaps in an otherwise valid telemetry span. Speed observations are used only when the next timestamp is no more than 15 minutes away; longer intervals are excluded and recorded as gaps rather than carrying a stale speed forward. To estimate mileage over the first-to-last observed speed timestamp, the collector expands the observed integral using the **measured time coverage**:
-
-```text
-time_coverage = accepted_speed_interval_seconds / telemetry_span_seconds
-estimated_track_km = observed_track_km / time_coverage
-```
-
-This is a measured-mean-speed estimate across missing intervals, not a claim that the aircraft maintained one exact speed during the gaps. Each flight stores both the observed-only integral and the coverage-expanded estimate, plus coverage, largest contiguous gap, elapsed flight time, telemetry-span time, interval count and mean measured ground speed. The route reference is the median estimated track mileage across accepted flights for that airport pair.
+The calibration accepts only directly observed integrals with at least 98% full-flight coverage, no unsupported gap longer than 15 minutes, at least eight valid intervals and at least 35 minutes of recorded flight. Missing intervals are never filled, and a partial observation is never divided by coverage to create an estimated full-flight total.
 
 ### Data-quality filters
 
@@ -54,15 +40,15 @@ The filters are defined once in `src/core/flight-telemetry.js` and copied into t
 - Ground-speed samples below 40 knots or above 750 knots are excluded from the airborne integration.
 - Telemetry span must be at least 35 minutes.
 - At least 8 valid speed intervals are required.
-- Valid speed intervals must cover at least 35% of the first-to-last telemetry span.
+- Valid speed intervals must cover at least 98% of the complete flight start-to-end duration.
 - No single ground-speed sample is held across an interval longer than 15 minutes; such intervals are excluded and counted as telemetry gaps.
-- No time is inferred outside the first and last speed timestamps.
+- Time missing before the first or after the last speed timestamp counts against coverage.
 
-The minimum coverage threshold is a collection-quality floor, not a guarantee of high accuracy. Coverage and largest-gap statistics remain in the dataset so a reviewer can decide whether a route observation is sufficiently representative.
+Coverage is an explicit acceptance gate, not an expansion factor. The observed-only distance policy is versioned in the dataset metadata; legacy datasets with a different or ambiguous coverage policy are ineligible for the strict fitter.
 
 ## Route sampling and validation
 
-Routes are collected by airport-pair identifier. The collector tries to fill a target of 8 accepted flights per route and stores every accepted observation. It uses the airport's published terminal boundary when available, or a 20 km airport-centred fallback search circle, only to ask the source API for flights with the requested origin and destination. It then checks the flight's own departure/arrival identifiers against the requested pair.
+Routes are collected by airport-pair identifier. The collector searches historical seven-day windows for up to 180 days and tries to fill a target of 6 accepted flights per route and stores every accepted observation. It uses the airport's published terminal boundary when available, or a 20 km airport-centred fallback search circle, only to ask the source API for flights with the requested origin and destination. It then checks the flight's own departure/arrival identifiers against the requested pair.
 
 The calibration split is at the **airport-pair level**:
 
@@ -70,11 +56,11 @@ The calibration split is at the **airport-pair level**:
 - Holdout routes are not used during fitting. They are evaluated only after the model has been fitted.
 - Leave-one-route-out validation refits the model after removing each training route in turn.
 
-A route needs at least 3 accepted flights before it can be used as a calibration observation. The fitter recomputes each route target from individual observations and retains only flights with at least 35% telemetry coverage and a largest gap no greater than 5 hours. Route examples with better coverage, shorter gaps and more accepted flights receive greater model weight. The candidate fitter requires at least 10 training routes and 4 holdout routes to calculate validation metrics; the production acceptance gate is stricter: at least 30 training routes, 4 holdout routes, 4 training routes south of 45°S, at least one training and one holdout route south of 60°S, and at least one southern holdout route. Existing error limits also have to pass. If any requirement fails, it does not write a production parameter file and the last approved coefficients remain active.
+A route needs at least three accepted high-coverage flights. Each route contributes one median observed-only mileage value. Entire airport pairs are held out from fitting. The refreshed production gate requires at least 20 training routes, 6 holdout routes, 4 training routes with an endpoint south of 30°S and 2 holdout routes with an endpoint south of 30°S, in addition to the existing error limits. Polar regions remain unvalidated unless suitable independent records become available. If any gate fails, the last accepted production coefficients remain active.
 
 ## Flat-disk model
 
-The map remains a circular radial disk, but the latitude-to-radius relation is now smoothly warped using the ADS-B route sample. This changes the map's latitude-ring spacing as well as the numeric radial scale; it is not merely a multiplier applied to a distance readout.
+The map remains a circular radial disk. Its current latitude-to-radius relation and 12-circle profile are carried forward from the last accepted calibration; a replacement based on the stricter observed-only records is not promoted until its independent holdout gates pass. This changes the map's latitude-ring spacing as well as the numeric radial scale; it is not merely a multiplier applied to a distance readout.
 
 For latitude `phi`, define colatitude `theta = pi/2 - phi` and normalized colatitude `t = theta / pi`. The current radial warp is a regularized power curve:
 

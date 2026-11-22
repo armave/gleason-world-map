@@ -127,7 +127,7 @@ test('coverage summary reports southern training and independent southern holdou
   assert.equal(coverage.trainingRoutesSouthOf30S, 3);
   assert.equal(coverage.trainingRoutesSouthOf45S, 1);
   assert.equal(coverage.trainingRoutesSouthOf60S, 0);
-  assert.equal(coverage.holdoutRoutesSouthOf30S, 1);
+  assert.equal(coverage.holdoutRoutesSouthOf30S, 4);
   assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
   assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
 });

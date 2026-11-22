@@ -652,7 +652,7 @@ function updateMeasurement(){
     ?'Polar extrapolation · endpoint is near the southern rim and is not validated by nearby routes.'
     :status==='extrapolated'
      ?'Extrapolated · endpoint geometry is outside or weakly supported by sampled routes.'
-     :'Within sampled route-feature range.';
+     :'Within sampled route-feature range · legacy profile; strict observed-only refresh pending validation.';
   const routeIds=calibration?.neighbourRouteIds||[];
   const routeWeights=calibration?.neighbourWeights||[];
   routes.textContent='Nearest reference routes: '+(routeIds.length
