@@ -98,11 +98,27 @@ Airport latitude/longitude values are only the endpoint encoding required to pos
 
 The radial warp moves interior rings relative to a linear `r = R * theta` disk while retaining the same pole/rim topology. With the current fit, the 45°N ring is about 592 km farther from the centre than it would be in a linear disk using the same fitted `R`; the maximum shift among the sampled 15° latitude markers is about 621 km. The outer rim and North Pole do not move. This adjustment changes coastline, capital, grid and map-click coordinates consistently because all are rendered through the same transform.
 
+## Smooth 12-circle visual radial calibration
+
+The same 12-circle factor profile also redistributes the displayed map geometry. This is not implemented as 12 separate radial transforms or hard-edged annular bands. It is applied as one continuous, edge-anchored function.
+
+Let `q` be the original ADS-B-fitted radial fraction, with 0 at the North Pole and 1 at the Antarctic rim. The local spacing profile is `f(q) = 1 - 0.5q`. Its normalized integral gives the displayed radius:
+
+```text
+q_visual = integral(0..q, f(u) du) / integral(0..1, f(u) du)
+         = q + q(1 - q) / 3
+dq_visual/dq = (4 - 2q) / 3
+```
+
+The derivative stays positive and continuous throughout the disk. Each section blends into the next without a visible join; inner rings are progressively spread and outer rings progressively compressed. Since `q_visual(0) = 0` and `q_visual(1) = 1`, the North Pole remains at the exact centre and the Ice Wall remains on the exact outer circle.
+
+The forward projection, inverse map-click lookup, latitude circles, country/coastline paths, labels, area/perimeter geometry and scale bar all use this same visual transform. The calibration panel lists the 12 reference circles with their mapped radii. For backwards-compatible numeric calibration, the A–B readout and ADS-B model retain the original fitted chord; the measurement panel shows the visual chord separately. The scale bar follows the visibly rewarped disk.
+
 ## 12-circle A–B readout correction
 
-The primary A–B readout applies a second, explicitly user-defined radial multiplier. It does not alter the map projection, point locations, line geometry, scale bar, polygon calculations or ADS-B flight-empirical estimate.
+The primary A–B readout applies a user-defined radial multiplier to the original fitted calibration chord. The separate smooth visual radial redistribution changes displayed map geometry but does not change this calibration chord or the ADS-B flight-empirical estimate.
 
-Let `qA` and `qB` be the normalized warped-disk radial fractions of the two endpoints, each ranging from 0 at the North Pole to 1 at the Antarctic rim. The mean radial fraction and multiplier are:
+Let `qA` and `qB` be the original fitted radial fractions before the visual redistribution, each ranging from 0 at the North Pole to 1 at the Antarctic rim. The mean radial fraction and multiplier are:
 
 ```text
 q_mean = (qA + qB) / 2
@@ -128,9 +144,9 @@ This produces the approved 12 reference values at equally spaced normalized radi
 | 11 | 0.55× |
 | 12 (Ice Wall) | 0.50× |
 
-Between reference circles, the factor is interpolated continuously rather than stepped. For endpoints on different circles, the mean endpoint radial fraction determines the intermediate factor. This is a custom readout convention requested for this map, not a multiplier fitted from ADS-B telemetry and not evidence that the adjusted number is a geographic ground distance. The raw chord remains separately available; the scale bar intentionally remains unadjusted.
+Between reference circles, the factor is interpolated continuously rather than stepped. For endpoints on different circles, the mean endpoint radial fraction determines the intermediate factor. This is a custom readout convention requested for this map, not a multiplier fitted from ADS-B telemetry and not evidence that the adjusted number is a geographic ground distance. The original calibration chord and visually warped chord are both available in the measurement result. The scale bar follows the visually warped projection but intentionally does not apply this A–B readout multiplier.
 
-For each route, let `qA` and `qB` be the warped radial fractions, and let `deltaLambda` be the wrapped longitude span. The exact Euclidean chord components in the warped unit disk are:
+For the ADS-B fit, let `qA` and `qB` remain the original fitted radial fractions (before the visual redistribution), and let `deltaLambda` be the wrapped longitude span. The exact Euclidean chord components in the warped unit disk are:
 
 ```text
 radial_component = pi * abs(qA - qB)
