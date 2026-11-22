@@ -119,7 +119,7 @@ export function unproject(x, y, baseRadius) {
   const rho = Math.hypot(x, y);
   const visualFraction = clamp(rho / baseRadius, 0, 1);
   const baseFraction = baseRadialFractionFromVisualFraction(visualFraction);
-  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_CALIBRATION.radialWarp);
+  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_PATH_CALIBRATION.radialWarp);
   const theta = t * Math.PI;
   const lat = (Math.PI / 2 - theta) * RAD;
   const lon = rho < 1e-9 ? 0 : wrapLongitude(Math.atan2(-y, x) * RAD);
