@@ -216,9 +216,9 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   }
 
   const result = fitMultiAnchorFlatDisk(observations, {
-    iterations: 2200,
-    learningRateKm: 8,
-    anchorWeight: 0.03,
+    iterations: 4000,
+    learningRateKm: 6,
+    anchorWeight: 0.005,
     sigmaKm,
     regularization: 1e-3
   });
