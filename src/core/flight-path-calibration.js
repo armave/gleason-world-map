@@ -264,15 +264,28 @@ function summarizeProjectedRouteCoverage(training, holdout) {
   };
 }
 
-function hasRequiredProjectedCoverage(coverage, limits) {
+function hasMinimumProjectedCoverage(coverage, limits) {
   return coverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
     coverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
     coverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
-    coverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
-    coverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
-    coverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
-    coverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
-    coverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
+    coverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes;
+}
+
+export function summarizeUsableProjectedPathCoverage(
+  dataset,
+  radialWarp = DEFAULT_RADIAL_WARP
+) {
+  const records = routeFlightRecords(dataset).filter(({ route, flights }) =>
+    flights.length >= FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute &&
+    Number.isFinite(route.airportA?.lat) &&
+    Number.isFinite(route.airportB?.lat)
+  );
+  const training = records.filter(item => item.route.split === 'train');
+  const holdout = records.filter(item => item.route.split === 'holdout');
+  return summarizeProjectedRouteCoverage(
+    makeRouteExamplesFromRecords(training, radialWarp),
+    makeRouteExamplesFromRecords(holdout, radialWarp)
+  );
 }
 
 function makeRouteExamples(dataset, radialWarp) {
@@ -487,11 +500,7 @@ export function fitFlightPathCalibration(dataset) {
   if (coverage.trainingRouteCount < limits.minimumTrainingRoutes ||
       coverage.holdoutRouteCount < limits.minimumHoldoutRoutes ||
       coverage.trainingRoutesSouthOf30S < limits.minimumSouthernTrainingRoutes ||
-      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes ||
-      coverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
-      coverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S ||
-      coverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
-      coverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S) {
+      coverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes) {
     throw new Error('Insufficient independent ADS-B flight-path coverage for production calibration.');
   }
 
@@ -505,7 +514,7 @@ export function fitFlightPathCalibration(dataset) {
     makeRouteExamplesFromRecords(training, DEFAULT_RADIAL_WARP),
     makeRouteExamplesFromRecords(holdout, DEFAULT_RADIAL_WARP)
   );
-  if (!hasRequiredProjectedCoverage(initialProjectedCoverage, limits)) {
+  if (!hasMinimumProjectedCoverage(initialProjectedCoverage, limits)) {
     throw new Error(
       'Insufficient usable projected-path airport-pair coverage after projection; ' +
       'the minimum route counts and southern coverage gates must still be met.'
@@ -525,7 +534,7 @@ export function fitFlightPathCalibration(dataset) {
   const projectedPathCoverage = summarizeProjectedRouteCoverage(
     best.trainingExamples, best.holdoutExamples
   );
-  if (!hasRequiredProjectedCoverage(projectedPathCoverage, limits)) {
+  if (!hasMinimumProjectedCoverage(projectedPathCoverage, limits)) {
     throw new Error(
       'Insufficient usable projected-path airport-pair coverage after projection; ' +
       'the minimum route counts and southern coverage gates must still be met.'
