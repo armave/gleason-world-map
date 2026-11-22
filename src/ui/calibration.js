@@ -39,7 +39,7 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
    ? 'No observed-path candidate has passed validation yet. The last approved flat-disk scale and latitude warp remain active; the endpoint-based ADS-B mileage estimate is shown separately.'
    : 'Active visible-map fit: '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+
     ' training airport pairs and '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+
-    ' independent holdout pairs. The displayed radial scale and warp were accepted against projected ADS-B flight paths compared with independent ground-speed/time mileage.';
+    ' independent holdout pairs. The displayed scale, latitude warp and 12-circle radial-spacing profile were accepted against projected ADS-B flight paths compared with independent ground-speed/time mileage.';
  }
 
  const rows=[90,60,30,0,-30,-60,-90].map(lat=>{
