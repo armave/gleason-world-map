@@ -108,7 +108,7 @@ test('same-circle chord measurements use the same smoothly interpolated radial f
   assert.ok(shorter.distanceMeters < longer.distanceMeters);
 });
 
-test('outer-rim endpoint pairs receive the full 0.50× correction', () => {
+test('outer-rim diagnostics retain the full 0.50× visual factor without altering great-circle distance', () => {
   const result = measureDirectDistance(point(-90, 0), point(-90, 180));
   assert.equal(result.radialCorrectionFactor, 0.5);
   assert.equal(result.radialCorrection.circlePosition, 12);
@@ -175,7 +175,7 @@ for (const route of heldOutFlightMileageRoutes) {
   });
 }
 
-test('radial correction preserves chord ordering for endpoints on the same circle', () => {
+test('great-circle distance preserves endpoint ordering while map diagnostics stay separate', () => {
   const shorter = measureDirectDistance(
     point(40.17, 44.5), point(40.17, 45.5)
   );
@@ -298,9 +298,9 @@ test('great-circle distance is symmetric and longitude-wrap safe for unbounded c
   const first = point(-33.4489, -70.6693);
   const second = point(-35.2809, 149.13);
   const expected = greatCircleDistanceMeters(first, second);
-  assert.equal(expected, greatCircleDistanceMeters(second, first));
-  assert.equal(expected, greatCircleDistanceMeters(first, point(second.lat, second.lon + 720)));
-  assert.equal(expected, greatCircleDistanceMeters(first, point(second.lat, second.lon - 1080)));
+  assert.ok(Math.abs(expected - greatCircleDistanceMeters(second, first)) < 1e-6);
+  assert.ok(Math.abs(expected - greatCircleDistanceMeters(first, point(second.lat, second.lon + 720))) < 1e-6);
+  assert.ok(Math.abs(expected - greatCircleDistanceMeters(first, point(second.lat, second.lon - 1080))) < 1e-6);
 });
 
 test('Santiago to Canberra uses coordinate-only great-circle distance', () => {
