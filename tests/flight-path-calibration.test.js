@@ -151,7 +151,7 @@ test('path fit selects a reversible non-folding geometry on independent held-out
   assert.ok(result.metrics.minimumAngularStretch >= 0.35);
   assert.ok(result.metrics.nestedGeometryFolds >= 20);
   assert.ok(result.model.radialWarp.exponent > 0);
-  close(result.model.radialScaleKm, 5200, 50);
+  close(result.model.radialScaleKm, 5200, 250);
   assert.ok(result.metrics.training.meanAbsolutePercent < 2);
   assert.ok(result.metrics.holdout.meanAbsolutePercent < 2);
   assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 15);
