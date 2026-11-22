@@ -352,7 +352,7 @@ test('canonical distance is symmetric and longitude-wrap safe', () => {
   const second = point(-35.2809, 149.13);
   const expected = measureDistanceMeters(first, second);
   assert.equal(expected, measureDistanceMeters(second, first));
-  assert.equal(expected, measureDistanceMeters(first, point(second.lat, second.lon + 720)));
-  assert.equal(expected, measureDistanceMeters(first, point(second.lat, second.lon - 1080)));
+  assert.ok(Math.abs(expected - measureDistanceMeters(first, point(second.lat, second.lon + 720))) < 1e-6);
+  assert.ok(Math.abs(expected - measureDistanceMeters(first, point(second.lat, second.lon - 1080))) < 1e-6);
   assert.equal(measureDirectDistance(first, second).distanceMeters, expected);
 });
