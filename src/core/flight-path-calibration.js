@@ -264,27 +264,87 @@ function summarizeErrors(examples, radialScaleKm) {
   };
 }
 
-function evaluateExponent(training, holdout, exponent) {
+function exponentCandidates() {
+  const values = [];
+  for (let exponent = MIN_EXPONENT; exponent <= MAX_EXPONENT + 1e-9;
+       exponent += EXPONENT_STEP) {
+    values.push(exponent);
+  }
+  return values;
+}
+
+/**
+ * Fit one fixed exponent on a training subset. The inner leave-one-route-out
+ * scale errors are used only to select a stable exponent; no outer validation
+ * route is present in this function's inputs.
+ */
+function fitTrainingExponent(training, exponent) {
   const radialWarp = {
     ...DEFAULT_RADIAL_WARP,
     exponent
   };
   const trainingExamples = makeRouteExamplesFromRecords(training, radialWarp);
-  const holdoutExamples = makeRouteExamplesFromRecords(holdout, radialWarp);
   const radialScaleKm = median(trainingExamples.map(item => item.requiredRadialScaleKm));
   const trainingMetrics = summarizeErrors(trainingExamples, radialScaleKm);
-  const holdoutMetrics = summarizeErrors(holdoutExamples, radialScaleKm);
 
-  const leaveOneOutErrors = trainingExamples.map(example => {
+  const innerErrors = trainingExamples.map(example => {
     const otherRatios = trainingExamples
       .filter(item => item.routeId !== example.routeId)
       .map(item => item.requiredRadialScaleKm);
-    const leaveOneOutScale = median(otherRatios);
     return absolutePercentError(
-      leaveOneOutScale,
+      median(otherRatios),
       example.requiredRadialScaleKm
     );
   });
+  const innerLeaveOneOut = {
+    routeCount: innerErrors.length,
+    meanAbsolutePercent: innerErrors.length
+      ? innerErrors.reduce((sum, value) => sum + value, 0) / innerErrors.length
+      : null,
+    maxAbsolutePercent: innerErrors.length ? Math.max(...innerErrors) : null
+  };
+  return {
+    radialWarp,
+    trainingExamples,
+    radialScaleKm,
+    training: trainingMetrics,
+    innerLeaveOneOut,
+    objective: trainingMetrics.meanAbsolutePercent + innerLeaveOneOut.meanAbsolutePercent
+  };
+}
+
+function evaluateExponent(training, holdout, exponent) {
+  const fitted = fitTrainingExponent(training, exponent);
+  const holdoutExamples = makeRouteExamplesFromRecords(holdout, fitted.radialWarp);
+  const holdoutMetrics = summarizeErrors(holdoutExamples, fitted.radialScaleKm);
+
+  // Nested leave-one-route-out: for each outer route, re-select the exponent
+  // and radial scale using only the remaining training routes.
+  const leaveOneOutErrors = training.flatMap(heldOutRoute => {
+    const reducedTraining = training.filter(item =>
+      item.route.routeId !== heldOutRoute.route.routeId
+    );
+    const nestedCandidates = exponentCandidates().map(candidateExponent =>
+      fitTrainingExponent(reducedTraining, candidateExponent)
+    ).filter(candidate =>
+      Number.isFinite(candidate.objective) &&
+      Number.isFinite(candidate.radialScaleKm) &&
+      candidate.radialScaleKm > 0
+    );
+    nestedCandidates.sort((first, second) => first.objective - second.objective);
+    const nestedFit = nestedCandidates[0];
+    if (!nestedFit) return [];
+
+    const heldOutExamples = makeRouteExamplesFromRecords(
+      [heldOutRoute], nestedFit.radialWarp
+    );
+    if (!heldOutExamples.length) return [];
+    return [absolutePercentError(
+      nestedFit.radialScaleKm,
+      heldOutExamples[0].requiredRadialScaleKm
+    )];
+  });
+
   const leaveOneOut = {
     routeCount: leaveOneOutErrors.length,
     meanAbsolutePercent: leaveOneOutErrors.length
@@ -294,12 +354,12 @@ function evaluateExponent(training, holdout, exponent) {
       ? Math.max(...leaveOneOutErrors) : null
   };
   return {
-    radialWarp,
-    radialScaleKm,
-    training: trainingMetrics,
+    radialWarp: fitted.radialWarp,
+    radialScaleKm: fitted.radialScaleKm,
+    training: fitted.training,
     holdout: holdoutMetrics,
     leaveOneOut,
-    objective: trainingMetrics.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
+    objective: fitted.training.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
   };
 }
 
@@ -357,8 +417,7 @@ export function fitFlightPathCalibration(dataset) {
   const holdout = records.filter(item => item.route.split === 'holdout');
   const candidates = [];
 
-  for (let exponent = MIN_EXPONENT; exponent <= MAX_EXPONENT + 1e-9;
-       exponent += EXPONENT_STEP) {
+  for (const exponent of exponentCandidates()) {
     const candidate = evaluateExponent(training, holdout, exponent);
     if (Number.isFinite(candidate.objective)) candidates.push(candidate);
   }
