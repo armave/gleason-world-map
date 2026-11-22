@@ -540,6 +540,7 @@ export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
     const right = applyMultiAnchorWarpXY(x + step, y, model);
     const up = applyMultiAnchorWarpXY(x, y - step, model);
     const down = applyMultiAnchorWarpXY(x, y + step, model);
+    if (![left, right, up, down].every(Boolean)) return null;
     const a = (right[0] - left[0]) / (2 * step);
     const c = (right[1] - left[1]) / (2 * step);
     const b = (down[0] - up[0]) / (2 * step);
