@@ -6,7 +6,7 @@ import {
   invertMultiAnchorWarpXY,
   summarizeMultiAnchorCoverage
 } from '../src/core/multi-anchor-flat-disk.js';
-import { DISK_RADIUS_KM } from '../src/core/flat-disk.js';
+import { DISK_RADIUS_KM, project } from '../src/core/flat-disk.js';
 
 const sampleSource = {
   provider: 'test fixture only',
@@ -112,4 +112,82 @@ test('conflicting anchor coordinates are rejected', () => {
   }];
   const coverage = summarizeMultiAnchorCoverage(observations);
   assert.ok(coverage.validationErrors.some(item => item.includes('conflicting coordinates')));
+});
+
+
+test('synthetic held-out pairs verify recovery of a known smooth disk deformation', () => {
+  const latitudes = [
+    -72, -60, -48, -36, -24, -12, 0, 12,
+    24, 36, 48, 60, 72, 54, -54, 18
+  ];
+  const longitudes = [
+    -157, -112, -67, -22, 23, 68, 113, 158,
+    -135, -90, -45, 0, 45, 90, 135, 180
+  ];
+  const anchors = latitudes.map((lat, index) => ({
+    id: 'S' + index,
+    lat,
+    lon: longitudes[index]
+  }));
+  const seed = anchors.map(point => project(point.lon, point.lat, DISK_RADIUS_KM));
+  const envelopeAt = ([x, y]) => {
+    const q = Math.min(1, Math.hypot(x, y) / DISK_RADIUS_KM);
+    return 16 * q * q * (1 - q) * (1 - q);
+  };
+  const sigmaKm = DISK_RADIUS_KM * 0.35;
+  const truth = {
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm,
+    controls: seed.map((point, index) => ({
+      id: anchors[index].id,
+      xKm: point[0],
+      yKm: point[1],
+      envelope: envelopeAt(point),
+      alphaX: 85 * Math.sin(index * 0.73),
+      alphaY: 85 * Math.cos(index * 0.61)
+    }))
+  };
+  const transformed = seed.map(point =>
+    applyMultiAnchorWarpXY(point[0], point[1], truth)
+  );
+  const observation = (i, j, split) => ({
+    id: split + '-' + i + '-' + j,
+    split,
+    a: anchors[i],
+    b: anchors[j],
+    distanceKm: Math.hypot(
+      transformed[j][0] - transformed[i][0],
+      transformed[j][1] - transformed[i][1]
+    ),
+    measurementType: 'direct-straight-line',
+    source: sampleSource
+  });
+  const observations = [];
+  for (let index = 0; index < anchors.length; index++) {
+    for (const offset of [1, 3, 5]) {
+      observations.push(observation(
+        index, (index + offset) % anchors.length, 'train'
+      ));
+    }
+    observations.push(observation(
+      index, (index + 7) % anchors.length, 'holdout'
+    ));
+  }
+
+  const result = fitMultiAnchorFlatDisk(observations, {
+    iterations: 2200,
+    learningRateKm: 8,
+    anchorWeight: 0.03,
+    sigmaKm,
+    regularization: 1e-7
+  });
+
+  assert.notEqual(result.status, 'fit-failed');
+  assert.ok(result.candidateModel);
+  assert.ok(Number.isFinite(result.metrics.training.meanAbsolutePercent));
+  assert.ok(Number.isFinite(result.metrics.holdout.meanAbsolutePercent));
+  assert.ok(result.metrics.holdout.meanAbsolutePercent <
+    result.metrics.baselineHoldout.meanAbsolutePercent);
+  assert.ok(result.metrics.minimumJacobianDeterminant > 0);
+  assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
 });
