@@ -224,7 +224,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
-- A–B distance: Euclidean length of the straight connector in the final 12-circle-warped flat disk, plus a separate ADS-B flight-mileage reference. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
+- A–B route estimate: empirical typical flown mileage from observed ADS-B ground-speed/time records, with explicit extrapolation warnings outside the supported domain; the exact flat-disk connector length is shown separately. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
 
 ## Important limitations
 
