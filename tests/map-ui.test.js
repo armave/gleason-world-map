@@ -164,7 +164,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.doesNotMatch(app, /calibrationDiagnostics|Outside the sampled route-feature range|Correction bound applied/);
   assert.doesNotMatch(html, /calibration-diagnostics|calibrationDiagnostics/);
   assert.match(app, /The map geometry uses a smooth, edge-anchored radial warp across all 12 circles/);
-  assert.match(app, /The A–B readout keeps the separate calibration chord and 12-circle factor/);
+  assert.match(app, /The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -216,16 +216,16 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('the radial-corrected A–B readout and ADS-B flight mileage remain separate references',()=>{
- assert.match(html,/Radially calibrated A–B distance/);
+test('the coordinate-only great-circle readout and ADS-B flight mileage remain separate references',()=>{
+ assert.match(html,/Great-circle A–B distance/);
  assert.match(html,/12-circle visual radial calibration/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
  assert.ok(html.indexOf('id="distanceValue"')<html.indexOf('id="flightDistanceValue"'));
- assert.match(app,/Base chord .*formatDistance\(measurement\.chordDistanceMeters\).*radial factor/);
- assert.match(app,/visual chord .*formatDistance\(measurement\.visualChordDistanceMeters\)/);
- assert.match(app,/radialCirclePosition/);
+ assert.match(app,/Spherical great-circle arc .*map chord .*is display-only/);
+ assert.match(app,/The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula/);
+ assert.match(app,/flightEmpiricalDistanceMeters/);
 });
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{

@@ -1,4 +1,5 @@
 import { clamp, baseFlatDiskDistanceMeters, flatDiskDistanceMeters, radialDistanceFromNorthKm, baseRadialFraction, rad, wrapLongitude } from './flat-disk.js';
+import { greatCircleDistanceMeters } from './great-circle.js';
 import {
   RADIAL_DISTANCE_CIRCLE_COUNT as RADIAL_CIRCLE_COUNT,
   RADIAL_DISTANCE_INNER_FACTOR as RADIAL_INNER_FACTOR,
@@ -13,9 +14,8 @@ const RESTRICTED_RADIUS_KM = radialDistanceFromNorthKm(RESTRICTED_PARALLEL_LATIT
 const EPSILON_KM = 1e-7;
 
 /**
- * User-defined radial adjustment for the primary A–B readout.
- * Circle 1 is the North Pole (1.00×); circle 12 is the Antarctic rim (0.50×).
- * Values between circles are linearly interpolated in normalized disk radius.
+ * Legacy 12-circle radial correction retained as an optional diagnostic.
+ * The primary A–B distance is calculated independently by the great-circle helper.
  */
 export const RADIAL_DISTANCE_CIRCLE_COUNT = RADIAL_CIRCLE_COUNT;
 export const RADIAL_DISTANCE_INNER_FACTOR = RADIAL_INNER_FACTOR;
@@ -155,18 +155,19 @@ export function directLineCalibrationFactor(first, second) {
 }
 
 /**
- * Measure the straight projected disk chord, apply the 12-circle radial
- * readout adjustment, and provide a separate ADS-B flight-mileage estimate.
+ * Measure a coordinate-only spherical great-circle distance and return
+ * separate flat-disk and ADS-B diagnostics for comparison.
  *
- * chordDistanceMeters is the original fitted-projection calibration chord;
- * visualChordDistanceMeters is the actual chord after the smooth map warp.
- * The A–B readout and ADS-B estimate keep the original calibration basis;
- * the visible connector and scale bar use the visually calibrated projection.
+ * distanceMeters is independent of the map projection and telemetry.
+ * chordDistanceMeters and visualChordDistanceMeters describe the original
+ * and displayed map geometry; flightEmpiricalDistanceMeters is a separate
+ * telemetry-derived estimate of typical flown mileage.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
+      greatCircleDistanceMeters: null,
       radiallyCorrectedDistanceMeters: null,
       calibratedDistanceMeters: null,
       flightEmpiricalDistanceMeters: null,
@@ -202,6 +203,8 @@ export function measureDirectDistance(first, second) {
     Number.isFinite(calibrationFactor)
     ? chordDistanceMeters * calibrationFactor
     : null;
+  const greatCircleDistance = greatCircleDistanceMeters(first, second);
+  const safeGreatCircleDistance = Number.isFinite(greatCircleDistance) ? greatCircleDistance : null;
   const safeChordDistance = Number.isFinite(chordDistanceMeters) ? chordDistanceMeters : null;
   const safeVisualChordDistance = Number.isFinite(visualChordDistanceMeters) ? visualChordDistanceMeters : null;
   const safeRadiallyCorrectedDistance = Number.isFinite(radiallyCorrectedDistanceMeters)
@@ -212,8 +215,10 @@ export function measureDirectDistance(first, second) {
     : null;
 
   return {
-    // Primary readout receives the user-defined 12-circle radial adjustment.
-    distanceMeters: safeRadiallyCorrectedDistance,
+    // Keep the legacy radial correction as a diagnostic alongside the primary
+    // coordinate-only distance, which is independent of telemetry and map warp.
+    distanceMeters: safeGreatCircleDistance,
+    greatCircleDistanceMeters: safeGreatCircleDistance,
     radiallyCorrectedDistanceMeters: safeRadiallyCorrectedDistance,
     calibratedDistanceMeters: safeFlightEmpiricalDistance,
     flightEmpiricalDistanceMeters: safeFlightEmpiricalDistance,
@@ -229,7 +234,7 @@ export function measureDirectDistance(first, second) {
     correctionPercent: calibration?.correctionPercent ?? null,
     calibration,
     warnings: calibration?.warnings ?? [],
-    metric: 'radially-corrected-flat-disk-chord',
+    metric: 'spherical-great-circle',
     restricted: false
   };
 }
