@@ -24,15 +24,18 @@ import { endpointDistanceFeatures, predictEndpointDistance } from '../src/core/e
 
 const point = (lat, lon) => ({ lat, lon });
 
-test('Santiago–Canberra uses a supported ADS-B endpoint estimate while preserving the displayed map chord', () => {
+test('Santiago–Canberra is flagged outside the validated route-length range while preserving both measurements', () => {
   const santiago = point(-33.45, -70.67);
   const canberra = point(-35.27, 149.13);
   const result = measureDirectDistance(santiago, canberra);
   const reverse = measureDirectDistance(canberra, santiago);
 
-  assert.equal(result.endpointDistanceCalibration.supportStatus, 'supported');
+  assert.equal(result.endpointDistanceCalibration.supportStatus, 'extrapolated');
+  assert.ok(result.endpointDistanceCalibration.nearestFeatureDistance >
+    result.endpointDistanceCalibration.maxSupportedFeatureDistance);
+  assert.ok(result.endpointDistanceCalibration.warnings.includes('outside-validated-route-feature-support'));
   assert.ok(Math.abs(result.distanceMeters - 23_894_366.29) < 1);
-  assert.ok(Math.abs(result.endpointDistanceEstimateMeters - 23_266_012.66) < 1);
+  assert.ok(Math.abs(result.endpointDistanceEstimateMeters - 24_754_491.69) < 1);
   assert.ok(Math.abs(
     result.endpointDistanceEstimateMeters -
     result.distanceMeters * result.endpointDistanceCalibration.calibrationFactor
@@ -40,7 +43,7 @@ test('Santiago–Canberra uses a supported ADS-B endpoint estimate while preserv
   assert.equal(result.endpointDistanceEstimateMeters,
     result.endpointDistanceCalibration.distanceMeters);
   assert.equal(result.endpointDistanceEstimateMeters, reverse.endpointDistanceEstimateMeters);
-  assert.equal(result.endpointDistanceCalibration.neighborRouteIds[0], 'YPAD--YSSY');
+  assert.equal(result.endpointDistanceCalibration.neighborRouteIds[0], 'LFPG--LTFM');
   assert.equal(result.metric, 'flat-disk-euclidean');
   assert.equal(result.distanceMeters, result.flatDiskDistanceMeters);
 });
@@ -66,6 +69,8 @@ test('endpoint feature decomposition is symmetric and corresponds to the display
     Math.hypot(forward.features[1], forward.features[2]) - 1
   ) < 1e-9);
   assert.deepEqual(forward.features, reverse.features);
+  assert.equal(forward.features.length, 4);
+  assert.ok(Number.isFinite(forward.features[3]));
 });
 
 const heldOutFlightMileageRoutes = [
