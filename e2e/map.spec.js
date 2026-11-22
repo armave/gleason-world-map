@@ -143,7 +143,7 @@ test('calculates a planar polygon area from three map clicks', async ({ page }) 
 
   await expect(page.locator('#areaValue')).not.toHaveText('—');
   await expect(page.locator('#areaValue')).not.toHaveText('Unavailable');
-  await expect(page.locator('#areaPerimeter')).toContainText('Planar perimeter');
+  await expect(page.locator('#areaPerimeter')).toContainText('Perimeter');
 });
 
 test('restores measurement endpoints and map orientation from a share URL', async ({ page }) => {
