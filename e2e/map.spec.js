@@ -65,7 +65,7 @@ test('searches for a capital and shows its geographic details', async ({ page })
   await expect(page.locator('#selectionCoords')).not.toHaveText('—');
 });
 
-test('shows a supported mileage estimate and distinguishes the projected disk chord', async ({ page }) => {
+test('shows the single canonical distance for a route pair', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
@@ -78,16 +78,15 @@ test('shows a supported mileage estimate and distinguishes the projected disk ch
   await page.locator('#coordBLon').fill('-122.3790');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('.primary-distance-reading')).toContainText('Empirical route-mileage estimate');
-  await expect(page.locator('.primary-distance-reading')).toContainText('Supported typical flown mileage');
-  await expect(page.locator('#distanceValue')).not.toHaveText('Not validated');
-  await expect(page.locator('.secondary-distance-reading')).toContainText('Projected flat-disk chord');
-  await expect(page.locator('.secondary-distance-reading')).toContainText('not flown route mileage');
-  await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
-  await expect(page.locator('#calibrationSupport')).toContainText('Supported by nearby reference routes');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Distance A–B');
+  await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('#distanceSub')).toContainText('One ADS-B-calibrated flat-disk distance');
+  await expect(page.locator('.secondary-distance-reading')).toHaveCount(0);
+  await expect(page.locator('#flightDistanceValue')).toHaveCount(0);
+  await expect(page.locator('#calibrationSupport')).toContainText('distance factor');
 });
 
-test('withholds the unsupported Santiago–Canberra mileage estimate', async ({ page }) => {
+test('Santiago–Canberra uses the single calibrated distance near 11,400 km', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
@@ -99,15 +98,15 @@ test('withholds the unsupported Santiago–Canberra mileage estimate', async ({ 
   await page.locator('#coordBLon').fill('149.13');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('#distanceValue')).toHaveText('Not validated');
-  await expect(page.locator('#distanceSub')).toContainText('Numeric estimate withheld');
-  await expect(page.locator('#calibrationSupport')).toContainText('5.09');
-  await expect(page.locator('#calibrationSupport')).toContainText('0.90');
-  await expect(page.locator('#flightDistanceValue')).toContainText('23,894.4');
-  await expect(page.locator('.secondary-distance-reading')).toContainText('not flown route mileage');
+  await expect(page.locator('#distanceValue')).toContainText('11,389.1');
+  await expect(page.locator('#distanceSub')).toContainText('One ADS-B-calibrated flat-disk distance');
+  await expect(page.locator('#calibrationSupport')).toContainText('distance factor 0.50×');
+  await expect(page.locator('#calibrationRoutes')).toContainText('YPAD--YSSY');
+  await expect(page.locator('#calibrationRoutes')).toContainText('YPAD--YPPH');
+  await expect(page.locator('#flightDistanceValue')).toHaveCount(0);
 });
 
-test('90°S coordinates remain distinct longitude-indexed points on the Antarctic disk rim', async ({ page }) => {
+test('90°S coordinates remain distinct longitude-indexed points under the canonical metric', async ({ page }) => {
   await openLoadedMap(page);
   await page.locator('#measureMode').click();
 
@@ -118,11 +117,11 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
   await page.locator('#coordBLon').fill('180');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('#flightDistanceValue')).toContainText('36,527.2');
-  await expect(page.locator('#distanceValue')).toHaveText('Not validated');
-  await expect(page.locator('#distanceSub')).toContainText('Numeric estimate withheld');
-  await expect(page.locator('#calibrationSupport')).toContainText('No route-mileage number shown');
-  await expect(page.locator('#measureHelp')).toContainText('Antarctic rim retains longitude-indexed positions');
+  await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('#distanceSub')).toContainText('One ADS-B-calibrated flat-disk distance');
+  await expect(page.locator('#calibrationSupport')).toContainText('near Antarctic rim');
+  await expect(page.locator('.secondary-distance-reading')).toHaveCount(0);
+  await expect(page.locator('#measureHelp')).toContainText('longitude-indexed Antarctic rim');
 });
 
 test('calculates a planar polygon area from three map clicks', async ({ page }) => {
