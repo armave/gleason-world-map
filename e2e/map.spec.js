@@ -79,8 +79,8 @@ test('shows empirical route estimate separately from the displayed flat-disk con
   await page.locator('#applyCoordsB').click();
 
   await expect(page.locator('.primary-distance-reading')).toContainText('Empirical route-distance estimate');
-  await expect(page.locator('.primary-distance-reading')).toContainText('Empirical estimate of typical flown mileage');
-  await expect(page.locator('.primary-distance-reading')).toContainText('not a specific flight path');
+  await expect(page.locator('.primary-distance-reading')).toContainText('Typical flown mileage');
+  await expect(page.locator('.primary-distance-reading')).toContainText('not a selected flight path');
   await expect(page.locator('.secondary-distance-reading')).toContainText('Flat-disk connector length');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
   await expect(page.locator('#flightDistanceValue')).not.toHaveText('—');
@@ -100,6 +100,7 @@ test('90°S coordinates remain distinct longitude-indexed points on the Antarcti
 
   await expect(page.locator('#flightDistanceValue')).toContainText('36,527.2');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('.primary-distance-reading')).toContainText('EXTRAPOLATED · provisional');
   await expect(page.locator('#calibrationSupport')).toContainText('Extrapolated');
   await expect(page.locator('#measureHelp')).toContainText('Antarctic rim retains longitude-indexed positions');
 });
