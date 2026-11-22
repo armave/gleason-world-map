@@ -25,15 +25,19 @@ The fitted latitude warp uses exponent 0.9 and epsilon 0.005. A second, visually
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
-The distance tool draws one straight connector between the endpoints in the visually warped disk, but the primary numeric A–B value is independent of that drawing: it uses a coordinate-only spherical great-circle formula (haversine) with a fixed mean Earth radius of 6,371,008.8 m. The result depends only on endpoint latitude/longitude and does not use ADS-B telemetry, the fitted map scale, or the 12-circle visual warp. The 12-circle transformation affects displayed map geometry only. A separate ADS-B flight-mileage estimate remains available as an empirical reference for typical flown mileage on sampled airport pairs; it is not the actual track of a selected flight and may differ from the great-circle distance because aircraft route around weather, airspace restrictions and operational constraints. Polar/out-of-range support and nearest reference routes are available in the expanded measurement details. The 60°S Restricted Line is a visual reference only.
+The primary A–B number is the Euclidean length of the same straight segment drawn between the projected endpoints in the flat-disk coordinate plane. Both endpoints use the fitted latitude warp and the continuous 12-circle transformation, so the measured segment and map visuals share exactly the same geometry. The scale bar and polygon edge lengths use the same map-plane kilometre metric. The nominal radial scale is empirically fitted from ADS-B ground-speed/time mileage; it is a flat-disk scale, not a globe radius or universal ground-distance constant. No sphere, globe, ellipsoid, great-circle or geodesic formula is used for the primary distance. A separate ADS-B flight-mileage estimate remains available as an empirical reference for typical flown mileage on sampled airport pairs; it is not the actual track of a selected flight and may differ from the map-plane segment because aircraft route around weather, airspace restrictions and operational constraints. The 60°S Restricted Line is a visual reference only. On this disk, longitude remains an angular coordinate at 90°S, so the Antarctic rim consists of distinct longitude-indexed boundary positions rather than one collapsed spherical South Pole.
 
 ## A–B distances and planar area measurements
 
-The A–B tool draws one straight projected segment on the visually calibrated disk. Its primary numeric readout is the coordinate-only spherical great-circle distance between the selected endpoints. The straight connector and its visual chord are display geometry only; the 12-circle warp does not change the great-circle result. A separate ADS-B estimate predicts typical flown mileage from the telemetry-trained route model. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
+The A–B tool draws one straight projected segment on the visually calibrated disk. Its primary numeric readout is the Euclidean length of that same segment in the displayed flat-disk plane. The 12-circle warp is included in both endpoint positions before the distance is calculated; no separate radial multiplier is applied to the resulting chord. Consequently, the connector label and primary readout are the same measurement. The scale bar and polygon edge lengths use the same projected-plane metric. A separate ADS-B estimate predicts typical flown mileage from the telemetry-trained route model. Polygon area remains a shoelace calculation in projected coordinates and polygon perimeter remains the sum of its straight projected edges.
 
 **Direct A–B distance**
 
-The primary A–B readout is a spherical great-circle distance calculated only from the two endpoint coordinates. With endpoint latitudes φ₁, φ₂ and wrapped longitude difference Δλ, it uses the haversine formula: `a = sin²(Δφ/2) + cos(φ₁)cos(φ₂)sin²(Δλ/2)` and `d = 2R asin(√a)`, where `R = 6,371,008.8 m` is the fixed mean Earth radius. This value is independent of ADS-B data, fitted map parameters and the visual 12-circle radial warp. The straight connector remains a projected map-display line; it is not the great-circle arc. A separate **ADS-B flight-mileage estimate** is displayed as a secondary reference: the original fitted map chord multiplied by a fitted radial scale and a local correction inferred from the two nearest training routes in standardized flat-disk feature space (mean warped radial fraction, radial share of the unit chord, and tangential share of the unit chord). The model uses inverse-distance weights and a geometric mean of the neighbours' observed mileage ratios. It estimates typical flown mileage in the sampled airport-pair domain, not a specific selected flight's track. Flight mileage can differ from great-circle distance due to airline routing, weather and operational constraints. Moving an endpoint across 60°S does not change the primary distance formula.
+The primary A–B readout is the Euclidean straight-line distance between the two final projected points. For an endpoint with longitude λ and latitude φ, the current map first computes `t = (π/2 − φ)/π`, then the fitted base fraction `q(t)`, then the visual radial fraction `qᵥ = q + q(1−q)/3`. The final projected point is `x = πR qᵥ cos(λ)`, `y = −πR qᵥ sin(λ)`, where `R` is the empirically fitted flat-disk radial scale. The reported distance is `sqrt((x₂−x₁)² + (y₂−y₁)²)`. This is exactly the Euclidean length of the straight connector drawn between those same points. There is no globe, sphere, ellipsoid, great-circle or geodesic distance formula in the primary measurement path, and the 12-circle warp is not applied a second time as a distance multiplier.
+
+At 90°S, the radial fraction is 1 and longitude continues to determine angular position on the outer circle. Thus `(−90°, 0°)` and `(−90°, 180°)` are opposite points on the disk rim, not one collapsed spherical South Pole. This is a deliberate flat-disk boundary convention that keeps the Antarctic Ice Wall circular and measurable; it is not a claim about a physical South Pole.
+
+A separate **ADS-B flight-mileage estimate** remains as a secondary reference. It applies an empirical route-neighbour correction to the original fitted calibration chord, using mean radial fraction and radial/tangential chord shares. It predicts typical flown mileage for sampled airport pairs, not the distance of the displayed segment and not the actual track of a selected flight. Its accuracy depends on the telemetry sample and is not validated at the Antarctic rim.
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
@@ -73,7 +77,7 @@ A = 1/2 * abs(r2^2 - r1^2) * abs(delta-lambda)
 
 The complete disk area in this model is pi * (pi * R)^2. This is the mathematical area of the calibrated flat disk; it is not a spherical or ellipsoidal surface area.
 
-The scale bar reports map-plane kilometres using the visually calibrated projection and fixed chord-to-pixel conversion; it is a visual map scale, not the formula used for the primary great-circle distance or the route-specific ADS-B correction. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the observed-flight data and limitations.
+The scale bar reports map-plane kilometres using the same visibly calibrated projection and Euclidean metric as the primary A–B measurement. Resizing the canvas does not change the calibrated flat-map distance or planar area results. See [the calibration methodology note](docs/flat-map-distance-calibration.md) for the observed-flight data and limitations.
 
 ## Antarctica / Ice Wall
 
@@ -107,7 +111,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: coordinate-only spherical great-circle formula; smooth 12-circle warp affects display only; ADS-B flight-mileage estimate remains a separate empirical reference
+- A–B distance: Euclidean length of the straight connector in the final 12-circle-warped flat disk; ADS-B flight-mileage estimate remains a separate empirical reference
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -115,7 +119,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar uses the visually calibrated map-plane chord metric; the A–B great-circle value is calculated independently from endpoint coordinates
+- View-centred scale bar and primary A–B measurement use the same visually calibrated map-plane Euclidean metric
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
@@ -185,7 +189,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite covers initial map loading, zoom and rotation, geographic search, coordinate-only great-circle A–B measurement, planar polygon area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
+The browser suite covers initial map loading, zoom and rotation, geographic search, flat-disk Euclidean A–B measurement, planar polygon area, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
 
 ## Run locally
 
@@ -219,7 +223,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 ## Important limitations
 
 - The map is a custom radial disk with a nonlinear latitude warp, not the standard azimuthal-equidistant formula. It is a mathematical map construction, not a claim about Earth's physical shape. The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp; a local nearest-route correction is applied only to the separate ADS-B flight-mileage estimate. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well the flight estimate generalizes to new route pairs.
-- The primary A–B result is a spherical great-circle distance calculated from endpoint coordinates with a fixed mean Earth radius. It is a direct geographic-distance approximation, not actual flown mileage. The straight map connector is display geometry only. The secondary result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight or a guaranteed prediction of an airline route. Performance outside the sampled airport-pair domain is not guaranteed.
+- The primary A–B result is a flat-disk Euclidean distance: it is the exact length of the straight connector between the endpoints after the fitted radial and 12-circle visual transforms. Its map-plane kilometre scale is empirically calibrated and is not a universal physical ground-distance law. The secondary result is an estimate of typical flown mileage inferred from ADS-B speed/time observations; it is not the actual track of a selected flight or a guaranteed prediction of an airline route. Performance outside the sampled airport-pair domain is not guaranteed.
 - The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
 - Latest ADS-B collection (21 November 2026, 12:17 UTC): 61 candidate airport pairs, 253 flight records, 32 qualifying training routes and 2 qualifying holdouts. The eight southern/polar candidate pairs returned no matching flight records, so no polar calibration is promoted.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
