@@ -1,0 +1,537 @@
+/**
+ * Experimental multi-anchor calibration for a circular flat-disk map.
+ *
+ * Fitting targets must be independently measured straight-line endpoint
+ * distances. Aircraft mileage, flight duration, track length, and endpoint
+ * coordinates converted through any spherical/ellipsoidal formula are not
+ * acceptable substitutes for those measurements.
+ *
+ * This module produces a candidate beside production geometry. It never
+ * changes the active map projection or the production distance engine.
+ */
+import { DISK_RADIUS_KM, project } from './flat-disk.js';
+
+export const MULTI_ANCHOR_FILTERS = Object.freeze({
+  minimumTrainingObservations: 30,
+  minimumHoldoutObservations: 12,
+  minimumTrainingAnchors: 12,
+  minimumLatitudeBands: 4,
+  minimumLongitudeSectors: 4,
+  maximumTrainingMapePercent: 8,
+  maximumHoldoutMapePercent: 10,
+  maximumHoldoutPairErrorPercent: 20,
+  minimumJacobianDeterminant: 0.2,
+  maximumAnchorDisplacementFraction: 0.12,
+  maximumControlPoints: 256
+});
+
+const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const pairKey = (a, b) => [a, b].sort().join('|');
+const validAnchor = point =>
+  !!point && typeof point.id === 'string' && point.id.trim() &&
+  Number.isFinite(point.lat) && point.lat >= -90 && point.lat <= 90 &&
+  Number.isFinite(point.lon) && point.lon >= -180 && point.lon <= 180;
+
+function normalizeObservations(input) {
+  const errors = [];
+  const observations = [];
+  const anchors = new Map();
+  const pairSplits = new Map();
+
+  if (!Array.isArray(input)) {
+    return { observations, errors: ['observations must be an array'] };
+  }
+
+  input.forEach((item, index) => {
+    const label = 'observation[' + index + ']';
+    if (!item || !['train', 'holdout'].includes(item.split)) {
+      errors.push(label + ' must declare split=train or split=holdout');
+      return;
+    }
+    if (!validAnchor(item.a) || !validAnchor(item.b) || item.a.id === item.b.id) {
+      errors.push(label + ' has invalid or identical endpoint anchors');
+      return;
+    }
+    if (!Number.isFinite(item.distanceKm) || item.distanceKm <= 0 ||
+        item.distanceKm > 50000) {
+      errors.push(label + ' distanceKm must be greater than 0 and at most 50000');
+      return;
+    }
+    if (item.measurementType !== 'direct-straight-line') {
+      errors.push(label + ' is not an eligible direct-straight-line measurement');
+      return;
+    }
+    if (!item.source || typeof item.source.provider !== 'string' ||
+        !item.source.provider.trim() ||
+        typeof item.source.reference !== 'string' ||
+        !item.source.reference.trim()) {
+      errors.push(label + ' must include source.provider and source.reference');
+      return;
+    }
+
+    let conflict = false;
+    for (const point of [item.a, item.b]) {
+      const previous = anchors.get(point.id);
+      if (previous && (Math.abs(previous.lat - point.lat) > 1e-7 ||
+          Math.abs(previous.lon - point.lon) > 1e-7)) conflict = true;
+    }
+    if (conflict) {
+      errors.push(label + ' reuses an anchor ID with conflicting coordinates');
+      return;
+    }
+    for (const point of [item.a, item.b]) {
+      anchors.set(point.id, { id: point.id, lat: point.lat, lon: point.lon });
+    }
+
+    const key = pairKey(item.a.id, item.b.id);
+    if (pairSplits.has(key)) {
+      errors.push(label + ' duplicates endpoint pair ' + key +
+        ' (previous split: ' + pairSplits.get(key) + ')');
+      return;
+    }
+    pairSplits.set(key, item.split);
+    observations.push({
+      id: typeof item.id === 'string' && item.id ? item.id : 'pair-' + index,
+      split: item.split,
+      a: { id: item.a.id, lat: item.a.lat, lon: item.a.lon },
+      b: { id: item.b.id, lat: item.b.lat, lon: item.b.lon },
+      distanceKm: item.distanceKm,
+      confidence: Number.isFinite(item.confidence)
+        ? clamp(item.confidence, 0.1, 1) : 1,
+      source: item.source
+    });
+  });
+
+  return { observations, errors };
+}
+
+function pointOnDisk(point) {
+  const projected = project(point.lon, point.lat, DISK_RADIUS_KM);
+  if (!Array.isArray(projected) || !projected.every(Number.isFinite)) {
+    throw new Error('Could not project reference anchor ' + point.id);
+  }
+  return projected;
+}
+
+function boundaryAnchor(x, y) {
+  const radius = Math.hypot(x, y);
+  return radius < DISK_RADIUS_KM * 1e-7 ||
+    radius > DISK_RADIUS_KM * (1 - 1e-7);
+}
+
+function envelopeAt(x, y, radiusKm = DISK_RADIUS_KM) {
+  const q = clamp(Math.hypot(x, y) / radiusKm, 0, 1);
+  return 16 * q * q * (1 - q) * (1 - q);
+}
+
+function coverageFor(training, holdout, errors = []) {
+  const anchors = new Map();
+  const latitudeBands = new Set();
+  const longitudeSectors = new Set();
+  for (const item of training) {
+    for (const point of [item.a, item.b]) {
+      anchors.set(point.id, point);
+      latitudeBands.add(clamp(Math.floor((point.lat + 90) / 30), 0, 5));
+      longitudeSectors.add(clamp(
+        Math.floor((((point.lon + 180) % 360) + 360) % 360 / 45), 0, 7
+      ));
+    }
+  }
+  return {
+    trainingObservationCount: training.length,
+    holdoutObservationCount: holdout.length,
+    trainingAnchorCount: anchors.size,
+    latitudeBandCount: latitudeBands.size,
+    longitudeSectorCount: longitudeSectors.size,
+    validationErrors: errors
+  };
+}
+
+function graphConnected(anchorIds, observations) {
+  if (!anchorIds.length) return false;
+  const adjacent = new Map(anchorIds.map(id => [id, []]));
+  for (const item of observations) {
+    adjacent.get(item.a.id)?.push(item.b.id);
+    adjacent.get(item.b.id)?.push(item.a.id);
+  }
+  const visited = new Set([anchorIds[0]]);
+  const pending = [anchorIds[0]];
+  while (pending.length) {
+    const id = pending.pop();
+    for (const next of adjacent.get(id) || []) {
+      if (!visited.has(next)) {
+        visited.add(next);
+        pending.push(next);
+      }
+    }
+  }
+  return visited.size === anchorIds.length;
+}
+
+function solveLinearSystem(matrix, vector) {
+  const n = vector.length;
+  const rows = matrix.map((row, index) => [...row, vector[index]]);
+  for (let column = 0; column < n; column++) {
+    let pivot = column;
+    for (let row = column + 1; row < n; row++) {
+      if (Math.abs(rows[row][column]) > Math.abs(rows[pivot][column])) pivot = row;
+    }
+    if (Math.abs(rows[pivot][column]) < 1e-12) {
+      throw new Error('Multi-anchor radial-basis system is singular');
+    }
+    [rows[column], rows[pivot]] = [rows[pivot], rows[column]];
+    const divisor = rows[column][column];
+    for (let j = column; j <= n; j++) rows[column][j] /= divisor;
+    for (let row = 0; row < n; row++) {
+      if (row === column) continue;
+      const factor = rows[row][column];
+      for (let j = column; j <= n; j++) {
+        rows[row][j] -= factor * rows[column][j];
+      }
+    }
+  }
+  return rows.map(row => row[n]);
+}
+
+function buildWarp(seed, fitted, anchorIds, options = {}) {
+  const sigmaKm = options.sigmaKm || DISK_RADIUS_KM * 0.2;
+  const regularization = options.regularization ?? 1e-5;
+  const controls = anchorIds.map((id, index) => ({
+    id,
+    xKm: seed[index][0],
+    yKm: seed[index][1],
+    envelope: envelopeAt(seed[index][0], seed[index][1]),
+    dx: fitted[index][0] - seed[index][0],
+    dy: fitted[index][1] - seed[index][1]
+  }));
+  const matrix = controls.map((first, row) => controls.map((second, column) => {
+    const dx = first.xKm - second.xKm;
+    const dy = first.yKm - second.yKm;
+    const kernel = Math.exp(-(dx * dx + dy * dy) / (2 * sigmaKm * sigmaKm));
+    return first.envelope * second.envelope * kernel +
+      (row === column ? regularization : 0);
+  }));
+  const alphaX = solveLinearSystem(matrix, controls.map(item => item.dx));
+  const alphaY = solveLinearSystem(matrix, controls.map(item => item.dy));
+  return {
+    kind: 'gaussian-rbf-flat-disk',
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm,
+    regularization,
+    controls: controls.map((item, index) => ({
+      id: item.id,
+      xKm: item.xKm,
+      yKm: item.yKm,
+      envelope: item.envelope,
+      alphaX: alphaX[index],
+      alphaY: alphaY[index]
+    }))
+  };
+}
+
+/** Smoothly warp a point in disk-kilometre coordinates; centre and rim stay fixed. */
+export function applyMultiAnchorWarpXY(xKm, yKm, model) {
+  if (!Number.isFinite(xKm) || !Number.isFinite(yKm) ||
+      !model || !Array.isArray(model.controls) ||
+      !Number.isFinite(model.sigmaKm) || model.sigmaKm <= 0) return null;
+  const envelope = envelopeAt(xKm, yKm, model.diskRadiusKm);
+  let dx = 0, dy = 0;
+  const denominator = 2 * model.sigmaKm * model.sigmaKm;
+  for (const control of model.controls) {
+    const x = xKm - control.xKm;
+    const y = yKm - control.yKm;
+    const kernel = Math.exp(-(x * x + y * y) / denominator);
+    const weight = envelope * control.envelope * kernel;
+    dx += weight * control.alphaX;
+    dy += weight * control.alphaY;
+  }
+  return [xKm + dx, yKm + dy];
+}
+
+function jacobianDeterminant(x, y, model) {
+  const step = Math.max(0.01, model.diskRadiusKm * 1e-6);
+  const left = applyMultiAnchorWarpXY(x - step, y, model);
+  const right = applyMultiAnchorWarpXY(x + step, y, model);
+  const up = applyMultiAnchorWarpXY(x, y - step, model);
+  const down = applyMultiAnchorWarpXY(x, y + step, model);
+  const dXdx = (right[0] - left[0]) / (2 * step);
+  const dYdx = (right[1] - left[1]) / (2 * step);
+  const dXdy = (down[0] - up[0]) / (2 * step);
+  const dYdy = (down[1] - up[1]) / (2 * step);
+  return dXdx * dYdy - dXdy * dYdx;
+}
+
+function topologyMetrics(model) {
+  let minimum = Infinity;
+  for (let radial = 1; radial < 20; radial++) {
+    const fraction = radial / 20;
+    for (let angular = 0; angular < 72; angular++) {
+      const angle = 2 * Math.PI * angular / 72;
+      minimum = Math.min(minimum, jacobianDeterminant(
+        model.diskRadiusKm * fraction * Math.cos(angle),
+        model.diskRadiusKm * fraction * Math.sin(angle),
+        model
+      ));
+    }
+  }
+  return { minimumJacobianDeterminant: minimum };
+}
+
+/** Numerical inverse for previewing an accepted candidate; never used by production. */
+export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY) || !model) return null;
+  let x = targetX, y = targetY;
+  const toleranceKm = options.toleranceKm ?? 1e-5;
+  const maximumIterations = options.maximumIterations ?? 30;
+  for (let iteration = 0; iteration < maximumIterations; iteration++) {
+    const mapped = applyMultiAnchorWarpXY(x, y, model);
+    if (!mapped) return null;
+    const ex = mapped[0] - targetX;
+    const ey = mapped[1] - targetY;
+    if (Math.hypot(ex, ey) <= toleranceKm) return [x, y];
+    const step = Math.max(0.01, model.diskRadiusKm * 1e-6);
+    const left = applyMultiAnchorWarpXY(x - step, y, model);
+    const right = applyMultiAnchorWarpXY(x + step, y, model);
+    const up = applyMultiAnchorWarpXY(x, y - step, model);
+    const down = applyMultiAnchorWarpXY(x, y + step, model);
+    const a = (right[0] - left[0]) / (2 * step);
+    const c = (right[1] - left[1]) / (2 * step);
+    const b = (down[0] - up[0]) / (2 * step);
+    const d = (down[1] - up[1]) / (2 * step);
+    const determinant = a * d - b * c;
+    if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-8) return null;
+    const dx = (d * ex - b * ey) / determinant;
+    const dy = (-c * ex + a * ey) / determinant;
+    x -= dx;
+    y -= dy;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  }
+  const finalPoint = applyMultiAnchorWarpXY(x, y, model);
+  return finalPoint && Math.hypot(finalPoint[0] - targetX, finalPoint[1] - targetY) <=
+    toleranceKm * 10 ? [x, y] : null;
+}
+
+function measureDistance(a, b, model = null) {
+  const first = pointOnDisk(a);
+  const second = pointOnDisk(b);
+  const movedFirst = model ? applyMultiAnchorWarpXY(first[0], first[1], model) : first;
+  const movedSecond = model ? applyMultiAnchorWarpXY(second[0], second[1], model) : second;
+  return Math.hypot(movedSecond[0] - movedFirst[0], movedSecond[1] - movedFirst[1]);
+}
+
+function summarizeErrors(observations, model = null) {
+  const errors = observations.map(item => {
+    const predictedKm = measureDistance(item.a, item.b, model);
+    return {
+      id: item.id,
+      observedKm: item.distanceKm,
+      predictedKm,
+      signedPercent: (predictedKm / item.distanceKm - 1) * 100,
+      absolutePercent: Math.abs(predictedKm / item.distanceKm - 1) * 100
+    };
+  });
+  return {
+    observationCount: errors.length,
+    meanAbsolutePercent: errors.length
+      ? errors.reduce((sum, item) => sum + item.absolutePercent, 0) / errors.length : null,
+    maxAbsolutePercent: errors.length
+      ? Math.max(...errors.map(item => item.absolutePercent)) : null,
+    errors
+  };
+}
+
+function optimizePositions(training, anchors, options = {}) {
+  const anchorIds = [...anchors.keys()];
+  if (anchorIds.length > MULTI_ANCHOR_FILTERS.maximumControlPoints) {
+    throw new Error('Training anchor count exceeds the configured solver limit');
+  }
+  if (!graphConnected(anchorIds, training)) {
+    throw new Error('Training anchor graph is disconnected');
+  }
+
+  const nodeIndex = new Map(anchorIds.map((id, index) => [id, index]));
+  const seed = anchorIds.map(id => pointOnDisk(anchors.get(id)));
+  const positions = seed.map(point => [...point]);
+  const edges = training.map(item => ({
+    aIndex: nodeIndex.get(item.a.id),
+    bIndex: nodeIndex.get(item.b.id),
+    distanceKm: item.distanceKm,
+    confidence: item.confidence
+  }));
+  const totalWeight = edges.reduce((sum, edge) => sum + edge.confidence, 0);
+  const firstMoment = positions.map(() => [0, 0]);
+  const secondMoment = positions.map(() => [0, 0]);
+  const iterations = options.iterations ?? 1600;
+  const learningRateKm = options.learningRateKm ?? 18;
+  const anchorWeight = options.anchorWeight ?? 0.15;
+  const beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8;
+  const radiusSquared = DISK_RADIUS_KM * DISK_RADIUS_KM;
+  const count = Math.max(1, positions.length);
+  const fixed = seed.map(point => boundaryAnchor(point[0], point[1]));
+
+  for (let iteration = 1; iteration <= iterations; iteration++) {
+    const gradient = positions.map(() => [0, 0]);
+    for (const edge of edges) {
+      const first = positions[edge.aIndex];
+      const second = positions[edge.bIndex];
+      const dx = second[0] - first[0];
+      const dy = second[1] - first[1];
+      const distance = Math.max(1e-8, Math.hypot(dx, dy));
+      const error = distance / edge.distanceKm - 1;
+      const scale = 2 * edge.confidence * error /
+        (totalWeight * edge.distanceKm * distance);
+      const gx = scale * dx;
+      const gy = scale * dy;
+      gradient[edge.aIndex][0] -= gx;
+      gradient[edge.aIndex][1] -= gy;
+      gradient[edge.bIndex][0] += gx;
+      gradient[edge.bIndex][1] += gy;
+    }
+
+    for (let index = 0; index < positions.length; index++) {
+      if (fixed[index]) {
+        gradient[index][0] = 0;
+        gradient[index][1] = 0;
+        positions[index][0] = seed[index][0];
+        positions[index][1] = seed[index][1];
+        continue;
+      }
+      gradient[index][0] += 2 * anchorWeight *
+        (positions[index][0] - seed[index][0]) / (radiusSquared * count);
+      gradient[index][1] += 2 * anchorWeight *
+        (positions[index][1] - seed[index][1]) / (radiusSquared * count);
+    }
+
+    const rate = learningRateKm * Math.sqrt(1 - iteration / (iterations + 1));
+    for (let index = 0; index < positions.length; index++) {
+      if (fixed[index]) continue;
+      for (let axis = 0; axis < 2; axis++) {
+        const value = gradient[index][axis];
+        firstMoment[index][axis] = beta1 * firstMoment[index][axis] +
+          (1 - beta1) * value;
+        secondMoment[index][axis] = beta2 * secondMoment[index][axis] +
+          (1 - beta2) * value * value;
+        const correctedFirst = firstMoment[index][axis] / (1 - beta1 ** iteration);
+        const correctedSecond = secondMoment[index][axis] / (1 - beta2 ** iteration);
+        positions[index][axis] -= rate * correctedFirst /
+          (Math.sqrt(correctedSecond) + epsilon);
+      }
+      const radius = Math.hypot(positions[index][0], positions[index][1]);
+      const maximumRadius = DISK_RADIUS_KM * 0.995;
+      if (radius > maximumRadius) {
+        positions[index][0] *= maximumRadius / radius;
+        positions[index][1] *= maximumRadius / radius;
+      }
+    }
+  }
+
+  let maximumDisplacementKm = 0;
+  positions.forEach((point, index) => {
+    maximumDisplacementKm = Math.max(maximumDisplacementKm,
+      Math.hypot(point[0] - seed[index][0], point[1] - seed[index][1]));
+  });
+  return { anchorIds, seed, positions, maximumDisplacementKm };
+}
+
+export function summarizeMultiAnchorCoverage(input) {
+  const normalized = normalizeObservations(input);
+  const training = normalized.observations.filter(item => item.split === 'train');
+  const holdout = normalized.observations.filter(item => item.split === 'holdout');
+  return coverageFor(training, holdout, normalized.errors);
+}
+
+/**
+ * Fit a candidate using direct-distance observations only.
+ * Candidate models are returned separately and never auto-activated.
+ */
+export function fitMultiAnchorFlatDisk(input, options = {}) {
+  const normalized = normalizeObservations(input);
+  const training = normalized.observations.filter(item => item.split === 'train');
+  const holdout = normalized.observations.filter(item => item.split === 'holdout');
+  const coverage = coverageFor(training, holdout, normalized.errors);
+  const limits = MULTI_ANCHOR_FILTERS;
+  const failures = [...normalized.errors];
+
+  if (training.length < limits.minimumTrainingObservations)
+    failures.push('Insufficient direct-distance training observations');
+  if (holdout.length < limits.minimumHoldoutObservations)
+    failures.push('Insufficient independent direct-distance holdout observations');
+  if (coverage.trainingAnchorCount < limits.minimumTrainingAnchors)
+    failures.push('Insufficient distinct training anchors');
+  if (coverage.latitudeBandCount < limits.minimumLatitudeBands)
+    failures.push('Insufficient latitude-band coverage');
+  if (coverage.longitudeSectorCount < limits.minimumLongitudeSectors)
+    failures.push('Insufficient longitude-sector coverage');
+  if (failures.length) {
+    return {
+      accepted: false,
+      status: 'insufficient-or-invalid-data',
+      failures,
+      coverage,
+      model: null,
+      metrics: null
+    };
+  }
+
+  let optimized, model;
+  try {
+    const anchors = new Map();
+    training.forEach(item => {
+      anchors.set(item.a.id, item.a);
+      anchors.set(item.b.id, item.b);
+    });
+    optimized = optimizePositions(training, anchors, options);
+    model = buildWarp(optimized.seed, optimized.positions, optimized.anchorIds, options);
+  } catch (error) {
+    return {
+      accepted: false,
+      status: 'fit-failed',
+      failures: [error.message],
+      coverage,
+      model: null,
+      metrics: null
+    };
+  }
+
+  const trainingMetrics = summarizeErrors(training, model);
+  const holdoutMetrics = summarizeErrors(holdout, model);
+  const baselineHoldout = summarizeErrors(holdout);
+  const topology = topologyMetrics(model);
+  const maximumDisplacementFraction = optimized.maximumDisplacementKm / DISK_RADIUS_KM;
+
+  if (trainingMetrics.meanAbsolutePercent > limits.maximumTrainingMapePercent)
+    failures.push('Training MAPE exceeds the acceptance limit');
+  if (holdoutMetrics.meanAbsolutePercent > limits.maximumHoldoutMapePercent)
+    failures.push('Independent holdout MAPE exceeds the acceptance limit');
+  if (holdoutMetrics.maxAbsolutePercent > limits.maximumHoldoutPairErrorPercent)
+    failures.push('Maximum independent holdout-pair error exceeds the acceptance limit');
+  if (topology.minimumJacobianDeterminant < limits.minimumJacobianDeterminant)
+    failures.push('Candidate deformation fails the no-foldover Jacobian gate');
+  if (maximumDisplacementFraction > limits.maximumAnchorDisplacementFraction)
+    failures.push('Candidate displacement exceeds the stability limit');
+  if (holdoutMetrics.meanAbsolutePercent >= baselineHoldout.meanAbsolutePercent - 0.25)
+    failures.push('Candidate does not improve independent holdout MAPE by at least 0.25 percentage points');
+
+  model.trainingAnchorCount = coverage.trainingAnchorCount;
+  model.trainingObservationCount = training.length;
+  model.holdoutObservationCount = holdout.length;
+  model.maximumDisplacementKm = optimized.maximumDisplacementKm;
+
+  return {
+    accepted: failures.length === 0,
+    status: failures.length ? 'rejected' : 'accepted',
+    failures,
+    coverage,
+    candidateModel: model,
+    model: failures.length ? null : model,
+    metrics: {
+      training: trainingMetrics,
+      holdout: holdoutMetrics,
+      baselineHoldout,
+      holdoutImprovementPercentagePoints:
+        baselineHoldout.meanAbsolutePercent - holdoutMetrics.meanAbsolutePercent,
+      ...topology,
+      maximumDisplacementFraction
+    }
+  };
+}
