@@ -121,3 +121,20 @@ test('the active 12-circle profile exponent is explicit and has a positive smoot
     assert.ok(RADIAL_DISTANCE_CIRCLE_FACTORS[index] > 0);
   }
 });
+
+
+test('candidate profiles share the exact integrated transform and invert back to base radius', () => {
+  for (const exponent of [0.7, 0.85, 1, 1.15, 1.3]) {
+    const profile = {innerFactor:1, outerFactor:0.5, exponent};
+    const mean = 0.5 + 0.5 / (exponent + 1);
+    assert.ok(Math.abs(integratedRadialDistanceMultiplier(1, profile) - mean) < 1e-12);
+    assert.equal(visualRadialFractionFromBaseFraction(0, profile), 0);
+    assert.equal(visualRadialFractionFromBaseFraction(1, profile), 1);
+    for (const q of [0.05,0.2,0.5,0.8,0.95]) {
+      const visual = visualRadialFractionFromBaseFraction(q, profile);
+      assert.ok(visual > 0 && visual < 1);
+      assert.ok(Math.abs(baseRadialFractionFromVisualFraction(visual, profile) - q) < 1e-10);
+      assert.ok(radialDistanceCorrectionFactor(q, profile) > 0);
+    }
+  }
+});
