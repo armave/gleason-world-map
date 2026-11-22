@@ -631,7 +631,7 @@ function updateMeasurement(){
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
   $('distanceSub').textContent=Number.isFinite(measurement.greatCircleDistanceMeters)
-   ?'Spherical great-circle formula · map chord '+formatDistance(measurement.visualChordDistanceMeters)+' · 12-circle warp is display-only'
+   ?'Spherical great-circle arc · map chord '+formatDistance(measurement.visualChordDistanceMeters)+' is display-only'
    :'Great-circle distance unavailable';
   $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
    ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
@@ -641,7 +641,7 @@ function updateMeasurement(){
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs base chord'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B distance uses only endpoint coordinates and a spherical great-circle formula; the 12-circle warp affects map display only. ADS-B mileage is shown separately as an empirical flight-route reference.';
+  $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B numeric distance uses only endpoint coordinates and a spherical great-circle formula. The visible connector remains a straight projected display line, not the great-circle arc; the 12-circle warp changes the map display only. ADS-B mileage is shown separately as an empirical flight-route reference.';
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
@@ -912,7 +912,7 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  measurementText='Radially adjusted A–B '+formatDistance(measurement.distanceMeters)+' ('+(Number.isFinite(measurement.radialCorrectionFactor)?measurement.radialCorrectionFactor.toFixed(3)+'×':'factor unavailable')+') · base chord '+formatDistance(measurement.chordDistanceMeters)+' · visual chord '+formatDistance(measurement.visualChordDistanceMeters);
+  measurementText='Great-circle A–B '+formatDistance(measurement.distanceMeters)+' · projected map chord '+formatDistance(measurement.visualChordDistanceMeters)+' (display only)';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
