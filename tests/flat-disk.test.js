@@ -13,7 +13,7 @@ import {
   DISK_RADIUS_METERS
 } from '../src/core/flat-disk.js';
 import { radialFractionFromUnitColatitude, radialWarpDerivative } from '../src/core/radial-warp.js';
-import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction } from '../src/core/visual-radial-calibration.js';
+import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction, visualRadialSpacingScale } from '../src/core/visual-radial-calibration.js';
 
 const close = (actual, expected, tolerance, message='') =>
   assert.ok(Math.abs(actual - expected) <= tolerance, message || `${actual} != ${expected}`);
@@ -94,11 +94,11 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
   const epsilon = 1e-6;
   for (let circle = 1; circle < 11; circle++) {
     const q = circle / 11;
-    const left = (
-      ((q + epsilon) + (q + epsilon) * (1 - q - epsilon) / 3) -
-      ((q - epsilon) + (q - epsilon) * (1 - q + epsilon) / 3)
+    const derivative = (
+      visualRadialFractionFromBaseFraction(q + epsilon) -
+      visualRadialFractionFromBaseFraction(q - epsilon)
     ) / (2 * epsilon);
-    close(left, (4 - 2 * q) / 3, 1e-8);
+    close(derivative, visualRadialSpacingScale(q), 1e-8);
   }
 
   const a = point(40, 10), b = point(40, 20);
