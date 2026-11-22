@@ -6,6 +6,7 @@ import {
   unitProjectedFlightPathLength,
   summarizeFlightPathCoverage,
   summarizeUsableProjectedPathCoverage,
+  isGloballyValidatedFlightPathCalibration,
   fitFlightPathCalibration
 } from '../src/core/flight-path-calibration.js';
 import { DEFAULT_RADIAL_WARP } from '../src/core/radial-warp.js';
@@ -105,6 +106,45 @@ function syntheticDataset() {
     routes
   };
 }
+
+test('global visual calibration acceptance checks raw and projected southern coverage', () => {
+  const limits = {
+    trainingRouteCount: 20,
+    holdoutRouteCount: 6,
+    trainingRoutesSouthOf30S: 4,
+    holdoutRoutesSouthOf30S: 2,
+    trainingRoutesSouthOf45S: 2,
+    holdoutRoutesSouthOf45S: 2,
+    trainingRoutesSouthOf60S: 1,
+    holdoutRoutesSouthOf60S: 1
+  };
+  const summary = {
+    accepted: true,
+    qualityGate: {
+      ...limits,
+      usableProjectedPathCoverage: { ...limits },
+      activeProfileUsableProjectedPathCoverage: { ...limits }
+    }
+  };
+
+  assert.equal(isGloballyValidatedFlightPathCalibration(summary), true);
+
+  const noSouthernRawCoverage = structuredClone(summary);
+  noSouthernRawCoverage.qualityGate.trainingRoutesSouthOf45S = 0;
+  assert.equal(isGloballyValidatedFlightPathCalibration(noSouthernRawCoverage), false);
+
+  const noSouthernProjectedHoldout = structuredClone(summary);
+  noSouthernProjectedHoldout.qualityGate.usableProjectedPathCoverage.holdoutRoutesSouthOf60S = 0;
+  assert.equal(isGloballyValidatedFlightPathCalibration(noSouthernProjectedHoldout), false);
+
+  const noActiveProfileCoverage = structuredClone(summary);
+  noActiveProfileCoverage.qualityGate.activeProfileUsableProjectedPathCoverage.trainingRoutesSouthOf60S = 0;
+  assert.equal(isGloballyValidatedFlightPathCalibration(noActiveProfileCoverage), false);
+
+  const rejected = { ...summary, accepted: false };
+  assert.equal(isGloballyValidatedFlightPathCalibration(rejected), false);
+  assert.equal(isGloballyValidatedFlightPathCalibration(null), false);
+});
 
 test('path coverage counts independent route splits and southern observations', () => {
   const coverage = summarizeFlightPathCoverage(syntheticDataset());
