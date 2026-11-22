@@ -630,9 +630,9 @@ function updateMeasurement(){
   const measurement=measureDirectDistance(points[0],points[1]);
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
-  $('distanceSub').textContent=Number.isFinite(measurement.radialCorrectionFactor)
-   ?'Base chord '+formatDistance(measurement.chordDistanceMeters)+' × '+measurement.radialCorrectionFactor.toFixed(3)+' radial factor · visual chord '+formatDistance(measurement.visualChordDistanceMeters)+' · circle '+measurement.radialCirclePosition.toFixed(1)+'/12'
-   :'Radial correction unavailable';
+  $('distanceSub').textContent=Number.isFinite(measurement.greatCircleDistanceMeters)
+   ?'Spherical great-circle formula · map chord '+formatDistance(measurement.visualChordDistanceMeters)+' · 12-circle warp is display-only'
+   :'Great-circle distance unavailable';
   $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
    ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
   const factor=measurement.calibrationFactor;
@@ -641,7 +641,7 @@ function updateMeasurement(){
    ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs base chord'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B readout keeps the separate calibration chord and 12-circle factor; the visual chord and scale bar follow the warped projection. The ADS-B estimate remains an independent empirical reference.';
+  $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B distance uses only endpoint coordinates and a spherical great-circle formula; the 12-circle warp affects map display only. ADS-B mileage is shown separately as an empirical flight-route reference.';
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
