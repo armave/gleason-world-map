@@ -53,7 +53,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall (BAS surface shading when bundled) · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Maximum detail: 50 km local scale</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · fine dotted rings = 12-circle radial calibration · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -199,7 +199,7 @@
         <thead><tr><th>Circle</th><th>Radial factor</th><th>Visual radius</th><th>Radius km</th></tr></thead>
         <tbody id="visualRadialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The 12-circle profile is applied as one continuous radial transformation, not as 12 independent bands. It is the normalized integral of a smooth 1.00×→0.50× radial profile: qᵥ = q + q(1 − q)/3. This spreads inner rings more and progressively compresses outer rings while keeping every transition smooth, the North Pole fixed at the centre, and the Ice Wall fixed at the outer rim. Coastlines, latitude circles, labels, map clicks, inverse lookup and the scale bar all use the same visual projection. The primary A–B value is calculated separately from endpoint coordinates; the ADS-B reference retains its empirical telemetry metric. Polygon areas and perimeters are calculated on the visibly warped disk.</p>
+      <p class="note" style="margin:9px 0 0">The 12-circle profile is applied as one continuous radial transformation, not as 12 independent bands. It is the normalized integral of a smooth 1.00×→0.50× radial profile: qᵥ = q + q(1 − q)/3. This spreads inner rings more and progressively compresses outer rings while keeping every transition smooth, the North Pole fixed at the centre, and the Ice Wall fixed at the outer rim. The ten interior reference positions are drawn as fine dotted guide rings; circle 1 is the central North Pole and circle 12 is the Ice Wall. Coastlines, latitude circles, labels, map clicks, inverse lookup and the scale bar all use the same visual projection. The primary A–B value is calculated separately from endpoint coordinates; the ADS-B reference retains its empirical telemetry metric. Polygon areas and perimeters are calculated on the visibly warped disk.</p>
     </section>
 </template>
 <template id="geometry-panel-template">
