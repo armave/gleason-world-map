@@ -295,47 +295,6 @@ export function summarizeUsableProjectedPathCoverage(
   );
 }
 
-function makeRouteExamples(dataset, radialWarp, radialProfile = FLIGHT_PATH_PROFILE) {
-  return routeFlightRecords(dataset).flatMap(({ route, flights }) => {
-    if (!['train', 'holdout'].includes(route.split) ||
-        !Number.isFinite(route.airportA?.lat) ||
-        !Number.isFinite(route.airportB?.lat) ||
-        flights.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
-
-    const measured = [];
-    const projected = [];
-    const pairedScaleRatios = [];
-    for (const flight of flights) {
-      const measuredKm = flight.observedTrackKm ?? flight.trackKm;
-      const unitPathLength = unitProjectedFlightPathLength(
-        flight.trackCoordinates, radialWarp, radialProfile
-      );
-      if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
-        measured.push(measuredKm);
-        projected.push(unitPathLength);
-        pairedScaleRatios.push(measuredKm / unitPathLength);
-      }
-    }
-    if (pairedScaleRatios.length < FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute) return [];
-
-    const medianObservedKm = median(measured);
-    const medianUnitPathLength = median(projected);
-    const requiredRadialScaleKm = median(pairedScaleRatios);
-    if (!(medianObservedKm > 0) || !(medianUnitPathLength > 0) ||
-        !(requiredRadialScaleKm > 0)) return [];
-    return [{
-      routeId: route.routeId,
-      split: route.split,
-      airportA: route.airportA,
-      airportB: route.airportB,
-      sampleCount: pairedScaleRatios.length,
-      medianObservedTrackKm: medianObservedKm,
-      medianUnitPathLength,
-      requiredRadialScaleKm
-    }];
-  });
-}
-
 function summarizeErrors(examples, radialScaleKm) {
   const errors = examples.map(example => absolutePercentError(
     radialScaleKm,
@@ -510,11 +469,11 @@ function nestedLeaveOneRouteOut(candidates, trainingRecords) {
 }
 
 function evaluateGeometryCandidates(candidates, trainingRecords) {
+  const leaveOneOut = nestedLeaveOneRouteOut(candidates, trainingRecords);
   return candidates.map(candidate => {
     const holdout = summarizeErrors(
       candidate.holdoutExamples, candidate.radialScaleKm
     );
-    const leaveOneOut = nestedLeaveOneRouteOut(candidates, trainingRecords);
     return {
       ...candidate,
       holdout,
