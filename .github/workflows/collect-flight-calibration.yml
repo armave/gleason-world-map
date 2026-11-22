@@ -10,6 +10,10 @@ on:
       - src/core/flight-path-calibration-parameters.js
       - src/core/flight-telemetry.js
       - src/core/flight-calibration-fit.js
+  # Refresh the historical route sample after new seasonal flight activity
+  # has entered the archive. Manual dispatch remains available for diagnostics.
+  schedule:
+    - cron: '15 3 1 * *'
   workflow_dispatch:
 permissions:
   contents: write

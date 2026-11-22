@@ -67,3 +67,18 @@ test('the Antarctic route plan keeps whole airport pairs out of both splits', ()
   const overlaps = [...training].filter(key => holdout.has(key));
   assert.deepEqual(overlaps, []);
 });
+
+
+test('telemetry archive refresh is monthly, main-only on push, and manually dispatchable', async () => {
+  const workflow = await readFile(
+    new URL('../.github/workflows/collect-flight-calibration.yml', import.meta.url),
+    'utf8'
+  );
+  assert.match(workflow, /branches:\s*\[main\]/);
+  assert.match(workflow, /cron:\s*'15 3 1 \* \*'/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /timeout-minutes:\s*120/);
+  assert.match(workflow, /cancel-in-progress:\s*true/);
+  assert.doesNotMatch(workflow, /package\.json/);
+  assert.doesNotMatch(workflow, /\.github\/workflows\/collect-flight-calibration\.yml/);
+});
