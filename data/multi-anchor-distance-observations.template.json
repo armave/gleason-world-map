@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "description": "Populate with independent, sourced endpoint-to-endpoint straight-line measurements. Do not insert ADS-B flown mileage, route duration, flight-track length, or distances calculated from a spherical/ellipsoidal formula.",
+  "measurementPolicy": {
+    "eligibleType": "direct-straight-line",
+    "requiredFields": [
+      "split",
+      "a",
+      "b",
+      "distanceKm",
+      "measurementType",
+      "source.provider",
+      "source.reference"
+    ],
+    "splitPolicy": "Assign complete unordered endpoint pairs to either train or holdout before fitting. Never place the same pair in both splits.",
+    "sourcePolicy": "Record the original survey, instrument, dataset row, or other traceable reference for every distance.",
+    "unit": "kilometres"
+  },
+  "observations": []
+}

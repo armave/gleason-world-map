@@ -228,3 +228,15 @@ node scripts/vendor-county-labels.mjs --source-file 2026_Gaz_counties_national.t
 ```
 
 Older share links containing the original five-layer visibility code remain compatible; county search data is independent of map-layer visibility.
+
+
+## Experimental multi-anchor flat-disk candidate
+
+A separate candidate fitting pipeline is available through `npm run fit:multi-anchor`. It adjusts a circular flat-disk drawing plane against independently sourced direct endpoint-to-endpoint distance observations, then checks independent holdout error and map foldover. It does not change the active production map or distance engine.
+
+The observation input is intentionally not populated with ADS-B route mileage: flown track length is not direct straight-line endpoint distance. Start from `data/multi-anchor-distance-observations.template.json`, provide source-traceable measurements, and keep complete endpoint pairs disjoint between training and holdout. The minimum coverage, quality gates, and manual promotion procedure are documented in `docs/multi-anchor-flat-disk.md`.
+
+The project currently has no qualifying independent direct-distance observation set for this candidate. Until such data is supplied and passes every holdout/topology gate, the existing production projection remains active.
+
+The experimental fitter uses confidence-weighted robust optimization, geographic holdout-coverage gates (including unseen anchors), a regularized radial-basis deformation, a damped numerical inverse, and denser checks for foldover, displacement and rim preservation. Its automated tests include synthetic recovery and deliberately invalid topology cases. These synthetic cases verify software behavior only; they are not real-world calibration measurements.
+
