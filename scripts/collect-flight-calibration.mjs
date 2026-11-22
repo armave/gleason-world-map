@@ -61,7 +61,8 @@ const ROUTES = [
   { from: 'WMKK', to: 'VTBS', split: 'train' },
   { from: 'YSSY', to: 'YMML', split: 'train' },
   // Southern-hemisphere short and medium regional routes for low-latitude fit coverage.
-  { from: 'YBBN', to: 'YMML', split: 'train' },
+  // Southern airport-pair holdout; no YBBN–YMML flight enters fitting.
+  { from: 'YBBN', to: 'YMML', split: 'holdout' },
   { from: 'YBBN', to: 'YPPH', split: 'train' },
   { from: 'YMML', to: 'YPAD', split: 'train' },
   { from: 'YSSY', to: 'YPAD', split: 'train' },
@@ -101,7 +102,8 @@ const ROUTES = [
   { from: 'KDFW', to: 'KMIA', split: 'train' },
   { from: 'KLAX', to: 'KSFO', split: 'train' },
   { from: 'KLAX', to: 'KLAS', split: 'train' },
-  { from: 'KSEA', to: 'KSFO', split: 'train' },
+  // Independent western North American airport-pair holdout.
+  { from: 'KSEA', to: 'KSFO', split: 'holdout' },
   { from: 'KATL', to: 'KMIA', split: 'train' },
   { from: 'EGLL', to: 'LEMD', split: 'holdout' },
   { from: 'EGLL', to: 'EDDM', split: 'train' },
