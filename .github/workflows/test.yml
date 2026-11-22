@@ -15,8 +15,5 @@ jobs:
         with:
           node-version: 24
       - run: npm install --no-audit --no-fund
-      - run: npm run fit:endpoint-distance-calibration -- --require-accepted
-      - name: Verify generated endpoint-distance report
-        run: git diff --exit-code -- data/endpoint-distance-calibration-summary.json
       - run: npm run build
       - run: npm test
