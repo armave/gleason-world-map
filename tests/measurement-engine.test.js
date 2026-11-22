@@ -77,7 +77,7 @@ test('12-circle radial factors taper linearly from 1.00× at the centre to 0.50�
   assert.equal(radialDistanceCorrectionFactor(1), 0.5);
 });
 
-test('A–B primary readout applies the radial factor while retaining the raw chord and ADS-B estimate', () => {
+test('A–B primary readout uses great-circle coordinates while retaining separate map and ADS-B diagnostics', () => {
   const a = point(40.17, 44.5), b = point(51.5, -0.12);
   const result = measureDirectDistance(a, b);
   assert.equal(result.metric, 'spherical-great-circle');
