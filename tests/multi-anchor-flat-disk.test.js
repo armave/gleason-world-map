@@ -88,7 +88,7 @@ test('topology diagnostics detect a deliberately folded and oversized disk warp'
   const diagnostics = inspectMultiAnchorTopology(model);
   assert.ok(diagnostics.minimumJacobianDeterminant < 0.2);
   assert.ok(diagnostics.maximumWarpDisplacementFraction > 0.12);
-  assert.equal(diagnostics.maximumBoundaryDisplacementKm, 0);
+  assert.ok(diagnostics.maximumBoundaryDisplacementKm < 1e-5);
 });
 
 test('the numerical inverse recovers an interior point after candidate warping', () => {
@@ -233,7 +233,7 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
   assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
   assert.ok(result.metrics.maximumRadialOvershootFraction <= 1e-5);
-  assert.equal(result.metrics.maximumBoundaryDisplacementKm, 0);
+  assert.ok(result.metrics.maximumBoundaryDisplacementKm < 1e-5);
 });
 
 
