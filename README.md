@@ -21,7 +21,7 @@ x = r cos(lambda)
 y = -r sin(lambda)
 ```
 
-The fitted latitude warp uses exponent 0.9 and epsilon 0.005. A second, visually applied 12-circle calibration redistributes the intermediate rings with one smooth function while preserving the North Pole at the centre and the Antarctic Ice Wall at the outer rim. Let q be the original fitted radial fraction; the displayed fraction is **q_visual = q + q(1-q)/3**. Its derivative, (4-2q)/3, remains continuous and positive from centre to rim, so there are no hard joins between circle sections. Inner sections gradually gain radial spacing while outer sections gradually compress. The outer disk radius remains **pi * R**. R is regenerated from the current ADS-B training sample; it is a flat-map empirical scale, not a globe radius. Coastlines, capitals, grid lines, labels, clicks and inverse lookup all use the same visually calibrated transform. Polygon area and perimeter are planar measurements on the displayed, rewarped disk. The ADS-B flight-mileage estimate uses the original fitted calibration coordinates; the primary A–B great-circle result is independent of them. The scale bar follows the displayed visual projection.
+The fitted latitude warp uses exponent 0.9 and epsilon 0.005. A second, visually applied 12-circle calibration redistributes the intermediate rings with one smooth function while preserving the North Pole at the centre and the Antarctic Ice Wall at the outer rim. Let q be the original fitted radial fraction; the displayed fraction is **q_visual = q + q(1-q)/3**. Its derivative, (4-2q)/3, remains continuous and positive from centre to rim, so there are no hard joins between circle sections. Inner sections gradually gain radial spacing while outer sections gradually compress. The outer disk radius remains **pi * R**. R is regenerated from the current ADS-B training sample; it is a flat-map empirical scale, not a globe radius. Coastlines, capitals, grid lines, labels, clicks and inverse lookup all use the same visually calibrated transform. Polygon area and perimeter are planar measurements on the displayed, rewarped disk. The primary A–B result uses the same visibly warped coordinates as the drawn connector; a separate ADS-B flight-mileage estimate uses the original fitted calibration coordinates. The scale bar follows the displayed visual projection.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same orientation.
 
@@ -41,7 +41,7 @@ A separate **ADS-B flight-mileage estimate** remains as a secondary reference. I
 
 The 60°S parallel is drawn as a red dashed Restricted Line with two opposing callouts. It is a cartographic reference only and does not change A–B distance calculations. Direct distance connectors and user-drawn polygon edges, including the closing edge, may cross it.
 
-The visible connector is always one straight projected A–B segment, including when either endpoint lies in the Antarctic band. The numeric primary distance is the coordinate-only spherical great-circle value; there is no latitude-triggered metric change.
+The visible connector is always one straight projected A–B segment, including when either endpoint lies in the Antarctic band. The numeric primary distance is the Euclidean length of that exact segment in the final warped disk; there is no latitude-triggered metric change.
 
 **ADS-B flight-telemetry calibration**
 
@@ -218,7 +218,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
-- A–B distance: primary coordinate-only spherical great-circle formula plus a separate ADS-B flight-mileage reference. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
+- A–B distance: Euclidean length of the straight connector in the final 12-circle-warped flat disk, plus a separate ADS-B flight-mileage reference. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
 
 ## Important limitations
 
