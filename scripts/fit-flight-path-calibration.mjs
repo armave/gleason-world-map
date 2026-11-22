@@ -95,8 +95,8 @@ async function main() {
     routeCoverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
     routeCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
     routeCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S &&
-    usableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
-    usableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+    candidateUsableProjectedPathCoverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
+    candidateUsableProjectedPathCoverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
     candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
     candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
     candidateUsableProjectedPathCoverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
@@ -134,9 +134,13 @@ async function main() {
     if (candidateUsableProjectedPathCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
         candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S)
       acceptanceFailures.push('insufficient usable projected-path training/holdout routes south of 60°S');
-    if ((metrics?.training?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
+    if (candidateUsableProjectedPathCoverage.trainingRouteCount < limits.minimumTrainingRoutes ||
+        candidateUsableProjectedPathCoverage.holdoutRouteCount < limits.minimumHoldoutRoutes ||
+        candidateUsableProjectedPathCoverage.trainingRoutesSouthOf30S < limits.minimumSouthernTrainingRoutes ||
+        candidateUsableProjectedPathCoverage.holdoutRoutesSouthOf30S < limits.minimumSouthernHoldoutRoutes ||
+        (metrics?.training?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
         (metrics?.holdout?.routeCount ?? 0) < limits.minimumHoldoutRoutes)
-      acceptanceFailures.push('minimum usable projected training/holdout route gate failed');
+      acceptanceFailures.push('minimum usable projected route and 30°S coverage gates failed');
     if ((metrics?.leaveOneOut?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
         (metrics?.leaveOneOut?.routeCount ?? 0) < (metrics?.training?.routeCount ?? Infinity))
       acceptanceFailures.push('not every usable training route completed a leave-one-route-out fold');
