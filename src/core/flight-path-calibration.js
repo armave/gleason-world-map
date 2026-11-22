@@ -40,7 +40,7 @@ const DEG = Math.PI / 180;
 const MIN_EXPONENT = 0.65;
 const MAX_EXPONENT = 1.35;
 const EXPONENT_STEP = 0.025;
-const PROFILE_EXPONENT_CANDIDATES = Object.freeze([0.7, 0.85, 1, 1.15, 1.3]);
+export const FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES = Object.freeze([0.7, 0.85, 1, 1.15, 1.3]);
 const median = values => {
   if (!values.length) return NaN;
   const ordered = [...values].sort((a, b) => a - b);
@@ -111,7 +111,7 @@ export function normalizeFlightTrack(path, timestamps) {
   return { trackCoordinates, trackTimestamps, trackPointCount };
 }
 
-function pointInUnitDisk(coordinate, radialWarp) {
+function pointInUnitDisk(coordinate, radialWarp, radialProfile = FLIGHT_PATH_PROFILE) {
   if (!validCoordinate(coordinate)) return null;
   const longitude = Number(coordinate[0]) * DEG;
   const latitude = Number(coordinate[1]);
@@ -119,8 +119,7 @@ function pointInUnitDisk(coordinate, radialWarp) {
   const q = radialFractionFromUnitColatitude(normalizedColatitude, radialWarp);
   if (!Number.isFinite(q)) return null;
 
-  const profile = arguments.length > 2 && arguments[2]
-    ? arguments[2] : FLIGHT_PATH_PROFILE;
+  const profile = radialProfile || FLIGHT_PATH_PROFILE;
   const innerFactor = profile.innerFactor ?? FLIGHT_PATH_PROFILE.innerFactor;
   const outerFactor = profile.outerFactor ?? FLIGHT_PATH_PROFILE.outerFactor;
   const exponent = profile.exponent ?? FLIGHT_PATH_PROFILE.exponent;
@@ -377,7 +376,7 @@ function exponentCandidates() {
  * route is present in this function's inputs.
  */
 function profileExponentCandidates() {
-  return PROFILE_EXPONENT_CANDIDATES;
+  return FLIGHT_PATH_PROFILE_EXPONENT_CANDIDATES;
 }
 
 /**
@@ -583,7 +582,7 @@ export function fitFlightPathCalibration(dataset) {
 
   return {
     model: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       sourceDatasetVersion: dataset.schemaVersion,
       target: 'Observed ADS-B ground-speed/time mileage compared with the projected polyline of that flight\'s recorded path',
       radialScaleKm: best.radialScaleKm,
@@ -600,6 +599,7 @@ export function fitFlightPathCalibration(dataset) {
       holdout: best.holdout,
       leaveOneOut: best.leaveOneOut,
       selectedExponentObjective: best.objective,
+      selectedProfileExponent: best.radialProfile.exponent,
       exponentCandidatesTested: exponentCandidates().length,
       profileExponentCandidatesTested: profileExponentCandidates().length
     }
