@@ -2,6 +2,7 @@ import {
   clamp,
   baseFlatDiskDistanceMeters,
   flatDiskDistanceMeters,
+  radialDistanceFromNorthKm,
   DISK_RADIUS_KM,
   project
 } from './flat-disk.js';
