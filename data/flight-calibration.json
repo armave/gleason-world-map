@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-22T14:23:37.301Z",
+    "retrievedAt": "2026-11-22T20:45:47.204Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-22"
@@ -7928,8 +7928,8 @@
       "medianTelemetryCoverage": 1,
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
-        "telemetry-gap-too-large": 11,
-        "missing-ground-speed-or-duration": 8
+        "missing-ground-speed-or-duration": 8,
+        "telemetry-gap-too-large": 11
       },
       "pagesScanned": 1,
       "windowsScanned": 0,
@@ -12600,9 +12600,9 @@
       "medianMaxGapMinutes": 0.8505833327770234,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 63,
+        "telemetry-gap-too-large": 55,
         "low-telemetry-coverage": 4,
         "missing-ground-speed-or-duration": 7,
-        "telemetry-gap-too-large": 55,
         "too-few-speed-intervals": 4
       },
       "pagesScanned": 2,
@@ -15924,8 +15924,8 @@
       "medianMaxGapMinutes": 0.07483333349227905,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 156,
-        "telemetry-gap-too-large": 49,
         "too-few-speed-intervals": 3,
+        "telemetry-gap-too-large": 49,
         "missing-ground-speed-or-duration": 7,
         "low-telemetry-coverage": 7
       },
@@ -39088,8 +39088,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "telemetry-gap-too-large": 5,
         "too-few-speed-intervals": 2,
+        "telemetry-gap-too-large": 5,
         "low-telemetry-coverage": 14,
         "missing-ground-speed-or-duration": 11,
         "flight-too-short": 1
@@ -43079,8 +43079,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "telemetry-gap-too-large": 8,
         "low-telemetry-coverage": 44,
+        "telemetry-gap-too-large": 8,
         "too-few-speed-intervals": 5,
         "missing-ground-speed-or-duration": 1,
         "flight-too-short": 4
@@ -47753,8 +47753,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 86,
-        "low-telemetry-coverage": 27,
         "telemetry-gap-too-large": 31,
+        "low-telemetry-coverage": 27,
         "too-few-speed-intervals": 11,
         "flight-too-short": 2
       },
@@ -72259,8 +72259,8 @@
       "medianTelemetryCoverage": 1,
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
-        "low-telemetry-coverage": 22,
         "telemetry-gap-too-large": 23,
+        "low-telemetry-coverage": 22,
         "too-few-speed-intervals": 1
       },
       "pagesScanned": 1,
@@ -110272,8 +110272,8 @@
       "medianTelemetryCoverage": 1,
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
-        "telemetry-gap-too-large": 52,
         "low-telemetry-coverage": 10,
+        "telemetry-gap-too-large": 52,
         "too-few-speed-intervals": 3,
         "missing-ground-speed-or-duration": 4
       },
@@ -118913,8 +118913,8 @@
       "medianMaxGapMinutes": 1.4290000001589458,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 53,
-        "telemetry-gap-too-large": 56,
         "too-few-speed-intervals": 6,
+        "telemetry-gap-too-large": 56,
         "missing-ground-speed-or-duration": 1,
         "low-telemetry-coverage": 7
       },
@@ -179608,8 +179608,8 @@
       "medianMaxGapMinutes": 0.5200833340485891,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 148,
-        "too-few-speed-intervals": 13,
         "telemetry-gap-too-large": 37,
+        "too-few-speed-intervals": 13,
         "missing-ground-speed-or-duration": 8,
         "low-telemetry-coverage": 8,
         "flight-too-short": 2
@@ -191136,8 +191136,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 9,
-        "telemetry-gap-too-large": 58,
-        "too-few-speed-intervals": 14
+        "too-few-speed-intervals": 14,
+        "telemetry-gap-too-large": 58
       },
       "pagesScanned": 1,
       "windowsScanned": 0,
