@@ -81,14 +81,13 @@ const ROUTES = [
   { from: 'SCEL', to: 'SAWH', split: 'train' },
   { from: 'SCCI', to: 'SCGZ', split: 'train' },
 
-  // Independent high-southern-latitude airport-pair holdouts.
+  // Independent high-southern-latitude airport-pair holdouts. The SCRM route
+  // stays in holdout; its complete pair must never be used in training.
   { from: 'NZCH', to: 'NZWD', split: 'holdout' },
   { from: 'SCCI', to: 'SAWB', split: 'holdout' },
   { from: 'SCCI', to: 'SCRM', split: 'holdout' },
 
-  // Additional documented Antarctic air bridges to improve deep-southern
-  // coverage. Training and holdout are assigned at the complete airport-pair
-  // level; no pair appears in both splits.
+  // Documented Antarctic training air bridges:
   // BAS operates regular Dash-7 shuttles between Punta Arenas and Rothera.
   { from: 'SCCI', to: 'EGAR', split: 'train' },
   // ALE schedules seasonal passenger/cargo flights from Punta Arenas to Union Glacier.
@@ -96,6 +95,11 @@ const ROUTES = [
   // The Australian Antarctic Program schedules A319 flights from Christchurch
   // to McMurdo; NZIR identifies the McMurdo Ice Runway.
   { from: 'NZCH', to: 'NZIR', split: 'train' },
+
+  // The 2026–27 Australian Antarctic Program schedule lists Hobart–Wilkins
+  // flights beginning 25 November 2026. This is a future independent holdout
+  // candidate; it counts only after enough observed flights enter the archive.
+  { from: 'YMHB', to: 'YWKS', split: 'holdout' },
 
   // Entire route pairs are held out from fitting.
   { from: 'OMDB', to: 'WSSS', split: 'holdout' },
