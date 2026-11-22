@@ -46,7 +46,7 @@ function statistics(routes) {
   const featureMeans = [0, 1, 2, 3].map(index =>
     routes.reduce((sum, route) => sum + route.features[index], 0) / routes.length
   );
-  const featureScales = [0, 1, 2].map(index => {
+  const featureScales = [0, 1, 2, 3].map(index => {
     const variance = routes.reduce(
       (sum, route) => sum + (route.features[index] - featureMeans[index]) ** 2,
       0
@@ -227,7 +227,7 @@ async function main() {
       predictor: 'four nearest route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios',
       featureNames: model.featureNames,
       routeQualityFilter: 'at least 3 accepted flights and (p90TrackKm - p10TrackKm) / medianTrackKm <= 0.60',
-      supportRule: 'nearest standardized feature distance <= 0.65',
+      supportRule: 'nearest standardized feature distance <= 0.90',
       factorBounds: FACTOR_BOUNDS
     },
     qualityGate,
