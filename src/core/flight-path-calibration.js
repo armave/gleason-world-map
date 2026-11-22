@@ -175,7 +175,10 @@ function pathTimestampQuality(trackTimestamps, startTs, endTs) {
     .filter(sequence => Array.isArray(sequence) && sequence.length >= 2)
     .map(sequence => ({ start: sequence[0], end: sequence.at(-1), times: sequence }))
     .sort((first, second) => first.start - second.start);
-  if (!sequences.length) return null;
+  if (!sequences.length ||
+      sequences.some(sequence =>
+        sequence.start < flightStart || sequence.end > flightEnd
+      )) return null;
 
   let previousEnd = flightStart;
   let coveredSeconds = 0;
@@ -243,6 +246,33 @@ export function summarizeFlightPathCoverage(dataset) {
         flightSum + (flight.trackPointCount || flight.trackCoordinates
           .reduce((n, sequence) => n + sequence.length, 0)), 0), 0)
   };
+}
+
+function summarizeProjectedRouteCoverage(training, holdout) {
+  const southernCount = (examples, latitude) => examples.filter(example =>
+    Math.min(example.airportA?.lat, example.airportB?.lat) <= latitude
+  ).length;
+  return {
+    trainingRouteCount: training.length,
+    holdoutRouteCount: holdout.length,
+    trainingRoutesSouthOf30S: southernCount(training, -30),
+    holdoutRoutesSouthOf30S: southernCount(holdout, -30),
+    trainingRoutesSouthOf45S: southernCount(training, -45),
+    holdoutRoutesSouthOf45S: southernCount(holdout, -45),
+    trainingRoutesSouthOf60S: southernCount(training, -60),
+    holdoutRoutesSouthOf60S: southernCount(holdout, -60)
+  };
+}
+
+function hasRequiredProjectedCoverage(coverage, limits) {
+  return coverage.trainingRouteCount >= limits.minimumTrainingRoutes &&
+    coverage.holdoutRouteCount >= limits.minimumHoldoutRoutes &&
+    coverage.trainingRoutesSouthOf30S >= limits.minimumSouthernTrainingRoutes &&
+    coverage.holdoutRoutesSouthOf30S >= limits.minimumSouthernHoldoutRoutes &&
+    coverage.trainingRoutesSouthOf45S >= limits.minimumTrainingRoutesSouthOf45S &&
+    coverage.holdoutRoutesSouthOf45S >= limits.minimumHoldoutRoutesSouthOf45S &&
+    coverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
+    coverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 }
 
 function makeRouteExamples(dataset, radialWarp) {
@@ -404,7 +434,12 @@ function evaluateExponent(training, holdout, exponent) {
     training: fitted.training,
     holdout: holdoutMetrics,
     leaveOneOut,
-    objective: fitted.training.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
+    trainingExamples: fitted.trainingExamples,
+    holdoutExamples,
+    objective: Number.isFinite(fitted.training.meanAbsolutePercent) &&
+      Number.isFinite(leaveOneOut.meanAbsolutePercent)
+      ? fitted.training.meanAbsolutePercent + leaveOneOut.meanAbsolutePercent
+      : Infinity
   };
 }
 
@@ -430,6 +465,8 @@ function makeRouteExamplesFromRecords(records, radialWarp) {
     return [{
       routeId: route.routeId,
       split: route.split,
+      airportA: route.airportA,
+      airportB: route.airportB,
       sampleCount: pairedScaleRatios.length,
       medianObservedTrackKm,
       medianUnitPathLength,
@@ -464,6 +501,16 @@ export function fitFlightPathCalibration(dataset) {
   );
   const training = records.filter(item => item.route.split === 'train');
   const holdout = records.filter(item => item.route.split === 'holdout');
+  const initialProjectedCoverage = summarizeProjectedRouteCoverage(
+    makeRouteExamplesFromRecords(training, DEFAULT_RADIAL_WARP),
+    makeRouteExamplesFromRecords(holdout, DEFAULT_RADIAL_WARP)
+  );
+  if (!hasRequiredProjectedCoverage(initialProjectedCoverage, limits)) {
+    throw new Error(
+      'Insufficient usable projected-path airport-pair coverage after projection; ' +
+      'the minimum route counts and southern coverage gates must still be met.'
+    );
+  }
   const candidates = [];
 
   for (const exponent of exponentCandidates()) {
@@ -475,11 +522,13 @@ export function fitFlightPathCalibration(dataset) {
   if (!best || !Number.isFinite(best.radialScaleKm) || best.radialScaleKm <= 0) {
     throw new Error('No finite flight-path radial calibration candidate could be fitted.');
   }
-  if (best.training.routeCount < limits.minimumTrainingRoutes ||
-      best.holdout.routeCount < limits.minimumHoldoutRoutes) {
+  const projectedPathCoverage = summarizeProjectedRouteCoverage(
+    best.trainingExamples, best.holdoutExamples
+  );
+  if (!hasRequiredProjectedCoverage(projectedPathCoverage, limits)) {
     throw new Error(
       'Insufficient usable projected-path airport-pair coverage after projection; ' +
-      'the minimum training and holdout route counts must still be met.'
+      'the minimum route counts and southern coverage gates must still be met.'
     );
   }
 
@@ -497,6 +546,7 @@ export function fitFlightPathCalibration(dataset) {
     },
     metrics: {
       spatialCoverage: coverage,
+      usableProjectedPathCoverage: projectedPathCoverage,
       training: best.training,
       holdout: best.holdout,
       leaveOneOut: best.leaveOneOut,
