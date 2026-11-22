@@ -163,7 +163,7 @@ test('country-area calculations share rendered rings and preserve the Antarctic 
   assert.doesNotMatch(html, /flightDistanceValue|flightDistanceSub|secondary-distance-reading/);
   assert.doesNotMatch(app, /endpointDistanceEstimateMeters|endpointDistanceCalibration|predictEndpointDistance/);
   assert.match(app, /measureDistanceMeters/);
-  assert.match(app, /adsb-calibrated-flat-disk/);
+  assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
   assert.match(app, /flatDiskPolygonMetrics\(areaPoints,project,baseR,measureDistanceMeters\)/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
@@ -191,7 +191,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Euclidean map-plane chord · not flown route mileage/);
+ assert.match(html,/One ADS-B-calibrated flat-disk distance formula/);
   assert.match(html,/continuous radial profile used by both the map and the path fitter/);
 });
 
