@@ -216,7 +216,7 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('the radial-corrected A–B readout and ADS-B flight mileage remain separate references',()=>{
+test('the coordinate-only great-circle readout and ADS-B flight mileage remain separate references',()=>{
  assert.match(html,/Radially calibrated A–B distance/);
  assert.match(html,/12-circle visual radial calibration/);
  assert.match(html,/id="visualRadialRows"/);
