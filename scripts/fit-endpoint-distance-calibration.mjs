@@ -11,7 +11,7 @@ const DATA_PATH = 'data/flight-calibration.json';
 const PARAMETERS_PATH = 'src/core/endpoint-distance-calibration-parameters.js';
 const SUMMARY_PATH = 'data/endpoint-distance-calibration-summary.json';
 const MAX_TRAINING_SPREAD_FRACTION = 0.60;
-const MAX_SUPPORTED_FEATURE_DISTANCE = 0.65;
+const MAX_SUPPORTED_FEATURE_DISTANCE = 0.90;
 const NEIGHBOR_COUNT = 4;
 const INVERSE_DISTANCE_POWER = 1;
 const FACTOR_BOUNDS = [0.75, 1.5];
@@ -43,7 +43,7 @@ function routeExample(route) {
 }
 
 function statistics(routes) {
-  const featureMeans = [0, 1, 2].map(index =>
+  const featureMeans = [0, 1, 2, 3].map(index =>
     routes.reduce((sum, route) => sum + route.features[index], 0) / routes.length
   );
   const featureScales = [0, 1, 2].map(index => {
@@ -194,7 +194,7 @@ async function main() {
     sourceDatasetVersion: dataset.schemaVersion,
     target: 'Median observed ADS-B ground-speed/time mileage by airport pair',
     geometry: 'Current displayed 12-circle radial and anchored longitude-warped flat disk',
-    featureNames: ['meanRadialFraction', 'radialShareOfChord', 'tangentialShareOfChord'],
+    featureNames: ['meanRadialFraction', 'radialShareOfChord', 'tangentialShareOfChord', 'logChordDistanceKm'],
     featureMeans: fullStatistics.featureMeans,
     featureScales: fullStatistics.featureScales,
     neighborCount: NEIGHBOR_COUNT,
@@ -224,7 +224,7 @@ async function main() {
     method: {
       target: model.target,
       endpointGeometry: model.geometry,
-      predictor: 'four nearest route examples in standardized three-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios',
+      predictor: 'four nearest route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios',
       featureNames: model.featureNames,
       routeQualityFilter: 'at least 3 accepted flights and (p90TrackKm - p10TrackKm) / medianTrackKm <= 0.60',
       supportRule: 'nearest standardized feature distance <= 0.65',
