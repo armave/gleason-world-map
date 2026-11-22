@@ -153,9 +153,9 @@ The base scale `R_base` is an empirical flat-disk calibration derived from ADS-B
 
 **Antarctic rim convention:** when `φ = −90°`, `q_visual = 1` and the radial coordinate is the disk boundary. Longitude `λ` continues to set the angular position around that boundary. Thus two coordinates at 90°S with different longitudes are different disk points. This deliberate convention preserves the circular Antarctic rim rather than collapsing it to one spherical pole.
 
-A separate ADS-B flight-mileage estimate is retained as an empirical reference. It uses the original fitted base chord and local route-neighbour correction to estimate typical flown mileage for sampled airport pairs. It does not define or alter the primary flat-disk distance and is not a specific flight path.
+A separate ADS-B flight-mileage estimate is retained as an empirical reference. The active legacy model uses its original fitted base chord. New strict model versions are tagged `chordGeometry: visual-12-circle` and use the same displayed 12-circle chord as the map. In either case, the local route-neighbour correction estimates typical flown mileage only; it does not alter map coordinates or the primary A–B connector. It is not a specific flight path.
 
-For the ADS-B fit, let `qA` and `qB` remain the original fitted radial fractions (before the visual redistribution), and let `deltaLambda` be the wrapped longitude span. The exact Euclidean chord components in the warped unit disk are:
+The legacy ADS-B model used the unmodified base radial fraction. Strict candidate model version 6 instead uses the displayed 12-circle radial positions. For that geometry, calculate `q_visual = (q - 0.25q²) / 0.75` at both endpoints, then use the wrapped longitude span. The physical chord is the following unit chord multiplied by the 0.75 disk-radius factor and the fitted radial scale:
 
 ```text
 radial_component = pi * abs(qA - qB)
@@ -180,18 +180,17 @@ The radial/tangential split distinguishes movement across concentric rings from 
 
 **Important southern-limit note:** the currently approved production snapshot has no training or holdout airport pair with an endpoint south of 60°S; its southernmost accepted endpoint is about 37.7°S. Therefore estimates near the Antarctic rim are still bounded extrapolations, not polar-validated predictions. The new southern/Antarctic airport pairs are collection candidates only. The model will keep the existing approved coefficients until actual ADS-B observations produce sufficient independent southern training and polar holdout coverage and the error gate passes.
 
-The latest collection attempt (retrieved 21 November 2026 at 12:17 UTC) contains 61 candidate airport pairs and 253 accepted flight records. After the 35% coverage and 5-hour maximum-gap filters, 32 training routes and 2 holdout routes remain—below the minimum 4 holdouts needed even to score a candidate. The eight added southern/polar candidates were each scanned for 24 pages but produced zero exact-route flight candidates. None of the accepted routes reaches 45°S. The generated fit summary now records this as a rejected candidate with current route counts and candidate diagnostics instead of leaving the previous run's `accepted: true` metrics beside the newer dataset.
+The figures in the schema-2 dataset snapshot are now historical diagnostics only. That snapshot used a 35% telemetry-coverage floor, expanded incomplete mileage, and had only two usable holdout route pairs. It is deliberately ineligible for the strict schema-3 fitter. The updated collector now searches historical seven-day windows for up to 180 days across an expanded route set; its new result must be evaluated under the observed-only policy below before any coefficients are considered.
 
 The generated parameter file records the fitted radial scale and warp, feature means/scales/ranges, the route-level ratios used by the flight-estimate neighbour lookup, factor bounds, route counts, and source dataset version.
 ## Validation gate and interpretation
 
-The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for:
+The fitter reports mean absolute percentage error (MAPE), RMS percentage error and maximum absolute percentage error for two separate models:
 
-- Training routes (in-sample fit).
-- Independent holdout routes.
-- Leave-one-route-out training validation.
+- The route-neighbour model, which estimates typical flown mileage as a secondary empirical reference.
+- The primary visual projection, which uses only the one global radial scale multiplied by the same displayed 12-circle chord used by the map. It is scored using leave-one-route-out training validation and independent holdout routes.
 
-Production parameters are emitted only when there are enough training/holdout route pairs and all configured error thresholds pass. A rejected fit still writes the summary for review, but removes/does not write the production parameter file. This prevents a poor or sparse sample from silently replacing the current map calibration.
+Production parameters are emitted only when both models, route-count and Southern Hemisphere coverage gates pass. In particular, the primary visual projection must meet its own MAPE and worst-route limits without relying on the local route-neighbour correction. A rejected fit still writes the summary for review and preserves the last approved production parameter file. This prevents a good secondary flight-mileage estimate from masking a poorly calibrated map visual scale.
 
 The summary and raw source records are:
 

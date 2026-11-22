@@ -320,9 +320,11 @@ export function predictFlightScaleRatio(features, model, { excludeRouteId = null
 export function predictFlightCalibratedKm(first, second, model) {
   if (!model || !validAirport(first) || !validAirport(second)) return null;
   const radialWarp = model.radialWarp || DEFAULT_RADIAL_WARP;
-  const chord = unitDiskChord(first, second, radialWarp);
+  const chordGeometry = model.chordGeometry === 'visual-12-circle'
+    ? 'visual-12-circle' : 'base';
+  const chord = unitDiskChord(first, second, radialWarp, chordGeometry);
   if (!Number.isFinite(chord)) return null;
-  const features = flightCalibrationFeatures(first, second, radialWarp);
+  const features = flightCalibrationFeatures(first, second, radialWarp, chordGeometry);
   const prediction = predictFlightScaleRatio(features, model);
   if (!prediction) return null;
 
@@ -336,8 +338,12 @@ export function predictFlightCalibratedKm(first, second, model) {
 
 function routeError(route, model, excludeRouteId = null) {
   const radialWarp = model.radialWarp || DEFAULT_RADIAL_WARP;
-  const chord = unitDiskChord(route.airportA, route.airportB, radialWarp);
-  const features = flightCalibrationFeatures(route.airportA, route.airportB, radialWarp);
+  const chordGeometry = model.chordGeometry === 'visual-12-circle'
+    ? 'visual-12-circle' : 'base';
+  const chord = unitDiskChord(route.airportA, route.airportB, radialWarp, chordGeometry);
+  const features = flightCalibrationFeatures(
+    route.airportA, route.airportB, radialWarp, chordGeometry
+  );
   const scale = predictFlightScaleRatio(features, model, { excludeRouteId });
   if (!scale) return NaN;
   const predicted = chord * clamp(
