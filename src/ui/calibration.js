@@ -12,8 +12,8 @@ export function renderRadialCalibration(radialRows,visualRows){
  radialRows.innerHTML=rows.join('');
 
  if(visualRows){
-  const circleRows=RADIAL_DISTANCE_VISUAL_CIRCLES.map(({circle,factor,visualFraction})=>{
-   const radialFactor=factor.toFixed(2)+'×';
+  const circleRows=RADIAL_DISTANCE_VISUAL_CIRCLES.map(({circle,distanceMultiplier,visualFraction})=>{
+   const radialFactor=distanceMultiplier.toFixed(2)+'×';
    const visualRadiusPercent=(visualFraction*100).toFixed(1)+'%';
    const visualRadiusKm=(DISK_RADIUS_KM*visualFraction)
     .toLocaleString('en-US',{maximumFractionDigits:0})+' km';
