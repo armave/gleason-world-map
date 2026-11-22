@@ -2,7 +2,7 @@
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp, a separate ADS-B estimate of typical flown mileage, and an observed-flight-path calibration pipeline gated by independent route validation, plus flat-disk chord and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp, an ADS-B-calibrated typical route-mileage estimate, a separately measured flat-disk connector, and an observed-flight-path calibration pipeline gated by independent route validation, plus planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 
 ## Map layout and calibration
@@ -228,7 +228,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 ## Important limitations
 
-- The map is a custom radial disk with a nonlinear latitude warp, not the standard azimuthal-equidistant formula. It is a mathematical map construction, not a claim about Earth's physical shape. The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp; a local nearest-route correction is applied only to the separate ADS-B flight-mileage estimate. It is not a universal physical distance law; the reported holdout and leave-one-route-out errors indicate how well the flight estimate generalizes to new route pairs.
+- The map is a custom radial disk with a nonlinear latitude warp, not the standard azimuthal-equidistant formula. It is a mathematical map construction, not a claim about Earth's physical shape. The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp. The A–B route-mileage estimate uses a separate nearest-route model calibrated to observed ADS-B mileage; it is not a universal physical distance law. The supported-subset holdout and leave-one-route-out errors indicate how well it generalizes within the sampled route-feature and chord-length domain.
 - The primary A–B result is an empirical estimate of typical flown mileage inferred from observed ADS-B ground-speed/time data. It is calibrated only within the route-feature and chord-length support of the sampled airport pairs; unsupported pairs are explicitly labelled extrapolated and should be treated as provisional. It is not the actual path of a selected flight, a shortest point-to-point distance or a guaranteed airline route. The exact Euclidean length of the displayed connector is available separately as a flat-disk map-plane measurement.
 - The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
 - Latest ADS-B collection (21 November 2026, 12:17 UTC): 61 candidate airport pairs, 253 flight records, 32 qualifying training routes and 2 qualifying holdouts. The eight southern/polar candidate pairs returned no matching flight records, so no polar calibration is promoted.
