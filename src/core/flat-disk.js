@@ -54,7 +54,7 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
-/** Radius in the original fitted projection, retained for the A–B/ADS-B model. */
+/** Radius in the original fitted projection, retained only for ADS-B calibration. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = baseRadialFraction(latitudeDegrees);
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
@@ -116,7 +116,7 @@ export function flatDiskDistanceMeters(a, b) {
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** Original fitted-projection chord, retained by the A–B and ADS-B readout models. */
+/** Original fitted-projection chord used only by the secondary ADS-B mileage estimator. */
 export function baseFlatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a, true), second = pointInDiskKm(b, true);
   if (!first || !second) return null;
