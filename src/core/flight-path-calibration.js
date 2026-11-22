@@ -10,6 +10,7 @@ import {
   DEFAULT_RADIAL_WARP,
   radialFractionFromUnitColatitude
 } from './radial-warp.js';
+import { integratedRadialDistanceMultiplier } from './visual-radial-calibration.js';
 
 export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   minimumFlightsPerRoute: 3,
@@ -119,14 +120,9 @@ function pointInUnitDisk(coordinate, radialWarp, radialProfile = FLIGHT_PATH_PRO
   const q = radialFractionFromUnitColatitude(normalizedColatitude, radialWarp);
   if (!Number.isFinite(q)) return null;
 
-  const profile = radialProfile || FLIGHT_PATH_PROFILE;
-  const innerFactor = profile.innerFactor ?? FLIGHT_PATH_PROFILE.innerFactor;
-  const outerFactor = profile.outerFactor ?? FLIGHT_PATH_PROFILE.outerFactor;
-  const exponent = profile.exponent ?? FLIGHT_PATH_PROFILE.exponent;
-  const taper = innerFactor - outerFactor;
-  const integratedFraction =
-    outerFactor * q +
-    taper * (1 - Math.pow(1 - q, exponent + 1)) / (exponent + 1);
+  const integratedFraction = integratedRadialDistanceMultiplier(
+    q, radialProfile || FLIGHT_PATH_PROFILE
+  );
   const radius = Math.PI * integratedFraction;
   return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
 }
