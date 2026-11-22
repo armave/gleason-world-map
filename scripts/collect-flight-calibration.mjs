@@ -5,9 +5,10 @@
  * Target mileage is integrated from ground speed and elapsed time only:
  *   track_km = sum(ground_speed_knots * elapsed_seconds / 3600) * 1.852
  *
- * Flight coordinates are not used to calculate a distance. Airport geometry
- * is used only by the upstream query API to retrieve flights for an airport
- * pair; airport lat/lon are retained only as flat-disk endpoint coordinates.
+ * Flight coordinates are never used to calculate the observed-mileage target.
+ * They are stored with matching timestamps for a separate flat-disk projected
+ * path-length comparison. Airport geometry is used only by the upstream query
+ * API to retrieve airport-pair flights and retain their map endpoints.
  */
 import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
