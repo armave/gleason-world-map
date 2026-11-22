@@ -6,9 +6,9 @@ import {
   unitProjectedFlightPathLength,
   summarizeFlightPathCoverage,
   summarizeUsableProjectedPathCoverage,
-  isGloballyValidatedFlightPathCalibration,
   fitFlightPathCalibration
 } from '../src/core/flight-path-calibration.js';
+import { isGloballyValidatedFlightPathCalibration } from '../src/core/flight-path-calibration-status.js';
 import { DEFAULT_RADIAL_WARP } from '../src/core/radial-warp.js';
 
 const close = (actual, expected, tolerance) =>
