@@ -231,7 +231,7 @@ test('distance connector is one straight projected segment measured in the map p
 
 test('the flat-disk A–B readout and ADS-B flight mileage remain separate references',()=>{
  assert.match(html,/Flat-disk A–B distance/);
- assert.match(html,/12-circle visual radial calibration/);
+ assert.match(html,/12-circle distance multiplier calibration/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(html,/ADS-B flight-mileage estimate · reference/);
