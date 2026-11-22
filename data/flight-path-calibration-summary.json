@@ -2,20 +2,31 @@
   "schemaVersion": 1,
   "accepted": false,
   "status": "rejected",
-  "generatedAt": "2026-11-22T08:36:57.403Z",
+  "generatedAt": "2026-11-22T09:13:20.785Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-22T08:35:25.990Z",
+  "sourceRetrievedAt": "2026-11-22T09:13:16.530Z",
   "method": {
     "target": "Independently observed ADS-B ground-speed/time mileage for each flight",
     "targetFormula": "sum(ground_speed_knots * accepted_interval_seconds / 3600) * 1.852",
     "visualMeasurement": "Sum the Euclidean lengths of the recorded flight path segments after projecting each timestamped ADS-B position into the custom 12-circle flat-disk plane.",
     "coordinatesUsedFor": "Visual path geometry only; never used to calculate observed flight mileage.",
     "sequenceHandling": "Preserve and measure each source MultiLineString sequence independently; never draw or measure a connector across a sequence break.",
-    "radialProfile": "Fixed requested 12-circle continuous profile: local multiplier tapers linearly from 1.00 at the North Pole to 0.50 at the Ice Wall.",
-    "fit": "Search the regularized-power latitude warp exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length.",
+    "radialProfile": "Smooth positive power taper m(q)=outer+(inner-outer)(1-q)^a, integrated continuously and normalized to preserve the North Pole centre and Antarctic Ice Wall radius. Twelve reference circles sample the fitted curve.",
+    "fit": "Jointly search the regularized-power latitude warp exponent and constrained radial-profile exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length. The profile exponent is selected inside nested route-level validation.",
     "validation": "Leave-one-airport-pair-out training validation plus fully independent airport-pair holdouts."
   },
-  "rejectionReason": null,
+  "rejectionReason": "training MAPE 15.29% exceeds 10%; holdout MAPE 12.43% exceeds 12%; maximum holdout route error 36.87% exceeds 20%; leave-one-route-out MAPE gate failed; maximum leave-one-route-out route error gate failed; insufficient qualified training/holdout routes south of 45°S; insufficient qualified training/holdout routes south of 60°S; insufficient usable projected-path training/holdout routes south of 45°S; insufficient usable projected-path training/holdout routes south of 60°S",
+  "rejectionDetails": [
+    "training MAPE 15.29% exceeds 10%",
+    "holdout MAPE 12.43% exceeds 12%",
+    "maximum holdout route error 36.87% exceeds 20%",
+    "leave-one-route-out MAPE gate failed",
+    "maximum leave-one-route-out route error gate failed",
+    "insufficient qualified training/holdout routes south of 45°S",
+    "insufficient qualified training/holdout routes south of 60°S",
+    "insufficient usable projected-path training/holdout routes south of 45°S",
+    "insufficient usable projected-path training/holdout routes south of 60°S"
+  ],
   "qualityGate": {
     "trainingRouteCount": 26,
     "holdoutRouteCount": 6,
@@ -28,13 +39,23 @@
     "trainingFlightsWithPaths": 148,
     "holdoutFlightsWithPaths": 36,
     "totalTrajectoryPoints": 29311,
-    "trainingMapePercent": 15.48392817126857,
-    "holdoutMapePercent": 12.588608859599091,
-    "holdoutMaxErrorPercent": 37.38286764384819,
-    "leaveOneOutMapePercent": 15.835391684264245,
-    "leaveOneOutMaxRouteErrorPercent": 116.72490199954524,
+    "trainingMapePercent": 15.29345175146862,
+    "holdoutMapePercent": 12.42673316494667,
+    "holdoutMaxErrorPercent": 36.87000177596265,
+    "leaveOneOutMapePercent": 15.988105435194942,
+    "leaveOneOutMaxRouteErrorPercent": 116.53463007832707,
     "usableTrainingRouteCount": 26,
     "usableHoldoutRouteCount": 6,
+    "activeProfileUsableProjectedPathCoverage": {
+      "trainingRouteCount": 26,
+      "holdoutRouteCount": 6,
+      "trainingRoutesSouthOf30S": 4,
+      "holdoutRoutesSouthOf30S": 2,
+      "trainingRoutesSouthOf45S": 0,
+      "holdoutRoutesSouthOf45S": 0,
+      "trainingRoutesSouthOf60S": 0,
+      "holdoutRoutesSouthOf60S": 0
+    },
     "usableProjectedPathCoverage": {
       "trainingRouteCount": 26,
       "holdoutRouteCount": 6,
@@ -62,18 +83,19 @@
     }
   },
   "model": {
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "sourceDatasetVersion": 4,
     "target": "Observed ADS-B ground-speed/time mileage compared with the projected polyline of that flight's recorded path",
-    "radialScaleKm": 6477.20719217592,
+    "radialScaleKm": 6779.312845867744,
     "radialWarp": {
       "kind": "regularized-power",
-      "exponent": 1.0000000000000002,
+      "exponent": 1.025,
       "epsilon": 0.005
     },
     "radialProfile": {
       "innerFactor": 1,
-      "outerFactor": 0.5
+      "outerFactor": 0.5,
+      "exponent": 1.3
     },
     "geometry": "sum-of-sequence-segment-lengths-in-the-displayed-flat-disk",
     "trainingRouteCount": 26,
@@ -105,251 +127,282 @@
     },
     "training": {
       "routeCount": 26,
-      "meanAbsolutePercent": 15.48392817126857,
-      "rmsPercent": 33.80374113027187,
-      "maxAbsolutePercent": 113.82867149673524,
+      "meanAbsolutePercent": 15.29345175146862,
+      "rmsPercent": 33.57176696495251,
+      "maxAbsolutePercent": 113.18396043858661,
       "errors": [
         {
           "routeId": "EGLL--EHAM",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6410.467991567114,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 1.0410971663316948
+          "requiredRadialScaleKm": 6725.252696507325,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 0.8038381872029099
         },
         {
           "routeId": "EGLL--LFPG",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6733.677672720301,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 3.808772754053902
+          "requiredRadialScaleKm": 7036.720988573259,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 3.6580694775807276
         },
         {
           "routeId": "EDDF--EGLL",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6337.213928876961,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 2.209066395266346
+          "requiredRadialScaleKm": 6651.024106386878,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 1.9288569313359094
         },
         {
           "routeId": "KJFK--KMIA",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 7105.254955426135,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 8.83920094620374
+          "requiredRadialScaleKm": 7427.220474308711,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 8.723419894186879
         },
         {
           "routeId": "KJFK--KORD",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6216.947962548628,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 4.186286119734528
+          "requiredRadialScaleKm": 6516.890485888327,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 4.026803282143021
         },
         {
           "routeId": "EHAM--LFPG",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6917.939225017408,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 6.370857252513362
+          "requiredRadialScaleKm": 7220.687471633789,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 6.112639932138997
         },
         {
           "routeId": "EDDF--EHAM",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6673.456184691865,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 2.940739956697669
+          "requiredRadialScaleKm": 6984.320942417709,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 2.9352616845668478
         },
         {
           "routeId": "OMDB--OOMS",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6024.111858985629,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 7.5213632116483575
+          "requiredRadialScaleKm": 6310.024920566462,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 7.437180220504636
         },
         {
           "routeId": "OBBI--OMDB",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 5972.3953558535395,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 8.452418271801365
+          "requiredRadialScaleKm": 6256.018607698531,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 8.36465284047041
         },
         {
           "routeId": "YMML--YSSY",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 3513.488361689371,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 84.3526013292818
+          "requiredRadialScaleKm": 3689.2706674110977,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 83.75753521562697
         },
         {
           "routeId": "YMML--YPAD",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 3337.8546505570994,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 94.05300320955712
+          "requiredRadialScaleKm": 3504.774781071913,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 93.43077000212648
         },
         {
           "routeId": "YPAD--YSSY",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 3029.1574777308642,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 113.82867149673524
+          "requiredRadialScaleKm": 3180.029506873106,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 113.18396043858661
         },
         {
           "routeId": "YBCG--YSSY",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6537.836824141572,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 0.92736532887715
+          "requiredRadialScaleKm": 6877.625789131749,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 1.429460489393919
         },
         {
           "routeId": "KBOS--KJFK",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6523.389703099292,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 0.7079526599711006
+          "requiredRadialScaleKm": 6826.874624845915,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 0.6966845239119168
         },
         {
           "routeId": "KDEN--KORD",
           "sampleCount": 3,
-          "requiredRadialScaleKm": 6176.848838927219,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 4.862646975522655
+          "requiredRadialScaleKm": 6476.011997652852,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 4.683450993062066
         },
         {
           "routeId": "KATL--KORD",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 7088.567390083937,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 8.624594565655652
+          "requiredRadialScaleKm": 7402.343265312622,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 8.416664792679885
         },
         {
           "routeId": "KLAX--KSFO",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6665.759401589817,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 2.8286680939748066
+          "requiredRadialScaleKm": 6973.241533800978,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 2.781040739707852
         },
         {
           "routeId": "KLAS--KLAX",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6431.024681252547,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 0.7181205672869062
+          "requiredRadialScaleKm": 6731.751066889572,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 0.7065290814466829
         },
         {
           "routeId": "KATL--KMIA",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6938.434048443218,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 6.647420052523001
+          "requiredRadialScaleKm": 7258.14903743948,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 6.597221813740262
         },
         {
           "routeId": "EDDM--EGLL",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6377.87625310874,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 1.557429701129176
+          "requiredRadialScaleKm": 6692.247996636588,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 1.300980616302816
         },
         {
           "routeId": "EGLL--LIRF",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6657.369695708919,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 2.706211488437016
+          "requiredRadialScaleKm": 6961.949387791384,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 2.6233534855038654
         },
         {
           "routeId": "EHAM--LEMD",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6992.523089361601,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 7.369527287935318
+          "requiredRadialScaleKm": 7295.776443797076,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 7.0789394646053605
         },
         {
           "routeId": "LFPG--LIRF",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6679.951874009468,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 3.0351218939524527
+          "requiredRadialScaleKm": 6987.515520525109,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 2.9796380994903227
         },
         {
           "routeId": "EDDF--LIRF",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 7086.392850857437,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 8.596554996352024
+          "requiredRadialScaleKm": 7389.186043793267,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 8.253591049284815
         },
         {
           "routeId": "LFPG--LTFM",
           "sampleCount": 4,
-          "requiredRadialScaleKm": 6318.4552188416965,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 2.5125124391294884
+          "requiredRadialScaleKm": 6623.905483884354,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 2.346159110535151
         },
         {
           "routeId": "YBBN--YBCG",
           "sampleCount": 3,
-          "requiredRadialScaleKm": 5687.551605653165,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 13.883928292410985
+          "requiredRadialScaleKm": 5979.651472863639,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 13.37304317204877
         }
       ]
     },
     "holdout": {
       "routeCount": 6,
-      "meanAbsolutePercent": 12.588608859599091,
-      "rmsPercent": 17.109269815653857,
-      "maxAbsolutePercent": 37.38286764384819,
+      "meanAbsolutePercent": 12.42673316494667,
+      "rmsPercent": 16.86123724412222,
+      "maxAbsolutePercent": 36.87000177596265,
       "errors": [
         {
           "routeId": "YBBN--YMML",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 4714.712469801878,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 37.38286764384819
+          "requiredRadialScaleKm": 4953.103498138727,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 36.87000177596265
         },
         {
           "routeId": "YBBN--YSSY",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6940.133933056322,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 6.670285405811138
+          "requiredRadialScaleKm": 7303.579323513995,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 7.17821296139507
         },
         {
           "routeId": "KATL--KJFK",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 6422.34919674475,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 0.8541733523143691
+          "requiredRadialScaleKm": 6721.07489743684,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 0.8664975367721928
         },
         {
           "routeId": "KSEA--KSFO",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 7209.581620525794,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 10.158348526976834
+          "requiredRadialScaleKm": 7516.499062311832,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 9.80757411572607
         },
         {
           "routeId": "EGLL--LEMD",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 7158.036419221382,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 9.511396522337334
+          "requiredRadialScaleKm": 7462.453926479177,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 9.154375857349418
         },
         {
           "routeId": "WMKK--WSSS",
           "sampleCount": 6,
-          "requiredRadialScaleKm": 5837.710433013831,
-          "fittedRadialScaleKm": 6477.20719217592,
-          "absolutePercent": 10.954581706306676
+          "requiredRadialScaleKm": 6124.940343892635,
+          "fittedRadialScaleKm": 6779.312845867744,
+          "absolutePercent": 10.683736742474625
         }
       ]
     },
     "leaveOneOut": {
       "routeCount": 26,
-      "meanAbsolutePercent": 15.835391684264245,
-      "maxAbsolutePercent": 116.72490199954524
+      "meanAbsolutePercent": 15.988105435194942,
+      "maxAbsolutePercent": 116.53463007832707,
+      "errors": [
+        0.47497280604950065,
+        4.101945130272044,
+        1.0105344203011901,
+        9.363791068607942,
+        3.6059716762064875,
+        6.466605937424763,
+        3.5498337309836536,
+        7.995912660444859,
+        8.76458844838568,
+        86.89699266374578,
+        96.71937591480241,
+        116.53463007832707,
+        2.121004060335663,
+        1.106600628640575,
+        4.1856178744558825,
+        9.059188075827896,
+        3.463101998415563,
+        1.15666445439353,
+        7.25250980428489,
+        1.0165228684589467,
+        3.048146392528872,
+        7.730847857695022,
+        3.4014851321501727,
+        8.897258412595043,
+        1.8704355923854665,
+        15.896203627349625
+      ]
     },
-    "selectedExponentObjective": 31.319319855532815,
-    "exponentCandidatesTested": 29
+    "selectedExponentObjective": 31.281557186663562,
+    "selectedProfileExponent": 1.3,
+    "exponentCandidatesTested": 29,
+    "profileExponentCandidatesTested": 5,
+    "geometryCandidatesTested": 145
   },
   "routeCoverage": {
     "trainingRouteCount": 26,
