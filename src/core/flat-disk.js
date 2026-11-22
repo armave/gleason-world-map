@@ -2,7 +2,8 @@
  * Flat-disk geometry engine for the Gleason-style north-polar map.
  * Latitude is mapped through the fitted base fraction q(t), then through the
  * integrated 1.00×→0.50× local radial-distance multiplier profile:
- * qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
+ * Screen fraction qv = integral(0..q, m(u) du) / 0.75 = q + q(1-q)/3.
+ * Physical radius is pi*R_base*integral(m); final disk radius is 0.75*pi*R_base.
  * Projection, A–B distance, polygon edges and scale bar share this geometry.
  * R is fitted from observed ADS-B ground-speed × elapsed-time mileage.
  */
