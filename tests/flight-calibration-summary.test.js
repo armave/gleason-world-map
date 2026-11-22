@@ -14,17 +14,11 @@ test('latest calibration summary belongs to the current ADS-B dataset snapshot',
   assert.equal(summary.sourceRetrievedAt, dataset.source.retrievedAt);
   assert.ok(summary.generatedAt);
   const strictCoverage = summarizeFlightCalibrationCoverage(dataset);
-  assert.deepEqual(strictCoverage, {
-    trainingRouteCount: 0,
-    holdoutRouteCount: 0,
-    trainingRoutesSouthOf30S: 0,
-    trainingRoutesSouthOf45S: 0,
-    trainingRoutesSouthOf60S: 0,
-    holdoutRoutesSouthOf30S: 0,
-    holdoutRoutesSouthOf45S: 0,
-    holdoutRoutesSouthOf60S: 0
-  });
-  assert.equal(dataset.schemaVersion, 2);
+  const summaryCoverage = Object.fromEntries(
+    Object.keys(strictCoverage).map(key => [key, summary.routeCoverage[key]])
+  );
+  assert.deepEqual(strictCoverage, summaryCoverage);
+  assert.equal(dataset.schemaVersion, 3);
   assert.equal(summary.accepted, false);
   assert.equal(summary.routeCoverage.candidateRoutes, dataset.routes.length);
   assert.equal(
