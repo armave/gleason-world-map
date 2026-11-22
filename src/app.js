@@ -631,7 +631,7 @@ function updateMeasurement(){
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
   $('distanceSub').textContent=Number.isFinite(measurement.radialCorrectionFactor)
-   ?'Raw disk chord × '+measurement.radialCorrectionFactor.toFixed(3)+' radial factor · circle '+measurement.radialCirclePosition.toFixed(1)+'/12'
+   ?'Raw chord '+formatDistance(measurement.chordDistanceMeters)+' × '+measurement.radialCorrectionFactor.toFixed(3)+' radial factor · circle '+measurement.radialCirclePosition.toFixed(1)+'/12'
    :'Radial correction unavailable';
   $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
    ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
