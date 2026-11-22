@@ -7,6 +7,8 @@ import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDa
 import {createFeaturePath} from './map/feature-paths.js';
 import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
 import {FLIGHT_PATH_CALIBRATION} from './core/flight-path-calibration-parameters.js';
+import {isGloballyValidatedFlightPathCalibration} from './core/flight-path-calibration.js';
+import FLIGHT_PATH_CALIBRATION_SUMMARY from '../data/flight-path-calibration-summary.json';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {createCompassRoseLayout} from './map/compass.js';
 import {centeredCanvasTransform} from './map/canvas-transform.js';
@@ -915,10 +917,12 @@ function exportPNG(){
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
  outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
-  const pathFitCaption=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion>0
-   ? 'Visible map · ADS-B projected-path fit v'+FLIGHT_PATH_CALIBRATION.schemaVersion+
+  const latestPathFitAccepted=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion>0&&
+   isGloballyValidatedFlightPathCalibration(FLIGHT_PATH_CALIBRATION_SUMMARY);
+  const pathFitCaption=latestPathFitAccepted
+   ? 'Visible map · globally validated ADS-B projected-path fit v'+FLIGHT_PATH_CALIBRATION.schemaVersion+
     ' · '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+' independent holdout route pairs'
-   : 'Visible map · previously approved flat-disk scale retained · ADS-B projected-path fit pending';
+   : 'Visible map · last approved flat-disk parameters retained · latest ADS-B path candidate not globally validated';
   outputCtx.fillText(pathFitCaption,14*dpr,canvas.height+53*dpr);
  const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
  outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
