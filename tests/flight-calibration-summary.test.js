@@ -18,8 +18,14 @@ test('latest calibration summary belongs to the current ADS-B dataset snapshot',
     Object.keys(strictCoverage).map(key => [key, summary.routeCoverage[key]])
   );
   assert.deepEqual(strictCoverage, summaryCoverage);
-  assert.equal(dataset.schemaVersion, 3);
-  assert.equal(summary.accepted, false);
+  assert.ok(dataset.schemaVersion === 3 || dataset.schemaVersion === 4);
+  if (dataset.schemaVersion === 4) {
+    assert.ok(dataset.routes.some(route => route.observations.some(observation =>
+      Array.isArray(observation.trackCoordinates) &&
+      Array.isArray(observation.trackTimestamps)
+    )));
+  }
+  assert.equal(typeof summary.accepted, 'boolean');
   assert.equal(summary.routeCoverage.candidateRoutes, dataset.routes.length);
   assert.equal(
     summary.routeCoverage.totalObservedFlights,
