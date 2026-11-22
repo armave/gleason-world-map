@@ -215,30 +215,48 @@ async function main() {
     validation: { trainingLeaveOneRouteOut, independentHoldout }
   };
 
+  const maxTrainingChordKm = Math.max(...training.map(route => route.chordKm));
   const summary = {
     schemaVersion: 1,
     accepted,
-    generatedAt: new Date().toISOString(),
     sourceDataset: DATA_PATH,
     sourceRetrievedAt: dataset.source?.retrievedAt ?? null,
     method: {
       target: model.target,
-      endpointGeometry: model.geometry,
-      predictor: 'four nearest route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios',
-      featureNames: model.featureNames,
-      routeQualityFilter: 'at least 3 accepted flights and (p90TrackKm - p10TrackKm) / medianTrackKm <= 0.60',
-      supportRule: 'nearest standardized feature distance <= 0.90',
+      geometry: model.geometry,
+      predictor: 'Four nearest route examples in standardized four-feature space; inverse-distance weighted geometric mean of observed mileage-per-chord ratios',
+      features: model.featureNames,
+      trainingQualityFilter: 'At least three accepted flights and (p90TrackKm - p10TrackKm) / medianTrackKm <= 0.60',
+      supportRule: 'Nearest standardized feature distance <= 0.90',
       factorBounds: FACTOR_BOUNDS
     },
     qualityGate,
+    coverage: {
+      trainingLeaveOneRouteOut: {
+        total: trainingLeaveOneRouteOut.routeCount,
+        supported: trainingLeaveOneRouteOut.supportedRouteCount,
+        coveragePercent: trainingLeaveOneRouteOut.supportedCoveragePercent
+      },
+      independentHoldout: {
+        total: independentHoldout.routeCount,
+        supported: independentHoldout.supportedRouteCount,
+        coveragePercent: independentHoldout.supportedCoveragePercent
+      }
+    },
     excludedTrainingRoutes: examples.filter(route =>
       route.split === 'train' && route.spreadFraction > MAX_TRAINING_SPREAD_FRACTION
     ).map(route => ({
       routeId: route.routeId,
+      sampleCount: route.sampleCount,
       spreadFraction: route.spreadFraction,
-      medianTrackKm: route.medianTrackKm,
-      sampleCount: route.sampleCount
+      reason: 'p90/p10 spread relative to median exceeds 0.60; one observed flight is a strong mileage outlier'
     })),
+    importantLimitations: [
+      'The supported accuracy figures apply only to held-out routes within the route-feature and chord-length support radius.',
+      (independentHoldout.routeCount - independentHoldout.supportedRouteCount) + ' of ' + independentHoldout.routeCount + ' independent holdout pairs are outside support and are not included in the supported holdout error metrics.',
+      'No qualifying training airport-pair chord exceeds about ' + Math.round(maxTrainingChordKm).toLocaleString('en-US') + ' km; materially longer query chords are extrapolations.',
+      'This is a typical observed flight-mileage estimate, not a selected flight\'s path or a shortest point-to-point distance.'
+    ],
     metrics: { trainingLeaveOneRouteOut, independentHoldout },
     supportedDomainOnly: true
   };
