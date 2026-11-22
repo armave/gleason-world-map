@@ -117,7 +117,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B measurement: empirical estimate of typical ADS-B route mileage, with an explicit supported/extrapolated status; exact flat-disk connector length is displayed separately
+- A–B measurement: empirical ADS-B route mileage is shown only inside validated support; unsupported estimates are withheld, and the exact projected flat-disk chord is labelled as a map-plane measurement
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -125,7 +125,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar and connector-length readout use the same visually calibrated map-plane Euclidean metric
+- View-centred scale bar and projected disk-chord labels use the same visually calibrated map-plane Euclidean metric
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
@@ -224,12 +224,12 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
-- A–B route estimate: empirical typical flown mileage from observed ADS-B ground-speed/time records, with explicit extrapolation warnings outside the supported domain; the exact flat-disk connector length is shown separately. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
+- A–B route estimate: empirical typical flown mileage from observed ADS-B ground-speed/time records is displayed only for endpoint pairs inside validated support. Outside support, the numeric estimate is withheld. The projected flat-disk chord remains available as a clearly labelled map-plane measurement. ADS-B calibration targets are generated from ground-speed/time observations, not coordinate-derived distances.
 
 ## Important limitations
 
 - The map is a custom radial disk with a nonlinear latitude warp, not the standard azimuthal-equidistant formula. It is a mathematical map construction, not a claim about Earth's physical shape. The radial disk uses a fitted base scale and a smooth latitude-dependent coordinate warp. The A–B route-mileage estimate uses a separate nearest-route model calibrated to observed ADS-B mileage; it is not a universal physical distance law. The supported-subset holdout and leave-one-route-out errors indicate how well it generalizes within the sampled route-feature and chord-length domain.
-- The primary A–B result is an empirical estimate of typical flown mileage inferred from observed ADS-B ground-speed/time data. It is calibrated only within the route-feature and chord-length support of the sampled airport pairs; unsupported pairs are explicitly labelled extrapolated and should be treated as provisional. It is not the actual path of a selected flight, a shortest point-to-point distance or a guaranteed airline route. The exact Euclidean length of the displayed connector is available separately as a flat-disk map-plane measurement.
+- The A–B empirical route-mileage estimate is displayed only inside the route-feature and chord-length support of the sampled airport pairs. Outside support the app withholds the numeric prediction and displays “Not validated”. The projected disk chord remains a separate Euclidean map-plane measurement; it is not a flown route mileage and must not be read as one. The estimator does not reconstruct a selected flight path or establish a shortest point-to-point distance.
 - The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
 - Latest ADS-B collection (21 November 2026, 12:17 UTC): 61 candidate airport pairs, 253 flight records, 32 qualifying training routes and 2 qualifying holdouts. The eight southern/polar candidate pairs returned no matching flight records, so no polar calibration is promoted.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
