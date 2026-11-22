@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "accepted": true,
   "status": "accepted",
-  "generatedAt": "2026-11-22T09:40:19.068Z",
+  "generatedAt": "2026-11-22T10:19:18.081Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-22T09:39:57.619Z",
+  "sourceRetrievedAt": "2026-11-22T10:18:46.871Z",
   "extrapolationWarnings": [
     "No qualified independent airport-pair coverage south of 45°S; map geometry there is extrapolated.",
     "No qualified independent airport-pair coverage south of 60°S; polar geometry is not empirically validated."
@@ -39,7 +39,7 @@
     "holdoutMaxErrorPercent": 6.978629613399523,
     "leaveOneOutMapePercent": 8.13842847432604,
     "leaveOneOutMaxRouteErrorPercent": 28.128527938005334,
-    "minimumAngularStretch": 0.3947267645685554,
+    "minimumAngularStretch": 0.3939035681598064,
     "usableTrainingRouteCount": 26,
     "usableHoldoutRouteCount": 6,
     "activeProfileUsableProjectedPathCoverage": {
@@ -75,7 +75,8 @@
       "maxHoldoutMapePercent": 12,
       "maxHoldoutRouteErrorPercent": 20,
       "maxLeaveOneOutMapePercent": 15,
-      "maxLeaveOneOutRouteErrorPercent": 45
+      "maxLeaveOneOutRouteErrorPercent": 45,
+      "minimumAngularStretch": 0.35
     }
   },
   "model": {
@@ -479,12 +480,12 @@
       "trainingRoutesSouthOf60S": 0,
       "holdoutRoutesSouthOf60S": 0
     },
-    "selectedExponentObjective": 6.117756837497704,
+    "selectedGeometryObjective": 6.117756837497704,
     "selectedProfileExponent": 1.0328125,
-    "profileExponentCandidatesTested": 1,
-    "geometryCandidatesTested": 265,
+    "jointGeometryParameterCount": 6,
+    "geometryCandidatesEvaluated": 265,
     "nestedGeometryFolds": 26,
-    "minimumAngularStretch": 0.3947267645685554,
+    "minimumAngularStretch": 0.3939035681598064,
     "longitudeWarpPenalty": 0.5434192382812499
   },
   "routeCoverage": {
