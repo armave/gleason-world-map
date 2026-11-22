@@ -98,6 +98,47 @@ async function main() {
     usableProjectedPathCoverage.trainingRoutesSouthOf60S >= limits.minimumTrainingRoutesSouthOf60S &&
     usableProjectedPathCoverage.holdoutRoutesSouthOf60S >= limits.minimumHoldoutRoutesSouthOf60S;
 
+  const acceptanceFailures = [];
+  if (!fitted) {
+    acceptanceFailures.push(rejectionReason || 'No candidate was fitted.');
+  } else {
+    if (trainingMapePercent > limits.maxTrainingMapePercent)
+      acceptanceFailures.push(`training MAPE ${trainingMapePercent.toFixed(2)}% exceeds ${limits.maxTrainingMapePercent}%`);
+    if (holdoutMapePercent > limits.maxHoldoutMapePercent)
+      acceptanceFailures.push(`holdout MAPE ${holdoutMapePercent.toFixed(2)}% exceeds ${limits.maxHoldoutMapePercent}%`);
+    if (holdoutMaxErrorPercent > limits.maxHoldoutRouteErrorPercent)
+      acceptanceFailures.push(`maximum holdout route error ${holdoutMaxErrorPercent.toFixed(2)}% exceeds ${limits.maxHoldoutRouteErrorPercent}%`);
+    if (!Number.isFinite(leaveOneOutMapePercent) ||
+        leaveOneOutMapePercent > limits.maxLeaveOneOutMapePercent)
+      acceptanceFailures.push('leave-one-route-out MAPE gate failed');
+    if (leaveOneOutMaxRouteErrorPercent > limits.maxLeaveOneOutRouteErrorPercent)
+      acceptanceFailures.push('maximum leave-one-route-out route error gate failed');
+    if (routeCoverage.trainingRouteCount < limits.minimumTrainingRoutes ||
+        routeCoverage.holdoutRouteCount < limits.minimumHoldoutRoutes)
+      acceptanceFailures.push('minimum independent training/holdout route coverage gate failed');
+    if (routeCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+        routeCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S)
+      acceptanceFailures.push('insufficient qualified training/holdout routes south of 45°S');
+    if (routeCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+        routeCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S)
+      acceptanceFailures.push('insufficient qualified training/holdout routes south of 60°S');
+    if (usableProjectedPathCoverage.trainingRoutesSouthOf45S < limits.minimumTrainingRoutesSouthOf45S ||
+        usableProjectedPathCoverage.holdoutRoutesSouthOf45S < limits.minimumHoldoutRoutesSouthOf45S)
+      acceptanceFailures.push('insufficient usable projected-path training/holdout routes south of 45°S');
+    if (usableProjectedPathCoverage.trainingRoutesSouthOf60S < limits.minimumTrainingRoutesSouthOf60S ||
+        usableProjectedPathCoverage.holdoutRoutesSouthOf60S < limits.minimumHoldoutRoutesSouthOf60S)
+      acceptanceFailures.push('insufficient usable projected-path training/holdout routes south of 60°S');
+    if ((metrics?.training?.routeCount ?? 0) < limits.minimumTrainingRoutes ||
+        (metrics?.holdout?.routeCount ?? 0) < limits.minimumHoldoutRoutes)
+      acceptanceFailures.push('minimum usable projected training/holdout route gate failed');
+  }
+  const finalRejectionReason = accepted
+    ? null
+    : [rejectionReason, ...acceptanceFailures]
+        .filter(Boolean)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .join('; ');
+
   const summary = {
     schemaVersion: 1,
     accepted,
@@ -115,7 +156,8 @@ async function main() {
       fit: 'Jointly search the regularized-power latitude warp exponent and constrained radial-profile exponent on training routes only; fit one robust global radial scale from route-median observed mileage divided by route-median projected path length. The profile exponent is selected inside nested route-level validation.',
       validation: 'Leave-one-airport-pair-out training validation plus fully independent airport-pair holdouts.'
     },
-    rejectionReason,
+    rejectionReason: finalRejectionReason,
+    rejectionDetails: acceptanceFailures,
     qualityGate,
     model: fitted?.model ?? null,
     metrics,
@@ -129,7 +171,7 @@ async function main() {
     console.log('Accepted flight-path calibration parameters written to ' + PARAMETERS_PATH);
   } else {
     console.warn('Flight-path calibration rejected; active visual parameters were preserved.');
-    if (rejectionReason) console.warn(rejectionReason);
+    if (finalRejectionReason) console.warn(finalRejectionReason);
   }
 
   console.log('FLIGHT_PATH_CALIBRATION_SUMMARY_BEGIN');
