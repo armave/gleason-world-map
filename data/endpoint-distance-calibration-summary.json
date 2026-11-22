@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "accepted": true,
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-22T10:57:11.685Z",
+  "sourceRetrievedAt": "2026-11-22T11:44:30.088Z",
   "method": {
     "target": "Median observed ADS-B ground-speed/time mileage by airport pair",
     "geometry": "Current displayed 12-circle radial and anchored longitude-warped flat disk",
