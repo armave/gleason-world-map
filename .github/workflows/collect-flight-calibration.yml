@@ -26,8 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Collect observed ground-speed and timestamp samples
-        run: npm run collect:flight-calibration -- --max-pages-per-route=120 --samples-per-route=6 --history-days=180
+      - name: Collect observed ground-speed and timestamp samples across the available archive
+        run: npm run collect:flight-calibration -- --max-pages-per-route=120 --samples-per-route=6 --history-days=560
       - name: Fit only when independent route coverage is sufficient
         run: npm run fit:flight-calibration
       - name: Commit reproducible telemetry data and fitted parameters
