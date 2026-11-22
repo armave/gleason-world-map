@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gleason Flat-Disk Map | Radial Disk &amp; 1892 Historical Comparison</title>
-<meta name="description" content="Interactive Gleason-style 12-circle flat-disk map calibrated with timestamped ADS-B flight paths. A–B distance is measured in the visible map plane; typical flown mileage is a separate empirical reference.">
+<meta name="description" content="Interactive Gleason-style 12-circle flat-disk map calibrated with timestamped ADS-B flight paths. A–B measurement shows an ADS-B-calibrated typical route-mileage estimate plus exact displayed flat-disk connector length.">
 <link rel="stylesheet" href="./styles.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2229%22 fill=%22%23dcecf0%22 stroke=%22%234f8799%22 stroke-width=%223%22/%3E%3Cpath d=%22M32 3 A29 29 0 0 1 32 61 A29 29 0 0 1 32 3%22 fill=%22none%22 stroke=%22%234f8799%22 stroke-width=%222%22/%3E%3C/svg%3E">
 
@@ -13,7 +13,7 @@
 <header>
   <div class="kicker">Interactive cartographic instrument</div>
   <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">Gleason-style radial disk · ADS-B projected-track calibration · flat-disk A–B distance · separate flown-mileage reference · 60°S reference line</div>
+  <div class="subtitle">Gleason-style radial disk · ADS-B projected-track calibration · empirical route-mileage estimate · flat-disk connector length · 60°S reference line</div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -53,7 +53,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Scale units: flat-disk km · Local detail ceiling: 50 km</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · fine dotted rings = 12-circle radial calibration · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale · A–B value equals visible connector length</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Scale units: flat-disk km · Local detail ceiling: 50 km</span><span>Blue oceans · detailed coastlines & islands · white Antarctic ice wall · fine dotted rings = 12-circle radial calibration · red 60°S reference line</span><span>Country names fade out in close-up · Capital names appear at regional scale · route estimate and visible connector are separate readings</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -199,7 +199,7 @@
         <thead><tr><th>Circle</th><th>Display multiplier</th><th>Disk radius</th><th>Radius km</th></tr></thead>
         <tbody id="visualRadialRows"></tbody>
       </table>
-      <p class="note" style="margin:9px 0 0">The continuous radial profile used by both the map and the path fitter is a positive smooth taper from 1.00× at the North Pole to 0.50× at the Ice Wall. The fitter jointly selects its curvature and the latitude warp using timestamped ADS-B path vertices, comparing projected polyline length with independent ground-speed × time mileage. Speed data and path timestamps are each required to cover at least 98% of the complete flight duration, with no gap longer than 15 minutes. Whole airport pairs are held out; rejected candidates do not replace the active visible-map parameters. The displayed A–B value remains the Euclidean length of the transformed flat-disk connector, not the measured track of one specific flight.</p>
+      <p class="note" style="margin:9px 0 0">The continuous radial profile used by both the map and the path fitter is a positive smooth taper from 1.00× at the North Pole to 0.50× at the Ice Wall. The fitter jointly selects its curvature and the latitude warp using timestamped ADS-B path vertices, comparing projected polyline length with independent ground-speed × time mileage. Speed data and path timestamps are each required to cover at least 98% of the complete flight duration, with no gap longer than 15 minutes. Whole airport pairs are held out; rejected candidates do not replace the active visible-map parameters. The secondary flat-disk connector readout remains its exact Euclidean length. The primary empirical estimate predicts typical route mileage and is not the track of one selected flight.</p>
     </section>
 </template>
 <template id="geometry-panel-template">
@@ -207,11 +207,11 @@
       <h2>Flat-disk geometry</h2>
       <div class="info-grid">
         <div class="info-box"><span>Coordinate units</span><strong>Flat-disk km</strong></div>
-        <div class="info-box"><span>Distance</span><strong>Flat-disk Euclidean distance</strong></div>
+        <div class="info-box"><span>Distance</span><strong>Empirical route estimate + map chord</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
         <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
-      <p class="note" style="margin:8px 0 0">The map is a mathematical flat disk. Geographic coordinates locate points through the current approved radial transform and 12-circle display warp. The primary A–B value is exactly the Euclidean length of its displayed straight connector in that disk. The scale bar shares that map-plane metric; it is not an independently verified measurement of actual flight paths or every real-world route. Longitude remains an angular coordinate at 90°S, so positions around the Antarctic rim are distinct points on the disk boundary rather than one collapsed spherical South Pole. No sphere, globe, ellipsoid, great-circle or geodesic formula is used for the primary distance. ADS-B estimated flown mileage is a separate empirical reference. Polygon area and perimeter remain planar measurements on the same visibly warped disk. The 60°S Restricted Line remains a visual reference only.</p>
+      <p class="note" style="margin:8px 0 0">The map is a mathematical flat disk. Geographic coordinates locate points through the current approved radial transform and 12-circle display warp. The primary A–B value is an empirical estimate of typical route mileage, fitted from observed ADS-B ground-speed/time records. The exact Euclidean length of the displayed flat-disk connector is shown separately. The calibration is only supported within the route-feature and chord-length range represented by its observations; estimates outside that range are explicitly marked as extrapolations. Longitude remains an angular coordinate at 90°S, so positions around the Antarctic rim are distinct points on the disk boundary rather than one collapsed spherical South Pole. No sphere, globe, ellipsoid, great-circle or geodesic formula is used for the primary distance. ADS-B estimated flown mileage is a separate empirical reference. Polygon area and perimeter remain planar measurements on the same visibly warped disk. The 60°S Restricted Line remains a visual reference only.</p>
     </section>
 </template>
 <template id="historical-panel-template">
