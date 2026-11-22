@@ -144,7 +144,7 @@ function option(name, fallback) {
 
 const MAX_PAGES_PER_ROUTE = option('max-pages-per-route', 120);
 const SAMPLES_PER_ROUTE = option('samples-per-route', 6);
-const HISTORY_DAYS = option('history-days', 180);
+const HISTORY_DAYS = option('history-days', 560);
 const MAX_DETAILS_PER_ROUTE = SAMPLES_PER_ROUTE * 12;
 const ROUTE_PAGE_LIMIT = 1000;
 
