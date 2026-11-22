@@ -2,7 +2,7 @@
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp calibrated against recorded ADS-B flight paths, a separate ADS-B estimate of typical flown mileage, flat-disk chord and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp, a separate ADS-B estimate of typical flown mileage, and an observed-flight-path calibration pipeline gated by independent route validation, plus flat-disk chord and planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 
 ## Map layout and calibration
