@@ -231,7 +231,7 @@ The calibration factor is clamped rather than silently switching formulas. The d
 - `src/app.js` — calls the shared function for the A–B display, connector label, scale bar and PNG footer; passes the same function to polygon edge labels and perimeter calculations.
 - `src/core/flat-disk.js` — computes polygon area and requires the supplied canonical distance callback for perimeter.
 
-The endpoint-only estimator is no longer called by the measurement engine and is not used by any distance display. There is no secondary projected-chord readout and no fallback to an uncorrected chord. The map's circular layout, 12-circle rendering, North Pole centre, longitude-indexed Antarctic rim and coastline geometry are not changed by this consolidation.
+The retired endpoint-only estimator has been removed from the project. There is no secondary projected-chord readout and no fallback to an uncorrected chord. The map's circular layout, 12-circle rendering, North Pole centre, longitude-indexed Antarctic rim and coastline geometry are not changed by this consolidation.
 
 Regenerate the route-feature fit locally with:
 
