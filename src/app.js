@@ -631,17 +631,17 @@ function updateMeasurement(){
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
   $('distanceSub').textContent=Number.isFinite(measurement.radialCorrectionFactor)
-   ?'Raw chord '+formatDistance(measurement.chordDistanceMeters)+' × '+measurement.radialCorrectionFactor.toFixed(3)+' radial factor · circle '+measurement.radialCirclePosition.toFixed(1)+'/12'
+   ?'Base chord '+formatDistance(measurement.chordDistanceMeters)+' × '+measurement.radialCorrectionFactor.toFixed(3)+' radial factor · visual chord '+formatDistance(measurement.visualChordDistanceMeters)+' · circle '+measurement.radialCirclePosition.toFixed(1)+'/12'
    :'Radial correction unavailable';
   $('flightDistanceValue').textContent=Number.isFinite(measurement.flightEmpiricalDistanceMeters)
    ?formatDistance(measurement.flightEmpiricalDistanceMeters):'Unavailable';
   const factor=measurement.calibrationFactor;
   const correction=measurement.correctionPercent;
   $('flightDistanceSub').textContent=Number.isFinite(factor)
-   ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs chord'
+   ?'×'+factor.toFixed(3)+' factor · '+(correction>=0?'+':'')+correction.toFixed(1)+'% vs base chord'
    :'Flight-mileage model unavailable';
 
-  $('measureHelp').textContent='The primary A–B readout multiplies the straight projected chord by a smoothly interpolated 12-circle radial factor: 1.00× at the North Pole, tapering to 0.50× at the Ice Wall. The connector and scale bar retain the unadjusted map geometry. The ADS-B estimate remains a separate empirical flight-mileage reference.';
+  $('measureHelp').textContent='The map geometry uses a smooth, edge-anchored radial warp across all 12 circles: qᵥ = q + q(1 − q)/3. The North Pole and Ice Wall stay fixed, with no hard joins between sections. The A–B readout keeps the separate calibration chord and 12-circle factor; the visual chord and scale bar follow the warped projection. The ADS-B estimate remains an independent empirical reference.';
   const calibration=measurement.calibration;
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   const status=calibration?.status;
@@ -772,7 +772,7 @@ function restoreSharedState(){
  syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();
 }
-function syncRadialControls(){renderRadialCalibration($('radialRows'));}
+function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'));}
 function syncHistoricalControls(){
  const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
  for(const [id,key,unit] of specs){$(id).value=historical[key];$(id+'Value').textContent=unit==='°'?Number(historical[key]).toFixed(1)+unit:Math.round(historical[key]*10)/10+unit;}
@@ -912,7 +912,7 @@ function exportPNG(){
  let measurementText='A–B measurement: not set';
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  measurementText='Radially adjusted A–B '+formatDistance(measurement.distanceMeters)+' ('+(Number.isFinite(measurement.radialCorrectionFactor)?measurement.radialCorrectionFactor.toFixed(3)+'×':'factor unavailable')+') · raw disk chord '+formatDistance(measurement.chordDistanceMeters);
+  measurementText='Radially adjusted A–B '+formatDistance(measurement.distanceMeters)+' ('+(Number.isFinite(measurement.radialCorrectionFactor)?measurement.radialCorrectionFactor.toFixed(3)+'×':'factor unavailable')+') · base chord '+formatDistance(measurement.chordDistanceMeters)+' · visual chord '+formatDistance(measurement.visualChordDistanceMeters);
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
