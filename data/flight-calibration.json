@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-22T14:23:37.301Z",
+    "retrievedAt": "2026-11-22T20:11:43.357Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-22"
@@ -7928,8 +7928,8 @@
       "medianTelemetryCoverage": 1,
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
-        "telemetry-gap-too-large": 11,
-        "missing-ground-speed-or-duration": 8
+        "missing-ground-speed-or-duration": 8,
+        "telemetry-gap-too-large": 11
       },
       "pagesScanned": 1,
       "windowsScanned": 0,
@@ -38864,8 +38864,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 245,
-        "telemetry-gap-too-large": 55,
         "low-telemetry-coverage": 4,
+        "telemetry-gap-too-large": 55,
         "too-few-speed-intervals": 13
       },
       "pagesScanned": 18,
@@ -39088,8 +39088,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "telemetry-gap-too-large": 5,
         "too-few-speed-intervals": 2,
+        "telemetry-gap-too-large": 5,
         "low-telemetry-coverage": 14,
         "missing-ground-speed-or-duration": 11,
         "flight-too-short": 1
@@ -43079,8 +43079,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "telemetry-gap-too-large": 8,
         "low-telemetry-coverage": 44,
+        "telemetry-gap-too-large": 8,
         "too-few-speed-intervals": 5,
         "missing-ground-speed-or-duration": 1,
         "flight-too-short": 4
@@ -99432,8 +99432,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 337,
-        "telemetry-gap-too-large": 59,
         "low-telemetry-coverage": 7,
+        "telemetry-gap-too-large": 59,
         "too-few-speed-intervals": 6
       },
       "pagesScanned": 6,
@@ -137459,8 +137459,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 4,
-        "missing-ground-speed-or-duration": 11,
         "telemetry-gap-too-large": 26,
+        "missing-ground-speed-or-duration": 11,
         "low-telemetry-coverage": 3
       },
       "pagesScanned": 1,
@@ -168548,8 +168548,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 151,
-        "missing-ground-speed-or-duration": 8,
-        "telemetry-gap-too-large": 14
+        "telemetry-gap-too-large": 14,
+        "missing-ground-speed-or-duration": 8
       },
       "pagesScanned": 1,
       "windowsScanned": 0,
@@ -179608,8 +179608,8 @@
       "medianMaxGapMinutes": 0.5200833340485891,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 148,
-        "too-few-speed-intervals": 13,
         "telemetry-gap-too-large": 37,
+        "too-few-speed-intervals": 13,
         "missing-ground-speed-or-duration": 8,
         "low-telemetry-coverage": 8,
         "flight-too-short": 2
@@ -191017,8 +191017,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 13,
-        "telemetry-gap-too-large": 62,
-        "too-few-speed-intervals": 10
+        "too-few-speed-intervals": 10,
+        "telemetry-gap-too-large": 62
       },
       "pagesScanned": 1,
       "windowsScanned": 0,
@@ -191136,8 +191136,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 9,
-        "telemetry-gap-too-large": 58,
-        "too-few-speed-intervals": 14
+        "too-few-speed-intervals": 14,
+        "telemetry-gap-too-large": 58
       },
       "pagesScanned": 1,
       "windowsScanned": 0,

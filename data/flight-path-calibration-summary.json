@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "accepted": true,
   "status": "accepted",
-  "generatedAt": "2026-11-22T14:24:07.872Z",
+  "generatedAt": "2026-11-22T20:12:12.440Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-22T14:23:37.301Z",
+  "sourceRetrievedAt": "2026-11-22T20:11:43.357Z",
   "extrapolationWarnings": [
     "No qualified independent airport-pair coverage south of 45°S; map geometry there is extrapolated.",
     "No qualified independent airport-pair coverage south of 60°S; polar geometry is not empirically validated."
