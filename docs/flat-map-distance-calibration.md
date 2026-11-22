@@ -247,13 +247,13 @@ The model is built from **25 training airport pairs** and evaluated against **6 
 - Independent holdout: **4 of 6 pairs supported**, **1.15% MAPE**, maximum supported error **2.56%**.
 - The two unsupported holdouts are not included in those MAPE values. The model does not claim validated performance on them.
 
-A query beyond the support threshold still receives a provisional estimate, but the UI marks it **Extrapolated** and shows the nearest-feature distance. It must not be described as validated.
+The internal predictor can calculate a provisional value beyond the support threshold for diagnostic review, but the UI **withholds that number** and displays **Not validated** with the nearest-feature distance. A numerical extrapolation must not be presented as a usable route-mileage estimate.
 
 ### Santiago–Canberra validation example
 
-The current displayed flat-disk connector for Santiago (−33.45°, −70.67°) to Canberra (−35.27°, 149.13°) measures **23,894.4 km**. The route model produces a provisional estimate of **24,754.5 km**, but its nearest training-feature distance is approximately **5.09**, against a support threshold of **0.90**. The longest usable training chord is approximately **2,314 km**, more than ten times shorter than this query's chord. The estimate is therefore explicitly classified as **Extrapolated**, not validated. The current archive also contains no qualifying Santiago–Australia route observations. Additional high-coverage long-haul airport-pair samples are needed before this city pair can be calibrated with confidence.
+For Santiago (−33.45°, −70.67°) to Canberra (−35.27°, 149.13°), the projected flat-disk chord is **23,894.4 km** in the map plane. This is not a validated flown-mileage result. The endpoint model's nearest training-feature distance is approximately **5.09**, against a support threshold of **0.90**; the longest usable training chord is approximately **2,314 km**, over ten times shorter than this query chord. The app therefore displays **Not validated** and withholds the former provisional estimate of **24,754.5 km**. The archive has no qualifying Santiago–Australia route observations. Additional high-coverage long-haul route samples are required before an empirical route-mileage estimate can be shown.
 
-The route estimate is a typical mileage reference. It does not reconstruct an actual selected flight, guarantee a specific airline route or predict the shortest distance between endpoints. The map connector remains available separately so users can inspect the exact displayed flat-disk segment.
+The route estimate is a typical mileage reference, not a selected flight path or a shortest point-to-point distance. The separately shown connector is only the exact Euclidean chord in the displayed map plane; it is not a substitute for validated route mileage.
 
 ### Generated model files and reproducibility
 
@@ -261,7 +261,7 @@ The route estimate is a typical mileage reference. It does not reconstruct an ac
 - `data/endpoint-distance-calibration-summary.json` — generation time, supported coverage, leave-one-route-out and independent holdout metrics, exclusions and limitations.
 - `scripts/fit-endpoint-distance-calibration.mjs` — deterministic fitter for the endpoint estimator.
 - `src/core/measurement-engine.js` — returns the flat-disk connector and empirical endpoint estimate as separate values.
-- `src/app.js` — displays the empirical estimate as the primary A–B result, the connector length separately, and warns on extrapolation.
+- `src/app.js` — displays a numeric empirical estimate only inside validated support, withholds unsupported predictions, and labels the connector as a projected disk chord.
 
 Regenerate the endpoint estimator with:
 
