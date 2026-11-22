@@ -234,7 +234,7 @@ for (const route of heldOutFlightMileageRoutes) {
   });
 }
 
-test('flat-disk distance preserves endpoint ordering and equals the projected segment length', () => {
+test('canonical distance preserves endpoint ordering and applies the correction to the base disk chord', () => {
   const shorter = measureDirectDistance(
     point(40.17, 44.5), point(40.17, 45.5)
   );
@@ -252,12 +252,11 @@ test('flat-disk distance preserves endpoint ordering and equals the projected se
     baseFlatDiskDistanceMeters(point(40.17, 44.5), point(40.17, 50.5)) * longer.calibrationFactor);
 });
 
-test('mixed-radius endpoints use symmetric Euclidean distances in the warped disk', () => {
+test('canonical distances are symmetric for mixed-radius endpoints', () => {
   const first = point(75, 20), second = point(-75, 120);
   const forward = measureDirectDistance(first, second);
   const reverse = measureDirectDistance(second, first);
   assert.ok(forward.distanceMeters > 0);
-  assert.equal(forward.distanceMeters, reverse.distanceMeters);
   assert.equal(forward.distanceMeters, reverse.distanceMeters);
   assert.equal(forward.calibrationFactor, reverse.calibrationFactor);
 });
