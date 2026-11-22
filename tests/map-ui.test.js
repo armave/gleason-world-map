@@ -179,7 +179,7 @@ test('map orientation is display-only, pointer-safe and included in share links'
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\)\)/);
- assert.match(html,/12-circle visual radial calibration/);assert.match(html,/id="visualRadialRows"/);
+ assert.match(html,/12-circle distance multiplier calibration/);assert.match(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
 
@@ -189,7 +189,11 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(app,/for\(const circle of RADIAL_DISTANCE_VISUAL_CIRCLES\)/);
  assert.match(app,/baseR\*circle\.visualFraction/);
  assert.match(calibrationUi,/RADIAL_DISTANCE_VISUAL_CIRCLES\.map/);
- assert.match(html,/ten interior reference positions are drawn as fine dotted guide rings/);
+ assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
+ assert.match(html,/Distance multiplier/);
+ assert.match(html,/steps of/);
+ assert.match(html,/Euclidean length of the visible connector/);
+ assert.match(html,/ten interior positions are drawn as fine dotted guide rings/);
 });
 
 test('direct A/B coordinate entry and calibration route support are available',()=>{
