@@ -15,8 +15,7 @@ import {
   flatDiskDistanceMeters,
   baseFlatDiskDistanceMeters,
   flatDiskLinePath,
-  project,
-  radialDistanceFromNorthKm
+  project
 } from '../src/core/flat-disk.js';
 import { FLIGHT_CALIBRATION } from '../src/core/flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from '../src/core/flight-path-calibration-parameters.js';
@@ -82,8 +81,7 @@ test('12-circle radial factors use the fitted taper and keep both endpoint multi
     assert.ok(factor < previous);
     previous = factor;
   }
-  assert.equal(FLIGHT_PATH_CALIBRATION.radialProfile.exponent,
-    FLIGHT_PATH_CALIBRATION.radialProfile.exponent);
+  assert.ok(FLIGHT_PATH_CALIBRATION.radialProfile.exponent > 0);
 });
 
 test('primary A–B distance exactly matches the rendered connector in the final warped disk', () => {
