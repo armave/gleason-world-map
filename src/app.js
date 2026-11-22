@@ -643,7 +643,7 @@ function updateMeasurement(){
    ?'Exact Euclidean length of the straight connector in the displayed flat disk'
    :'Displayed map connector length unavailable';
 
-  $('measureHelp').textContent='The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data, calibrated against nearby airport-pair examples in the current flat-disk projection. It is not a selected flight path or a guaranteed shortest distance. The secondary value is the exact Euclidean length of the straight connector drawn between the two endpoints in the displayed 12-circle-warped disk. The projection and calibration use the project’s flat-disk geometry; no globe, sphere, ellipsoid or geodesic formula is used. Estimates outside the validated route-feature range are explicitly marked as extrapolations.';
+  $('measureHelp').textContent='The main value estimates typical route mileage from observed ADS-B ground-speed and timestamp data, calibrated against nearby airport-pair examples in the current flat-disk projection. It is not a selected flight path or a guaranteed shortest distance. The secondary value is the exact Euclidean length of the straight connector drawn between the two endpoints in the displayed 12-circle-warped disk. The projection and calibration use the project’s flat-disk geometry; no globe, sphere, ellipsoid or geodesic formula is used. The Antarctic rim retains longitude-indexed positions rather than collapsing them to one point. Estimates outside the validated route-feature range are explicitly marked as extrapolations.';
   const support=$('calibrationSupport'),routes=$('calibrationRoutes');
   if(routeCalibration){
    const validation=routeCalibration.validation||{};
