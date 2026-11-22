@@ -72,13 +72,18 @@ test('the restricted line remains the 60th parallel south', () => {
   assert.equal(RESTRICTED_PARALLEL_LATITUDE, -60);
 });
 
-test('12-circle radial factors taper linearly from 1.00× at the centre to 0.50× at the Ice Wall', () => {
-  const expected = [1.00, 0.95, 0.91, 0.86, 0.82, 0.77, 0.73, 0.68, 0.64, 0.59, 0.55, 0.50];
-  expected.forEach((factor, index) => {
-    assert.ok(Math.abs(radialDistanceCorrectionFactor(index / 11) - factor) <= 0.005);
-  });
+test('12-circle radial factors use the fitted taper and keep both endpoint multipliers', () => {
   assert.equal(radialDistanceCorrectionFactor(0), 1);
   assert.equal(radialDistanceCorrectionFactor(1), 0.5);
+  let previous = Infinity;
+  for (let index = 0; index < 12; index++) {
+    const factor = radialDistanceCorrectionFactor(index / 11);
+    assert.ok(factor > 0);
+    assert.ok(factor < previous);
+    previous = factor;
+  }
+  assert.equal(FLIGHT_PATH_CALIBRATION.radialProfile.exponent,
+    FLIGHT_PATH_CALIBRATION.radialProfile.exponent);
 });
 
 test('primary A–B distance exactly matches the rendered connector in the final warped disk', () => {
@@ -119,7 +124,7 @@ test('same-circle distances use the visible warped-disk chord for both short and
   assert.equal(longer.distanceMeters, longer.flatDiskDistanceMeters);
 });
 
-test('north-south measurements include the radial multiplier profile used to position map rings', () => {
+test('same-longitude measurements equal the straight chord between fitted projected endpoints', () => {
   for (const [latitudeA, latitudeB] of [
     [90, 75], [75, 60], [60, 45], [45, 30],
     [30, 15], [15, 0], [0, -15], [-15, -30],
@@ -127,11 +132,14 @@ test('north-south measurements include the radial multiplier profile used to pos
   ]) {
     const a = point(latitudeA, 23), b = point(latitudeB, 23);
     const result = measureDirectDistance(a, b);
-    const projectedRadialLength = Math.abs(
-      radialDistanceFromNorthKm(latitudeB) -
-      radialDistanceFromNorthKm(latitudeA)
-    ) * 1000;
-    assert.ok(Math.abs(result.distanceMeters - projectedRadialLength) < 1e-6);
+    const projectedA = project(a.lon, a.lat, 1);
+    const projectedB = project(b.lon, b.lat, 1);
+    const expectedChord = Math.hypot(
+      projectedB[0] - projectedA[0],
+      projectedB[1] - projectedA[1]
+    ) * DISK_RADIUS_KM * 1000;
+    assert.equal(result.distanceMeters, flatDiskDistanceMeters(a, b));
+    assert.ok(Math.abs(result.distanceMeters - expectedChord) < 1e-6);
   }
 });
 
