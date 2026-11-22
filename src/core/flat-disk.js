@@ -55,8 +55,8 @@ export function baseRadialFraction(latitudeDegrees) {
   );
 }
 
-/** Original chord-model fraction, retained only for the secondary flight-mileage estimate. */
-function secondaryBaseRadialFraction(latitudeDegrees) {
+/** Radial fraction for the canonical ADS-B-calibrated base-disk distance. */
+function calibratedBaseRadialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
   if (!Number.isFinite(theta)) return NaN;
   return radialFractionFromUnitColatitude(
@@ -81,7 +81,7 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
 
 /** Radius in the original fitted base projection used by the canonical distance formula. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
-  const fraction = secondaryBaseRadialFraction(latitudeDegrees);
+  const fraction = calibratedBaseRadialFraction(latitudeDegrees);
   const secondaryBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
   return Number.isFinite(fraction) ? secondaryBaseRadiusKm * fraction : NaN;
 }
@@ -99,7 +99,7 @@ function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees, useBaseProje
   if (!Number.isFinite(longitudeDegrees) || !Number.isFinite(latitudeDegrees) ||
       latitudeDegrees < -90 || latitudeDegrees > 90) return null;
   const baseFraction = useBaseProjection
-    ? secondaryBaseRadialFraction(latitudeDegrees)
+    ? calibratedBaseRadialFraction(latitudeDegrees)
     : baseRadialFraction(latitudeDegrees);
   const radius = useBaseProjection
     ? baseRadialDistanceFromNorthKm(latitudeDegrees)
