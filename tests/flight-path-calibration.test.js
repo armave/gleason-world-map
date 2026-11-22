@@ -58,8 +58,11 @@ function syntheticDataset() {
     const split = index < trainingCount ? 'train' : 'holdout';
     const localIndex = split === 'train' ? index : index - trainingCount;
     const southern = split === 'train' ? localIndex < 5 : localIndex < 2;
-    const startLat = southern ? -34 - (localIndex % 4) * 1.5 : 12 + (localIndex % 8) * 4.5;
-    const endLat = startLat + (southern ? 3.5 : 5 + (localIndex % 3));
+    const polar = split === 'train' ? localIndex < 2 : localIndex === 0;
+    const startLat = polar
+      ? -64 - (localIndex % 2) * 2
+      : southern ? -34 - (localIndex % 4) * 1.5 : 12 + (localIndex % 8) * 4.5;
+    const endLat = startLat + (polar ? 2.5 : southern ? 3.5 : 5 + (localIndex % 3));
     const startLon = -150 + index * 8;
     const endLon = startLon + 2.5 + (index % 5) * 0.7;
     const coordinates = [
@@ -108,6 +111,10 @@ test('path coverage counts independent route splits and southern observations', 
   assert.equal(coverage.holdoutRouteCount, 6);
   assert.equal(coverage.trainingRoutesSouthOf30S, 5);
   assert.equal(coverage.holdoutRoutesSouthOf30S, 2);
+  assert.equal(coverage.trainingRoutesSouthOf45S, 2);
+  assert.equal(coverage.holdoutRoutesSouthOf45S, 1);
+  assert.equal(coverage.trainingRoutesSouthOf60S, 2);
+  assert.equal(coverage.holdoutRoutesSouthOf60S, 1);
   assert.equal(coverage.trainingFlightsWithPaths, 72);
   assert.equal(coverage.holdoutFlightsWithPaths, 18);
   assert.equal(coverage.totalTrajectoryPoints, 360);
@@ -136,6 +143,30 @@ test('path fit recovers a known radial scale and warp on independent held-out ro
   assert.ok(result.metrics.holdout.meanAbsolutePercent < 0.1);
   assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 0.1);
   assert.equal(result.metrics.holdout.routeCount, 6);
+});
+
+test('path fit rejects routes that pass timestamp checks but have zero projected length', () => {
+  const dataset = syntheticDataset();
+  const zeroPathRoutes = [
+    ...dataset.routes.filter(route => route.split === 'train').slice(0, 5),
+    ...dataset.routes.filter(route => route.split === 'holdout').slice(0, 1)
+  ];
+  for (const route of zeroPathRoutes) {
+    for (const observation of route.observations) {
+      const coordinate = observation.trackCoordinates[0][0];
+      observation.trackCoordinates = [[
+        [...coordinate], [...coordinate], [...coordinate], [...coordinate]
+      ]];
+    }
+  }
+
+  const reportedCoverage = summarizeFlightPathCoverage(dataset);
+  assert.equal(reportedCoverage.trainingRouteCount, 24);
+  assert.equal(reportedCoverage.holdoutRouteCount, 6);
+  assert.throws(
+    () => fitFlightPathCalibration(dataset),
+    /Insufficient usable projected-path airport-pair coverage/
+  );
 });
 
 test('path fit refuses legacy or non-observed-only datasets', () => {
