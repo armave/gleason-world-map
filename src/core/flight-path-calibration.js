@@ -418,6 +418,7 @@ const GEOMETRY_BOUNDS = Object.freeze([
   [0, 2.5], [0, 2.5]
 ]);
 const LONGITUDE_WARP_REGULARIZATION = 3;
+const DISTANCE_METRIC_REGULARIZATION = 2;
 const MINIMUM_ANGULAR_STRETCH = 0.35;
 
 function geometryFromVector(vector) {
@@ -466,14 +467,21 @@ function geometryVectorObjective(vector, records) {
     vector[2] ** 2 + vector[3] ** 2 +
     3 * vector[4] ** 2 + 3 * vector[5] ** 2
   );
+  // Keep the additional metric coefficients near their empirically neutral
+  // seed unless the training routes provide repeatable evidence to move them.
+  const distanceMetricPenalty = DISTANCE_METRIC_REGULARIZATION * (
+    (vector[6] - DEFAULT_TANGENTIAL_SCALE_C1) ** 2 +
+    (vector[7] - DEFAULT_TANGENTIAL_SCALE_C2) ** 2
+  );
   return {
-    objective: leaveOneOutMape + longitudePenalty,
+    objective: leaveOneOutMape + longitudePenalty + distanceMetricPenalty,
     leaveOneOutMape,
     leaveOneOutMax: Math.max(...errors),
     examples,
     geometry,
     angularStretch,
-    longitudePenalty
+    longitudePenalty,
+    distanceMetricPenalty
   };
 }
 
@@ -652,7 +660,8 @@ export function fitFlightPathCalibration(dataset) {
       geometryCandidatesEvaluated: fitted.evaluations,
       nestedGeometryFolds: leaveOneOut.routeCount,
       minimumAngularStretch: fitted.angularStretch,
-      longitudeWarpPenalty: fitted.longitudePenalty
+      longitudeWarpPenalty: fitted.longitudePenalty,
+      distanceMetricPenalty: fitted.distanceMetricPenalty
     }
   };
 }
