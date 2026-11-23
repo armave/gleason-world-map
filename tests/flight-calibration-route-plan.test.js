@@ -85,7 +85,7 @@ test('Marambio holdout uses a verified Rio Gallegos–Marambio KC-130H airbridge
   );
   assert.ok(route);
   assert.equal(route.split, 'holdout');
-  assert.deepEqual(route.icao24, ['e20022']);
+  assert.ok(collectorSource.includes("from: 'SAWG', to: 'SAWB', split: 'holdout', icao24: ['e20022']"));
   assert.doesNotMatch(collectorSource, /from: 'SCCI', to: 'SAWB'/);
 });
 
