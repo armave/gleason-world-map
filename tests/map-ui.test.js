@@ -219,21 +219,22 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/One ADS-B-calibrated flat-disk distance formula/);
+ assert.match(html,/Visible flat-disk chord distance/);
   assert.match(html,/continuous radial profile used for the visible map is a positive smooth taper/);
 });
 
-test('direct A/B coordinate entry and calibration route support are available',()=>{
+test('direct A/B coordinate entry and visible-chord measurement help are available',()=>{
  assert.match(html,/id="coordALat"/);
  assert.match(html,/id="coordALon"/);
  assert.match(html,/id="coordBLat"/);
  assert.match(html,/id="coordBLon"/);
  assert.match(html,/id="applyCoordsA"/);
  assert.match(html,/id="applyCoordsB"/);
- assert.match(html,/id="calibrationSupport"/);
- assert.match(html,/id="calibrationRoutes"/);
+ assert.match(html,/id="measurementMethod"/);
+ assert.doesNotMatch(html,/id="calibrationSupport"|id="calibrationRoutes"/);
  assert.match(app,/function applyCoordinateEndpoint\(index\)/);
- assert.match(app,/calibration\.neighbourRouteIds/);
+ assert.match(app,/Visible flat-disk chord · same endpoints as the red connector/);
+ assert.doesNotMatch(app,/calibration\.neighbourRouteIds/);
  assert.match(app,/loadAntarcticAddDataset\(\)\.then/);
  assert.match(app,/Natural Earth outline remains active/);
 });
@@ -261,10 +262,10 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('A–B, scale bar, polygon edges and PNG use one calibrated distance function',()=>{
+test('A–B, scale bar, polygon edges and PNG use one visible-flat-disk chord function',()=>{
  assert.match(html,/<span>Distance A–B<\/span>/);
- assert.match(html,/One ADS-B-calibrated flat-disk distance formula/);
- assert.doesNotMatch(html,/flightDistanceValue|flightDistanceSub|secondary-distance-reading|Projected flat-disk chord/);
+ assert.match(html,/Visible flat-disk chord distance/);
+ assert.doesNotMatch(html,/flightDistanceValue|flightDistanceSub|secondary-distance-reading|calibrationSupport|calibrationRoutes/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
  assert.match(app,/measureDistanceMeters\(first,second\)/);
@@ -273,7 +274,7 @@ test('A–B, scale bar, polygon edges and PNG use one calibrated distance functi
  assert.match(app,/const distanceMeters=measureDistanceMeters\(first,second\)/);
  assert.match(app,/A–B distance '\+formatDistance\(measurement\.distanceMeters\)/);
  assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.doesNotMatch(app,/flatDiskDistanceMeters|endpointDistanceEstimateMeters|endpointDistanceCalibration|flightDistanceValue/);
+ assert.doesNotMatch(app,/endpointDistanceEstimateMeters|endpointDistanceCalibration|flightDistanceValue|ADS-B route-feature correction/);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
 });
 test('distance and area drawings render km labels on their measurement geometry',()=>{
