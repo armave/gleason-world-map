@@ -5,6 +5,12 @@ import {
   buildFlightCalibrationRoutePredicate,
   summarizeRouteIdentifierMismatches
 } from '../scripts/flight-calibration-route-predicate.mjs';
+import {
+  ANTARCTIC_AIRPORT_METADATA_FALLBACKS,
+  resolveCalibrationAirport,
+  canCollectCalibrationRoute,
+  routeHasAircraftDiscovery
+} from '../scripts/flight-calibration-airport-metadata.mjs';
 
 const collectorSource = await readFile(
   new URL('../scripts/collect-flight-calibration.mjs', import.meta.url),
@@ -21,6 +27,56 @@ function calibrationRoutes() {
 }
 
 const pairKey = (from, to) => [from, to].sort().join('--');
+
+test('remote Antarctic route metadata fallbacks allow aircraft discovery without airport-index records', () => {
+  const indexed = new Map();
+  const rothera = resolveCalibrationAirport('EGAR', indexed);
+  const unionGlacier = resolveCalibrationAirport('SCGC', indexed);
+  const williamsField = resolveCalibrationAirport('NZWD', indexed);
+  const marambio = resolveCalibrationAirport('SAWB', indexed);
+  const marsh = resolveCalibrationAirport('SCRM', indexed);
+  const wilkins = resolveCalibrationAirport('YWKS', indexed);
+
+  assert.equal(rothera.lat, -67.568889);
+  assert.equal(rothera.lon, -68.1248);
+  assert.equal(unionGlacier.lat, -79.767183);
+  assert.equal(williamsField.lat, -77.867401);
+  assert.equal(marambio.lat, -64.238297);
+  assert.equal(marsh.lat, -62.190833);
+  assert.equal(wilkins.lat, -66.6908);
+  for (const airport of [rothera, unionGlacier, williamsField, marambio, marsh, wilkins]) {
+    assert.equal(airport.metadataSource, 'published coordinate fallback');
+    assert.match(airport.coordinateSource, /^https:\/\//);
+    assert.ok(Number.isFinite(airport.lon));
+  }
+
+  assert.equal(
+    resolveCalibrationAirport('EGAR', new Map([['EGAR', {
+      ident: 'EGAR', lat: -67.57, lon: -68.13, airspaces: []
+    }]])).metadataSource,
+    'adsb.aero airport index'
+  );
+  assert.equal(ANTARCTIC_AIRPORT_METADATA_FALLBACKS.NZIR.ident, 'NZIR');
+});
+
+test('aircraft-only route collection does not require both endpoint index records', () => {
+  const route = { from: 'SCCI', to: 'EGAR', split: 'train', icao24: ['43be5b'] };
+  assert.equal(routeHasAircraftDiscovery(route), true);
+  assert.equal(canCollectCalibrationRoute(route, null, null), true);
+  assert.equal(canCollectCalibrationRoute(route, { ident: 'SCCI' }, null), true);
+  assert.equal(canCollectCalibrationRoute({ from: 'SCCI', to: 'EGAR' }, null, null), false);
+  assert.ok(collectorSource.includes('if (!canCollectCalibrationRoute(route, airportA, airportB))'));
+  assert.ok(collectorSource.includes('deriveAirportFromObservedEndpoints(route, observations, route.from)'));
+  assert.ok(collectorSource.includes('median of exact-match ADS-B flight endpoint coordinates'));
+  assert.ok(collectorSource.includes('routeKey(detailFrom, detailTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('detailRouteIdentifierMismatch'));
+});
+
+test('McMurdo runway aliases are not split between training and holdout', () => {
+  const keys = calibrationRoutes().map(route => pairKey(route.from, route.to));
+  assert.ok(keys.includes(pairKey('NZCH', 'NZWD')));
+  assert.ok(!keys.includes(pairKey('NZCH', 'NZIR')));
+});
 
 test('collector assigns each unordered airport pair to exactly one split', () => {
   const routes = calibrationRoutes();
@@ -44,7 +100,6 @@ test('deep-southern training and holdout pairs cover documented Antarctic air br
   const required = [
     ['SCCI', 'EGAR', 'train'], // Punta Arenas–Rothera (BAS)
     ['SCCI', 'SCGC', 'train'], // Punta Arenas–Union Glacier (ALE)
-    ['NZCH', 'NZIR', 'train'], // Christchurch–McMurdo (AAD)
     ['SCCI', 'SCRM', 'holdout'],
     ['NZCH', 'NZWD', 'holdout'],
     ['SCCI', 'SAWB', 'holdout'],
@@ -142,7 +197,6 @@ test('documented Antarctic airframes are queried directly while retaining route 
   assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269']"));
   assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5']"));
   assert.ok(collectorSource.includes("from: 'NZCH', to: 'NZWD', split: 'holdout', icao24: ['ae4d6a']"));
-  assert.ok(collectorSource.includes("from: 'NZCH', to: 'NZIR', split: 'train', icao24: ['ae4d6a']"));
   assert.doesNotMatch(collectorSource, /to: 'NZFX'/);
 
   const geometryA = { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 };
