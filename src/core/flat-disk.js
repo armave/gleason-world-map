@@ -378,7 +378,7 @@ const clickPointCoordinate = point =>
     ? [point.lon, point.lat] : null;
 
 /**
- * Planar shoelace area and visible-flat-disk chord perimeter for a user polygon.
+ * Planar shoelace area and canonical anisotropic planar perimeter for a user polygon.
  * The same distance callback used by the A–B ruler is required for every edge.
  */
 export function flatDiskPolygonMetrics(
