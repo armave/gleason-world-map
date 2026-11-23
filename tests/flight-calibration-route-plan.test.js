@@ -76,6 +76,7 @@ test('telemetry archive refresh is monthly, main-only on push, and manually disp
     'utf8'
   );
   assert.match(workflow, /branches:\s*\[main\]/);
+  assert.match(workflow, /scripts\/flight-calibration-route-predicate\.mjs/);
   assert.match(workflow, /cron:\s*'15 3 1 \* \*'/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /timeout-minutes:\s*120/);

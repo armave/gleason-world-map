@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - scripts/collect-flight-calibration.mjs
+      - scripts/flight-calibration-route-predicate.mjs
       - scripts/fit-flight-calibration.mjs
       - scripts/fit-flight-path-calibration.mjs
       - src/core/flight-path-calibration.js
