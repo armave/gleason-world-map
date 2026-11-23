@@ -41,7 +41,7 @@ test('A–B distance is the visible projected chord, not a base-geometry or flig
   assert.equal(result.distanceMeters, measureDirectDistance(second, first).distanceMeters);
 });
 
-test('moving an endpoint to a different part of the disk changes the distance by the visible chord amount', () => {
+test('moving an endpoint to a different part of the disk changes the distance by the anisotropic metric amount', () => {
   const destination = point(-48, -66);
   const firstStart = point(18, -70);
   const relocatedStart = point(65, -150);
