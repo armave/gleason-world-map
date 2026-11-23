@@ -85,8 +85,11 @@ const ROUTES = [
   // Independent high-southern-latitude airport-pair holdouts. The SCRM route
   // stays in holdout; its complete pair must never be used in training.
   { from: 'NZCH', to: 'NZWD', split: 'holdout' },
+  // Active Phoenix Airfield flight discovery: USAF C-17A 10-0217 (AE4D6A)
+  // has recent Christchurch–McMurdo (NZFX) legs; keep this whole pair held out.
+  { from: 'NZCH', to: 'NZFX', split: 'holdout', icao24: ['ae4d6a'] },
   { from: 'SCCI', to: 'SAWB', split: 'holdout' },
-  { from: 'SCCI', to: 'SCRM', split: 'holdout' },
+  { from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5'] },
 
   // Documented Antarctic training air bridges:
   // BAS operates regular Dash-7 shuttles between Punta Arenas and Rothera.
@@ -96,7 +99,7 @@ const ROUTES = [
   // are still mandatory before any returned flight can enter this route.
   { from: 'SCCI', to: 'EGAR', split: 'train', icao24: ['43be5b'] },
   // ALE schedules seasonal passenger/cargo flights from Punta Arenas to Union Glacier.
-  { from: 'SCCI', to: 'SCGC', split: 'train' },
+  { from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269'] },
   // The Australian Antarctic Program schedules A319 flights from Christchurch
   // to McMurdo; NZIR identifies the McMurdo Ice Runway.
   { from: 'NZCH', to: 'NZIR', split: 'train' },
