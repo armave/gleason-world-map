@@ -79,7 +79,7 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
-/** Radius in the original fitted base projection used by the canonical distance formula. */
+/** Radius in the legacy fitted base projection retained for calibration analysis. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = calibratedBaseRadialFraction(latitudeDegrees);
   const calibratedBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
@@ -145,7 +145,7 @@ function pointInDiskKm(point, useBaseProjection = false) {
   return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
 }
 
-/** Euclidean chord in the visible disk, retained for geometry analysis; not the A–B distance metric. */
+/** Euclidean chord in the visible disk; this is the canonical direct A–B measurement. */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
   if (!first || !second) return null;
@@ -356,7 +356,7 @@ const clickPointCoordinate = point =>
     ? [point.lon, point.lat] : null;
 
 /**
- * Planar shoelace area and canonical calibrated perimeter for a user polygon.
+ * Planar shoelace area and visible-flat-disk chord perimeter for a user polygon.
  * The same distance callback used by the A–B ruler is required for every edge.
  */
 export function flatDiskPolygonMetrics(
