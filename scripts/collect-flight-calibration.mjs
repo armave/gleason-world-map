@@ -14,7 +14,10 @@ import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { integrateGroundSpeedSeries, FLIGHT_TELEMETRY_FILTERS } from '../src/core/flight-telemetry.js';
 import { normalizeFlightTrack } from '../src/core/flight-path-calibration.js';
-import { buildFlightCalibrationRoutePredicate } from './flight-calibration-route-predicate.mjs';
+import {
+  buildFlightCalibrationRoutePredicate,
+  summarizeRouteIdentifierMismatches
+} from './flight-calibration-route-predicate.mjs';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
 const OUTPUT_PATH = 'data/flight-calibration.json';
@@ -84,10 +87,9 @@ const ROUTES = [
 
   // Independent high-southern-latitude airport-pair holdouts. The SCRM route
   // stays in holdout; its complete pair must never be used in training.
-  { from: 'NZCH', to: 'NZWD', split: 'holdout' },
-  // Active Phoenix Airfield flight discovery: USAF C-17A 10-0217 (AE4D6A)
-  // has recent Christchurch–McMurdo (NZFX) legs; keep this whole pair held out.
-  { from: 'NZCH', to: 'NZFX', split: 'holdout', icao24: ['ae4d6a'] },
+  // Direct search for USAF C-17A 10-0217 (AE4D6A); the archive lists
+  // Williams Field (NZWD), not the Phoenix Airfield alias NZFX, as an airport.
+  { from: 'NZCH', to: 'NZWD', split: 'holdout', icao24: ['ae4d6a'] },
   { from: 'SCCI', to: 'SAWB', split: 'holdout' },
   { from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5'] },
 
@@ -102,7 +104,7 @@ const ROUTES = [
   { from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269'] },
   // The Australian Antarctic Program schedules A319 flights from Christchurch
   // to McMurdo; NZIR identifies the McMurdo Ice Runway.
-  { from: 'NZCH', to: 'NZIR', split: 'train' },
+  { from: 'NZCH', to: 'NZIR', split: 'train', icao24: ['ae4d6a'] },
 
   // The 2026–27 Australian Antarctic Program schedule lists Hobart–Wilkins
   // flights beginning 25 November 2026. This is a future independent holdout
@@ -327,6 +329,7 @@ async function collectRoute(route, airports, endDate, historyStart) {
   const airportB = airports.get(route.to);
   const counters = {};
   const observations = [];
+  const routeIdentifierMismatches = [];
   const seen = new Set();
   let cursor = null;
   let windowEnd = endDate;
@@ -337,7 +340,11 @@ async function collectRoute(route, airports, endDate, historyStart) {
   let detailsTried = 0;
 
   if (!airportA || !airportB) {
-    return { route, airportA, airportB, observations, counters: { airportLookupFailed: 1 }, pagesScanned, candidatesSeen };
+    return {
+      route, airportA, airportB, observations,
+      routeIdentifierMismatches: [],
+      counters: { airportLookupFailed: 1 }, pagesScanned, candidatesSeen
+    };
   }
 
   const geometryA = airportGeometry(airportA);
@@ -366,6 +373,10 @@ async function collectRoute(route, airports, endDate, historyStart) {
       if (!observedFrom || !observedTo ||
           routeKey(observedFrom, observedTo) !== expectedRouteKey) {
         counters.routeIdentifierMismatch = (counters.routeIdentifierMismatch || 0) + 1;
+        routeIdentifierMismatches.push({
+          from: observedFrom || null,
+          to: observedTo || null
+        });
         return false;
       }
       return true;
@@ -404,7 +415,11 @@ async function collectRoute(route, airports, endDate, historyStart) {
   }
 
   observations.sort((a, b) => String(a.startTs).localeCompare(String(b.startTs)));
-  return { route, airportA, airportB, observations, counters, pagesScanned, candidatesSeen, windowsScanned };
+  return {
+    route, airportA, airportB, observations, counters, pagesScanned,
+    candidatesSeen, windowsScanned,
+    routeIdentifierMismatches: summarizeRouteIdentifierMismatches(routeIdentifierMismatches)
+  };
 }
 
 async function collect() {
@@ -491,6 +506,7 @@ async function collect() {
       medianTelemetryCoverage: percentile(result.observations.map(item => item.coverage), 0.5),
       medianMaxGapMinutes: percentile(result.observations.map(item => item.maxGapMinutes), 0.5),
       telemetryDiagnostics: result.counters,
+      routeIdentifierMismatches: result.routeIdentifierMismatches || [],
       pagesScanned: result.pagesScanned,
       windowsScanned: result.windowsScanned,
       candidatesSeen: result.candidatesSeen,
