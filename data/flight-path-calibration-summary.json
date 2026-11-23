@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "accepted": false,
   "status": "rejected",
-  "generatedAt": "2026-11-22T21:15:18.594Z",
+  "generatedAt": "2026-11-23T04:42:55.807Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-22T21:15:16.955Z",
+  "sourceRetrievedAt": "2026-11-23T04:42:53.304Z",
   "extrapolationWarnings": [
     "Independent training/holdout route coverage south of 45°S is below the acceptance minimum; the outer southern disk remains extrapolated.",
     "Independent training/holdout route coverage south of 60°S is below the acceptance minimum; polar geometry is not validated."
@@ -36,9 +36,9 @@
     "holdoutRoutesSouthOf45S": 0,
     "trainingRoutesSouthOf60S": 0,
     "holdoutRoutesSouthOf60S": 0,
-    "trainingFlightsWithPaths": 148,
+    "trainingFlightsWithPaths": 151,
     "holdoutFlightsWithPaths": 36,
-    "totalTrajectoryPoints": 29311,
+    "totalTrajectoryPoints": 29855,
     "trainingMapePercent": null,
     "holdoutMapePercent": null,
     "holdoutMaxErrorPercent": null,
@@ -95,8 +95,8 @@
     "holdoutRoutesSouthOf45S": 0,
     "trainingRoutesSouthOf60S": 0,
     "holdoutRoutesSouthOf60S": 0,
-    "trainingFlightsWithPaths": 148,
+    "trainingFlightsWithPaths": 151,
     "holdoutFlightsWithPaths": 36,
-    "totalTrajectoryPoints": 29311
+    "totalTrajectoryPoints": 29855
   }
 }
