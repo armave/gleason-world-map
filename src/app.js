@@ -940,7 +940,7 @@ function exportPNG(){
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
-   ' · visible flat-disk chord';
+   ' · anisotropic planar metric';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
