@@ -205,7 +205,7 @@ export function northSouthDistanceKm(latitude1, latitude2) {
   );
 }
 
-/** Straight chord between two points on the same latitude circle. */
+/** Same-latitude distance through the canonical anisotropic planar metric. */
 export function eastWestDistanceKm(
   latitudeDegrees,
   deltaLongitudeRadians,
@@ -213,11 +213,11 @@ export function eastWestDistanceKm(
 ) {
   if (!Number.isFinite(latitudeDegrees) || latitudeDegrees < -90 || latitudeDegrees > 90 ||
       !Number.isFinite(deltaLongitudeRadians) || !Number.isFinite(startLongitudeDegrees)) return null;
-  const radius = radialDistanceFromNorthKm(latitudeDegrees);
-  const baseFraction = baseRadialFraction(latitudeDegrees);
-  const first = warpLongitudeRadians(rad(startLongitudeDegrees), baseFraction);
-  const second = warpLongitudeRadians(rad(startLongitudeDegrees) + deltaLongitudeRadians, baseFraction);
-  return 2 * radius * Math.abs(Math.sin((second - first) / 2));
+  const distanceMeters = flatDiskDistanceMeters(
+    { lat: latitudeDegrees, lon: startLongitudeDegrees },
+    { lat: latitudeDegrees, lon: startLongitudeDegrees + deltaLongitudeRadians * RAD }
+  );
+  return Number.isFinite(distanceMeters) ? distanceMeters / 1000 : null;
 }
 
 /** Ordinary Euclidean area of a radial disk sector, in square kilometres. */
