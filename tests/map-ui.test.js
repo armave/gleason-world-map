@@ -15,11 +15,13 @@ const html = [
  ['<map-measure-panel data-lit-panel></map-measure-panel>','measure-panel-template'],
  ['<map-layers-panel data-lit-panel></map-layers-panel>','layers-panel-template'],
  ['<map-selection-panel data-lit-panel></map-selection-panel>','selection-panel-template'],
- ['<map-calibration-panel data-lit-panel></map-calibration-panel>','calibration-panel-template'],
+ ['<map-route-panel data-lit-panel></map-panel>','route-panel-template'],
+ ['<map-calibration-panel data-lit-panel></map-panel>','calibration-panel-template'],
  ['<map-geometry-panel data-lit-panel></map-geometry-panel>','geometry-panel-template'],
  ['<map-historical-panel data-lit-panel></map-historical-panel>','historical-panel-template']
 ].reduce((source,[placeholder,id])=>source.replace(placeholder,templateMarkup(id)),htmlSource);
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+const panels = await readFile(new URL('../src/components/panels.js', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 const featurePaths = await readFile(new URL('../src/map/feature-paths.js', import.meta.url), 'utf8');
 const calibrationUi = await readFile(new URL('../src/ui/calibration.js', import.meta.url), 'utf8');
@@ -492,4 +494,18 @@ test('Lit panels mount from templates into light DOM and preserve selectors',()=
  assert.ok(app.includes('map-panel-event'));
  assert.ok(app.includes('createAppState'));
  assert.ok(app.includes('new MapController'));
+});
+
+test('engraved title cartouche and live route register are wired to shared measurement state',()=>{
+  assert.match(html,/class="title-cartouche"/);
+  assert.match(html,/NEW STANDARD MAP OF THE WORLD/);
+  assert.match(html,/id="routePointAName"/);
+  assert.match(html,/id="routePointBName"/);
+  assert.match(html,/id="routeDistanceValue"/);
+  assert.match(panels,/this\.localName !== 'map-route-panel'/);
+  assert.match(panels,/measurement\.endpoints/);
+  assert.match(app,/endpoints:points\.map\(point=>\(\{name:point\.name\|\|'Map location',coordinates:fmtCoord\(point\.lat,point\.lon\)\}\)\)/);
+  assert.match(app,/distanceLabel:points\.length===2\?formatDistance\(measureDirectDistance\(points\[0\],points\[1\]\)\.distanceMeters\):''/);
+  assert.match(app,/drawMeasurementLabelAtMap\(x\+16\/zoom,y-14\/zoom/);
+  assert.match(styles,/\.route-register-panel/);
 });
