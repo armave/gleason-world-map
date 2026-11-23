@@ -168,7 +168,8 @@ test('source code defines or imports no spherical/geodesic distance routines', a
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const paths = [
     ...await sourceFiles(join(root, 'src')),
-    ...await sourceFiles(join(root, 'scripts'))
+    ...await sourceFiles(join(root, 'scripts')),
+    ...await sourceFiles(join(root, 'tests'))
   ];
   const names = [
     ['haver', 'sine'].join(''),
