@@ -18,6 +18,10 @@ import {
   buildFlightCalibrationRoutePredicate,
   summarizeRouteIdentifierMismatches
 } from './flight-calibration-route-predicate.mjs';
+import {
+  resolveCalibrationAirport,
+  canCollectCalibrationRoute
+} from './flight-calibration-airport-metadata.mjs';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
 const OUTPUT_PATH = 'data/flight-calibration.json';
@@ -102,9 +106,10 @@ const ROUTES = [
   { from: 'SCCI', to: 'EGAR', split: 'train', icao24: ['43be5b'] },
   // ALE schedules seasonal passenger/cargo flights from Punta Arenas to Union Glacier.
   { from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269'] },
-  // The Australian Antarctic Program schedules A319 flights from Christchurch
-  // to McMurdo; NZIR identifies the McMurdo Ice Runway.
-  { from: 'NZCH', to: 'NZIR', split: 'train', icao24: ['ae4d6a'] },
+  // Christchurch–McMurdo uses a single held-out runway-pair identity (NZWD).
+  // Do not assign the same C-17 and the nearby NZIR sea-ice runway as a
+  // separate training pair: both serve the same McMurdo complex and could
+  // leak the same airbridge into both calibration splits.
 
   // The 2026–27 Australian Antarctic Program schedule lists Hobart–Wilkins
   // flights beginning 25 November 2026. This is a future independent holdout
@@ -238,6 +243,49 @@ async function postJson(path, body) {
   }, path);
 }
 
+function medianNumber(values) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? sorted[middle]
+    : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function deriveAirportFromObservedEndpoints(route, observations, ident) {
+  const latitudes = [];
+  const longitudes = [];
+  for (const item of observations) {
+    let point = null;
+    if (item.startAirportIdent === ident) point = item.startPoint;
+    else if (item.endAirportIdent === ident) point = item.endPoint;
+    if (!point || !Number.isFinite(point.lat) || !Number.isFinite(point.lon)) continue;
+    latitudes.push(point.lat);
+    longitudes.push(point.lon);
+  }
+  if (!latitudes.length) return null;
+
+  // Unwrap longitudes around the first point before taking the median so
+  // endpoints near the antimeridian remain geographically coherent.
+  const reference = longitudes[0];
+  const unwrapped = longitudes.map(value =>
+    reference + ((((value - reference) + 540) % 360) - 180)
+  );
+  const medianLon = medianNumber(unwrapped);
+  const wrappedLon = ((medianLon + 180) % 360 + 360) % 360 - 180;
+  return {
+    ident,
+    iataCode: null,
+    name: ident + ' (observed airport endpoint)',
+    lat: medianNumber(latitudes),
+    lon: wrappedLon,
+    country: null,
+    airspaces: [],
+    metadataSource: 'median of exact-match ADS-B flight endpoint coordinates',
+    coordinateSource: 'observed start_point/end_point from exact airport-pair flights'
+  };
+}
+
 function percentile(values, fraction) {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -284,7 +332,7 @@ async function mapLimit(items, limit, callback) {
   return output;
 }
 
-async function fetchFlightDetail(candidate, airportA, airportB, counters) {
+async function fetchFlightDetail(candidate, counters) {
   try {
     const detail = await getJson('/flights/' + encodeURIComponent(candidate.flight_id));
     const integrated = integrateGroundSpeedSeries(
@@ -325,8 +373,8 @@ async function fetchFlightDetail(candidate, airportA, airportB, counters) {
 }
 
 async function collectRoute(route, airports, endDate, historyStart) {
-  const airportA = airports.get(route.from);
-  const airportB = airports.get(route.to);
+  const airportA = resolveCalibrationAirport(route.from, airports);
+  const airportB = resolveCalibrationAirport(route.to, airports);
   const counters = {};
   const observations = [];
   const routeIdentifierMismatches = [];
@@ -339,16 +387,21 @@ async function collectRoute(route, airports, endDate, historyStart) {
   let candidatesSeen = 0;
   let detailsTried = 0;
 
-  if (!airportA || !airportB) {
+  if (!canCollectCalibrationRoute(route, airportA, airportB)) {
     return {
       route, airportA, airportB, observations,
       routeIdentifierMismatches: [],
-      counters: { airportLookupFailed: 1 }, pagesScanned, candidatesSeen
+      counters: { airportLookupFailed: Number(!airportA) + Number(!airportB) },
+      pagesScanned, candidatesSeen
     };
   }
-
-  const geometryA = airportGeometry(airportA);
-  const geometryB = airportGeometry(airportB);
+  if (!airportA) counters.airportAMetadataUnavailable = 1;
+  if (!airportB) counters.airportBMetadataUnavailable = 1;
+  const geometryA = airportA ? airportGeometry(airportA) : null;
+  const geometryB = airportB ? airportGeometry(airportB) : null;
+  // Aircraft-specific routes query the known Mode-S address even when remote
+  // runway metadata is absent. The query helper returns ICAO24 only in that
+  // case; airport identifiers are still checked exactly before detail lookup.
   const match = buildFlightCalibrationRoutePredicate(route, geometryA, geometryB);
 
   for (let pageNumber = 0; pageNumber < MAX_PAGES_PER_ROUTE; pageNumber++) {
@@ -386,7 +439,7 @@ async function collectRoute(route, airports, endDate, historyStart) {
 
     const details = await mapLimit(candidates, MAX_CONCURRENT_DETAILS, async candidate => {
       await sleep(60);
-      return fetchFlightDetail(candidate, airportA, airportB, counters);
+      return fetchFlightDetail(candidate, counters);
     });
 
     for (const observation of details) {
@@ -415,9 +468,19 @@ async function collectRoute(route, airports, endDate, historyStart) {
   }
 
   observations.sort((a, b) => String(a.startTs).localeCompare(String(b.startTs)));
+  const resolvedAirportA = airportA ||
+    deriveAirportFromObservedEndpoints(route, observations, route.from);
+  const resolvedAirportB = airportB ||
+    deriveAirportFromObservedEndpoints(route, observations, route.to);
   return {
-    route, airportA, airportB, observations, counters, pagesScanned,
-    candidatesSeen, windowsScanned,
+    route,
+    airportA: resolvedAirportA,
+    airportB: resolvedAirportB,
+    observations,
+    counters,
+    pagesScanned,
+    candidatesSeen,
+    windowsScanned,
     routeIdentifierMismatches: summarizeRouteIdentifierMismatches(routeIdentifierMismatches)
   };
 }
@@ -486,7 +549,9 @@ async function collect() {
         name: result.airportA.name,
         lat: result.airportA.lat,
         lon: result.airportA.lon,
-        country: result.airportA.country
+        country: result.airportA.country,
+        metadataSource: result.airportA.metadataSource || 'adsb.aero airport index',
+        coordinateSource: result.airportA.coordinateSource || 'adsb.aero airport index'
       } : null,
       airportB: result.airportB ? {
         ident: result.airportB.ident,
@@ -494,7 +559,9 @@ async function collect() {
         name: result.airportB.name,
         lat: result.airportB.lat,
         lon: result.airportB.lon,
-        country: result.airportB.country
+        country: result.airportB.country,
+        metadataSource: result.airportB.metadataSource || 'adsb.aero airport index',
+        coordinateSource: result.airportB.coordinateSource || 'adsb.aero airport index'
       } : null,
       sampleCount: result.observations.length,
       medianTrackKm: percentile(distances, 0.5),
@@ -552,7 +619,7 @@ async function collect() {
         'scheduled flight times or estimated cruise-speed averages'
       ],
       trajectoryGeometry: 'The source API GeoJSON MultiLineString path coordinates and matching timestamps are stored for each accepted flight. Candidate visual calibration projects those recorded points into the custom flat-disk plane and compares the resulting polyline length with the independent ground-speed/time integral. The coordinates are never used to calculate the observed-mileage target.',
-      airportBoundaryUse: 'Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. Airport coordinates are retained as map endpoints. The observed-mileage target is calculated only from recorded ground speed and elapsed time.'
+      airportBoundaryUse: 'Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify ordinary airport-pair flights. Published Antarctic airport coordinates fill missing archive-index metadata for remote airfields. For aircraft-specific discovery, the source query uses Mode-S only and exact observed airport identifiers are required before detail retrieval; when airport metadata is unavailable, endpoint coordinates are derived from exact-match flight start/end points. None of these coordinates are used to calculate observed flown mileage, which is integrated only from recorded ground speed and elapsed time.'
     },
     collection: {
       endDate,
