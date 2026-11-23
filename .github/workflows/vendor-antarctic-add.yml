@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.ref_name }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Download and validate BAS Antarctic Digital Database v7.13
         run: npm run vendor:antarctica
       - name: Commit bundled Antarctic surface geometry
@@ -39,7 +40,7 @@ jobs:
           fi
       - name: Upload bundled Antarctic surface dataset
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: antarctic-add-v7.13
           path: |
