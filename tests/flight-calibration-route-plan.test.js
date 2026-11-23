@@ -145,5 +145,5 @@ test('documented Antarctic airframes are queried directly while retaining route 
     {}, {}
   );
   assert.deepEqual(predicate, { icao24: ['e803cc', 'e803c5'] });
-  assert.match(collectorSource, /routeKey\\(observedFrom, observedTo\\) !== expectedRouteKey/);
+  assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
 });
