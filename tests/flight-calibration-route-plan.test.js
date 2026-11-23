@@ -100,7 +100,8 @@ test('the BAS Rothera route can query a known aircraft when endpoint geometry fi
     { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 },
     { type: 'Circle', coordinates: [-68.13, -67.57], radius: 20000 }
   );
-  assert.deepEqual(predicate, { icao24: ['43be5b'] });
+  assert.deepEqual(predicate.and[0], { icao24: ['43be5b'] });
+  assert.equal(predicate.and[1].or.length, 2);
 
   // Broad aircraft discovery does not relax the airport-pair split or route
   // identity check: each selected flight must still name this exact pair.
