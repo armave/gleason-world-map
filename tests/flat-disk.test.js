@@ -182,7 +182,7 @@ test('direct connector contains only the two projected endpoints', () => {
   assert.deepEqual(flatDiskLinePath(a, b, () => [NaN, 0]), []);
 });
 
-test('radial separation and same-latitude straight chord formulas are planar', () => {
+test('radial separation and same-latitude distance helpers remain planar', () => {
   close(northSouthDistanceKm(90, 0), radialDistanceFromNorthKm(0), 1e-10);
   close(
     eastWestDistanceKm(0, Math.PI / 180),
