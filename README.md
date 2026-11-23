@@ -48,7 +48,7 @@ The measurement uses the same forward radial warp, integrated 12-circle profile 
 
 The same `measureDistanceMeters()` function powers the A–B value, the on-map connector label, local scale-bar sampling, each polygon edge label, polygon perimeter and PNG metadata. ADS-B ground-speed/time mileage is not used as an endpoint-distance correction.
 
-### Planar polygon area and calibrated perimeter
+### Planar polygon area and visible-chord perimeter
 
 User-drawn polygon area is still computed by the shoelace formula in projected flat-disk coordinates:
 
