@@ -84,12 +84,27 @@ const ROUTES = [
   { from: 'SCEL', to: 'SAEZ', split: 'train' },
   { from: 'SCEL', to: 'SBGR', split: 'train' },
 
-  // Southern South America and Antarctic logistics routes.
-  { from: 'SCEL', to: 'SCCI', split: 'train' },
-  { from: 'SAWH', to: 'SAEZ', split: 'train' },
+  // Southern South America regional routes. Direct Mode-S hints are based
+  // on recent published route histories; the collector still requires exact
+  // full-detail airport identifiers and observed-only telemetry quality.
+  // Santiago–Punta Arenas training: LATAM A320 registrations CC-BEE, CC-BHU,
+  // CC-BEC and CC-BAL.
+  { from: 'SCEL', to: 'SCCI', split: 'train', icao24: ['e80446', 'e80496', 'e80442', 'e8041e'] },
+  // Ezeiza–Ushuaia training, with known Aerolíneas Argentinas airframes.
+  { from: 'SAWH', to: 'SAEZ', split: 'train', icao24: ['e0b254', 'e0b255', 'e082d7', 'e07191'] },
+  // The AEP–Ushuaia airport pair is a separate training pair, not an alias of
+  // EZE–Ushuaia; both use the same published aircraft discovery set.
+  { from: 'SABE', to: 'SAWH', split: 'train', icao24: ['e0b254', 'e0b255', 'e082d7', 'e07191'] },
   { from: 'SAWH', to: 'SCCI', split: 'train' },
   { from: 'SCEL', to: 'SAWH', split: 'train' },
   { from: 'SCCI', to: 'SCGZ', split: 'train' },
+
+  // Independent southern holdouts. Buenos Aires–Rio Gallegos and
+  // Punta Arenas–Balmaceda are kept wholly out of fitting.
+  // Rio Gallegos–AEP: recent Aerolíneas Argentinas AR1862/AR1863 flights.
+  { from: 'SAWG', to: 'SABE', split: 'holdout', icao24: ['e06443', 'e0b244', 'e07543'] },
+  // Punta Arenas–Balmaceda: scheduled DAP430/V5430 regional service.
+  { from: 'SCCI', to: 'SCBA', split: 'holdout', icao24: ['e803cf', 'e803cc'] },
 
   // Independent high-southern-latitude airport-pair holdouts. The SCRM route
   // stays in holdout; its complete pair must never be used in training.
