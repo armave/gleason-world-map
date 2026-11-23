@@ -1,10 +1,10 @@
 # Legacy ADS-B route-mileage correction and flight-path calibration
 
-> **Current status:** This document preserves the former ADS-B route-feature correction and telemetry methodology for historical reference. The runtime A–B ruler, scale bar and polygon perimeter no longer use that correction. Direct measurements now use the Euclidean chord in the visible flat-disk geometry, through `measureDirectDistance()` and `measureDistanceMeters()`. See the current measurement implementation in `src/core/measurement-engine.js` and `src/core/flat-disk.js`.
+> **Current status:** This document preserves the former ADS-B route-feature correction and telemetry methodology for historical reference. The runtime A–B ruler, red connector label, scale bar, polygon perimeter and PNG metadata now use one canonical 64-step anisotropic planar polar metric through `measureDirectDistance()`, `measureDistanceMeters()` and `flatDiskDistanceMeters()`. The active coefficients are stored in `src/core/flight-path-calibration-parameters.js`; their defaults are c1=0.08 and c2=0.20. The visual radial/longitude projection is unchanged.
 
 ## Historical purpose and scope
 
-This section describes the former A–B distance model, which used a calibrated base flat-disk chord and one bounded ADS-B route-feature correction. That endpoint correction has been retired from the runtime measurement engine. The active A–B measurement instead equals the Euclidean chord between endpoints in the visible flat-disk projection.
+This section describes the former A–B distance model, which used a calibrated base flat-disk chord and one bounded ADS-B route-feature correction. That endpoint correction has been retired from the runtime measurement engine. The active A–B measurement instead integrates the straight projected segment with 64 equal planar midpoint steps, preserving radial components and applying the calibrated radius-dependent weight only to tangential components.
 
 The correction is fitted to observed ADS-B ground-speed/time mileage. The output is a calibrated map distance, not a reconstruction of one selected flight's track, a guaranteed airline itinerary, or a shortest point-to-point route. Its performance depends on the reference-route coverage and the bound applied to the correction.
 
