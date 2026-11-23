@@ -117,7 +117,7 @@ The fitted model is judged against these error and geometry limits:
 
 A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. An accepted candidate writes radial scale, latitude warp, radial profile and longitude warp to that file. The renderer, inverse lookup, coastlines, markers, map-click coordinates, ruler, scale bar and planar measurements all use the same forward/inverse geometry.
 
-The endpoint-only chord fitter and the former route-feature correction are legacy artifacts. They are not imported by the runtime measurement engine and do not supply a distance value or fallback. The active direct-distance formula uses the visible projection in `src/core/flat-disk.js`.
+The endpoint-only chord fitter and the former route-feature correction are legacy artifacts. The runtime direct-measurement function no longer reads or applies their route-mileage correction; the legacy base-projection helpers are retained for analysis only and do not supply a ruler value or fallback. The active direct-distance formula uses the visible projection in `src/core/flat-disk.js`.
 
 ## Route sampling and validation
 
