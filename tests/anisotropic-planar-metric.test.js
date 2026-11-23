@@ -109,8 +109,23 @@ const benchmarkRoutes = [
   }
 ];
 
+for (const route of benchmarkRoutes.slice(0, 3)) {
+  test(`default metric seed preserves the radial/northern benchmark for ${route.name}`, () => {
+    const start = pointKm(...route.a);
+    const end = pointKm(...route.b);
+    const predictedKm = integrateAnisotropicPlanarSegment(start, end, {
+      equatorRadius: EQUATOR_RADIUS_KM,
+      c1: DEFAULT_TANGENTIAL_SCALE_C1,
+      c2: DEFAULT_TANGENTIAL_SCALE_C2
+    });
+    const errorPercent = (predictedKm / route.observedKm - 1) * 100;
+    assert.ok(Math.abs(errorPercent) <= 5,
+      `${route.name}: ${predictedKm.toFixed(1)} km vs ${route.observedKm} km (${errorPercent.toFixed(2)}%)`);
+  });
+}
+
 for (const route of benchmarkRoutes) {
-  test(`benchmark fit remains within ±5% for ${route.name}`, () => {
+  test(`benchmark-tuned coefficients remain within ±5% for ${route.name}`, () => {
     const start = pointKm(...route.a);
     const end = pointKm(...route.b);
     const predictedKm = integrateAnisotropicPlanarSegment(start, end, {
