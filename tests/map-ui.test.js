@@ -188,7 +188,7 @@ test('map orientation is display-only, pointer-safe and included in share links'
 });
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
-  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),\$\('visualRadialRows'\),\$\('calibrationFormula'\),\$\('pathCalibrationStatus'\)\)/);
+  assert.match(app,/renderRadialCalibration\\(\\$\\('radialRows'\\),\\$\\('visualRadialRows'\\),\\$\\('calibrationFormula'\\),\\$\\('pathCalibrationStatus'\\),\\$\\('geometryMetricFormula'\\)\\)/);
  assert.match(html,/id="calibrationFormula"/);assert.match(html,/id="pathCalibrationStatus"/);assert.match(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);assert.match(app,/for\(let d=0;d<360;d\+=5\)/);
 });
@@ -219,7 +219,7 @@ test('map draws the same 12 radial reference circles listed in the calibration p
  assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
  assert.match(html,/Display multiplier/);
   assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Visible flat-disk chord distance/);
+ assert.match(html,/Anisotropic planar segment distance/);
   assert.match(html,/continuous radial profile used for the visible map is a positive smooth taper/);
 });
 
@@ -262,7 +262,7 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('A–B, scale bar, polygon edges and PNG use one visible-flat-disk chord function',()=>{
+test('A–B, scale bar, polygon edges and PNG use one anisotropic planar distance function',()=>{
  assert.match(html,/<span>Distance A–B<\/span>/);
  assert.match(html,/Visible flat-disk chord distance/);
  assert.doesNotMatch(html,/flightDistanceValue|flightDistanceSub|secondary-distance-reading|calibrationSupport|calibrationRoutes/);
@@ -358,8 +358,8 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
  assert.match(app,/geometryBaseR=projectionBaseR/);
 });
 
-test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/The scale bar uses the same visible-flat-disk chord metric as A–B and area edges/);
+test('scale-bar calculations use the canonical anisotropic planar metric as A–B measurements',()=>{
+ assert.match(app,/The scale bar uses the same anisotropic planar metric as A–B and area edges/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
