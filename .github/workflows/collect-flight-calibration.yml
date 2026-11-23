@@ -27,12 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.ref_name }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Collect observed ground-speed and timestamp samples across the available archive
         run: npm run collect:flight-calibration -- --max-pages-per-route=120 --samples-per-route=6 --history-days=560
       - name: Fit visual geometry against recorded ADS-B trajectories
@@ -74,7 +75,7 @@ jobs:
           fi
       - name: Upload the collected telemetry dataset
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: flight-calibration-telemetry
           path: |
