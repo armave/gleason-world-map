@@ -20,6 +20,7 @@ const close = (actual, expected, tolerance, message = '') =>
   assert.ok(Math.abs(actual - expected) <= tolerance,
     message || `${actual} != ${expected}`);
 
+// Benchmark-tuned candidate for the feasible first five routes; the active seed remains 0.08/0.20.
 const benchmarkMetric = Object.freeze({ c1: 0.78081279, c2: 1.0 });
 const pointKm = (latitude, longitude) =>
   project(longitude, latitude, DISK_RADIUS_KM);
