@@ -24,7 +24,7 @@ export const FLIGHT_PATH_CALIBRATION = Object.freeze({
     "secondSine": 0.019218750000000003,
     "secondCosine": 0.12
   },
-  "geometry": "shared radial profile plus latitude-dependent periodic longitude shear; shear is identity at the North Pole and Ice Wall",
+  "geometry": "shared radial profile and anchored longitude shear preserve the same circular disk projection; 64-step anisotropic polar metric uses c1 and c2",
   "trainingRouteCount": 26,
   "holdoutRouteCount": 6
 });
