@@ -10,11 +10,7 @@ export function buildFlightCalibrationRoutePredicate(route, geometryA, geometryB
   const addresses = Array.isArray(route?.icao24)
     ? route.icao24.map(value => String(value).trim().toLowerCase()).filter(Boolean)
     : [];
-  if (addresses.length) {
-    return { icao24: [...new Set(addresses)] };
-  }
-
-  return {
+  const endpointPairPredicate = {
     or: [
       {
         and: [
@@ -30,8 +26,20 @@ export function buildFlightCalibrationRoutePredicate(route, geometryA, geometryB
       }
     ]
   };
-}
 
+  if (addresses.length) {
+    // Require both the documented aircraft identity and one of the requested
+    // departure/arrival endpoint pairs during source-side discovery.
+    // Exact airport identifiers are checked independently after retrieval.
+    return {
+      and: [
+        { icao24: [...new Set(addresses)] },
+        endpointPairPredicate
+      ]
+    };
+  }
+  return endpointPairPredicate;
+}
 
 /**
  * Summarize endpoint identifiers returned by broad aircraft-address searches
