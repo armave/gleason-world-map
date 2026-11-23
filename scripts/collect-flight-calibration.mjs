@@ -14,6 +14,7 @@ import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { integrateGroundSpeedSeries, FLIGHT_TELEMETRY_FILTERS } from '../src/core/flight-telemetry.js';
 import { normalizeFlightTrack } from '../src/core/flight-path-calibration.js';
+import { buildFlightCalibrationRoutePredicate } from './flight-calibration-route-predicate.mjs';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
 const OUTPUT_PATH = 'data/flight-calibration.json';
@@ -89,7 +90,11 @@ const ROUTES = [
 
   // Documented Antarctic training air bridges:
   // BAS operates regular Dash-7 shuttles between Punta Arenas and Rothera.
-  { from: 'SCCI', to: 'EGAR', split: 'train' },
+  // The BAS Dash-7 VP-FBQ (Mode-S 43BE5B) has independently listed recent
+  // Rothera–Punta Arenas flights, but airport-endpoint queries found no archive
+  // candidates. Search this known airframe directly; exact airport identifiers
+  // are still mandatory before any returned flight can enter this route.
+  { from: 'SCCI', to: 'EGAR', split: 'train', icao24: ['43be5b'] },
   // ALE schedules seasonal passenger/cargo flights from Punta Arenas to Union Glacier.
   { from: 'SCCI', to: 'SCGC', split: 'train' },
   // The Australian Antarctic Program schedules A319 flights from Christchurch
@@ -334,22 +339,7 @@ async function collectRoute(route, airports, endDate, historyStart) {
 
   const geometryA = airportGeometry(airportA);
   const geometryB = airportGeometry(airportB);
-  const match = {
-    or: [
-      {
-        and: [
-          { endpoint_within: { mode: 'start', geometry: geometryA } },
-          { endpoint_within: { mode: 'end', geometry: geometryB } }
-        ]
-      },
-      {
-        and: [
-          { endpoint_within: { mode: 'start', geometry: geometryB } },
-          { endpoint_within: { mode: 'end', geometry: geometryA } }
-        ]
-      }
-    ]
-  };
+  const match = buildFlightCalibrationRoutePredicate(route, geometryA, geometryB);
 
   for (let pageNumber = 0; pageNumber < MAX_PAGES_PER_ROUTE; pageNumber++) {
     if (!(Date.parse(windowEnd) > historyFloor)) break;
@@ -468,6 +458,10 @@ async function collect() {
       routeId: routeKey(result.route.from, result.route.to),
       directionListed: result.route.from + '-' + result.route.to,
       split: result.route.split,
+      queryMode: Array.isArray(result.route.icao24) && result.route.icao24.length
+        ? 'icao24'
+        : 'airport-endpoint-geometry',
+      queryIcao24: result.route.icao24 || [],
       airportA: result.airportA ? {
         ident: result.airportA.ident,
         iataCode: result.airportA.iataCode,
