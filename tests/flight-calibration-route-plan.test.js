@@ -43,6 +43,7 @@ test('deep-southern training and holdout pairs cover documented Antarctic air br
     ['SCCI', 'SCGC', 'train'], // Punta Arenas–Union Glacier (ALE)
     ['NZCH', 'NZIR', 'train'], // Christchurch–McMurdo (AAD)
     ['SCCI', 'SCRM', 'holdout'],
+    ['NZCH', 'NZFX', 'holdout'],
     ['SCCI', 'SAWB', 'holdout'],
     ['NZCH', 'NZWD', 'holdout'],
     ['YMHB', 'YWKS', 'holdout'] // Future scheduled Hobart–Wilkins candidate
@@ -126,4 +127,23 @@ test('ordinary calibration routes keep using the airport endpoint geometry predi
       ]
     }
   );
+});
+
+
+test('documented Antarctic airframes are queried directly while retaining route split checks', () => {
+  const routePairs = new Map(calibrationRoutes().map(route => [
+    pairKey(route.from, route.to), route
+  ]));
+  assert.deepEqual(routePairs.get(pairKey('SCCI', 'SCGC'))?.icao24, ['4cc269']);
+  assert.deepEqual(routePairs.get(pairKey('SCCI', 'SCRM'))?.icao24, ['e803cc', 'e803c5']);
+  assert.equal(routePairs.get(pairKey('SCCI', 'SCRM'))?.split, 'holdout');
+  assert.deepEqual(routePairs.get(pairKey('NZCH', 'NZFX'))?.icao24, ['ae4d6a']);
+  assert.equal(routePairs.get(pairKey('NZCH', 'NZFX'))?.split, 'holdout');
+
+  const predicate = buildFlightCalibrationRoutePredicate(
+    { from: 'SCCI', to: 'SCRM', icao24: ['E803CC', 'E803C5', 'e803cc'] },
+    {}, {}
+  );
+  assert.deepEqual(predicate, { icao24: ['e803cc', 'e803c5'] });
+  assert.match(collectorSource, /routeKey\\(observedFrom, observedTo\\) !== expectedRouteKey/);
 });
