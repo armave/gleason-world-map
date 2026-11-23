@@ -56,7 +56,7 @@ User-drawn polygon area is still computed by the shoelace formula in projected f
 A = 1/2 × abs(sum(x_i × y_(i+1) - x_(i+1) × y_i))
 ```
 
-Every polygon edge, including closure, obtains its perimeter contribution from the same canonical A–B distance function. The on-map edge labels and finished polygon perimeter therefore cannot switch back to a raw projected Euclidean chord. Selected-country areas continue to use the densified projected boundary rings, subtract interior holes and sum Polygon/MultiPolygon components. Antarctica's full 360° outer-rim edge is retained.
+Every polygon edge, including closure, obtains its perimeter contribution from the same visible-flat-disk chord function as A–B. The on-map edge labels and finished polygon perimeter therefore use the same measurement as the drawn projected segments. Selected-country areas continue to use the densified projected boundary rings, subtract interior holes and sum Polygon/MultiPolygon components. Antarctica's full 360° outer-rim edge is retained.
 
 The scale bar samples two map coordinates at the current view anchor and measures them with the same canonical function. Canvas resizing does not change the metric.
 
@@ -207,7 +207,7 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - The map is a custom radial disk with a nonlinear latitude warp. It remains a circular flat-disk construction with the North Pole at the centre and longitude-indexed positions around the Antarctic rim.
 - The visible map geometry is empirically calibrated with observed flight-path data, but direct A–B measurements are straight projected chords in that geometry. They are map-plane measurements, not flight paths, airline routes or independently surveyed ground distances.
-- The approved flight-calibration snapshot currently has no training or holdout route endpoint south of 60°S. Antarctic-rim values are therefore bounded extrapolations; candidate polar routes must be observed and independently validated before the production coefficients can change.
+- The active visible-map path-calibration snapshot has no independent training or holdout route endpoint south of 60°S. The Antarctic-rim geometry is therefore an extrapolation with limited empirical support. Direct A–B measurements still use the visible chord, without an additional flown-mileage multiplier.
 - Antarctic candidate collection is still subject to exact airport-pair checks, full-detail endpoint verification, observed-only ground-speed/time coverage and independent training/holdout gates. Aircraft identifiers and airport aliases broaden discovery only; they do not count as evidence until a route has at least three quality-qualified flights.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
 - Country, coastline, airport and capital coordinates remain as location data for rendering and endpoint selection. They are not used to calculate the calibration's distance targets.
