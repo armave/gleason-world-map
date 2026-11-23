@@ -6,14 +6,22 @@ const DEFAULT_STATE = Object.freeze({
   visualStyle:'atlas',
   layers:Object.freeze({}),
   selection:null,
-  measurement:Object.freeze({distancePointCount:0,areaPointCount:0,areaFinished:false}),
+  measurement:Object.freeze({distancePointCount:0,areaPointCount:0,areaFinished:false,endpoints:Object.freeze([]),distanceLabel:''}),
   historical:Object.freeze({}),
   searchQuery:''
 });
 
 function freezeSnapshot(state) {
   for (const key of NESTED_STATE_KEYS) {
-    if (state[key] && typeof state[key] === 'object') Object.freeze(state[key]);
+    if (state[key] && typeof state[key] === 'object') {
+      if (key === 'measurement' && Array.isArray(state[key].endpoints)) {
+        state[key].endpoints.forEach(endpoint => {
+          if (endpoint && typeof endpoint === 'object') Object.freeze(endpoint);
+        });
+        Object.freeze(state[key].endpoints);
+      }
+      Object.freeze(state[key]);
+    }
   }
   return Object.freeze(state);
 }
