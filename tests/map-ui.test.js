@@ -189,8 +189,8 @@ test('calibration panel and PNG export share the latest global path-fit acceptan
  assert.match(calibrationUi,/Last approved correction remains active/);
  assert.match(calibrationUi,/not independent straight-line distance evidence/);
  assert.match(calibrationUi,/isGloballyValidatedFlightPathCalibration/);
- assert.match(calibrationUi,/The latest observed-path candidate has not passed the global validation gates/);
- assert.match(calibrationUi,/last approved flat-disk scale and latitude warp remain active/);
+ assert.match(calibrationUi,/Latest visual-path candidate rejected/);
+ assert.match(calibrationUi,/The last approved flat-disk parameters remain active/);
  assert.match(calibrationUi,/Latest accepted visible-map fit/);
  assert.match(app,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
  assert.match(app,/isGloballyValidatedFlightPathCalibration/);
