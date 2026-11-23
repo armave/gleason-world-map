@@ -2,6 +2,7 @@ import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
 import {FLIGHT_PATH_CALIBRATION} from '../core/flight-path-calibration-parameters.js';
 import {isGloballyValidatedFlightPathCalibration} from '../core/flight-path-calibration-status.js';
 import FLIGHT_PATH_CALIBRATION_SUMMARY from '../../data/flight-path-calibration-summary.json';
+import FLIGHT_CALIBRATION_SUMMARY from '../../data/flight-calibration-summary.json';
 import {
  ACTIVE_VISUAL_LONGITUDE_WARP,
  maximumLongitudeWarpDisplacementRadians,
@@ -50,11 +51,21 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
    'Flat-disk radius = πR_base · mean(m)';
  }
  if(statusElement){
-  statusElement.textContent=pending
-   ? 'The latest observed-path candidate has not passed the global validation gates, including independent southern coverage. The last approved flat-disk scale and latitude warp remain active; southern and polar geometry remains extrapolated, and the endpoint-based ADS-B mileage estimate is shown separately.'
+  const pathStatus=pending
+   ? 'Latest visual-path candidate rejected: independent southern-coverage gates failed. The last approved flat-disk parameters remain active; polar geometry is still extrapolated.'
    : 'Latest accepted visible-map fit: '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+
     ' training airport pairs and '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+
     ' independent holdout pairs. The scale, latitude warp, 12-circle radial spacing and smooth longitude shear were fitted against projected ADS-B paths and observed ground-speed/time mileage. The shear returns to zero at the pole and Ice Wall; deep-southern rings remain an extrapolation where this archive has no routes.';
+  const distanceQuality=FLIGHT_CALIBRATION_SUMMARY.qualityGate||{};
+  const distanceLimits=distanceQuality.limits||{};
+  const formatPercent=value=>Number.isFinite(value)?value.toFixed(1)+'%':'not available';
+  const distanceStatus=FLIGHT_CALIBRATION_SUMMARY.accepted===true
+   ? ' Latest route-mileage correction passed its route-level validation; it is a flown-mileage correction, not an independent straight-line distance calibration.'
+   : ' Latest route-mileage correction rejected: training MAPE '+formatPercent(distanceQuality.trainingMapePercent)+
+    ' (limit '+formatPercent(distanceLimits.maxTrainingMapePercent)+'), holdout MAPE '+
+    formatPercent(distanceQuality.holdoutMapePercent)+' (limit '+formatPercent(distanceLimits.maxHoldoutMapePercent)+'), worst holdout error '+
+    formatPercent(distanceQuality.holdoutMaxErrorPercent)+' (limit '+formatPercent(distanceLimits.maxHoldoutRouteErrorPercent)+'). Last approved correction remains active; route mileage is not independent straight-line distance evidence.';
+  statusElement.textContent=pathStatus+distanceStatus;
  }
 
  const rows=[90,60,30,0,-30,-60,-90].map(lat=>{
