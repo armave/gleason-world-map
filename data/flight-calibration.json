@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-23T04:42:53.304Z",
+    "retrievedAt": "2026-11-23T05:03:12.275Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-22"
@@ -51,7 +51,6 @@
     "storedTrajectoryPoints": 31369,
     "airportLookupErrors": {
       "OKBK": "/airports/OKBK: HTTP 404 {\"detail\":\"No airport with ICAO or IATA code 'OKBK'. Search by name with GET /api/v1/waypoints/search?q=...\",\"documentation\":\"https://adsb.aero/llms.txt\",\"hint\":\"No airport with ICAO or IATA code 'OKBK'. Search by name with GET /api/v1/waypoints/search?q=... Full query vocabulary: https://adsb.aero/",
-      "NZFX": "/airports/NZFX: HTTP 404 {\"detail\":\"No airport with ICAO or IATA code 'NZFX'. Search by name with GET /api/v1/waypoints/search?q=...\",\"documentation\":\"https://adsb.aero/llms.txt\",\"hint\":\"No airport with ICAO or IATA code 'NZFX'. Search by name with GET /api/v1/waypoints/search?q=... Full query vocabulary: https://adsb.aero/",
       "FADN": "/airports/FADN: HTTP 404 {\"detail\":\"No airport with ICAO or IATA code 'FADN'. Search by name with GET /api/v1/waypoints/search?q=...\",\"documentation\":\"https://adsb.aero/llms.txt\",\"hint\":\"No airport with ICAO or IATA code 'FADN'. Search by name with GET /api/v1/waypoints/search?q=... Full query vocabulary: https://adsb.aero/"
     }
   },
@@ -92,6 +91,7 @@
         "telemetry-gap-too-large": 71,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -132,6 +132,7 @@
         "routeIdentifierMismatch": 9,
         "telemetry-gap-too-large": 72
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -172,6 +173,7 @@
         "telemetry-gap-too-large": 71,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 8,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -213,6 +215,7 @@
         "telemetry-gap-too-large": 23,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 24,
@@ -255,6 +258,7 @@
         "too-few-speed-intervals": 6,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -295,6 +299,7 @@
         "routeIdentifierMismatch": 29,
         "telemetry-gap-too-large": 72
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 6,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -336,6 +341,18 @@
         "too-few-speed-intervals": 4,
         "telemetry-gap-too-large": 20
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "LFPB--VIDP",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "VIDP>LFPB",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 24,
@@ -376,6 +393,7 @@
         "routeIdentifierMismatch": 2209,
         "telemetry-gap-too-large": 14
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 14,
@@ -417,6 +435,7 @@
         "too-few-speed-intervals": 2,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -456,6 +475,7 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 225
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -496,6 +516,18 @@
         "routeIdentifierMismatch": 40,
         "telemetry-gap-too-large": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "EGWU--EHAM",
+          "count": 3,
+          "directions": [
+            {
+              "direction": "EGWU>EHAM",
+              "count": 3
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -4569,6 +4601,46 @@
         "routeIdentifierMismatch": 78,
         "missing-ground-speed-or-duration": 13
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "EGWU--LFPB",
+          "count": 11,
+          "directions": [
+            {
+              "direction": "EGWU>LFPB",
+              "count": 6
+            },
+            {
+              "direction": "LFPB>EGWU",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "routeId": "EGLL--LFPO",
+          "count": 3,
+          "directions": [
+            {
+              "direction": "LFPO>EGLL",
+              "count": 2
+            },
+            {
+              "direction": "EGLL>LFPO",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "EGLD--LFPB",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "EGLD>LFPB",
+              "count": 2
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 67,
@@ -7955,9 +8027,10 @@
       "medianTelemetryCoverage": 1,
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
-        "telemetry-gap-too-large": 11,
-        "missing-ground-speed-or-duration": 8
+        "missing-ground-speed-or-duration": 8,
+        "telemetry-gap-too-large": 11
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -12629,11 +12702,12 @@
       "medianMaxGapMinutes": 0.8505833327770234,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 63,
-        "telemetry-gap-too-large": 55,
         "missing-ground-speed-or-duration": 7,
         "low-telemetry-coverage": 4,
+        "telemetry-gap-too-large": 55,
         "too-few-speed-intervals": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -15919,6 +15993,7 @@
         "too-few-speed-intervals": 1,
         "low-telemetry-coverage": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -15962,6 +16037,22 @@
         "missing-ground-speed-or-duration": 7,
         "low-telemetry-coverage": 7
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KLGA--KMIA",
+          "count": 149,
+          "directions": [
+            {
+              "direction": "KLGA>KMIA",
+              "count": 77
+            },
+            {
+              "direction": "KMIA>KLGA",
+              "count": 72
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -24531,10 +24622,26 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 364,
-        "missing-ground-speed-or-duration": 11,
         "telemetry-gap-too-large": 46,
+        "missing-ground-speed-or-duration": 11,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KLGA--KORD",
+          "count": 363,
+          "directions": [
+            {
+              "direction": "KLGA>KORD",
+              "count": 183
+            },
+            {
+              "direction": "KORD>KLGA",
+              "count": 180
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -30876,6 +30983,7 @@
         "telemetry-gap-too-large": 71,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -30917,6 +31025,22 @@
         "missing-ground-speed-or-duration": 14,
         "telemetry-gap-too-large": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "EHAM--LFPB",
+          "count": 5,
+          "directions": [
+            {
+              "direction": "LFPB>EHAM",
+              "count": 4
+            },
+            {
+              "direction": "EHAM>LFPB",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 69,
@@ -34944,6 +35068,7 @@
         "telemetry-gap-too-large": 1,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -38911,6 +39036,18 @@
         "low-telemetry-coverage": 4,
         "too-few-speed-intervals": 13
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "HEAZ--LTFM",
+          "count": 5,
+          "directions": [
+            {
+              "direction": "LTFM>HEAZ",
+              "count": 5
+            }
+          ]
+        }
+      ],
       "pagesScanned": 18,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -38953,6 +39090,7 @@
         "telemetry-gap-too-large": 51,
         "too-few-speed-intervals": 12
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 17,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -38990,6 +39128,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -39032,6 +39171,7 @@
         "too-few-speed-intervals": 3,
         "low-telemetry-coverage": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 55,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -39074,6 +39214,18 @@
         "telemetry-gap-too-large": 54,
         "low-telemetry-coverage": 2
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "OMDB--VAJJ",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "VAJJ>OMDB",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -39106,6 +39258,7 @@
       "telemetryDiagnostics": {
         "airportLookupFailed": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 0,
       "candidatesSeen": 0,
       "observations": []
@@ -39149,6 +39302,7 @@
         "missing-ground-speed-or-duration": 11,
         "flight-too-short": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -43136,12 +43290,13 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "low-telemetry-coverage": 44,
         "telemetry-gap-too-large": 8,
+        "low-telemetry-coverage": 44,
         "too-few-speed-intervals": 5,
         "missing-ground-speed-or-duration": 1,
         "flight-too-short": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -47734,6 +47889,7 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 626
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -47772,12 +47928,28 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 179,
-        "too-few-speed-intervals": 17,
         "low-telemetry-coverage": 34,
+        "too-few-speed-intervals": 17,
         "telemetry-gap-too-large": 12,
         "flight-too-short": 8,
         "missing-ground-speed-or-duration": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "OMDB--OTBD",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "OMDB>OTBD",
+              "count": 1
+            },
+            {
+              "direction": "OTBD>OMDB",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 4,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -47816,11 +47988,23 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 86,
-        "low-telemetry-coverage": 27,
         "telemetry-gap-too-large": 31,
+        "low-telemetry-coverage": 27,
         "too-few-speed-intervals": 11,
         "flight-too-short": 2
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "OOMS--OTBD",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "OOMS>OTBD",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 4,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -49106,6 +49290,22 @@
         "missing-ground-speed-or-duration": 6,
         "low-telemetry-coverage": 5
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "OBBI--OTBD",
+          "count": 10,
+          "directions": [
+            {
+              "direction": "OBBI>OTBD",
+              "count": 8
+            },
+            {
+              "direction": "OTBD>OBBI",
+              "count": 2
+            }
+          ]
+        }
+      ],
       "pagesScanned": 3,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -49144,10 +49344,26 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 44,
-        "low-telemetry-coverage": 6,
         "telemetry-gap-too-large": 60,
+        "low-telemetry-coverage": 6,
         "too-few-speed-intervals": 6
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "VTBD--WSSS",
+          "count": 17,
+          "directions": [
+            {
+              "direction": "VTBD>WSSS",
+              "count": 12
+            },
+            {
+              "direction": "WSSS>VTBD",
+              "count": 5
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -49187,6 +49403,7 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -49229,6 +49446,36 @@
         "low-telemetry-coverage": 7,
         "too-few-speed-intervals": 6
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "VTBD--WMKK",
+          "count": 52,
+          "directions": [
+            {
+              "direction": "WMKK>VTBD",
+              "count": 50
+            },
+            {
+              "direction": "VTBD>WMKK",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "VTBD--WMSA",
+          "count": 22,
+          "directions": [
+            {
+              "direction": "WMSA>VTBD",
+              "count": 19
+            },
+            {
+              "direction": "VTBD>WMSA",
+              "count": 3
+            }
+          ]
+        }
+      ],
       "pagesScanned": 41,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -49270,6 +49517,22 @@
         "telemetry-gap-too-large": 7,
         "low-telemetry-coverage": 2
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "YMEN--YSSY",
+          "count": 8,
+          "directions": [
+            {
+              "direction": "YMEN>YSSY",
+              "count": 4
+            },
+            {
+              "direction": "YSSY>YMEN",
+              "count": 4
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -59194,6 +59457,18 @@
         "telemetry-gap-too-large": 44,
         "low-telemetry-coverage": 3
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "YBBN--YMEN",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "YMEN>YBBN",
+              "count": 2
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -67791,6 +68066,7 @@
         "telemetry-gap-too-large": 68,
         "too-few-speed-intervals": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -67832,6 +68108,22 @@
         "telemetry-gap-too-large": 11,
         "low-telemetry-coverage": 3
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "YMEN--YPAD",
+          "count": 10,
+          "directions": [
+            {
+              "direction": "YMEN>YPAD",
+              "count": 6
+            },
+            {
+              "direction": "YPAD>YMEN",
+              "count": 4
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -72344,6 +72636,7 @@
         "low-telemetry-coverage": 22,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -81483,6 +81776,7 @@
         "low-telemetry-coverage": 7,
         "too-few-speed-intervals": 7
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 26,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -81524,6 +81818,7 @@
         "telemetry-gap-too-large": 14,
         "low-telemetry-coverage": 3
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -92626,6 +92921,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -92666,6 +92962,7 @@
         "telemetry-gap-too-large": 24,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -99091,6 +99388,7 @@
         "routeIdentifierMismatch": 1709,
         "telemetry-gap-too-large": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 1,
@@ -99131,6 +99429,7 @@
         "routeIdentifierMismatch": 3894,
         "telemetry-gap-too-large": 5
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 5,
@@ -99168,6 +99467,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99205,6 +99505,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99242,6 +99543,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99279,6 +99581,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99316,6 +99619,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99325,8 +99629,10 @@
       "routeId": "NZCH--NZWD",
       "directionListed": "NZCH-NZWD",
       "split": "holdout",
-      "queryMode": "airport-endpoint-geometry",
-      "queryIcao24": [],
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "ae4d6a"
+      ],
       "airportA": {
         "ident": "NZCH",
         "iataCode": "CHC",
@@ -99353,41 +99659,9 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
-      "candidatesSeen": 0,
-      "observations": []
-    },
-    {
-      "routeId": "NZCH--NZFX",
-      "directionListed": "NZCH-NZFX",
-      "split": "holdout",
-      "queryMode": "icao24",
-      "queryIcao24": [
-        "ae4d6a"
-      ],
-      "airportA": {
-        "ident": "NZCH",
-        "iataCode": "CHC",
-        "name": "CHRISTCHURCH",
-        "lat": -43.489444444444,
-        "lon": 172.53444444444,
-        "country": "NZ"
-      },
-      "airportB": null,
-      "sampleCount": 0,
-      "medianTrackKm": null,
-      "medianObservedTrackKm": null,
-      "p10TrackKm": null,
-      "p90TrackKm": null,
-      "medianDurationMinutes": null,
-      "medianTelemetrySpanMinutes": null,
-      "medianTelemetryCoverage": null,
-      "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {
-        "airportLookupFailed": 1
-      },
-      "pagesScanned": 0,
       "candidatesSeen": 0,
       "observations": []
     },
@@ -99423,6 +99697,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99462,9 +99737,8 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {
-        "routeIdentifierMismatch": 212
-      },
+      "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99503,9 +99777,8 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {
-        "routeIdentifierMismatch": 13
-      },
+      "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99544,9 +99817,8 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {
-        "routeIdentifierMismatch": 416
-      },
+      "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99556,8 +99828,10 @@
       "routeId": "NZCH--NZIR",
       "directionListed": "NZCH-NZIR",
       "split": "train",
-      "queryMode": "airport-endpoint-geometry",
-      "queryIcao24": [],
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "ae4d6a"
+      ],
       "airportA": {
         "ident": "NZCH",
         "iataCode": "CHC",
@@ -99584,6 +99858,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99621,6 +99896,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99662,6 +99938,7 @@
         "telemetry-gap-too-large": 70,
         "too-few-speed-intervals": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 3,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -99700,9 +99977,21 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 112,
-        "telemetry-gap-too-large": 70,
-        "too-few-speed-intervals": 2
+        "too-few-speed-intervals": 2,
+        "telemetry-gap-too-large": 70
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "OTBD--RJAA",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "RJAA>OTBD",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 17,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -99745,6 +100034,7 @@
         "low-telemetry-coverage": 7,
         "too-few-speed-intervals": 6
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 6,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -99787,6 +100077,22 @@
         "telemetry-gap-too-large": 5,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KBOS--KLGA",
+          "count": 273,
+          "directions": [
+            {
+              "direction": "KBOS>KLGA",
+              "count": 144
+            },
+            {
+              "direction": "KLGA>KBOS",
+              "count": 129
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -103550,6 +103856,22 @@
         "missing-ground-speed-or-duration": 4,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KATL--KLGA",
+          "count": 268,
+          "directions": [
+            {
+              "direction": "KATL>KLGA",
+              "count": 134
+            },
+            {
+              "direction": "KLGA>KATL",
+              "count": 134
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -110450,6 +110772,7 @@
         "telemetry-gap-too-large": 63,
         "low-telemetry-coverage": 9
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -110488,11 +110811,12 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 1,
-        "low-telemetry-coverage": 10,
         "telemetry-gap-too-large": 50,
+        "low-telemetry-coverage": 10,
         "missing-ground-speed-or-duration": 4,
         "too-few-speed-intervals": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -116612,6 +116936,7 @@
         "missing-ground-speed-or-duration": 7,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -122224,6 +122549,22 @@
         "missing-ground-speed-or-duration": 1,
         "low-telemetry-coverage": 7
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KDAL--KLAX",
+          "count": 59,
+          "directions": [
+            {
+              "direction": "KDAL>KLAX",
+              "count": 30
+            },
+            {
+              "direction": "KLAX>KDAL",
+              "count": 29
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -124592,6 +124933,22 @@
         "too-few-speed-intervals": 4,
         "low-telemetry-coverage": 5
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KDAL--KMIA",
+          "count": 14,
+          "directions": [
+            {
+              "direction": "KDAL>KMIA",
+              "count": 7
+            },
+            {
+              "direction": "KMIA>KDAL",
+              "count": 7
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -127206,6 +127563,7 @@
         "telemetry-gap-too-large": 8,
         "missing-ground-speed-or-duration": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -131488,6 +131846,7 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -135267,6 +135626,7 @@
         "telemetry-gap-too-large": 50,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -141726,9 +142086,10 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 5,
-        "telemetry-gap-too-large": 21,
-        "missing-ground-speed-or-duration": 12
+        "missing-ground-speed-or-duration": 12,
+        "telemetry-gap-too-large": 21
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -147934,6 +148295,22 @@
         "missing-ground-speed-or-duration": 14,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "EGWU--LEMD",
+          "count": 4,
+          "directions": [
+            {
+              "direction": "EGWU>LEMD",
+              "count": 2
+            },
+            {
+              "direction": "LEMD>EGWU",
+              "count": 2
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -153904,6 +154281,18 @@
         "telemetry-gap-too-large": 53,
         "missing-ground-speed-or-duration": 5
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "EDDM--EGWU",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "EGWU>EDDM",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -158836,6 +159225,7 @@
         "telemetry-gap-too-large": 34,
         "missing-ground-speed-or-duration": 7
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 57,
@@ -167079,6 +167469,7 @@
         "routeIdentifierMismatch": 38,
         "telemetry-gap-too-large": 40
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -173412,9 +173803,25 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 162,
-        "missing-ground-speed-or-duration": 9,
-        "telemetry-gap-too-large": 15
+        "telemetry-gap-too-large": 15,
+        "missing-ground-speed-or-duration": 9
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "LFPO--LIRF",
+          "count": 55,
+          "directions": [
+            {
+              "direction": "LIRF>LFPO",
+              "count": 49
+            },
+            {
+              "direction": "LFPO>LIRF",
+              "count": 6
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 47,
@@ -179073,6 +179480,7 @@
         "missing-ground-speed-or-duration": 6,
         "telemetry-gap-too-large": 5
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 40,
@@ -184464,6 +184872,32 @@
         "low-telemetry-coverage": 8,
         "flight-too-short": 2
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "LFPO--LTFM",
+          "count": 29,
+          "directions": [
+            {
+              "direction": "LFPO>LTFM",
+              "count": 18
+            },
+            {
+              "direction": "LTFM>LFPO",
+              "count": 11
+            }
+          ]
+        },
+        {
+          "routeId": "LFPB--LTFM",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "LFPB>LTFM",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -190204,6 +190638,7 @@
         "telemetry-gap-too-large": 70,
         "too-few-speed-intervals": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 22,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -190248,6 +190683,32 @@
         "too-few-speed-intervals": 1,
         "flight-too-short": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "WMSA--WSSL",
+          "count": 86,
+          "directions": [
+            {
+              "direction": "WMSA>WSSL",
+              "count": 73
+            },
+            {
+              "direction": "WSSL>WMSA",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "routeId": "WMSA--WSSS",
+          "count": 21,
+          "directions": [
+            {
+              "direction": "WMSA>WSSS",
+              "count": 21
+            }
+          ]
+        }
+      ],
       "pagesScanned": 40,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -195877,6 +196338,18 @@
         "too-few-speed-intervals": 9,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "RPLL--WSSL",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "WSSL>RPLL",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -195919,6 +196392,18 @@
         "telemetry-gap-too-large": 51,
         "too-few-speed-intervals": 6
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "RCGM--VHHH",
+          "count": 26,
+          "directions": [
+            {
+              "direction": "VHHH>RCGM",
+              "count": 26
+            }
+          ]
+        }
+      ],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -195961,6 +196446,7 @@
         "too-few-speed-intervals": 6,
         "low-telemetry-coverage": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196002,6 +196488,7 @@
         "telemetry-gap-too-large": 58,
         "too-few-speed-intervals": 14
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196045,6 +196532,28 @@
         "low-telemetry-coverage": 9,
         "flight-too-short": 1
       },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "VABB--VIDD",
+          "count": 5,
+          "directions": [
+            {
+              "direction": "VABB>VIDD",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "routeId": "VAJJ--VIDP",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "VAJJ>VIDP",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 53,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196085,6 +196594,7 @@
         "telemetry-gap-too-large": 69,
         "low-telemetry-coverage": 3
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196126,6 +196636,7 @@
         "telemetry-gap-too-large": 70,
         "low-telemetry-coverage": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196169,6 +196680,7 @@
         "too-few-speed-intervals": 6,
         "flight-too-short": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 28,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196211,6 +196723,7 @@
         "low-telemetry-coverage": 2,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -196255,6 +196768,7 @@
         "low-telemetry-coverage": 1,
         "missing-ground-speed-or-duration": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 18,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -200067,6 +200581,7 @@
         "telemetry-gap-too-large": 68,
         "low-telemetry-coverage": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -200104,6 +200619,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -200143,6 +200659,7 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 567
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -200182,6 +200699,7 @@
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 272
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -200225,6 +200743,7 @@
         "missing-ground-speed-or-duration": 1,
         "routeIdentifierMismatch": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -200266,6 +200785,7 @@
         "telemetry-gap-too-large": 3,
         "too-few-speed-intervals": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 4,
@@ -200298,6 +200818,7 @@
       "telemetryDiagnostics": {
         "airportLookupFailed": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 0,
       "candidatesSeen": 0,
       "observations": []
@@ -200329,6 +200850,7 @@
       "telemetryDiagnostics": {
         "airportLookupFailed": 1
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 0,
       "candidatesSeen": 0,
       "observations": []
@@ -200365,6 +200887,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -200407,6 +200930,7 @@
         "low-telemetry-coverage": 4,
         "too-few-speed-intervals": 2
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 2,
       "windowsScanned": 0,
       "candidatesSeen": 72,
@@ -200444,6 +200968,7 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {},
+      "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -200486,6 +201011,7 @@
         "low-telemetry-coverage": 8,
         "too-few-speed-intervals": 4
       },
+      "routeIdentifierMismatches": [],
       "pagesScanned": 1,
       "windowsScanned": 0,
       "candidatesSeen": 72,
