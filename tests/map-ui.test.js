@@ -264,7 +264,7 @@ test('distance connector is one straight projected segment measured in the map p
 
 test('A–B, scale bar, polygon edges and PNG use one anisotropic planar distance function',()=>{
  assert.match(html,/<span>Distance A–B<\/span>/);
- assert.match(html,/Visible flat-disk chord distance/);
+ assert.match(html,/Anisotropic planar segment distance/);
  assert.doesNotMatch(html,/flightDistanceValue|flightDistanceSub|secondary-distance-reading|calibrationSupport|calibrationRoutes/);
  assert.match(html,/id="visualRadialRows"/);
  assert.match(html,/1\.00×[\s\S]*0\.50×/);
