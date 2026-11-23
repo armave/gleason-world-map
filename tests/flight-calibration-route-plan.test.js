@@ -78,6 +78,17 @@ test('McMurdo runway aliases are not split between training and holdout', () => 
   assert.ok(!keys.includes(pairKey('NZCH', 'NZIR')));
 });
 
+
+test('Marambio holdout uses a verified Rio Gallegos–Marambio KC-130H airbridge', () => {
+  const route = calibrationRoutes().find(item =>
+    pairKey(item.from, item.to) === pairKey('SAWG', 'SAWB')
+  );
+  assert.ok(route);
+  assert.equal(route.split, 'holdout');
+  assert.ok(collectorSource.includes("from: 'SAWG', to: 'SAWB', split: 'holdout', icao24: ['e20022']"));
+  assert.doesNotMatch(collectorSource, /from: 'SCCI', to: 'SAWB'/);
+});
+
 test('collector assigns each unordered airport pair to exactly one split', () => {
   const routes = calibrationRoutes();
   assert.ok(routes.length >= 90, 'expected the broad calibration route plan');
@@ -102,7 +113,7 @@ test('deep-southern training and holdout pairs cover documented Antarctic air br
     ['SCCI', 'SCGC', 'train'], // Punta Arenas–Union Glacier (ALE)
     ['SCCI', 'SCRM', 'holdout'],
     ['NZCH', 'NZWD', 'holdout'],
-    ['SCCI', 'SAWB', 'holdout'],
+    ['SAWG', 'SAWB', 'holdout'],
     ['YMHB', 'YWKS', 'holdout'] // Future scheduled Hobart–Wilkins candidate
   ];
 
@@ -197,6 +208,8 @@ test('documented Antarctic airframes are queried directly while retaining route 
   assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269']"));
   assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5']"));
   assert.ok(collectorSource.includes("from: 'NZCH', to: 'NZWD', split: 'holdout', icao24: ['ae4d6a']"));
+  assert.ok(collectorSource.includes("from: 'SAWG', to: 'SAWB', split: 'holdout', icao24: ['e20022']"));
+  assert.equal(routePairs.get(pairKey('SAWG', 'SAWB'))?.split, 'holdout');
   assert.doesNotMatch(collectorSource, /to: 'NZFX'/);
 
   const geometryA = { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 };

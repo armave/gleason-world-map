@@ -94,7 +94,9 @@ const ROUTES = [
   // Direct search for USAF C-17A 10-0217 (AE4D6A); the archive lists
   // Williams Field (NZWD), not the Phoenix Airfield alias NZFX, as an airport.
   { from: 'NZCH', to: 'NZWD', split: 'holdout', icao24: ['ae4d6a'] },
-  { from: 'SCCI', to: 'SAWB', split: 'holdout' },
+  // Verified Argentina Air Force TC-69 KC-130H (Mode-S E20022) round trips
+  // between Rio Gallegos and Marambio on 20 November 2026.
+  { from: 'SAWG', to: 'SAWB', split: 'holdout', icao24: ['e20022'] },
   { from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5'] },
 
   // Documented Antarctic training air bridges:
