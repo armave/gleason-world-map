@@ -681,36 +681,13 @@ function updateMeasurement(){
  }
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
-  const calibration=measurement.calibration;
   $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
    ?formatDistance(measurement.distanceMeters):'Unavailable';
   $('distanceSub').textContent=Number.isFinite(measurement.distanceMeters)
-   ?'One ADS-B-calibrated flat-disk distance · same formula used throughout the map'
-   :'Canonical distance unavailable for these coordinates';
-  $('measureHelp').textContent='One distance formula powers the A–B reading, on-map label, scale bar, polygon edge labels and polygon perimeter. The formula applies the accepted ADS-B route-feature correction to the flat-disk base chord. ADS-B ground-speed and timestamp observations calibrate the correction; the same output is used everywhere. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
-  const support=$('calibrationSupport'),routes=$('calibrationRoutes');
-  if(calibration){
-   const status=calibration.status==='within-fit-range'
-    ?'Within fitted calibration range'
-    :calibration.status==='bounded-extrapolation'
-     ?'Bounded calibration · review warnings'
-     :'Calibration extrapolation · review warnings';
-   support.textContent=status+' · distance factor '+calibration.calibrationFactor.toFixed(2)+'×'+
-    ' · nearest reference feature '+calibration.nearestFeatureDistance.toFixed(2)+
-    (calibration.factorWasClamped?' · correction bound applied':'')+
-    (calibration.nearSouthRim?' · near Antarctic rim':'');
-   const routeIds=calibration.neighbourRouteIds||[];
-   const routeWeights=calibration.neighbourWeights||[];
-   routes.textContent='ADS-B reference routes: '+(routeIds.length
-    ?routeIds.map((route,index)=>route+' '+Math.round((routeWeights[index]||0)*100)+'%').join(' · ')
-    :'not available');
-  }else{
-   support.textContent='ADS-B calibration unavailable for these coordinates.';
-   routes.textContent='Reference routes: not available';
-  }
+   ?'Visible flat-disk chord · same endpoints as the red connector'
+   :'Flat-disk distance unavailable for these coordinates';
+  $('measureHelp').textContent='The distance is the Euclidean length of the straight red connector in the visible flat-disk plane, converted using the map kilometre scale. The same function powers A–B, the connector label, scale-bar sampling, polygon edge labels and polygon perimeter. ADS-B flight-mileage corrections do not alter direct map measurements. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
  }else{
-  $('calibrationSupport').textContent='ADS-B calibration diagnostics appear after both endpoints are set.';
-  $('calibrationRoutes').textContent='Nearest reference routes: —';
   $('distanceValue').textContent='—';
   $('distanceSub').textContent='Set two endpoints to calculate the canonical distance';
   $('measureHelp').textContent=points.length===1
@@ -963,7 +940,7 @@ function exportPNG(){
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
-   ' · single ADS-B-calibrated flat-disk metric';
+   ' · visible flat-disk chord';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
