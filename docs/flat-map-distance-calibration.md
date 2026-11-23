@@ -131,6 +131,20 @@ A route needs at least three accepted high-coverage flights. Each route contribu
 
 ### Expanded deep-southern route search
 
+### Added regularly operated southern training and holdout pairs
+
+The collector supplements the Antarctic airbridge search with scheduled southern South American regional services. These provide a better chance of obtaining complete timestamped ADS-B paths than the sparsely covered Antarctic logistics flights, while extending route coverage below 45°S:
+
+- `SCEL–SCCI` (Santiago–Punta Arenas), training. Direct aircraft discovery includes LATAM A320s CC-BEE (`E80446`), CC-BHU (`E80496`), CC-BEC (`E80442`) and CC-BAL (`E8041E`).
+- `SAEZ–SAWH` (Ezeiza–Ushuaia), training. Discovery includes Aerolíneas Argentinas B737s LV-KIT (`E0B254`), LV-KIU (`E0B255`), LV-HKW (`E082D7`) and LV-GFQ (`E07191`).
+- `SABE–SAWH` (Aeroparque–Ushuaia), a separate training airport pair. It is kept separate from the Ezeiza pair because the departure airports differ.
+- `SAWG–SABE` (Rio Gallegos–Aeroparque), independent holdout. Discovery includes LV-FQC (`E06443`), LV-KID (`E0B244`) and LV-GUC (`E07543`).
+- `SCCI–SCBA` (Punta Arenas–Balmaceda), independent holdout. DAP's scheduled regional service includes CC-DHT (`E803CF`) and CC-DCU (`E803CC`).
+
+The route identities and train/holdout assignments are fixed at the complete airport-pair level. All aircraft hints broaden discovery only; an observation still requires full-detail airport identifiers matching the configured pair or a recognized exact IATA alias, followed by the existing observed-only ground-speed/time interval, full-flight coverage, path timestamp and minimum sample-count filters. The schedules and aircraft histories establish that the services operate; they do not establish ADS-B coverage or calibration eligibility.
+
+Sources: [DAP — Punta Arenas–Balmaceda regular route and weekly/seasonal schedule](https://dapairline.com/en/flights-punta-arenas-balmaceda/), [AirNav — DAP430 SCCI/PUQ–SCBA/BBA and CC-DHT Mode-S E803CF](https://www.airnavradar.com/data/flights/DAP430/3013816108), [Plane Finder — AR1886 Buenos Aires–Ushuaia flight history](https://planefinder.net/data/flight/AR1886), [Flightradar24 — AR1886 recent Ushuaia services](https://www.flightradar24.com/data/flights/AR1886), [PlaneTrack — CC-BAL Mode-S E8041E](https://www.planetrack.ai/aircraft/cc-bal), [Plane Finder — AR1863 Rio Gallegos–Buenos Aires history](https://planefinder.net/data/flight/AR1863), [Flightradar24 — AR1863 route history](https://www.flightradar24.com/data/flights/AR1863).
+
 The collector now includes additional route candidates backed by published Antarctic air operations:
 
 - `SCCI–EGAR` (Punta Arenas–Rothera), training. The British Antarctic Survey describes regular Dash-7 shuttle flights between Rothera and Punta Arenas.
