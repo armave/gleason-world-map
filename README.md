@@ -41,7 +41,8 @@ The map has one distance source of truth. For every pair of endpoints, the canon
 ```text
 A' = project(A.longitude, A.latitude)
 B' = project(B.longitude, B.latitude)
-Δx = (B'.x − A'.x) / 64 · Δy = (B'.y − A'.y) / 64
+Δx = (B'.x − A'.x) / 64
+Δy = (B'.y − A'.y) / 64
 At midpoint (xᵢ,yᵢ): rᵢ = hypot(xᵢ,yᵢ)
 drᵢ = (xᵢΔx + yᵢΔy) / rᵢ
 tᵢ = (xᵢΔy − yᵢΔx) / rᵢ
