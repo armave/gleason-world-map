@@ -48,7 +48,6 @@ test('deep-southern training and holdout pairs cover documented Antarctic air br
     ['SCCI', 'SCRM', 'holdout'],
     ['NZCH', 'NZWD', 'holdout'],
     ['SCCI', 'SAWB', 'holdout'],
-    ['NZCH', 'NZWD', 'holdout'],
     ['YMHB', 'YWKS', 'holdout'] // Future scheduled Hobart–Wilkins candidate
   ];
 
@@ -100,8 +99,7 @@ test('the BAS Rothera route can query a known aircraft when endpoint geometry fi
     { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 },
     { type: 'Circle', coordinates: [-68.13, -67.57], radius: 20000 }
   );
-  assert.deepEqual(predicate.and[0], { icao24: ['43be5b'] });
-  assert.equal(predicate.and[1].or.length, 2);
+  assert.deepEqual(predicate, { icao24: ['43be5b'] });
 
   // Broad aircraft discovery does not relax the airport-pair split or route
   // identity check: each selected flight must still name this exact pair.
@@ -153,27 +151,7 @@ test('documented Antarctic airframes are queried directly while retaining route 
     { from: 'SCCI', to: 'SCRM', icao24: ['E803CC', 'E803C5', 'e803cc'] },
     geometryA, geometryB
   );
-  assert.deepEqual(predicate, {
-    and: [
-      { icao24: ['e803cc', 'e803c5'] },
-      {
-        or: [
-          {
-            and: [
-              { endpoint_within: { mode: 'start', geometry: geometryA } },
-              { endpoint_within: { mode: 'end', geometry: geometryB } }
-            ]
-          },
-          {
-            and: [
-              { endpoint_within: { mode: 'start', geometry: geometryB } },
-              { endpoint_within: { mode: 'end', geometry: geometryA } }
-            ]
-          }
-        ]
-      }
-    ]
-  });
+  assert.deepEqual(predicate, { icao24: ['e803cc', 'e803c5'] });
   assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
 });
 
@@ -209,31 +187,15 @@ test('route mismatch diagnostics preserve actual returned airport pairs without 
 });
 
 
-test('aircraft discovery combines Mode-S identity with endpoint geometry in the source query', () => {
+test('aircraft discovery uses Mode-S only and exact airport identifiers are a post-query gate', () => {
   const a = { type: 'Circle', coordinates: [-70, -53], radius: 20000 };
   const b = { type: 'Circle', coordinates: [-68, -67], radius: 20000 };
   const predicate = buildFlightCalibrationRoutePredicate(
-    { from: 'SCCI', to: 'EGAR', icao24: ['43BE5B'] }, a, b
+    { from: 'SCCI', to: 'EGAR', icao24: ['43BE5B', '43be5b'] }, a, b
   );
-  assert.deepEqual(predicate, {
-    and: [
-      { icao24: ['43be5b'] },
-      {
-        or: [
-          {
-            and: [
-              { endpoint_within: { mode: 'start', geometry: a } },
-              { endpoint_within: { mode: 'end', geometry: b } }
-            ]
-          },
-          {
-            and: [
-              { endpoint_within: { mode: 'start', geometry: b } },
-              { endpoint_within: { mode: 'end', geometry: a } }
-            ]
-          }
-        ]
-      }
-    ]
-  });
+  assert.deepEqual(predicate, { icao24: ['43be5b'] });
+
+  // The collector—not the query—enforces the exact airport-pair split.
+  assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('routeIdentifierMismatches.push'));
 });
