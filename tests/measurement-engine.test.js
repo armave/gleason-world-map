@@ -79,7 +79,7 @@ test('same-longitude intervals measure the radial chord in the visible disk', ()
   }
 });
 
-test('the Antarctic rim preserves longitude-indexed positions under the visible chord metric', () => {
+test('the Antarctic rim preserves longitude-indexed positions under the anisotropic planar metric', () => {
   const first = point(-90, 0), second = point(-90, 180);
   const result = measureDirectDistance(first, second);
   assert.equal(result.metric, 'anisotropic-planar-segment');
@@ -89,7 +89,7 @@ test('the Antarctic rim preserves longitude-indexed positions under the visible 
     measureDirectDistance(second, first).distanceMeters);
 });
 
-test('longitude wrapping does not change the visible flat-disk chord', () => {
+test('longitude wrapping does not change the anisotropic flat-disk metric', () => {
   const first = point(-33.4489, -70.6693);
   const second = point(-35.2809, 149.13);
   const expected = measureDistanceMeters(first, second);
