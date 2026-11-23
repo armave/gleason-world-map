@@ -1,8 +1,10 @@
-# Flat-disk flight-telemetry calibration
+# Legacy ADS-B route-mileage correction and flight-path calibration
 
-## Purpose and scope
+> **Current status:** This document preserves the former ADS-B route-feature correction and telemetry methodology for historical reference. The runtime A–B ruler, scale bar and polygon perimeter no longer use that correction. Direct measurements now use the Euclidean chord in the visible flat-disk geometry, through `measureDirectDistance()` and `measureDistanceMeters()`. See the current measurement implementation in `src/core/measurement-engine.js` and `src/core/flat-disk.js`.
 
-The A–B measurement panel displays one distance only. It is calculated by a single canonical function using the calibrated base flat-disk chord and one bounded ADS-B route-feature correction. The A–B value, on-map label, scale bar, polygon edge labels, polygon perimeter and PNG metadata all call that same function. There is no secondary connector readout, alternate endpoint predictor or fallback distance calculation.
+## Historical purpose and scope
+
+This section describes the former A–B distance model, which used a calibrated base flat-disk chord and one bounded ADS-B route-feature correction. That endpoint correction has been retired from the runtime measurement engine. The active A–B measurement instead equals the Euclidean chord between endpoints in the visible flat-disk projection.
 
 The correction is fitted to observed ADS-B ground-speed/time mileage. The output is a calibrated map distance, not a reconstruction of one selected flight's track, a guaranteed airline itinerary, or a shortest point-to-point route. Its performance depends on the reference-route coverage and the bound applied to the correction.
 
@@ -43,7 +45,7 @@ Coverage is an explicit acceptance gate, not an expansion factor. The observed-o
 
 ## Recorded ADS-B trajectory path and visible-map calibration
 
-The visible map projection has its own accepted display-transform parameter file: `src/core/flight-path-calibration-parameters.js`. The single distance formula is separately calibrated by `src/core/flight-calibration-parameters.js`; it applies one bounded ADS-B route-feature correction to the base flat-disk chord.
+The visible map projection has its own accepted display-transform parameter file: `src/core/flight-path-calibration-parameters.js`. The endpoint-distance correction formerly described in this document was separately stored in `src/core/flight-calibration-parameters.js`; it is retained as a historical calibration artifact and is not applied to direct map measurements.
 
 For each accepted flight, the collector requests the full flight detail from `GET /flights/{flight_id}` and stores:
 
@@ -115,7 +117,7 @@ The fitted model is judged against these error and geometry limits:
 
 A rejected candidate is recorded in `data/flight-path-calibration-summary.json`; it does not overwrite the active `src/core/flight-path-calibration-parameters.js`. An accepted candidate writes radial scale, latitude warp, radial profile and longitude warp to that file. The renderer, inverse lookup, coastlines, markers, map-click coordinates, ruler, scale bar and planar measurements all use the same forward/inverse geometry.
 
-The endpoint-only chord fitter and its generated files are legacy artifacts. They are not imported by the runtime measurement engine and do not supply a distance value or fallback. The active distance formula uses `src/core/flight-calibration-parameters.js`.
+The endpoint-only chord fitter and the former route-feature correction are legacy artifacts. The runtime direct-measurement function no longer reads or applies their route-mileage correction; the legacy base-projection helpers are retained for analysis only and do not supply a ruler value or fallback. The active direct-distance formula uses the visible projection in `src/core/flat-disk.js`.
 
 ## Route sampling and validation
 

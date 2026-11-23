@@ -6,7 +6,7 @@
  * The fitted power taper changes all 12 ring spacings while preserving the
  * centre and outer rim. The visible transform loads a separately gated
  * observed-ADS-B-path parameter set.
- * All displayed distances use one ADS-B-calibrated base-chord formula.
+ * Direct displayed distances use the Euclidean chord in this visible disk.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
@@ -55,7 +55,7 @@ export function baseRadialFraction(latitudeDegrees) {
   );
 }
 
-/** Radial fraction for the canonical ADS-B-calibrated base-disk distance. */
+/** Base radial fraction retained for legacy calibration and geometry analysis. */
 function calibratedBaseRadialFraction(latitudeDegrees) {
   const theta = colatitudeRadians(latitudeDegrees);
   if (!Number.isFinite(theta)) return NaN;
@@ -79,7 +79,7 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
-/** Radius in the original fitted base projection used by the canonical distance formula. */
+/** Radius in the legacy fitted base projection retained for calibration analysis. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = calibratedBaseRadialFraction(latitudeDegrees);
   const calibratedBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
@@ -145,14 +145,14 @@ function pointInDiskKm(point, useBaseProjection = false) {
   return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
 }
 
-/** Euclidean chord in the visible disk, retained for geometry analysis; not the A–B distance metric. */
+/** Euclidean chord in the visible disk; this is the canonical direct A–B measurement. */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
   if (!first || !second) return null;
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** Base flat-disk chord used as the input to the canonical ADS-B distance formula. */
+/** Legacy base-projection chord retained for calibration analysis; not the runtime ruler metric. */
 export function baseFlatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a, true), second = pointInDiskKm(b, true);
   if (!first || !second) return null;
@@ -356,7 +356,7 @@ const clickPointCoordinate = point =>
     ? [point.lon, point.lat] : null;
 
 /**
- * Planar shoelace area and canonical calibrated perimeter for a user polygon.
+ * Planar shoelace area and visible-flat-disk chord perimeter for a user polygon.
  * The same distance callback used by the A–B ruler is required for every edge.
  */
 export function flatDiskPolygonMetrics(

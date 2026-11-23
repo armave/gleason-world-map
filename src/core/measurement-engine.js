@@ -1,12 +1,9 @@
 import {
-  clamp,
-  baseFlatDiskDistanceMeters,
+  flatDiskDistanceMeters,
   radialDistanceFromNorthKm,
   DISK_RADIUS_KM,
   project
 } from './flat-disk.js';
-import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
-import { flightCalibrationFeatures, predictFlightScaleRatio } from './flight-calibration-fit.js';
 
 export const RESTRICTED_PARALLEL_LATITUDE = -60;
 const RESTRICTED_RADIUS_KM = radialDistanceFromNorthKm(RESTRICTED_PARALLEL_LATITUDE);
@@ -53,118 +50,34 @@ export function polylineCrossesRestrictedParallel(points, closed = false) {
   return false;
 }
 
-/**
- * The single canonical distance calibration for the flat-disk map.
- *
- * The model is fitted to observed ADS-B ground-speed × timestamp mileage.
- * Every distance readout uses the same base-disk chord multiplied by this
- * one bounded, route-feature calibration factor.
- */
-export function directLineCalibrationDiagnostics(first, second) {
-  if (!validPoint(first) || !validPoint(second)) return null;
-
-  const chordGeometry = FLIGHT_CALIBRATION.chordGeometry === 'visual-12-circle'
-    ? 'visual-12-circle' : 'base';
-  const features = flightCalibrationFeatures(
-    first, second, FLIGHT_CALIBRATION.radialWarp, chordGeometry
-  );
-  const prediction = predictFlightScaleRatio(features, FLIGHT_CALIBRATION);
-  if (!prediction) return null;
-
-  const meanRadialFraction = features[0];
-  const radialShareOfChord = features[1];
-  const tangentialShareOfChord = features[2];
-  const radialScaleKm = FLIGHT_CALIBRATION.radialScaleKm;
-  const unclampedFactor = prediction.mileagePerUnitChord / radialScaleKm;
-  const calibrationFactor = clamp(
-    unclampedFactor,
-    FLIGHT_CALIBRATION.factorBounds[0],
-    FLIGHT_CALIBRATION.factorBounds[1]
-  );
-  const featureRanges = FLIGHT_CALIBRATION.featureRanges;
-  const outsideTrainingRange = features.some((value, index) =>
-    value < featureRanges[index][0] || value > featureRanges[index][1]
-  );
-  const nearSouthRim = first.lat <= -85 || second.lat <= -85;
-  const factorWasClamped = calibrationFactor !== unclampedFactor;
-  const weakNeighbourSupport = prediction.nearestFeatureDistance > 2;
-  const warnings = [];
-  if (outsideTrainingRange) warnings.push('outside-training-range');
-  if (nearSouthRim) warnings.push('near-south-rim');
-  if (factorWasClamped) warnings.push('factor-clamped');
-  if (weakNeighbourSupport) warnings.push('weak-neighbour-support');
-
-  return {
-    calibrationFactor,
-    unclampedFactor,
-    correctionPercent: (calibrationFactor - 1) * 100,
-    meanRadialFraction,
-    radialShareOfChord,
-    tangentialShareOfChord,
-    radialScaleKm,
-    nearestFeatureDistance: prediction.nearestFeatureDistance,
-    neighbourRouteIds: prediction.neighborRouteIds,
-    neighbourWeights: prediction.weights,
-    outsideTrainingRange,
-    nearSouthRim,
-    factorWasClamped,
-    weakNeighbourSupport,
-    warnings,
-    status: factorWasClamped || nearSouthRim
-      ? 'bounded-extrapolation'
-      : outsideTrainingRange || weakNeighbourSupport
-        ? 'extrapolated'
-        : 'within-fit-range'
-  };
-}
-
-/** Canonical distance entry point shared by every UI measurement surface. */
+/** Canonical distance entry point shared by every map measurement surface. */
 export function measureDistanceMeters(first, second) {
   return measureDirectDistance(first, second).distanceMeters;
 }
 
-/** Return the bounded ADS-B flight-mileage factor for a straight disk chord. */
-export function directLineCalibrationFactor(first, second) {
-  return directLineCalibrationDiagnostics(first, second)?.calibrationFactor ?? null;
-}
-
 /**
- * Measure one canonical ADS-B-calibrated flat-disk distance.
+ * Measure the straight connector as a Euclidean chord in the visible flat disk.
  *
- * Formula: base flat-disk chord × the single bounded route-feature factor.
- * ADS-B ground-speed/time observations calibrate the factor; no second
- * endpoint estimator or uncorrected chord is returned as another distance.
+ * flatDiskDistanceMeters() uses the same forward radial warp, 12-circle profile
+ * and longitude deformation as project(), so the returned kilometre value is
+ * the length of the exact segment drawn between the two displayed endpoints.
+ * ADS-B flown-mileage corrections are deliberately not applied to this
+ * endpoint-to-endpoint map measurement.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
-      calibrationFactor: null,
-      correctionPercent: null,
-      calibration: null,
-      warnings: [],
       metric: 'unavailable',
       restricted: false
     };
   }
 
-  const baseChordDistance = baseFlatDiskDistanceMeters(first, second);
-  const calibration = directLineCalibrationDiagnostics(first, second);
-  const calibrationFactor = calibration?.calibrationFactor ?? null;
-  const canonicalDistance = Number.isFinite(baseChordDistance) &&
-    Number.isFinite(calibrationFactor)
-    ? baseChordDistance * calibrationFactor
-    : null;
-  const safeDistance = Number.isFinite(canonicalDistance) ? canonicalDistance : null;
-  const safeCalibration = calibration;
-
+  const distanceMeters = flatDiskDistanceMeters(first, second);
   return {
-    distanceMeters: safeDistance,
-    calibrationFactor,
-    correctionPercent: calibration?.correctionPercent ?? null,
-    calibration: safeCalibration,
-    warnings: calibration?.warnings ?? [],
-    metric: 'adsb-calibrated-flat-disk',
+    distanceMeters: Number.isFinite(distanceMeters) && distanceMeters >= 0
+      ? distanceMeters : null,
+    metric: 'visible-flat-disk-chord',
     restricted: false
   };
 }

@@ -80,10 +80,9 @@ test('shows the single canonical distance for a route pair', async ({ page }) =>
 
   await expect(page.locator('.primary-distance-reading')).toContainText('Distance A–B');
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
-  await expect(page.locator('#distanceSub')).toContainText('One ADS-B-calibrated flat-disk distance');
+  await expect(page.locator('#distanceSub')).toContainText('Visible flat-disk chord');
   await expect(page.locator('.secondary-distance-reading')).toHaveCount(0);
   await expect(page.locator('#flightDistanceValue')).toHaveCount(0);
-  await expect(page.locator('#calibrationSupport')).toContainText('distance factor');
   await expect(page.locator('#routePointAName')).toContainText('manual coordinates');
   await expect(page.locator('#routePointBName')).toContainText('manual coordinates');
   await expect(page.locator('#routePointACoords')).not.toContainText('Waiting');
@@ -92,7 +91,7 @@ test('shows the single canonical distance for a route pair', async ({ page }) =>
   await expect(page.locator('#routeRegisterStatus')).toContainText('same canonical measurement');
 });
 
-test('Santiago–Canberra uses the single calibrated distance near 11,400 km', async ({ page }) => {
+test('Santiago–Canberra uses the visible flat-disk chord metric', async ({ page }) => {
   await openLoadedMap(page);
 
   await page.locator('#measureMode').click();
@@ -104,13 +103,34 @@ test('Santiago–Canberra uses the single calibrated distance near 11,400 km', a
   await page.locator('#coordBLon').fill('149.13');
   await page.locator('#applyCoordsB').click();
 
-  await expect(page.locator('#distanceValue')).toContainText('11,389.1');
-  await expect(page.locator('#distanceSub')).toContainText('One ADS-B-calibrated flat-disk distance');
-  await expect(page.locator('#calibrationSupport')).toContainText('distance factor 0.50×');
-  await expect(page.locator('#calibrationRoutes')).toContainText('YPAD--YSSY');
-  await expect(page.locator('#calibrationRoutes')).toContainText('YPAD--YPPH');
+  await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('#distanceSub')).toContainText('Visible flat-disk chord');
   await expect(page.locator('#flightDistanceValue')).toHaveCount(0);
 });
+
+test('moving a map measurement endpoint changes the visible chord distance', async ({ page }) => {
+  await openLoadedMap(page);
+  await page.locator('#measureMode').click();
+
+  await page.locator('#coordALat').fill('18');
+  await page.locator('#coordALon').fill('-70');
+  await page.locator('#applyCoordsA').click();
+  await page.locator('#coordBLat').fill('-48');
+  await page.locator('#coordBLon').fill('-66');
+  await page.locator('#applyCoordsB').click();
+
+  const firstDistance = await page.locator('#distanceValue').textContent();
+  await page.locator('#coordBLat').fill('65');
+  await page.locator('#coordBLon').fill('-150');
+  await page.locator('#applyCoordsB').click();
+  const movedDistance = await page.locator('#distanceValue').textContent();
+
+  expect(firstDistance).not.toBe('—');
+  expect(movedDistance).not.toBe('—');
+  expect(movedDistance).not.toBe(firstDistance);
+  await expect(page.locator('#distanceSub')).toContainText('Visible flat-disk chord');
+});
+
 
 test('90°S coordinates remain distinct longitude-indexed points under the canonical metric', async ({ page }) => {
   await openLoadedMap(page);
@@ -124,8 +144,7 @@ test('90°S coordinates remain distinct longitude-indexed points under the canon
   await page.locator('#applyCoordsB').click();
 
   await expect(page.locator('#distanceValue')).not.toHaveText('—');
-  await expect(page.locator('#distanceSub')).toContainText('One ADS-B-calibrated flat-disk distance');
-  await expect(page.locator('#calibrationSupport')).toContainText('near Antarctic rim');
+  await expect(page.locator('#distanceSub')).toContainText('Visible flat-disk chord');
   await expect(page.locator('.secondary-distance-reading')).toHaveCount(0);
   await expect(page.locator('#measureHelp')).toContainText('longitude-indexed Antarctic rim');
 });

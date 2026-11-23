@@ -60,11 +60,14 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
   const distanceLimits=distanceQuality.limits||{};
   const formatPercent=value=>Number.isFinite(value)?value.toFixed(1)+'%':'not available';
   const distanceStatus=FLIGHT_CALIBRATION_SUMMARY.accepted===true
-   ? ' Latest route-mileage correction passed its route-level validation; it is a flown-mileage correction, not an independent straight-line distance calibration.'
-   : ' Latest route-mileage correction rejected: training MAPE '+formatPercent(distanceQuality.trainingMapePercent)+
-    ' (limit '+formatPercent(distanceLimits.maxTrainingMapePercent)+'), holdout MAPE '+
-    formatPercent(distanceQuality.holdoutMapePercent)+' (limit '+formatPercent(distanceLimits.maxHoldoutMapePercent)+'), worst holdout error '+
-    formatPercent(distanceQuality.holdoutMaxErrorPercent)+' (limit '+formatPercent(distanceLimits.maxHoldoutRouteErrorPercent)+'). Last approved correction remains active; route mileage is not independent straight-line distance evidence.';
+   ? ' Legacy route-mileage model report: its candidate passed route-level validation, but the correction is not applied to direct map measurements.'
+   : ' Legacy route-mileage model report: latest candidate rejected (training MAPE '+
+    formatPercent(distanceQuality.trainingMapePercent)+' / limit '+
+    formatPercent(distanceLimits.maxTrainingMapePercent)+', holdout MAPE '+
+    formatPercent(distanceQuality.holdoutMapePercent)+' / limit '+
+    formatPercent(distanceLimits.maxHoldoutMapePercent)+', worst holdout error '+
+    formatPercent(distanceQuality.holdoutMaxErrorPercent)+' / limit '+
+    formatPercent(distanceLimits.maxHoldoutRouteErrorPercent)+'). No route-mileage multiplier is applied to the A–B ruler, scale bar or polygon measurements.';
   statusElement.textContent=pathStatus+distanceStatus;
  }
 
