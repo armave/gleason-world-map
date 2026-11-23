@@ -166,7 +166,7 @@ test('route mismatch diagnostics preserve actual returned airport pairs without 
   ]);
   assert.deepEqual(diagnostics, [
     {
-      routeId: 'SCGC--SCCI',
+      routeId: 'SCCI--SCGC',
       count: 3,
       directions: [
         { direction: 'SCCI>SCGC', count: 2 },
