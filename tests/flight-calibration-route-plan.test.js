@@ -68,6 +68,8 @@ test('aircraft-only route collection does not require both endpoint index record
   assert.ok(collectorSource.includes('if (!canCollectCalibrationRoute(route, airportA, airportB))'));
   assert.ok(collectorSource.includes('deriveAirportFromObservedEndpoints(route, observations, route.from)'));
   assert.ok(collectorSource.includes('median of exact-match ADS-B flight endpoint coordinates'));
+  assert.ok(collectorSource.includes('routeKey(detailFrom, detailTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('detailRouteIdentifierMismatch'));
 });
 
 test('McMurdo runway aliases are not split between training and holdout', () => {
