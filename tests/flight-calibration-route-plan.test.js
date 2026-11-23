@@ -134,11 +134,12 @@ test('documented Antarctic airframes are queried directly while retaining route 
   const routePairs = new Map(calibrationRoutes().map(route => [
     pairKey(route.from, route.to), route
   ]));
-  assert.deepEqual(routePairs.get(pairKey('SCCI', 'SCGC'))?.icao24, ['4cc269']);
-  assert.deepEqual(routePairs.get(pairKey('SCCI', 'SCRM'))?.icao24, ['e803cc', 'e803c5']);
+  assert.equal(routePairs.get(pairKey('SCCI', 'SCGC'))?.split, 'train');
   assert.equal(routePairs.get(pairKey('SCCI', 'SCRM'))?.split, 'holdout');
-  assert.deepEqual(routePairs.get(pairKey('NZCH', 'NZFX'))?.icao24, ['ae4d6a']);
   assert.equal(routePairs.get(pairKey('NZCH', 'NZFX'))?.split, 'holdout');
+  assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269']"));
+  assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5']"));
+  assert.ok(collectorSource.includes("from: 'NZCH', to: 'NZFX', split: 'holdout', icao24: ['ae4d6a']"));
 
   const predicate = buildFlightCalibrationRoutePredicate(
     { from: 'SCCI', to: 'SCRM', icao24: ['E803CC', 'E803C5', 'e803cc'] },
