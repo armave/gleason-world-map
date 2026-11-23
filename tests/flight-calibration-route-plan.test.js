@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { buildFlightCalibrationRoutePredicate } from '../scripts/flight-calibration-route-predicate.mjs';
 
 const collectorSource = await readFile(
   new URL('../scripts/collect-flight-calibration.mjs', import.meta.url),
@@ -9,7 +10,7 @@ const collectorSource = await readFile(
 
 function calibrationRoutes() {
   const routes = [];
-  const pattern = /\{\s*from:\s*'([A-Z0-9]+)'\s*,\s*to:\s*'([A-Z0-9]+)'\s*,\s*split:\s*'(train|holdout)'\s*\}/g;
+  const pattern = /\{\s*from:\s*'([A-Z0-9]+)'\s*,\s*to:\s*'([A-Z0-9]+)'\s*,\s*split:\s*'(train|holdout)'(?:\s*,[^}]*)?\s*\}/g;
   for (const match of collectorSource.matchAll(pattern)) {
     routes.push({ from: match[1], to: match[2], split: match[3] });
   }
@@ -81,4 +82,47 @@ test('telemetry archive refresh is monthly, main-only on push, and manually disp
   assert.match(workflow, /cancel-in-progress:\s*true/);
   assert.doesNotMatch(workflow, /package\.json/);
   assert.doesNotMatch(workflow, /\.github\/workflows\/collect-flight-calibration\.yml/);
+});
+
+test('the BAS Rothera route can query a known aircraft when endpoint geometry finds no flights', () => {
+  assert.match(
+    collectorSource,
+    /from: 'SCCI', to: 'EGAR', split: 'train', icao24: \['43be5b'\]/
+  );
+
+  const predicate = buildFlightCalibrationRoutePredicate(
+    { from: 'SCCI', to: 'EGAR', icao24: ['43BE5B', '43be5b'] },
+    { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 },
+    { type: 'Circle', coordinates: [-68.13, -67.57], radius: 20000 }
+  );
+  assert.deepEqual(predicate, { icao24: { icao24: ['43be5b'] } });
+
+  // Broad aircraft discovery does not relax the airport-pair split or route
+  // identity check: each selected flight must still name this exact pair.
+  assert.match(collectorSource, /routeKey\(observedFrom, observedTo\) !== expectedRouteKey/);
+  assert.match(collectorSource, /queryMode: Array\.isArray\(result\.route\.icao24\)/);
+});
+
+test('ordinary calibration routes keep using the airport endpoint geometry predicate', () => {
+  const geometryA = { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 };
+  const geometryB = { type: 'Circle', coordinates: [-68.13, -67.57], radius: 20000 };
+  assert.deepEqual(
+    buildFlightCalibrationRoutePredicate({ from: 'SCCI', to: 'EGAR' }, geometryA, geometryB),
+    {
+      or: [
+        {
+          and: [
+            { endpoint_within: { mode: 'start', geometry: geometryA } },
+            { endpoint_within: { mode: 'end', geometry: geometryB } }
+          ]
+        },
+        {
+          and: [
+            { endpoint_within: { mode: 'start', geometry: geometryB } },
+            { endpoint_within: { mode: 'end', geometry: geometryA } }
+          ]
+        }
+      ]
+    }
+  );
 });
