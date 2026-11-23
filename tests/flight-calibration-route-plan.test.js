@@ -201,7 +201,7 @@ test('the BAS Rothera route can query a known aircraft when endpoint geometry fi
 
   // Broad aircraft discovery does not relax the airport-pair split or route
   // identity check: each selected flight must still name this exact pair.
-  assert.match(collectorSource, /routeKey\(observedFrom, observedTo\) !== expectedRouteKey/);
+  assert.match(collectorSource, /matchesAirportPairIdentifiers\(airportA, airportB, observedFrom, observedTo\)/);
   assert.match(collectorSource, /queryMode: Array\.isArray\(result\.route\.icao24\)/);
 });
 
@@ -251,7 +251,7 @@ test('documented Antarctic airframes are queried directly while retaining route 
     geometryA, geometryB
   );
   assert.deepEqual(predicate, { icao24: ['e803cc', 'e803c5'] });
-  assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('matchesAirportPairIdentifiers(airportA, airportB, observedFrom, observedTo)'));
 });
 
 
@@ -295,6 +295,6 @@ test('aircraft discovery uses Mode-S only and exact airport identifiers are a po
   assert.deepEqual(predicate, { icao24: ['43be5b'] });
 
   // The collector—not the query—enforces the exact airport-pair split.
-  assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('matchesAirportPairIdentifiers(airportA, airportB, observedFrom, observedTo)'));
   assert.ok(collectorSource.includes('routeIdentifierMismatches.push'));
 });
