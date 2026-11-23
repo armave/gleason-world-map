@@ -405,7 +405,7 @@ function makeRouteExamplesFromRecords(
 }
 
 const GEOMETRY_START = Object.freeze([
-  1, 1, 0, 0, 0, 0,
+  1, FLIGHT_PATH_PROFILE.exponent, 0, 0, 0, 0,
   DEFAULT_TANGENTIAL_SCALE_C1, DEFAULT_TANGENTIAL_SCALE_C2
 ]);
 const GEOMETRY_STEPS = Object.freeze([
@@ -419,6 +419,7 @@ const GEOMETRY_BOUNDS = Object.freeze([
 ]);
 const LONGITUDE_WARP_REGULARIZATION = 3;
 const DISTANCE_METRIC_REGULARIZATION = 20;
+const RADIAL_PROFILE_REGULARIZATION = 20;
 const MINIMUM_ANGULAR_STRETCH = 0.35;
 
 function geometryFromVector(vector) {
@@ -473,15 +474,19 @@ function geometryVectorObjective(vector, records) {
     (vector[6] - DEFAULT_TANGENTIAL_SCALE_C1) ** 2 +
     (vector[7] - DEFAULT_TANGENTIAL_SCALE_C2) ** 2
   );
+  const radialProfilePenalty = RADIAL_PROFILE_REGULARIZATION *
+    (vector[1] - FLIGHT_PATH_PROFILE.exponent) ** 2;
   return {
-    objective: leaveOneOutMape + longitudePenalty + distanceMetricPenalty,
+    objective: leaveOneOutMape + longitudePenalty +
+      distanceMetricPenalty + radialProfilePenalty,
     leaveOneOutMape,
     leaveOneOutMax: Math.max(...errors),
     examples,
     geometry,
     angularStretch,
     longitudePenalty,
-    distanceMetricPenalty
+    distanceMetricPenalty,
+    radialProfilePenalty
   };
 }
 
@@ -661,7 +666,8 @@ export function fitFlightPathCalibration(dataset) {
       nestedGeometryFolds: leaveOneOut.routeCount,
       minimumAngularStretch: fitted.angularStretch,
       longitudeWarpPenalty: fitted.longitudePenalty,
-      distanceMetricPenalty: fitted.distanceMetricPenalty
+      distanceMetricPenalty: fitted.distanceMetricPenalty,
+      radialProfilePenalty: fitted.radialProfilePenalty
     }
   };
 }
