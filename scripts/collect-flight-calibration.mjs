@@ -20,7 +20,10 @@ import {
 } from './flight-calibration-route-predicate.mjs';
 import {
   resolveCalibrationAirport,
-  canCollectCalibrationRoute
+  canCollectCalibrationRoute,
+  routeHasAircraftDiscovery,
+  matchesAirportPairIdentifiers,
+  shouldDeferSummaryAirportPairCheck
 } from './flight-calibration-airport-metadata.mjs';
 
 const API_ROOT = 'https://adsb.aero/api/v1';
@@ -106,8 +109,10 @@ const ROUTES = [
   // candidates. Search this known airframe directly; exact airport identifiers
   // are still mandatory before any returned flight can enter this route.
   { from: 'SCCI', to: 'EGAR', split: 'train', icao24: ['43be5b'] },
-  // ALE schedules seasonal passenger/cargo flights from Punta Arenas to Union Glacier.
-  { from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269'] },
+  // Verified Punta Arenas–Union Glacier air-bridge aircraft:
+  // TF-FIA (4CC269), an Icelandair B757 charter recorded on 18 Nov 2026,
+  // and 7Q-ASS (058082), a Zebu Air IL-76 recorded on 20 Nov 2026.
+  { from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269', '058082'] },
   // Christchurch–McMurdo uses a single held-out runway-pair identity (NZWD).
   // Do not assign the same C-17 and the nearby NZIR sea-ice runway as a
   // separate training pair: both serve the same McMurdo complex and could
@@ -425,8 +430,15 @@ async function collectRoute(route, airports, endDate, historyStart) {
       seen.add(flight.flight_id);
       const observedFrom = flight.start_airport_ident;
       const observedTo = flight.end_airport_ident;
-      if (!observedFrom || !observedTo ||
-          routeKey(observedFrom, observedTo) !== expectedRouteKey) {
+      if (shouldDeferSummaryAirportPairCheck(route, observedFrom, observedTo)) {
+        // Some aircraft-query summaries omit endpoint IDs. Retrieve the flight
+        // detail, then require the same exact airport pair (including recognized
+        // ICAO/IATA aliases) before admitting any observation.
+        counters.summaryAirportPairDeferred =
+          (counters.summaryAirportPairDeferred || 0) + 1;
+        return true;
+      }
+      if (!matchesAirportPairIdentifiers(airportA, airportB, observedFrom, observedTo)) {
         counters.routeIdentifierMismatch = (counters.routeIdentifierMismatch || 0) + 1;
         routeIdentifierMismatches.push({
           from: observedFrom || null,
@@ -448,8 +460,7 @@ async function collectRoute(route, airports, endDate, historyStart) {
       if (!observation) continue;
       const detailFrom = observation.startAirportIdent;
       const detailTo = observation.endAirportIdent;
-      if (!detailFrom || !detailTo ||
-          routeKey(detailFrom, detailTo) !== expectedRouteKey) {
+      if (!matchesAirportPairIdentifiers(airportA, airportB, detailFrom, detailTo)) {
         counters.detailRouteIdentifierMismatch =
           (counters.detailRouteIdentifierMismatch || 0) + 1;
         routeIdentifierMismatches.push({
