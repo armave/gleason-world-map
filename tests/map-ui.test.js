@@ -184,6 +184,10 @@ test('latitude grid includes intermediate parallels, an emphasized equator, long
 
 test('calibration panel and PNG export share the latest global path-fit acceptance state',()=>{
  assert.match(calibrationUi,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
+ assert.match(calibrationUi,/FLIGHT_CALIBRATION_SUMMARY/);
+ assert.match(calibrationUi,/Latest route-mileage correction was rejected/);
+ assert.match(calibrationUi,/last approved correction remains active/);
+ assert.match(calibrationUi,/not independent straight-line distance evidence/);
  assert.match(calibrationUi,/isGloballyValidatedFlightPathCalibration/);
  assert.match(calibrationUi,/The latest observed-path candidate has not passed the global validation gates/);
  assert.match(calibrationUi,/last approved flat-disk scale and latitude warp remain active/);
