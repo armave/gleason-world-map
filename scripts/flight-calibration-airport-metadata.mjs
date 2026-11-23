@@ -16,7 +16,8 @@ export const AIRPORT_IDENTIFIER_ALIASES = Object.freeze({
   SCGC: Object.freeze(['UGL']),
   SAWB: Object.freeze(['QAB']),
   SCRM: Object.freeze(['TNM']),
-  SAWG: Object.freeze(['RGL'])
+  SAWG: Object.freeze(['RGL']),
+  SCBA: Object.freeze(['BBA'])
 });
 
 export const ANTARCTIC_AIRPORT_METADATA_FALLBACKS = Object.freeze({
