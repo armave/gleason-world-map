@@ -510,7 +510,7 @@ function drawArea(){
   strokeMeasurementConnector('area');
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';drawUprightMapText(String(i+1),x,y);});
- // Each edge label uses the canonical calibrated distance also used by the polygon perimeter.
+ // Each edge label uses the same visible flat-disk chord metric as A–B and polygon perimeter.
  const edgeLabels=createProjectedSegmentLabels(areaPoints,project,measureDistanceMeters,closed);
  edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
   label.x,label.y,formatMeasurementKilometres(label.meters),'area'
@@ -537,7 +537,7 @@ function updateAreaMeasurement(){
   if(result){
    $('areaValue').textContent=formatArea(result.areaM2);
    $('areaPerimeter').textContent='Perimeter · '+formatDistance(result.perimeterM);
-   $('areaHelp').textContent='Planar area; perimeter uses the same calibrated distance formula as A–B and the scale bar. Edges may cross 60°S.';
+   $('areaHelp').textContent='Planar area; perimeter uses the same visible flat-disk chord metric as A–B and the scale bar. Edges may cross 60°S.';
   }else{
    $('areaValue').textContent='Unavailable';
    $('areaPerimeter').textContent='Invalid polygon · check for crossing edges';
