@@ -178,7 +178,8 @@ test('direct connector contains only the two projected endpoints', () => {
   const renderedLineMeters = Math.hypot(
     path[1][0] - path[0][0], path[1][1] - path[0][1]
   ) * (DISK_RADIUS_KM * 1000 / 500);
-  close(renderedLineMeters, flatDiskDistanceMeters(a, b), 1e-5);
+  assert.ok(flatDiskDistanceMeters(a, b) <= renderedLineMeters + 1e-5,
+    'the tangentially weighted planar metric cannot exceed the Euclidean length of its straight connector');
   assert.deepEqual(flatDiskLinePath(a, b, () => [NaN, 0]), []);
 });
 
