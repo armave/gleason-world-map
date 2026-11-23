@@ -84,6 +84,12 @@ test('shows the single canonical distance for a route pair', async ({ page }) =>
   await expect(page.locator('.secondary-distance-reading')).toHaveCount(0);
   await expect(page.locator('#flightDistanceValue')).toHaveCount(0);
   await expect(page.locator('#calibrationSupport')).toContainText('distance factor');
+  await expect(page.locator('#routePointAName')).toContainText('manual coordinates');
+  await expect(page.locator('#routePointBName')).toContainText('manual coordinates');
+  await expect(page.locator('#routePointACoords')).not.toContainText('Waiting');
+  await expect(page.locator('#routePointBCoords')).not.toContainText('Waiting');
+  await expect(page.locator('#routeDistanceValue')).toHaveText(await page.locator('#distanceValue').textContent());
+  await expect(page.locator('#routeRegisterStatus')).toContainText('same canonical measurement');
 });
 
 test('Santiago–Canberra uses the single calibrated distance near 11,400 km', async ({ page }) => {
