@@ -862,7 +862,7 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
  const distanceMeters=measureDistanceMeters(first,second);
- // The scale bar uses the same canonical calibrated metric as A–B and area edges.
+ // The scale bar uses the same visible-flat-disk chord metric as A–B and area edges.
  return Number.isFinite(distanceMeters)?distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
