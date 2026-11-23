@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "accepted": false,
   "status": "rejected",
-  "generatedAt": "2026-11-23T05:49:31.876Z",
+  "generatedAt": "2026-11-23T06:01:27.257Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-23T05:49:29.889Z",
+  "sourceRetrievedAt": "2026-11-23T06:01:24.960Z",
   "extrapolationWarnings": [
     "Independent training/holdout route coverage south of 45°S is below the acceptance minimum; the outer southern disk remains extrapolated.",
     "Independent training/holdout route coverage south of 60°S is below the acceptance minimum; polar geometry is not validated."
