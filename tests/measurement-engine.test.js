@@ -32,7 +32,7 @@ test('A–B distance is the visible projected chord, not a base-geometry or flig
     line[1][1] - line[0][1]
   ) * DISK_RADIUS_KM / 480 * 1000;
 
-  assert.equal(result.metric, 'visible-flat-disk-chord');
+  assert.equal(result.metric, 'anisotropic-planar-segment');
   assert.equal(result.restricted, false);
   assert.ok(Number.isFinite(result.distanceMeters));
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
@@ -73,7 +73,7 @@ test('same-longitude intervals measure the radial chord in the visible disk', ()
   ]) {
     const first = point(latitudeA, 23), second = point(latitudeB, 23);
     const result = measureDirectDistance(first, second);
-    assert.equal(result.metric, 'visible-flat-disk-chord');
+    assert.equal(result.metric, 'anisotropic-planar-segment');
     assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
     assert.ok(result.distanceMeters > 0);
   }
@@ -82,7 +82,7 @@ test('same-longitude intervals measure the radial chord in the visible disk', ()
 test('the Antarctic rim preserves longitude-indexed positions under the visible chord metric', () => {
   const first = point(-90, 0), second = point(-90, 180);
   const result = measureDirectDistance(first, second);
-  assert.equal(result.metric, 'visible-flat-disk-chord');
+  assert.equal(result.metric, 'anisotropic-planar-segment');
   assert.ok(result.distanceMeters > 17_000_000);
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
   assert.equal(result.distanceMeters,
@@ -114,7 +114,7 @@ test('the restricted line remains the 60th parallel south', () => {
 test('crossing the 60°S reference line does not switch the direct-line metric', () => {
   const first = point(-59.9, 20), second = point(-60.1, 110);
   assert.equal(segmentCrossesRestrictedParallel(first, second), true);
-  assert.equal(measureDirectDistance(first, second).metric, 'visible-flat-disk-chord');
+  assert.equal(measureDirectDistance(first, second).metric, 'anisotropic-planar-segment');
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
@@ -132,9 +132,9 @@ test('restricted-line crossing checks use the displayed longitude-deformed endpo
 test('southern local segments and one restricted-line touch remain measurable', () => {
   const first = point(-70, 10), second = point(-70, 20);
   assert.equal(segmentCrossesRestrictedParallel(first, second), false);
-  assert.equal(measureDirectDistance(first, second).metric, 'visible-flat-disk-chord');
+  assert.equal(measureDirectDistance(first, second).metric, 'anisotropic-planar-segment');
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric,
-    'visible-flat-disk-chord');
+    'anisotropic-planar-segment');
 });
 
 test('invalid coordinates fail safely', () => {
