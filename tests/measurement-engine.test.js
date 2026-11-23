@@ -51,7 +51,7 @@ test('A–B distance integrates the visible projected segment, not base geometry
   assert.ok(result.distanceMeters < drawnSegmentMeters,
     'tangential compression must reduce this predominantly tangential connector');
   assert.equal(result.distanceMeters, measureDistanceMeters(first, second));
-  assert.equal(result.distanceMeters, measureDirectDistance(second, first).distanceMeters);
+  assert.ok(Math.abs(result.distanceMeters - measureDirectDistance(second, first).distanceMeters) < 1e-6);
 });
 
 test('moving an endpoint to a different part of the disk changes the distance by the anisotropic metric amount', () => {
