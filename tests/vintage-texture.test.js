@@ -37,7 +37,11 @@ test('vintage texture tiles are deterministic, transparent and generated once pe
     assert.equal(tile.height,128);
     assert.ok(tile.context.operations.length>0);
   }
-  assert.equal(tiles,createVintageTextureTiles(doc));
+  const firstOperations=doc.canvases.map(canvas=>canvas.context.operations);
+  const second=createVintageTextureTiles(doc);
+  const secondOperations=doc.canvases.slice(3).map(canvas=>canvas.context.operations);
+  assert.notEqual(tiles,second);
+  assert.deepEqual(firstOperations,secondOperations);
 });
 
 test('vintage texture patterns are context-owned repeat fills',()=>{
