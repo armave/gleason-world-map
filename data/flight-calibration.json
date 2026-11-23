@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-23T05:03:12.275Z",
+    "retrievedAt": "2026-11-23T05:28:59.954Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-22"
@@ -12702,8 +12702,8 @@
       "medianMaxGapMinutes": 0.8505833327770234,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 63,
-        "missing-ground-speed-or-duration": 7,
         "low-telemetry-coverage": 4,
+        "missing-ground-speed-or-duration": 7,
         "telemetry-gap-too-large": 55,
         "too-few-speed-intervals": 4
       },
@@ -24622,8 +24622,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 364,
-        "telemetry-gap-too-large": 46,
         "missing-ground-speed-or-duration": 11,
+        "telemetry-gap-too-large": 46,
         "low-telemetry-coverage": 1
       },
       "routeIdentifierMismatches": [
@@ -43290,8 +43290,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "telemetry-gap-too-large": 8,
         "low-telemetry-coverage": 44,
+        "telemetry-gap-too-large": 8,
         "too-few-speed-intervals": 5,
         "missing-ground-speed-or-duration": 1,
         "flight-too-short": 4
@@ -47928,8 +47928,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 179,
-        "low-telemetry-coverage": 34,
         "too-few-speed-intervals": 17,
+        "low-telemetry-coverage": 34,
         "telemetry-gap-too-large": 12,
         "flight-too-short": 8,
         "missing-ground-speed-or-duration": 1
@@ -47988,8 +47988,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 86,
-        "telemetry-gap-too-large": 31,
         "low-telemetry-coverage": 27,
+        "telemetry-gap-too-large": 31,
         "too-few-speed-intervals": 11,
         "flight-too-short": 2
       },
@@ -49285,8 +49285,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 216,
-        "flight-too-short": 53,
         "too-few-speed-intervals": 8,
+        "flight-too-short": 53,
         "missing-ground-speed-or-duration": 6,
         "low-telemetry-coverage": 5
       },
@@ -99658,8 +99658,111 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
-      "routeIdentifierMismatches": [],
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 288
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KTCM--KTCM",
+          "count": 7,
+          "directions": [
+            {
+              "direction": "KTCM>KTCM",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "routeId": "KDAY--KDAY",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KDAY>KDAY",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--KSUU",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KSUU>KSUU",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--KTCM",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KTCM>KSUU",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "EGPK--KDMA",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "EGPK>KDMA",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--KWRI",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "KSUU>KWRI",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--PHNL",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "KSUU>PHNL",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KTCM--PAED",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "KTCM>PAED",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "PAED--RJTY",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "RJTY>PAED",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "PHNL--PHNL",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "PHNL>PHNL",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99737,7 +99840,9 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 212
+      },
       "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
@@ -99777,7 +99882,9 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 13
+      },
       "routeIdentifierMismatches": [],
       "pagesScanned": 79,
       "windowsScanned": 1,
@@ -99817,8 +99924,167 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
-      "routeIdentifierMismatches": [],
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 416
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "BIKF--KDEN",
+          "count": 7,
+          "directions": [
+            {
+              "direction": "KDEN>BIKF",
+              "count": 5
+            },
+            {
+              "direction": "BIKF>KDEN",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--EKCH",
+          "count": 5,
+          "directions": [
+            {
+              "direction": "EKCH>BIKF",
+              "count": 4
+            },
+            {
+              "direction": "BIKF>EKCH",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--EDDM",
+          "count": 4,
+          "directions": [
+            {
+              "direction": "BIKF>EDDM",
+              "count": 2
+            },
+            {
+              "direction": "EDDM>BIKF",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--KEWR",
+          "count": 4,
+          "directions": [
+            {
+              "direction": "BIKF>KEWR",
+              "count": 2
+            },
+            {
+              "direction": "KEWR>BIKF",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--LEBL",
+          "count": 3,
+          "directions": [
+            {
+              "direction": "LEBL>BIKF",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--EGKK",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "BIKF>EGKK",
+              "count": 1
+            },
+            {
+              "direction": "EGKK>BIKF",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--EHAM",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "BIKF>EHAM",
+              "count": 1
+            },
+            {
+              "direction": "EHAM>BIKF",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--EIDW",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "BIKF>EIDW",
+              "count": 1
+            },
+            {
+              "direction": "EIDW>BIKF",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--KJFK",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "BIKF>KJFK",
+              "count": 1
+            },
+            {
+              "direction": "KJFK>BIKF",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KDEN--KDEN",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KDEN>KDEN",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "SBGR--SBKP",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "SBGR>SBKP",
+              "count": 1
+            },
+            {
+              "direction": "SBKP>SBGR",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "BIKF--BIKF",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "BIKF>BIKF",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99857,8 +100123,111 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
-      "routeIdentifierMismatches": [],
+      "telemetryDiagnostics": {
+        "routeIdentifierMismatch": 288
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "KTCM--KTCM",
+          "count": 7,
+          "directions": [
+            {
+              "direction": "KTCM>KTCM",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "routeId": "KDAY--KDAY",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KDAY>KDAY",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--KSUU",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KSUU>KSUU",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--KTCM",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "KTCM>KSUU",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "routeId": "EGPK--KDMA",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "EGPK>KDMA",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--KWRI",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "KSUU>KWRI",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KSUU--PHNL",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "KSUU>PHNL",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "KTCM--PAED",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "KTCM>PAED",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "PAED--RJTY",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "RJTY>PAED",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "PHNL--PHNL",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "PHNL>PHNL",
+              "count": 1
+            }
+          ]
+        }
+      ],
       "pagesScanned": 79,
       "windowsScanned": 1,
       "candidatesSeen": 0,
@@ -99977,8 +100346,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 112,
-        "too-few-speed-intervals": 2,
-        "telemetry-gap-too-large": 70
+        "telemetry-gap-too-large": 70,
+        "too-few-speed-intervals": 2
       },
       "routeIdentifierMismatches": [
         {
@@ -110811,8 +111180,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 1,
-        "telemetry-gap-too-large": 50,
         "low-telemetry-coverage": 10,
+        "telemetry-gap-too-large": 50,
         "missing-ground-speed-or-duration": 4,
         "too-few-speed-intervals": 2
       },
@@ -116932,8 +117301,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 3,
-        "telemetry-gap-too-large": 31,
         "missing-ground-speed-or-duration": 7,
+        "telemetry-gap-too-large": 31,
         "too-few-speed-intervals": 1
       },
       "routeIdentifierMismatches": [],
@@ -142086,8 +142455,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 5,
-        "missing-ground-speed-or-duration": 12,
-        "telemetry-gap-too-large": 21
+        "telemetry-gap-too-large": 21,
+        "missing-ground-speed-or-duration": 12
       },
       "routeIdentifierMismatches": [],
       "pagesScanned": 1,
@@ -184866,8 +185235,8 @@
       "medianMaxGapMinutes": 0.5200833340485891,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 148,
-        "too-few-speed-intervals": 13,
         "telemetry-gap-too-large": 37,
+        "too-few-speed-intervals": 13,
         "missing-ground-speed-or-duration": 8,
         "low-telemetry-coverage": 8,
         "flight-too-short": 2
@@ -196334,8 +196703,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 13,
-        "telemetry-gap-too-large": 62,
         "too-few-speed-intervals": 9,
+        "telemetry-gap-too-large": 62,
         "low-telemetry-coverage": 1
       },
       "routeIdentifierMismatches": [
@@ -200737,8 +201106,8 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
-        "telemetry-gap-too-large": 61,
         "low-telemetry-coverage": 8,
+        "telemetry-gap-too-large": 61,
         "too-few-speed-intervals": 2,
         "missing-ground-speed-or-duration": 1,
         "routeIdentifierMismatch": 2
