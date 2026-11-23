@@ -9,7 +9,10 @@ import {
   ANTARCTIC_AIRPORT_METADATA_FALLBACKS,
   resolveCalibrationAirport,
   canCollectCalibrationRoute,
-  routeHasAircraftDiscovery
+  routeHasAircraftDiscovery,
+  airportIdentifiers,
+  matchesAirportPairIdentifiers,
+  shouldDeferSummaryAirportPairCheck
 } from '../scripts/flight-calibration-airport-metadata.mjs';
 
 const collectorSource = await readFile(
@@ -68,8 +71,37 @@ test('aircraft-only route collection does not require both endpoint index record
   assert.ok(collectorSource.includes('if (!canCollectCalibrationRoute(route, airportA, airportB))'));
   assert.ok(collectorSource.includes('deriveAirportFromObservedEndpoints(route, observations, route.from)'));
   assert.ok(collectorSource.includes('median of exact-match ADS-B flight endpoint coordinates'));
-  assert.ok(collectorSource.includes('routeKey(detailFrom, detailTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('matchesAirportPairIdentifiers(airportA, airportB, detailFrom, detailTo)'));
   assert.ok(collectorSource.includes('detailRouteIdentifierMismatch'));
+  assert.ok(collectorSource.includes('shouldDeferSummaryAirportPairCheck(route, observedFrom, observedTo)'));
+  assert.ok(collectorSource.includes('summaryAirportPairDeferred'));
+});
+
+test('flight route identity accepts exact ICAO or published IATA airport aliases', () => {
+  const puntaArenas = { ident: 'SCCI', iataCode: 'PUQ' };
+  const unionGlacier = resolveCalibrationAirport('SCGC', new Map());
+  const kingGeorge = { ident: 'SCRM', iataCode: 'TNM' };
+  const rioGallegos = { ident: 'SAWG', iataCode: 'RGL' };
+  const marambio = resolveCalibrationAirport('SAWB', new Map());
+
+  assert.ok(airportIdentifiers(unionGlacier).has('SCGC'));
+  assert.ok(airportIdentifiers(unionGlacier).has('UGL'));
+  assert.ok(matchesAirportPairIdentifiers(puntaArenas, unionGlacier, 'PUQ', 'UGL'));
+  assert.ok(matchesAirportPairIdentifiers(puntaArenas, unionGlacier, 'SCGC', 'SCCI'));
+  assert.ok(matchesAirportPairIdentifiers(puntaArenas, kingGeorge, 'TNM', 'PUQ'));
+  assert.ok(matchesAirportPairIdentifiers(rioGallegos, marambio, 'QAB', 'RGL'));
+  assert.equal(matchesAirportPairIdentifiers(puntaArenas, unionGlacier, 'BIKF', 'KDEN'), false);
+});
+
+test('aircraft summaries with missing airport IDs defer only to the full detail check', () => {
+  const aircraftRoute = {
+    from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269', '058082']
+  };
+  const ordinaryRoute = { from: 'SCCI', to: 'SCGC', split: 'train' };
+  assert.equal(shouldDeferSummaryAirportPairCheck(aircraftRoute, null, 'UGL'), true);
+  assert.equal(shouldDeferSummaryAirportPairCheck(aircraftRoute, 'PUQ', null), true);
+  assert.equal(shouldDeferSummaryAirportPairCheck(aircraftRoute, 'PUQ', 'UGL'), false);
+  assert.equal(shouldDeferSummaryAirportPairCheck(ordinaryRoute, null, 'UGL'), false);
 });
 
 test('McMurdo runway aliases are not split between training and holdout', () => {
@@ -169,7 +201,7 @@ test('the BAS Rothera route can query a known aircraft when endpoint geometry fi
 
   // Broad aircraft discovery does not relax the airport-pair split or route
   // identity check: each selected flight must still name this exact pair.
-  assert.match(collectorSource, /routeKey\(observedFrom, observedTo\) !== expectedRouteKey/);
+  assert.match(collectorSource, /matchesAirportPairIdentifiers\(airportA, airportB, observedFrom, observedTo\)/);
   assert.match(collectorSource, /queryMode: Array\.isArray\(result\.route\.icao24\)/);
 });
 
@@ -205,7 +237,7 @@ test('documented Antarctic airframes are queried directly while retaining route 
   assert.equal(routePairs.get(pairKey('SCCI', 'SCGC'))?.split, 'train');
   assert.equal(routePairs.get(pairKey('SCCI', 'SCRM'))?.split, 'holdout');
   assert.equal(routePairs.get(pairKey('NZCH', 'NZWD'))?.split, 'holdout');
-  assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269']"));
+  assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCGC', split: 'train', icao24: ['4cc269', '058082']"));
   assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCRM', split: 'holdout', icao24: ['e803cc', 'e803c5']"));
   assert.ok(collectorSource.includes("from: 'NZCH', to: 'NZWD', split: 'holdout', icao24: ['ae4d6a']"));
   assert.ok(collectorSource.includes("from: 'SAWG', to: 'SAWB', split: 'holdout', icao24: ['e20022']"));
@@ -219,7 +251,7 @@ test('documented Antarctic airframes are queried directly while retaining route 
     geometryA, geometryB
   );
   assert.deepEqual(predicate, { icao24: ['e803cc', 'e803c5'] });
-  assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('matchesAirportPairIdentifiers(airportA, airportB, observedFrom, observedTo)'));
 });
 
 
@@ -263,6 +295,6 @@ test('aircraft discovery uses Mode-S only and exact airport identifiers are a po
   assert.deepEqual(predicate, { icao24: ['43be5b'] });
 
   // The collector—not the query—enforces the exact airport-pair split.
-  assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
+  assert.ok(collectorSource.includes('matchesAirportPairIdentifiers(airportA, airportB, observedFrom, observedTo)'));
   assert.ok(collectorSource.includes('routeIdentifierMismatches.push'));
 });

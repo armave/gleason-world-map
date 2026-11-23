@@ -6,6 +6,19 @@
  * endpoint coverage classification and labels. They are never used to
  * calculate observed flown mileage or to change the flat-disk projection.
  */
+/**
+ * Recognized public IATA aliases for airport identifiers used in the collector.
+ * The archive's airport index sometimes omits iata_code on remote Antarctic
+ * runways, while flight-history summaries may use the public three-letter code.
+ */
+export const AIRPORT_IDENTIFIER_ALIASES = Object.freeze({
+  EGAR: Object.freeze(['QAR']),
+  SCGC: Object.freeze(['UGL']),
+  SAWB: Object.freeze(['QAB']),
+  SCRM: Object.freeze(['TNM']),
+  SAWG: Object.freeze(['RGL'])
+});
+
 export const ANTARCTIC_AIRPORT_METADATA_FALLBACKS = Object.freeze({
   EGAR: Object.freeze({
     ident: 'EGAR',
@@ -102,4 +115,46 @@ export function canCollectCalibrationRoute(route, airportA, airportB) {
   return (airportA !== null && airportA !== undefined &&
       airportB !== null && airportB !== undefined) ||
     routeHasAircraftDiscovery(route);
+}
+
+/** All exact recognized identifiers for one airport, including its IATA alias. */
+export function airportIdentifiers(airport) {
+  const ident = typeof airport?.ident === 'string'
+    ? airport.ident.trim().toUpperCase() : '';
+  const values = [
+    ident,
+    airport?.iataCode,
+    ...(AIRPORT_IDENTIFIER_ALIASES[ident] || [])
+  ];
+  return new Set(values
+    .filter(value => typeof value === 'string' && value.trim().length > 0)
+    .map(value => value.trim().toUpperCase()));
+}
+
+/**
+ * Match the same airport pair regardless of flight direction or whether the
+ * archive reports the ICAO identifier or a published IATA alias.
+ */
+export function matchesAirportPairIdentifiers(
+  airportA, airportB, observedFrom, observedTo
+) {
+  if (typeof observedFrom !== 'string' || typeof observedTo !== 'string') return false;
+  const from = observedFrom.trim().toUpperCase();
+  const to = observedTo.trim().toUpperCase();
+  if (!from || !to) return false;
+  const identifiersA = airportIdentifiers(airportA);
+  const identifiersB = airportIdentifiers(airportB);
+  return (identifiersA.has(from) && identifiersB.has(to)) ||
+    (identifiersB.has(from) && identifiersA.has(to));
+}
+
+/**
+ * Aircraft-address queries can return summary rows with missing airport IDs.
+ * Defer those rows to the detail endpoint, where exact pair matching is still
+ * mandatory. Explicit nonmatching IDs are never deferred.
+ */
+export function shouldDeferSummaryAirportPairCheck(route, observedFrom, observedTo) {
+  return routeHasAircraftDiscovery(route) &&
+    (typeof observedFrom !== 'string' || !observedFrom.trim() ||
+      typeof observedTo !== 'string' || !observedTo.trim());
 }
