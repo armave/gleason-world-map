@@ -146,11 +146,33 @@ test('documented Antarctic airframes are queried directly while retaining route 
   assert.ok(collectorSource.includes("from: 'NZCH', to: 'NZIR', split: 'train', icao24: ['ae4d6a']"));
   assert.doesNotMatch(collectorSource, /to: 'NZFX'/);
 
+  const geometryA = { type: 'Circle', coordinates: [-70.85, -53.0], radius: 20000 };
+  const geometryB = { type: 'Circle', coordinates: [-58.9866, -62.1908], radius: 20000 };
   const predicate = buildFlightCalibrationRoutePredicate(
     { from: 'SCCI', to: 'SCRM', icao24: ['E803CC', 'E803C5', 'e803cc'] },
-    {}, {}
+    geometryA, geometryB
   );
-  assert.deepEqual(predicate, { icao24: ['e803cc', 'e803c5'] });
+  assert.deepEqual(predicate, {
+    and: [
+      { icao24: ['e803cc', 'e803c5'] },
+      {
+        or: [
+          {
+            and: [
+              { endpoint_within: { mode: 'start', geometry: geometryA } },
+              { endpoint_within: { mode: 'end', geometry: geometryB } }
+            ]
+          },
+          {
+            and: [
+              { endpoint_within: { mode: 'start', geometry: geometryB } },
+              { endpoint_within: { mode: 'end', geometry: geometryA } }
+            ]
+          }
+        ]
+      }
+    ]
+  });
   assert.ok(collectorSource.includes('routeKey(observedFrom, observedTo) !== expectedRouteKey'));
 });
 
@@ -183,4 +205,34 @@ test('route mismatch diagnostics preserve actual returned airport pairs without 
     }
   ]);
   assert.deepEqual(summarizeRouteIdentifierMismatches([]), []);
+});
+
+
+test('aircraft discovery combines Mode-S identity with endpoint geometry in the source query', () => {
+  const a = { type: 'Circle', coordinates: [-70, -53], radius: 20000 };
+  const b = { type: 'Circle', coordinates: [-68, -67], radius: 20000 };
+  const predicate = buildFlightCalibrationRoutePredicate(
+    { from: 'SCCI', to: 'EGAR', icao24: ['43BE5B'] }, a, b
+  );
+  assert.deepEqual(predicate, {
+    and: [
+      { icao24: ['43be5b'] },
+      {
+        or: [
+          {
+            and: [
+              { endpoint_within: { mode: 'start', geometry: a } },
+              { endpoint_within: { mode: 'end', geometry: b } }
+            ]
+          },
+          {
+            and: [
+              { endpoint_within: { mode: 'start', geometry: b } },
+              { endpoint_within: { mode: 'end', geometry: a } }
+            ]
+          }
+        ]
+      }
+    ]
+  });
 });
