@@ -162,13 +162,13 @@ test('source code defines or imports no spherical/geodesic distance routines', a
     ['spherical', 'Distance'].join(''),
     ['ellipsoid', 'Distance'].join('')
   ];
-  const declarationFor = name => new RegExp(
-    `(?:function\\s+${name}\\s*\\(|(?:const|let|var)\\s+${name}\\s*=|export\\s*\\{[^}]*\\b${name}\\b)`
+  const declarationOrImportFor = name => new RegExp(
+    `(?:function\\s+${name}\\s*\\(|(?:const|let|var)\\s+${name}\\s*=|export\\s*\\{[^}]*\\b${name}\\b|import\\s+[^;]*\\b${name}\\b)`
   );
   for (const path of paths) {
     const source = await readFile(path, 'utf8');
     for (const name of names) {
-      assert.doesNotMatch(source, declarationFor(name),
+      assert.doesNotMatch(source, declarationOrImportFor(name),
         `${path} must not define or export ${name}`);
     }
   }
