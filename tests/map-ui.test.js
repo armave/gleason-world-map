@@ -15,8 +15,8 @@ const html = [
  ['<map-measure-panel data-lit-panel></map-measure-panel>','measure-panel-template'],
  ['<map-layers-panel data-lit-panel></map-layers-panel>','layers-panel-template'],
  ['<map-selection-panel data-lit-panel></map-selection-panel>','selection-panel-template'],
- ['<map-route-panel data-lit-panel></map-panel>','route-panel-template'],
- ['<map-calibration-panel data-lit-panel></map-panel>','calibration-panel-template'],
+ ['<map-route-panel data-lit-panel></map-route-panel>','route-panel-template'],
+ ['<map-calibration-panel data-lit-panel></map-calibration-panel>','calibration-panel-template'],
  ['<map-geometry-panel data-lit-panel></map-geometry-panel>','geometry-panel-template'],
  ['<map-historical-panel data-lit-panel></map-historical-panel>','historical-panel-template']
 ].reduce((source,[placeholder,id])=>source.replace(placeholder,templateMarkup(id)),htmlSource);
