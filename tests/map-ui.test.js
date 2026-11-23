@@ -163,7 +163,7 @@ test('1892 Vintage is the default visual style without changing flat-disk map ge
  assert.match(app,/vintage:\{canvas:'#eadfc9',water:'#82a9ad'/);
  assert.match(app,/vintageTexturePattern/);
  assert.match(app,/createVintageTexturePatterns/);
- assert.match(styles,/:root\\?\[data-map-style="vintage"\\?\]/);
+ assert.match(styles,/:root\[data-map-style="vintage"\]/);
 });
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
