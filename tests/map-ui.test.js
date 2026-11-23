@@ -198,8 +198,8 @@ test('calibration panel and PNG export share the latest global path-fit acceptan
  assert.match(calibrationUi,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
  assert.match(calibrationUi,/FLIGHT_CALIBRATION_SUMMARY/);
  assert.match(calibrationUi,/Latest route-mileage correction rejected/);
- assert.match(calibrationUi,/Last approved correction remains active/);
- assert.match(calibrationUi,/not independent straight-line distance evidence/);
+ assert.match(calibrationUi,/correction is not applied to direct map measurements/);
+ assert.match(calibrationUi,/No route-mileage multiplier is applied to the A–B ruler, scale bar or polygon measurements/);
  assert.match(calibrationUi,/isGloballyValidatedFlightPathCalibration/);
  assert.match(calibrationUi,/Latest visual-path candidate rejected/);
  assert.match(calibrationUi,/The last approved flat-disk parameters remain active/);
