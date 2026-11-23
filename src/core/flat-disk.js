@@ -6,7 +6,7 @@
  * The fitted power taper changes all 12 ring spacings while preserving the
  * centre and outer rim. The visible transform loads a separately gated
  * observed-ADS-B-path parameter set.
- * Direct displayed distances use the Euclidean chord in this visible disk.
+ * Direct displayed distances use the shared 64-step anisotropic planar metric.
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
