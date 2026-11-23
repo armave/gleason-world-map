@@ -143,6 +143,11 @@ test('deep-southern training and holdout pairs cover documented Antarctic air br
   const required = [
     ['SCCI', 'EGAR', 'train'], // Punta Arenas–Rothera (BAS)
     ['SCCI', 'SCGC', 'train'], // Punta Arenas–Union Glacier (ALE)
+    ['SCEL', 'SCCI', 'train'],
+    ['SAEZ', 'SAWH', 'train'],
+    ['SABE', 'SAWH', 'train'],
+    ['SAWG', 'SABE', 'holdout'],
+    ['SCCI', 'SCBA', 'holdout'],
     ['SCCI', 'SCRM', 'holdout'],
     ['NZCH', 'NZWD', 'holdout'],
     ['SAWG', 'SAWB', 'holdout'],
@@ -229,6 +234,23 @@ test('ordinary calibration routes keep using the airport endpoint geometry predi
   );
 });
 
+
+test('scheduled Southern South America routes provide distinct train and holdout pairs', () => {
+  const routes = new Map(calibrationRoutes().map(route => [
+    pairKey(route.from, route.to), route
+  ]));
+  assert.equal(routes.get(pairKey('SCEL', 'SCCI'))?.split, 'train');
+  assert.equal(routes.get(pairKey('SAEZ', 'SAWH'))?.split, 'train');
+  assert.equal(routes.get(pairKey('SABE', 'SAWH'))?.split, 'train');
+  assert.equal(routes.get(pairKey('SAWG', 'SABE'))?.split, 'holdout');
+  assert.equal(routes.get(pairKey('SCCI', 'SCBA'))?.split, 'holdout');
+
+  assert.ok(collectorSource.includes("from: 'SCEL', to: 'SCCI', split: 'train', icao24: ['e80446', 'e80496', 'e80442', 'e8041e']"));
+  assert.ok(collectorSource.includes("from: 'SAWH', to: 'SAEZ', split: 'train', icao24: ['e0b254', 'e0b255', 'e082d7', 'e07191']"));
+  assert.ok(collectorSource.includes("from: 'SABE', to: 'SAWH', split: 'train', icao24: ['e0b254', 'e0b255', 'e082d7', 'e07191']"));
+  assert.ok(collectorSource.includes("from: 'SAWG', to: 'SABE', split: 'holdout', icao24: ['e06443', 'e0b244', 'e07543']"));
+  assert.ok(collectorSource.includes("from: 'SCCI', to: 'SCBA', split: 'holdout', icao24: ['e803cf', 'e803cc']"));
+});
 
 test('documented Antarctic airframes are queried directly while retaining route split checks', () => {
   const routePairs = new Map(calibrationRoutes().map(route => [
