@@ -279,6 +279,30 @@ npm test
 
 The single distance formula is evaluated against observed reference-route mileage. Its correction is bounded for every pair; diagnostics report when a reference-range or correction-bound warning applies. The same returned number is used by all map distance surfaces.
 
+## Latest end-to-end replacement review — 23 November 2026
+
+The completed archive refresh is [GitHub Actions run #45114200598](https://github.com/armave/gleason-world-map/actions/runs/45114200598). It queried the published historical range from 19 May 2025 through 22 November 2026 (560 days) and committed a 103-airport-pair dataset containing 194 observed-only ADS-B flights with timestamped paths. The dataset yielded 26 training and 6 independent holdout airport pairs with at least three accepted mileage observations each; the visual-path fitter used 151 training and 36 holdout trajectories with 29,855 timestamped path points.
+
+The additional Antarctic/very-southern candidates remain empty in this archive: Punta Arenas–Rothera (SCCI–EGAR), Punta Arenas–Union Glacier (SCCI–SCGC), Christchurch–McMurdo (NZCH–NZIR and NZCH–NZWD), Punta Arenas–Marambio (SCCI–SAWB), Punta Arenas–King George Island (SCCI–SCRM), and Hobart–Wilkins (YMHB–YWKS) each returned zero matching candidate flights in this run. The Mode-S search is combined with endpoint geometry and exact airport identifiers; this narrower query no longer floods the collector with unrelated flights for the same airframe. It does not manufacture route records where the archive has none.
+
+The latest visible-map fit remains **rejected**:
+- South of 30°S: 4 training and 2 holdout route pairs (minimum met).
+- South of 45°S: 0 training and 0 holdout pairs; minimum is 2/2.
+- South of 60°S: 0 training and 0 holdout pairs; minimum is 1/1.
+- No global path-fit error metrics can be scored until the required independent southern coverage is present.
+
+The separate route-mileage distance correction is also **rejected**:
+- Training MAPE 11.70% (maximum 10%).
+- Independent holdout MAPE 23.15% (maximum 12%).
+- Worst holdout route error 56.83% (maximum 20%).
+- Leave-one-route-out MAPE 11.70% (maximum 15%); worst leave-one-out route error 75.79% (maximum 45%).
+
+Both fit scripts completed, but neither candidate passed its acceptance gates. The generated reports were committed without replacing the active parameter files. The current visible transform remains at source dataset version 4 and the last approved route-mileage correction remains at source dataset version 2. The calibration panel now reports both fit decisions and their separate roles.
+
+The parallel multi-anchor experiment is not ready to substitute either: `data/multi-anchor-distance-observations.json` still contains no independently sourced direct-straight-line observations, so its fitter correctly refuses to generate a candidate. Flown ADS-B mileage is not a straight-line endpoint distance and must not be substituted for one.
+
+**Replacement decision:** the new collector, diagnostics, UI and deployment work are complete, but the new map/distance calibration is not approved for replacement. Keep the last approved map active until actual qualifying southern observations and passing independent distance-validation data are available. Do not relax the geographic or error gates to force promotion.
+
 ## What this method does not establish
 
 - It does not estimate the shortest distance between two endpoints.
