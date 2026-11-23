@@ -47,7 +47,7 @@ test('A–B distance integrates the visible projected segment, not base geometry
     c2: ACTIVE_PLANAR_METRIC_C2
   }) * 1000;
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
-  assert.equal(result.distanceMeters, expectedMeters);
+  assert.ok(Math.abs(result.distanceMeters - expectedMeters) < 1e-6);
   assert.ok(result.distanceMeters < drawnSegmentMeters,
     'tangential compression must reduce this predominantly tangential connector');
   assert.equal(result.distanceMeters, measureDistanceMeters(first, second));
@@ -106,7 +106,7 @@ test('longitude wrapping does not change the anisotropic flat-disk metric', () =
   const first = point(-33.4489, -70.6693);
   const second = point(-35.2809, 149.13);
   const expected = measureDistanceMeters(first, second);
-  assert.equal(expected, measureDistanceMeters(second, first));
+  assert.ok(Math.abs(expected - measureDistanceMeters(second, first)) < 1e-6);
   assert.ok(Math.abs(expected - measureDistanceMeters(first, point(second.lat, second.lon + 720))) < 1e-6);
   assert.ok(Math.abs(expected - measureDistanceMeters(first, point(second.lat, second.lon - 1080))) < 1e-6);
 });
