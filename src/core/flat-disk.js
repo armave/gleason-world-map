@@ -10,6 +10,11 @@
  */
 import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
 import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
+import {
+  DEFAULT_TANGENTIAL_SCALE_C1,
+  DEFAULT_TANGENTIAL_SCALE_C2,
+  integrateAnisotropicPlanarSegment
+} from './anisotropic-planar-metric.js';
 import { radialFractionFromUnitColatitude, unitColatitudeFromRadialFraction } from './radial-warp.js';
 import {
   RADIAL_DISTANCE_PROFILE_MEAN,
@@ -27,6 +32,12 @@ export const DISK_BASE_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
 /** Final measured disk radius after integrating the active 12-circle profile. */
 export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
+export const ACTIVE_PLANAR_METRIC_C1 =
+  Number.isFinite(FLIGHT_PATH_CALIBRATION.c1) && FLIGHT_PATH_CALIBRATION.c1 >= 0
+    ? FLIGHT_PATH_CALIBRATION.c1 : DEFAULT_TANGENTIAL_SCALE_C1;
+export const ACTIVE_PLANAR_METRIC_C2 =
+  Number.isFinite(FLIGHT_PATH_CALIBRATION.c2) && FLIGHT_PATH_CALIBRATION.c2 >= 0
+    ? FLIGHT_PATH_CALIBRATION.c2 : DEFAULT_TANGENTIAL_SCALE_C2;
 
 const DEG = Math.PI / 180;
 const RAD = 180 / Math.PI;
@@ -78,6 +89,9 @@ export function radialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = radialFraction(latitudeDegrees);
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
+
+/** Active flat-disk radius at the equator, used to normalize tangential weight. */
+export const EQUATOR_RADIUS_KM = radialDistanceFromNorthKm(0);
 
 /** Radius in the legacy fitted base projection retained for calibration analysis. */
 export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
@@ -145,11 +159,19 @@ function pointInDiskKm(point, useBaseProjection = false) {
   return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
 }
 
-/** Euclidean chord in the visible disk; this is the canonical direct A–B measurement. */
+/**
+ * Canonical 64-step anisotropic planar distance along the straight segment
+ * between visible flat-disk endpoints. The projection itself is unchanged.
+ */
 export function flatDiskDistanceMeters(a, b) {
   const first = pointInDiskKm(a), second = pointInDiskKm(b);
   if (!first || !second) return null;
-  return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
+  const distanceKm = integrateAnisotropicPlanarSegment(first, second, {
+    equatorRadius: EQUATOR_RADIUS_KM,
+    c1: ACTIVE_PLANAR_METRIC_C1,
+    c2: ACTIVE_PLANAR_METRIC_C2
+  });
+  return Number.isFinite(distanceKm) ? distanceKm * 1000 : null;
 }
 
 /** Legacy base-projection chord retained for calibration analysis; not the runtime ruler metric. */
