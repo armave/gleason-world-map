@@ -28,15 +28,12 @@ export function buildFlightCalibrationRoutePredicate(route, geometryA, geometryB
   };
 
   if (addresses.length) {
-    // Require both the documented aircraft identity and one of the requested
-    // departure/arrival endpoint pairs during source-side discovery.
-    // Exact airport identifiers are checked independently after retrieval.
-    return {
-      and: [
-        { icao24: [...new Set(addresses)] },
-        endpointPairPredicate
-      ]
-    };
+    // Remote Antarctic runways may be missing from, or positioned differently
+    // in, the archive's endpoint geometry index. Query only the documented
+    // aircraft identity here. The collector records returned airport-pair
+    // mismatches, and only exact preassigned airport identifiers can proceed
+    // to detail retrieval or enter the train/holdout split.
+    return { icao24: [...new Set(addresses)] };
   }
   return endpointPairPredicate;
 }
