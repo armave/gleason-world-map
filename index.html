@@ -11,9 +11,17 @@
 </head>
 <body>
 <header>
-  <div class="kicker">Interactive cartographic instrument</div>
-  <h1>Gleason Flat-Disk Map</h1>
-  <div class="subtitle">1892-inspired engraved cartography · interactive flat-disk geometry · continuous Antarctic Ice Wall</div>
+  <div class="title-cartouche">
+    <div class="title-ribbon" aria-label="Historical map title">
+      <span aria-hidden="true">✥</span>
+      <span>NEW STANDARD MAP OF THE WORLD</span>
+      <span aria-hidden="true">✥</span>
+    </div>
+    <div class="kicker">Interactive cartographic instrument</div>
+    <h1>Gleason Flat-Disk Map</h1>
+    <div class="subtitle">1892-inspired engraved cartography · interactive flat-disk geometry · continuous Antarctic Ice Wall</div>
+    <div class="title-imprint"><span>POLAR DISK ATLAS</span><span>1892 VINTAGE EDITION</span><span>ANTARCTIC RIM COMPLETE</span></div>
+  </div>
 </header>
 <div class="app">
   <main class="map-card" id="mapCard">
@@ -59,6 +67,7 @@
   <aside id="toolsPanel">
     <map-layers-panel data-lit-panel></map-layers-panel>
     <map-selection-panel data-lit-panel></map-selection-panel>
+    <map-route-panel data-lit-panel></map-route-panel>
     <map-calibration-panel data-lit-panel></map-calibration-panel>
     <map-geometry-panel data-lit-panel></map-geometry-panel>
 <map-historical-panel data-lit-panel></map-historical-panel>
@@ -179,6 +188,36 @@
         <button id="setA">Set as A</button><button id="setB">Set as B</button>
       </div>
     </section>
+</template>
+<template id="route-panel-template">
+<section class="panel route-register-panel" aria-labelledby="routeRegisterTitle">
+  <div class="route-register-topline">
+    <span>FIELD NOTES · A—B</span>
+    <span class="route-register-seal" aria-hidden="true">✥</span>
+  </div>
+  <h2 id="routeRegisterTitle">Route register</h2>
+  <div class="route-register-endpoints" aria-live="polite" aria-atomic="true">
+    <div class="route-register-endpoint">
+      <span class="route-register-marker a">A</span>
+      <div class="route-register-place">
+        <strong id="routePointAName">Not set</strong>
+        <small id="routePointACoords">Waiting for endpoint A</small>
+      </div>
+    </div>
+    <div class="route-register-endpoint">
+      <span class="route-register-marker b">B</span>
+      <div class="route-register-place">
+        <strong id="routePointBName">Not set</strong>
+        <small id="routePointBCoords">Waiting for endpoint B</small>
+      </div>
+    </div>
+  </div>
+  <div class="route-register-distance" aria-live="polite">
+    <span>CANONICAL MAP DISTANCE</span>
+    <strong id="routeDistanceValue">—</strong>
+  </div>
+  <p class="route-register-status" id="routeRegisterStatus" role="status">Choose two points in Distance mode or assign capitals as A and B.</p>
+</section>
 </template>
 <template id="calibration-panel-template">
 <section class="panel">

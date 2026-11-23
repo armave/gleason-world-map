@@ -85,7 +85,8 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 ## Features
 
 - Gleason-style 2D north-polar circular disk layout
-- 1892 Vintage presentation with restrained parchment grain, engraved ocean contours and clipped land hatching; textures are decorative and do not alter geography or measurements
+- 1892 Vintage presentation with restrained parchment grain, engraved ocean contours, clipped land hatching, and an ornamental title cartouche; textures and ornament are decorative and do not alter geography or measurements
+- Live A–B route register with endpoint names, coordinates, and the same canonical distance shown on the map; zoomed map annotations identify each endpoint without introducing another distance calculation
 - Smooth ADS-B-calibrated radial disk with a finite-derivative latitude warp and integrated 12-circle radial-spacing profile; parameters promoted only after observed-path validation
 - Separate Natural Earth physical coastlines and island shorelines, with dateline-safe projection
 - Curved ocean and sea labels that fade by scale and avoid land and other labels

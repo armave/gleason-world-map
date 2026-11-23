@@ -73,14 +73,18 @@ let registrationPoints = [], registrationPickActive = false, pendingRegistration
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
 const appState=createAppState({
  mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
- selection:null,measurement:{distancePointCount:0,areaPointCount:0},
+ selection:null,measurement:{distancePointCount:0,areaPointCount:0,areaFinished:false,endpoints:[],distanceLabel:''},
  historical:{...historical},searchQuery:''
 });
 function publishAppState(reason='map-interaction'){
  appState.update({
   mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
   selection:selected?{type:selected.type||'unknown'}:null,
-  measurement:{distancePointCount:points.length,areaPointCount:areaPoints.length,areaFinished},
+  measurement:{
+   distancePointCount:points.length,areaPointCount:areaPoints.length,areaFinished,
+   endpoints:points.map(point=>({name:point.name||'Map location',coordinates:fmtCoord(point.lat,point.lon)})),
+   distanceLabel:points.length===2?formatDistance(measureDirectDistance(points[0],points[1]).distanceMeters):''
+  },
   historical:{...historical}
  },{source:'map',reason});
 }
@@ -433,7 +437,7 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  }
  if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
     labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
- const isArea=kind==='area';
+ const isArea=kind==='area',isRouteB=kind==='route-b';
  if(kind==='restricted'){
   // Keep the callout attached to its map coordinate, but constrain its text
   // to the readable half-plane so rotation never leaves it vertical/upside-down.
@@ -442,11 +446,12 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
   ctx.translate(labelX,labelY);ctx.rotate(readableAngle);labelX=0;labelY=0;
  }
  ctx.fillStyle='rgba(255,250,238,.96)';
- ctx.strokeStyle=isArea?'#3f7285':'#b45c39';
+ const labelColor=isArea?'#3f7285':isRouteB?'#3c7189':'#b45c39';
+ ctx.strokeStyle=labelColor;
  ctx.lineWidth=1;
  ctx.fillRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
  ctx.strokeRect(labelX-boxWidth/2,labelY-boxHeight/2,boxWidth,boxHeight);
- ctx.fillStyle=isArea?'#315d6c':'#87452e';
+ ctx.fillStyle=isArea?'#315d6c':isRouteB?'#315e73':'#87452e';
  ctx.textAlign='center';ctx.textBaseline='middle';
  ctx.fillText(text,labelX,labelY+.5);
  ctx.restore();
@@ -480,7 +485,17 @@ function drawMeasure(){
    );
   }
  }
- points.forEach((p,i)=>{const [x,y]=project(p.lon,p.lat);ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';drawUprightMapText(i===0?'A':'B',x,y+.3/zoom);});
+ points.forEach((p,i)=>{
+  const [x,y]=project(p.lon,p.lat);
+  ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);
+  ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();
+  ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();
+  ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#fff';drawUprightMapText(i===0?'A':'B',x,y+.3/zoom);
+  const caption=String(p.name||fmtCoord(p.lat,p.lon)).replace(/\s+/g,' ').trim();
+  const compact=caption.length>26?caption.slice(0,23)+'…':caption;
+  if(zoom>=1.05&&compact)drawMeasurementLabelAtMap(x+16/zoom,y-14/zoom,(i===0?'A':'B')+' · '+compact,i===0?'route-a':'route-b');
+ });
 }
 function drawArea(){
  if(!areaPoints.length)return;
@@ -703,6 +718,7 @@ function updateMeasurement(){
    :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
  }
  syncMeasurementActionButtons();
+ publishAppState('measurement');
 }
 function clearMeasurementDrawings(){
  points=[];areaPoints=[];areaFinished=false;
