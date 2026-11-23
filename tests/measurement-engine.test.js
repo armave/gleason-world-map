@@ -11,16 +11,20 @@ import {
   DISK_RADIAL_SCALE_KM,
   DISK_BASE_RADIUS_KM,
   DISK_RADIUS_KM,
+  EQUATOR_RADIUS_KM,
+  ACTIVE_PLANAR_METRIC_C1,
+  ACTIVE_PLANAR_METRIC_C2,
   flatDiskDistanceMeters,
   flatDiskLinePath,
   project
 } from '../src/core/flat-disk.js';
+import { integrateAnisotropicPlanarSegment } from '../src/core/anisotropic-planar-metric.js';
 import { FLIGHT_PATH_CALIBRATION } from '../src/core/flight-path-calibration-parameters.js';
 import { RADIAL_DISTANCE_PROFILE_MEAN, radialDistanceCorrectionFactor } from '../src/core/visual-radial-calibration.js';
 
 const point = (lat, lon) => ({ lat, lon });
 
-test('A–B distance is the visible projected chord, not a base-geometry or flight-mileage estimate', () => {
+test('A–B distance integrates the visible projected segment, not base geometry or flight mileage', () => {
   const first = point(-33.45, -70.67);
   const second = point(-35.27, 149.13);
   const result = measureDirectDistance(first, second);
@@ -35,8 +39,17 @@ test('A–B distance is the visible projected chord, not a base-geometry or flig
   assert.equal(result.metric, 'anisotropic-planar-segment');
   assert.equal(result.restricted, false);
   assert.ok(Number.isFinite(result.distanceMeters));
+  const firstKm = project(first.lon, first.lat, DISK_RADIUS_KM);
+  const secondKm = project(second.lon, second.lat, DISK_RADIUS_KM);
+  const expectedMeters = integrateAnisotropicPlanarSegment(firstKm, secondKm, {
+    equatorRadius: EQUATOR_RADIUS_KM,
+    c1: ACTIVE_PLANAR_METRIC_C1,
+    c2: ACTIVE_PLANAR_METRIC_C2
+  }) * 1000;
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
-  assert.equal(result.distanceMeters, drawnSegmentMeters);
+  assert.equal(result.distanceMeters, expectedMeters);
+  assert.ok(result.distanceMeters < drawnSegmentMeters,
+    'tangential compression must reduce this predominantly tangential connector');
   assert.equal(result.distanceMeters, measureDistanceMeters(first, second));
   assert.equal(result.distanceMeters, measureDirectDistance(second, first).distanceMeters);
 });
