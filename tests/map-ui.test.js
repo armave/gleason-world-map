@@ -359,7 +359,7 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
 });
 
 test('scale-bar calculations use the same direct projected metric as A–B measurements',()=>{
- assert.match(app,/The scale bar uses the same canonical calibrated metric as A–B and area edges/);
+ assert.match(app,/The scale bar uses the same visible-flat-disk chord metric as A–B and area edges/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
