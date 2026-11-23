@@ -21,7 +21,6 @@ import {
 import {
   resolveCalibrationAirport,
   canCollectCalibrationRoute,
-  routeHasAircraftDiscovery,
   matchesAirportPairIdentifiers,
   shouldDeferSummaryAirportPairCheck
 } from './flight-calibration-airport-metadata.mjs';
@@ -424,7 +423,6 @@ async function collectRoute(route, airports, endDate, historyStart) {
     const page = await postJson('/query', body);
     pagesScanned++;
     const flights = Array.isArray(page.flights) ? page.flights : [];
-    const expectedRouteKey = routeKey(route.from, route.to);
     const candidates = flights.filter(flight => {
       if (!flight.flight_id || seen.has(flight.flight_id)) return false;
       seen.add(flight.flight_id);
