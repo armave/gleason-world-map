@@ -12,6 +12,21 @@ test('state snapshots are immutable and nested state is merged',()=>{
   assert.equal(before.view.rotationDegrees,0);
 });
 
+test('measurement endpoint annotations are included in immutable snapshots',()=>{
+  const state=createAppState();
+  assert.deepEqual(state.getState().measurement.endpoints,[]);
+  assert.equal(state.getState().measurement.distanceLabel,'');
+  state.update({measurement:{
+    endpoints:[{name:'Yerevan',coordinates:'40.18 N · 44.51 E'},{name:'Paris',coordinates:'48.86 N · 2.35 E'}],
+    distanceLabel:'3,420 km'
+  }});
+  const measurement=state.getState().measurement;
+  assert.equal(measurement.distanceLabel,'3,420 km');
+  assert.equal(measurement.endpoints[0].name,'Yerevan');
+  assert.ok(Object.isFrozen(measurement.endpoints));
+  assert.ok(Object.isFrozen(measurement.endpoints[0]));
+});
+
 test('subscribers receive updates and can unsubscribe',()=>{
   const state=createAppState();
   const changes=[];
