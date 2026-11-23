@@ -11,7 +11,7 @@ export function buildFlightCalibrationRoutePredicate(route, geometryA, geometryB
     ? route.icao24.map(value => String(value).trim().toLowerCase()).filter(Boolean)
     : [];
   if (addresses.length) {
-    return { icao24: { icao24: [...new Set(addresses)] } };
+    return { icao24: [...new Set(addresses)] };
   }
 
   return {
