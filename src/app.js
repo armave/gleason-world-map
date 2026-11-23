@@ -5,6 +5,7 @@ import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js'
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
+import {createVintageTextureTiles,createVintageTexturePatterns} from './map/vintage-texture.js';
 import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
 import {FLIGHT_PATH_CALIBRATION} from './core/flight-path-calibration-parameters.js';
 import {isGloballyValidatedFlightPathCalibration} from './core/flight-path-calibration-status.js';
@@ -46,13 +47,27 @@ let frameScaleBarReadingKm = Infinity;
 let boundaryScaleLabel='Natural Earth 1:50m';
 const QUALITY_STORAGE_KEY='gleason-map:quality:v1',STYLE_STORAGE_KEY='gleason-map:style:v2';
 const VISUAL_STYLES=Object.freeze({
- vintage:{canvas:'#f0e9d9',water:'#dcecf1',rim:'#91aab4',grid:'#9ba9a8',gridMinor:'#c0c5b7',equator:'#526f78',labels:'#405a62',outline:'#68746f',coastline:'#477486',coastHalo:'rgba(250,253,247,.94)',oceanLabel:'#355f70',seaLabel:'#4c6b76',labelHalo:'rgba(245,250,250,.96)',countryColors:['#cdb889','#b8c6a9','#d8cba9','#b8c2b0','#d4b995','#c1c9b8','#d9c6a1']},
+ vintage:{canvas:'#eadfc9',water:'#82a9ad',rim:'#718f91',grid:'#5f8585',gridMinor:'#a8bdb0',equator:'#395f60',labels:'#3d4037',outline:'#7b6042',coastline:'#315f62',coastHalo:'rgba(243,233,208,.94)',oceanLabel:'#294f56',seaLabel:'#3d5e5d',labelHalo:'rgba(234,224,201,.97)',countryColors:['#d6b477','#a5b486','#dfc58f','#9cb3a0','#ca9c6e','#b4b98e','#d5a47a']},
  atlas:{canvas:'#edf2ec',water:'#b9d8e8',rim:'#557f91',grid:'#6f94a1',gridMinor:'#9db9c2',equator:'#315f73',labels:'#284f61',outline:'#456b72',coastline:'#315f73',coastHalo:'rgba(246,251,249,.96)',oceanLabel:'#244f66',seaLabel:'#3c6474',labelHalo:'rgba(241,248,248,.97)',countryColors:['#d7c8a2','#a8c7ab','#e3d29e','#aac3d0','#d9b99b','#b6c6a5','#e2c6a9']},
  clean:{canvas:'#f4f7f8',water:'#e4f0f6',rim:'#a1bdca',grid:'#b3c4cb',gridMinor:'#d3dfe3',equator:'#638795',labels:'#3f6170',outline:'#8b9ea7',coastline:'#6c8997',coastHalo:'rgba(255,255,255,.98)',oceanLabel:'#496a78',seaLabel:'#6a8792',labelHalo:'rgba(248,252,253,.98)',countryColors:['#d7e0d9','#e4e8d7','#d8e3e9','#eee1d0','#d6e0e8','#dce6d8','#e7ddd0']}
 });
 function readMapQuality(){try{const value=localStorage.getItem(QUALITY_STORAGE_KEY);return Object.hasOwn(MAP_QUALITY_OPTIONS,value)?value:'medium';}catch{return 'medium';}}
 function readVisualStyle(){try{const value=localStorage.getItem(STYLE_STORAGE_KEY);return Object.hasOwn(VISUAL_STYLES,value)?value:'vintage';}catch{return 'vintage';}}
 let mapQuality=readMapQuality(),visualStyle=readVisualStyle(),visualPalette=VISUAL_STYLES[visualStyle],loadGeneration=0;
+let vintageTextureTiles=null;
+const vintageTexturePatternsByContext=new WeakMap();
+function vintageTexturePattern(targetContext,kind){
+ if(visualStyle!=='vintage'||!targetContext)return null;
+ if(!vintageTextureTiles)vintageTextureTiles=createVintageTextureTiles(document);
+ if(!vintageTextureTiles)return null;
+ let patterns=vintageTexturePatternsByContext.get(targetContext);
+ if(!patterns){
+  patterns=createVintageTexturePatterns(targetContext,vintageTextureTiles);
+  if(!patterns)return null;
+  vintageTexturePatternsByContext.set(targetContext,patterns);
+ }
+ return patterns[kind]||null;
+}
 document.documentElement.dataset.mapStyle=visualStyle;
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
@@ -190,7 +205,15 @@ function resize(){
  if(countryLayerDpr!==dpr)buildCountryLayerCache();
  draw();
 }
-function drawDiskBase(){ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
+function drawDiskBase(){
+ ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.fillStyle=visualPalette.water;ctx.fill();
+ const waterTexture=vintageTexturePattern(ctx,'water');
+ if(waterTexture){
+  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
+  ctx.globalAlpha=.72;ctx.fillStyle=waterTexture;ctx.fillRect(-baseR,-baseR,baseR*2,baseR*2);ctx.restore();
+ }
+ ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();
+}
 function drawGrid(){ctx.save();const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];for(const lat of latitudes){if(lat===RESTRICTED_PARALLEL_LATITUDE)continue;const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;ctx.lineWidth=(lat===0?1.55:.65)/zoom;ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);ctx.stroke();}ctx.save();ctx.setLineDash([1.15/zoom,5/zoom]);ctx.strokeStyle=visualPalette.gridMinor;ctx.globalAlpha=.72;ctx.lineWidth=.46/zoom;for(const circle of RADIAL_DISTANCE_VISUAL_CIRCLES){if(circle.circle===1||circle.circle===12)continue;ctx.beginPath();ctx.arc(0,0,baseR*circle.visualFraction,0,Math.PI*2);ctx.stroke();}ctx.restore();ctx.setLineDash([]);for(let d=0;d<360;d+=15){ctx.beginPath();let started=false;for(let lat=90;lat>=-90;lat-=2){const [x,y]=project(d,lat);if(!Number.isFinite(x)||!Number.isFinite(y))continue;if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}ctx.strokeStyle=d%30===0?visualPalette.grid:visualPalette.gridMinor;ctx.lineWidth=(d%30===0?.82:.42)/zoom;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();}
 function drawCompassRose(){
  const rose=createCompassRoseLayout(rotationRadians()),{cx,cy,radius:r,outerRadius}=rose;
@@ -245,9 +268,14 @@ function buildCountryLayerCache(){
  const layerCtx=layer.getContext('2d');
  if(!layerCtx)return;
  layerCtx.setTransform(...centeredCanvasTransform(pixelRatio,baseR));
+ const landTexture=vintageTexturePattern(layerCtx,'land');
  for(const rec of pathRecords){
   layerCtx.fillStyle=hashColorForPalette(rec.country.iso,visualPalette.countryColors);
   layerCtx.globalAlpha=.93;layerCtx.fill(rec.path,'evenodd');layerCtx.globalAlpha=1;
+  if(landTexture){
+   layerCtx.save();layerCtx.clip(rec.path,'evenodd');layerCtx.globalAlpha=.68;
+   layerCtx.fillStyle=landTexture;layerCtx.fillRect(-baseR,-baseR,baseR*2,baseR*2);layerCtx.restore();
+  }
  }
  countryLayerCanvas=layer;countryLayerBaseR=baseR;countryLayerStyle=visualStyle;countryLayerDpr=pixelRatio;
 }
@@ -256,7 +284,12 @@ function drawCountries(){
   ctx.drawImage(countryLayerCanvas,-baseR,-baseR,baseR*2,baseR*2);
   if(countryOutlinesPath){ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(countryOutlinesPath);}
  }else{
-  for(const rec of pathRecords){const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);}
+  const landTexture=vintageTexturePattern(ctx,'land');
+  for(const rec of pathRecords){
+   const c=rec.country;ctx.fillStyle=hashColor(c.iso);ctx.globalAlpha=.93;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;
+   if(landTexture){ctx.save();ctx.clip(rec.path,'evenodd');ctx.globalAlpha=.68;ctx.fillStyle=landTexture;ctx.fillRect(-baseR,-baseR,baseR*2,baseR*2);ctx.restore();}
+   ctx.strokeStyle=visualPalette.outline;ctx.lineWidth=.62/zoom;ctx.stroke(rec.path);
+  }
  }
  if(hoveredCountry){const rec=pathRecords.find(x=>x.country===hoveredCountry);if(rec){ctx.fillStyle='#d18b57';ctx.globalAlpha=.30;ctx.fill(rec.path,'evenodd');ctx.globalAlpha=1;ctx.strokeStyle='#8c482b';ctx.lineWidth=2/zoom;ctx.stroke(rec.path);}}
  if(selected&&selected.type==='country'){const rec=pathRecords.find(x=>x.country===selected.country);if(rec){ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(rec.path);}}
@@ -526,6 +559,8 @@ function draw(){
  const scaleLayout=calculateScaleBarLayout();
  frameScaleBarReadingKm=scaleLayout?.targetKm??Infinity;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle=visualPalette.canvas;ctx.fillRect(0,0,width,height);
+ const paperTexture=vintageTexturePattern(ctx,'paper');
+ if(paperTexture){ctx.save();ctx.globalAlpha=.8;ctx.fillStyle=paperTexture;ctx.fillRect(0,0,width,height);ctx.restore();}
  labelCollisionBoxes=[];reserveScreenUiCollisionBoxes();ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
  // Draw geographic geometry first; labels are placed afterward against a shared collision map.
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
