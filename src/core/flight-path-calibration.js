@@ -418,7 +418,7 @@ const GEOMETRY_BOUNDS = Object.freeze([
   [0, 2.5], [0, 2.5]
 ]);
 const LONGITUDE_WARP_REGULARIZATION = 3;
-const DISTANCE_METRIC_REGULARIZATION = 2;
+const DISTANCE_METRIC_REGULARIZATION = 20;
 const MINIMUM_ANGULAR_STRETCH = 0.35;
 
 function geometryFromVector(vector) {
