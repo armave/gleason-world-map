@@ -10,7 +10,7 @@ const collectorSource = await readFile(
 
 function calibrationRoutes() {
   const routes = [];
-  const pattern = /\{\s*from:\s*'([A-Z0-9]+)'\s*,\s*to:\s*'([A-Z0-9]+)'\s*,\s*split:\s*'(train|holdout)'\s*\}/g;
+  const pattern = /\{\s*from:\s*'([A-Z0-9]+)'\s*,\s*to:\s*'([A-Z0-9]+)'\s*,\s*split:\s*'(train|holdout)'(?:\s*,[^}]*)?\s*\}/g;
   for (const match of collectorSource.matchAll(pattern)) {
     routes.push({ from: match[1], to: match[2], split: match[3] });
   }
