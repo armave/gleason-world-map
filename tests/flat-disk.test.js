@@ -184,12 +184,9 @@ test('direct connector contains only the two projected endpoints', () => {
 
 test('radial separation and same-latitude straight chord formulas are planar', () => {
   close(northSouthDistanceKm(90, 0), radialDistanceFromNorthKm(0), 1e-10);
-  const projectedA = project(0, 0, 1);
-  const projectedB = project(1, 0, 1);
   close(
     eastWestDistanceKm(0, Math.PI / 180),
-    Math.hypot(projectedB[0] - projectedA[0], projectedB[1] - projectedA[1]) *
-      DISK_RADIUS_KM,
+    flatDiskDistanceMeters(point(0, 0), point(0, 1)) / 1000,
     1e-7
   );
 });
