@@ -195,7 +195,8 @@ test('path fit selects a reversible non-folding geometry on independent held-out
   assert.ok(result.model.c1 >= 0 && result.model.c2 >= 0);
   assert.equal(result.model.metricSamples, 64);
   assert.ok(result.metrics.selectedC1 >= 0 && result.metrics.selectedC2 >= 0);
-  close(result.model.radialScaleKm, 5200, 250);
+  assert.ok(Math.abs(result.model.radialScaleKm - 5200) <= 250,
+    `radial scale ${result.model.radialScaleKm}; c1=${result.model.c1}; c2=${result.model.c2}; radial exponent=${result.model.radialWarp.exponent}; profile exponent=${result.model.radialProfile.exponent}; metric penalty=${result.metrics.distanceMetricPenalty}`);
   assert.ok(result.metrics.training.meanAbsolutePercent < 2);
   assert.ok(result.metrics.holdout.meanAbsolutePercent < 10);
   assert.ok(result.metrics.leaveOneOut.meanAbsolutePercent < 15);
