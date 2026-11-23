@@ -6,6 +6,7 @@ export const PANEL_TAGS=Object.freeze([
   'map-measure-panel',
   'map-layers-panel',
   'map-selection-panel',
+  'map-route-panel',
   'map-calibration-panel',
   'map-geometry-panel',
   'map-historical-panel'
@@ -58,6 +59,30 @@ class TemplatePanel extends LitElement {
     const mode = snapshot.mode || 'explore';
     this.dataset.activeMode = mode;
     this.querySelector('.lit-panel-content')?.setAttribute('data-active-mode', mode);
+    if (this.localName !== 'map-route-panel') return;
+
+    const measurement = snapshot.measurement || {};
+    const endpoints = Array.isArray(measurement.endpoints) ? measurement.endpoints : [];
+    const a = endpoints[0] || null;
+    const b = endpoints[1] || null;
+    const setText = (id, value) => {
+      const element = this.querySelector('#' + id);
+      if (element) element.textContent = value;
+    };
+    setText('routePointAName', a?.name || 'Not set');
+    setText('routePointACoords', a?.coordinates || 'Waiting for endpoint A');
+    setText('routePointBName', b?.name || 'Not set');
+    setText('routePointBCoords', b?.coordinates || 'Waiting for endpoint B');
+    setText('routeDistanceValue', measurement.distancePointCount === 2
+      ? (measurement.distanceLabel || 'Unavailable')
+      : '—');
+    const status = measurement.distancePointCount === 2
+      ? 'A and B are connected by the same canonical measurement shown on the map.'
+      : measurement.distancePointCount === 1
+        ? 'Endpoint A is set. Add a second point to complete the route annotation.'
+        : 'Choose two points in Distance mode or assign capitals as A and B.';
+    setText('routeRegisterStatus', status);
+    this.dataset.routeComplete = String(measurement.distancePointCount === 2);
   }
 
   _relayPanelEvent(event) {
@@ -98,6 +123,7 @@ const definitions = [
   ['map-measure-panel','measure-panel-template'],
   ['map-layers-panel','layers-panel-template'],
   ['map-selection-panel','selection-panel-template'],
+  ['map-route-panel','route-panel-template'],
   ['map-calibration-panel','calibration-panel-template'],
   ['map-geometry-panel','geometry-panel-template'],
   ['map-historical-panel','historical-panel-template']
