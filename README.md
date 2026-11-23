@@ -41,7 +41,12 @@ The map has one distance source of truth. For every pair of endpoints, the canon
 ```text
 A' = project(A.longitude, A.latitude)
 B' = project(B.longitude, B.latitude)
-Δx = (B'.x − A'.x) / 64 · Δy = (B'.y − A'.y) / 64\nAt midpoint (xᵢ,yᵢ): rᵢ = hypot(xᵢ,yᵢ)\ndrᵢ = (xᵢΔx + yᵢΔy) / rᵢ\ntᵢ = (xᵢΔy − yᵢΔx) / rᵢ\nw(r) = 1 / [1 + c₁(r/R_eq)² + c₂(r/R_eq)⁴]\nD(A,B) = Σᵢ₌₀⁶³ sqrt(drᵢ² + [w(rᵢ)tᵢ]²)
+Δx = (B'.x − A'.x) / 64 · Δy = (B'.y − A'.y) / 64
+At midpoint (xᵢ,yᵢ): rᵢ = hypot(xᵢ,yᵢ)
+drᵢ = (xᵢΔx + yᵢΔy) / rᵢ
+tᵢ = (xᵢΔy − yᵢΔx) / rᵢ
+w(r) = 1 / [1 + c₁(r/R_eq)² + c₂(r/R_eq)⁴]
+D(A,B) = Σᵢ₌₀⁶³ sqrt(drᵢ² + [w(rᵢ)tᵢ]²)
 ```
 
 The endpoints use the existing forward radial warp, integrated 12-circle profile and periodic longitude shear. Distance then integrates the straight segment in that unchanged plane. The initial c₁/c₂ defaults are 0.08/0.20, giving w(12,865 km) close to 0.49 when R_eq is about 8,945.06 km. Radial travel is not scaled. **Known constraint:** because c₁,c₂≥0, w(r) is positive and ds≥|dr| at every sample. On the unchanged Santiago–Canberra projected segment, the 64-step radial variation alone is approximately 16,539 km, already well above the requested 11,907 km upper limit for an 11,340 km benchmark. No allowed c₁/c₂ pair can bring that route within ±5% without changing the projection or allowing radial scaling.
