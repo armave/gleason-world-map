@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-23T06:01:24.960Z",
+    "retrievedAt": "2026-11-23T06:21:22.501Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-22"
@@ -12758,9 +12758,9 @@
       "medianMaxGapMinutes": 0.8505833327770234,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 63,
+        "low-telemetry-coverage": 4,
         "missing-ground-speed-or-duration": 7,
         "telemetry-gap-too-large": 55,
-        "low-telemetry-coverage": 4,
         "too-few-speed-intervals": 4
       },
       "routeIdentifierMismatches": [],
@@ -24690,8 +24690,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 364,
-        "telemetry-gap-too-large": 46,
         "missing-ground-speed-or-duration": 11,
+        "telemetry-gap-too-large": 46,
         "low-telemetry-coverage": 1
       },
       "routeIdentifierMismatches": [
@@ -39402,8 +39402,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "telemetry-gap-too-large": 5,
         "too-few-speed-intervals": 2,
+        "telemetry-gap-too-large": 5,
         "low-telemetry-coverage": 14,
         "missing-ground-speed-or-duration": 11,
         "flight-too-short": 1
@@ -48110,8 +48110,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 86,
-        "telemetry-gap-too-large": 31,
         "low-telemetry-coverage": 27,
+        "telemetry-gap-too-large": 31,
         "too-few-speed-intervals": 11,
         "flight-too-short": 2
       },
@@ -99621,8 +99621,13 @@
       "routeId": "SCCI--SCEL",
       "directionListed": "SCEL-SCCI",
       "split": "train",
-      "queryMode": "airport-endpoint-geometry",
-      "queryIcao24": [],
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "e80446",
+        "e80496",
+        "e80442",
+        "e8041e"
+      ],
       "airportA": {
         "ident": "SCEL",
         "iataCode": "SCL",
@@ -99652,19 +99657,62 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
-      "routeIdentifierMismatches": [],
-      "pagesScanned": 79,
-      "windowsScanned": 1,
-      "candidatesSeen": 0,
+      "telemetryDiagnostics": {
+        "summaryAirportPairDeferred": 96,
+        "routeIdentifierMismatch": 3,
+        "telemetry-gap-too-large": 12,
+        "flight-too-short": 30,
+        "too-few-speed-intervals": 25,
+        "missing-ground-speed-or-duration": 5
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "SABE--SABE",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SABE>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SPJC",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SPJC>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SBGR--SCEL",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SCEL>SBGR",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "pagesScanned": 1,
+      "windowsScanned": 0,
+      "candidatesSeen": 72,
       "observations": []
     },
     {
       "routeId": "SAEZ--SAWH",
       "directionListed": "SAWH-SAEZ",
       "split": "train",
-      "queryMode": "airport-endpoint-geometry",
-      "queryIcao24": [],
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "e0b254",
+        "e0b255",
+        "e082d7",
+        "e07191"
+      ],
       "airportA": {
         "ident": "SAWH",
         "iataCode": "USH",
@@ -99694,11 +99742,230 @@
       "medianTelemetrySpanMinutes": null,
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {},
-      "routeIdentifierMismatches": [],
-      "pagesScanned": 79,
-      "windowsScanned": 1,
-      "candidatesSeen": 0,
+      "telemetryDiagnostics": {
+        "summaryAirportPairDeferred": 145,
+        "routeIdentifierMismatch": 63,
+        "too-few-speed-intervals": 8,
+        "low-telemetry-coverage": 16,
+        "telemetry-gap-too-large": 31,
+        "missing-ground-speed-or-duration": 1,
+        "flight-too-short": 6,
+        "detailRouteIdentifierMismatch": 10
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "SABE--SABE",
+          "count": 22,
+          "directions": [
+            {
+              "direction": "SABE>SABE",
+              "count": 22
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SBGR",
+          "count": 19,
+          "directions": [
+            {
+              "direction": "SBGR>SABE",
+              "count": 10
+            },
+            {
+              "direction": "SABE>SBGR",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SAEZ",
+          "count": 17,
+          "directions": [
+            {
+              "direction": "SABE>SAEZ",
+              "count": 9
+            },
+            {
+              "direction": "SAEZ>SABE",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SPJC",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "SABE>SPJC",
+              "count": 1
+            },
+            {
+              "direction": "SPJC>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SUMU",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "SABE>SUMU",
+              "count": 1
+            },
+            {
+              "direction": "SUMU>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SAEZ--SBGR",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SAEZ>SBGR",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "pagesScanned": 2,
+      "windowsScanned": 0,
+      "candidatesSeen": 72,
+      "observations": []
+    },
+    {
+      "routeId": "SABE--SAWH",
+      "directionListed": "SABE-SAWH",
+      "split": "train",
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "e0b254",
+        "e0b255",
+        "e082d7",
+        "e07191"
+      ],
+      "airportA": {
+        "ident": "SABE",
+        "iataCode": "AEP",
+        "name": "AEROPARQUE JORGE NEWBERY",
+        "lat": -34.559,
+        "lon": -58.416,
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
+      },
+      "airportB": {
+        "ident": "SAWH",
+        "iataCode": "USH",
+        "name": "USHUAIA / MALVINAS ARGENTINAS",
+        "lat": -54.84331603340204,
+        "lon": -68.29563870745761,
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "medianObservedTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "medianTelemetrySpanMinutes": null,
+      "medianTelemetryCoverage": null,
+      "medianMaxGapMinutes": null,
+      "telemetryDiagnostics": {
+        "summaryAirportPairDeferred": 145,
+        "routeIdentifierMismatch": 63,
+        "too-few-speed-intervals": 8,
+        "low-telemetry-coverage": 16,
+        "telemetry-gap-too-large": 31,
+        "missing-ground-speed-or-duration": 1,
+        "flight-too-short": 6,
+        "detailRouteIdentifierMismatch": 10
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "SABE--SABE",
+          "count": 22,
+          "directions": [
+            {
+              "direction": "SABE>SABE",
+              "count": 22
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SBGR",
+          "count": 19,
+          "directions": [
+            {
+              "direction": "SBGR>SABE",
+              "count": 10
+            },
+            {
+              "direction": "SABE>SBGR",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SAEZ",
+          "count": 17,
+          "directions": [
+            {
+              "direction": "SABE>SAEZ",
+              "count": 9
+            },
+            {
+              "direction": "SAEZ>SABE",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SPJC",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "SABE>SPJC",
+              "count": 1
+            },
+            {
+              "direction": "SPJC>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SUMU",
+          "count": 2,
+          "directions": [
+            {
+              "direction": "SABE>SUMU",
+              "count": 1
+            },
+            {
+              "direction": "SUMU>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SAEZ--SBGR",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SAEZ>SBGR",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "pagesScanned": 2,
+      "windowsScanned": 0,
+      "candidatesSeen": 72,
       "observations": []
     },
     {
@@ -99828,6 +100095,195 @@
       "observations": []
     },
     {
+      "routeId": "SABE--SAWG",
+      "directionListed": "SAWG-SABE",
+      "split": "holdout",
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "e06443",
+        "e0b244",
+        "e07543"
+      ],
+      "airportA": {
+        "ident": "SAWG",
+        "iataCode": "RGL",
+        "name": "RIO GALLEGOS / PILOTO CIVIL NORBERTO FERNÁNDEZ",
+        "lat": -51.609,
+        "lon": -69.313,
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
+      },
+      "airportB": {
+        "ident": "SABE",
+        "iataCode": "AEP",
+        "name": "AEROPARQUE JORGE NEWBERY",
+        "lat": -34.559,
+        "lon": -58.416,
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "medianObservedTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "medianTelemetrySpanMinutes": null,
+      "medianTelemetryCoverage": null,
+      "medianMaxGapMinutes": null,
+      "telemetryDiagnostics": {
+        "summaryAirportPairDeferred": 102,
+        "routeIdentifierMismatch": 46,
+        "flight-too-short": 21,
+        "too-few-speed-intervals": 6,
+        "telemetry-gap-too-large": 22,
+        "low-telemetry-coverage": 14,
+        "missing-ground-speed-or-duration": 3,
+        "detailRouteIdentifierMismatch": 6
+      },
+      "routeIdentifierMismatches": [
+        {
+          "routeId": "SABE--SABE",
+          "count": 20,
+          "directions": [
+            {
+              "direction": "SABE>SABE",
+              "count": 20
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SAEZ",
+          "count": 10,
+          "directions": [
+            {
+              "direction": "SAEZ>SABE",
+              "count": 6
+            },
+            {
+              "direction": "SABE>SAEZ",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SBGR",
+          "count": 10,
+          "directions": [
+            {
+              "direction": "SABE>SBGR",
+              "count": 5
+            },
+            {
+              "direction": "SBGR>SABE",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SUMU",
+          "count": 3,
+          "directions": [
+            {
+              "direction": "SABE>SUMU",
+              "count": 2
+            },
+            {
+              "direction": "SUMU>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SABE--SARP",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SARP>SABE",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SAEZ--SAEZ",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SAEZ>SAEZ",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "routeId": "SAEZ--SGAS",
+          "count": 1,
+          "directions": [
+            {
+              "direction": "SAEZ>SGAS",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "pagesScanned": 2,
+      "windowsScanned": 0,
+      "candidatesSeen": 72,
+      "observations": []
+    },
+    {
+      "routeId": "SCBA--SCCI",
+      "directionListed": "SCCI-SCBA",
+      "split": "holdout",
+      "queryMode": "icao24",
+      "queryIcao24": [
+        "e803cf",
+        "e803cc"
+      ],
+      "airportA": {
+        "ident": "SCCI",
+        "iataCode": "PUQ",
+        "name": "CARLOS IBAÑEZ DEL CAMPO",
+        "lat": -53.0036,
+        "lon": -70.8536,
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
+      },
+      "airportB": {
+        "ident": "SCBA",
+        "iataCode": "BBA",
+        "name": "BALMACEDA",
+        "lat": -45.9163,
+        "lon": -71.6869,
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
+      },
+      "sampleCount": 0,
+      "medianTrackKm": null,
+      "medianObservedTrackKm": null,
+      "p10TrackKm": null,
+      "p90TrackKm": null,
+      "medianDurationMinutes": null,
+      "medianTelemetrySpanMinutes": null,
+      "medianTelemetryCoverage": null,
+      "medianMaxGapMinutes": null,
+      "telemetryDiagnostics": {
+        "summaryAirportPairDeferred": 63,
+        "flight-too-short": 22,
+        "missing-ground-speed-or-duration": 7,
+        "too-few-speed-intervals": 32,
+        "telemetry-gap-too-large": 2
+      },
+      "routeIdentifierMismatches": [],
+      "pagesScanned": 79,
+      "windowsScanned": 1,
+      "candidatesSeen": 63,
+      "observations": []
+    },
+    {
       "routeId": "NZCH--NZWD",
       "directionListed": "NZCH-NZWD",
       "split": "holdout",
@@ -99941,8 +100397,8 @@
       "telemetryDiagnostics": {
         "summaryAirportPairDeferred": 72,
         "routeIdentifierMismatch": 35,
-        "flight-too-short": 23,
         "telemetry-gap-too-large": 25,
+        "flight-too-short": 23,
         "too-few-speed-intervals": 16,
         "low-telemetry-coverage": 4,
         "missing-ground-speed-or-duration": 2,
@@ -100058,8 +100514,8 @@
       "telemetryDiagnostics": {
         "summaryAirportPairDeferred": 75,
         "flight-too-short": 30,
-        "too-few-speed-intervals": 39,
-        "missing-ground-speed-or-duration": 3
+        "missing-ground-speed-or-duration": 3,
+        "too-few-speed-intervals": 39
       },
       "routeIdentifierMismatches": [],
       "pagesScanned": 10,
@@ -100106,8 +100562,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "summaryAirportPairDeferred": 13,
-        "telemetry-gap-too-large": 6,
         "too-few-speed-intervals": 6,
+        "telemetry-gap-too-large": 6,
         "detailRouteIdentifierMismatch": 1
       },
       "routeIdentifierMismatches": [],
@@ -100413,8 +100869,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 112,
-        "telemetry-gap-too-large": 70,
-        "too-few-speed-intervals": 2
+        "too-few-speed-intervals": 2,
+        "telemetry-gap-too-large": 70
       },
       "routeIdentifierMismatches": [
         {
@@ -185378,8 +185834,8 @@
       "medianMaxGapMinutes": 0.5200833340485891,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 148,
-        "telemetry-gap-too-large": 37,
         "too-few-speed-intervals": 13,
+        "telemetry-gap-too-large": 37,
         "missing-ground-speed-or-duration": 8,
         "low-telemetry-coverage": 8,
         "flight-too-short": 2

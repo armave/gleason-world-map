@@ -35,9 +35,9 @@
       "maxMapLeaveOneOutRouteErrorPercent": 45
     }
   },
-  "generatedAt": "2026-11-23T06:01:27.454Z",
+  "generatedAt": "2026-11-23T06:21:25.039Z",
   "sourceDataset": "data/flight-calibration.json",
-  "sourceRetrievedAt": "2026-11-23T06:01:24.960Z",
+  "sourceRetrievedAt": "2026-11-23T06:21:22.501Z",
   "method": {
     "target": "Median directly observed flown mileage per airport pair",
     "targetSource": "ADS-B path_gs ground-speed/time observations with at least 98% full-flight coverage and no gap over 15 minutes",
@@ -989,7 +989,7 @@
     "holdoutRoutesSouthOf30S": 2,
     "holdoutRoutesSouthOf45S": 0,
     "holdoutRoutesSouthOf60S": 0,
-    "candidateRoutes": 102,
+    "candidateRoutes": 105,
     "totalObservedFlights": 194,
     "totalRoutes": 32
   }
