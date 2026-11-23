@@ -155,6 +155,13 @@ test('visual presets are selectable, remembered and keep the flat-disk projectio
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
  assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath/);
 });
+test('1892 Vintage is the default visual style without changing flat-disk map geometry',()=>{
+ assert.match(html,/option value="vintage" selected>1892 Vintage/);
+ assert.match(html,/option value="atlas">Classic Atlas/);
+ assert.match(app,/STYLE_STORAGE_KEY='gleason-map:style:v2'/);
+ assert.match(app,/function readVisualStyle\(\)\{try\{const value=localStorage\.getItem\(STYLE_STORAGE_KEY\);return Object\.hasOwn\(VISUAL_STYLES,value\)\?value:'vintage';\}catch\{return 'vintage';\}\}/);
+ assert.match(app,/vintage:\{canvas:'#f0e9d9',water:'#dcecf1'/);
+});
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
