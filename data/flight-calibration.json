@@ -8,7 +8,7 @@
     "archiveUrl": "https://www.adsb.lol/docs/open-data/historical",
     "license": "Open Database License 1.0 (ODbL-1.0)",
     "attribution": "Contains data from the adsb.lol open ADS-B archive; ODbL 1.0.",
-    "retrievedAt": "2026-11-23T05:28:59.954Z",
+    "retrievedAt": "2026-11-23T05:39:09.400Z",
     "availableRange": {
       "first_date": "2025-05-19",
       "last_date": "2026-11-22"
@@ -37,7 +37,7 @@
       "scheduled flight times or estimated cruise-speed averages"
     ],
     "trajectoryGeometry": "The source API GeoJSON MultiLineString path coordinates and matching timestamps are stored for each accepted flight. Candidate visual calibration projects those recorded points into the custom flat-disk plane and compares the resulting polyline length with the independent ground-speed/time integral. The coordinates are never used to calculate the observed-mileage target.",
-    "airportBoundaryUse": "Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify flights departing and arriving at the selected airports. Airport coordinates are retained as map endpoints. The observed-mileage target is calculated only from recorded ground speed and elapsed time."
+    "airportBoundaryUse": "Airport airspace polygons, or a 20 km airport-centred fallback circle, are used only by the source API to identify ordinary airport-pair flights. Published Antarctic airport coordinates fill missing archive-index metadata for remote airfields. For aircraft-specific discovery, the source query uses Mode-S only and exact observed airport identifiers are required before detail retrieval; when airport metadata is unavailable, endpoint coordinates are derived from exact-match flight start/end points. None of these coordinates are used to calculate observed flown mileage, which is integrated only from recorded ground speed and elapsed time."
   },
   "collection": {
     "endDate": "2026-11-22T23:59:59Z",
@@ -67,7 +67,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EGLL",
@@ -75,7 +77,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -109,7 +113,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "WSSS",
@@ -117,7 +123,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -150,7 +158,9 @@
         "name": "CHICAGO O'HARE INTL",
         "lat": 41.97694027,
         "lon": -87.90814972,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VHHH",
@@ -158,7 +168,9 @@
         "name": "HONG KONG",
         "lat": 22.30889,
         "lon": 113.91472,
-        "country": "CN"
+        "country": "CN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -191,7 +203,9 @@
         "name": "HELSINKI-VANTAA",
         "lat": 60.32,
         "lon": 24.955833333333,
-        "country": "FI"
+        "country": "FI",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "RJAA",
@@ -199,7 +213,9 @@
         "name": "NARITA INTERNATIONAL AIRPORT",
         "lat": 35.7647,
         "lon": 140.386,
-        "country": "JP"
+        "country": "JP",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -233,7 +249,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OMDB",
@@ -241,7 +259,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -276,7 +296,9 @@
         "name": "AMSTERDAM/SCHIPHOL",
         "lat": 52.308055555556,
         "lon": 4.7641666666667,
-        "country": "NL"
+        "country": "NL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KLAX",
@@ -284,7 +306,9 @@
         "name": "LOS ANGELES INTL",
         "lat": 33.94249638,
         "lon": -118.40804861,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -317,7 +341,9 @@
         "name": "PARIS CHARLES DE GAULLE",
         "lat": 49.00973,
         "lon": 2.54778,
-        "country": "FR"
+        "country": "FR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VIDP",
@@ -325,7 +351,9 @@
         "name": "INDIRA GANDHI INTERNATIONAL AIRPORT",
         "lat": 28.5665,
         "lon": 77.1031,
-        "country": "IN"
+        "country": "IN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -370,7 +398,9 @@
         "name": "KUALA LUMPUR/SEPANG",
         "lat": 2.7456,
         "lon": 101.71,
-        "country": "MY"
+        "country": "MY",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EGLL",
@@ -378,7 +408,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -411,7 +443,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KDFW",
@@ -419,7 +453,9 @@
         "name": "DALLAS-FORT WORTH INTL",
         "lat": 32.89723305,
         "lon": -97.03769472,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -453,7 +489,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YSSY",
@@ -461,7 +499,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -493,7 +533,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EHAM",
@@ -501,7 +543,9 @@
         "name": "AMSTERDAM/SCHIPHOL",
         "lat": 52.308055555556,
         "lon": 4.7641666666667,
-        "country": "NL"
+        "country": "NL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 426.5715561192075,
@@ -4578,7 +4622,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LFPG",
@@ -4586,7 +4632,9 @@
         "name": "PARIS CHARLES DE GAULLE",
         "lat": 49.00973,
         "lon": 2.54778,
-        "country": "FR"
+        "country": "FR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 388.5924403649625,
@@ -8007,7 +8055,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EDDF",
@@ -8015,7 +8065,9 @@
         "name": "FRANKFURT MAIN",
         "lat": 50.038611111111,
         "lon": 8.5597222222222,
-        "country": "DE"
+        "country": "DE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 741.9578035274521,
@@ -8027,8 +8079,8 @@
       "medianTelemetryCoverage": 1,
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
-        "missing-ground-speed-or-duration": 8,
-        "telemetry-gap-too-large": 11
+        "telemetry-gap-too-large": 11,
+        "missing-ground-speed-or-duration": 8
       },
       "routeIdentifierMismatches": [],
       "pagesScanned": 1,
@@ -12681,7 +12733,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LTFM",
@@ -12689,7 +12743,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 2,
       "medianTrackKm": 2594.829591369691,
@@ -12702,9 +12758,9 @@
       "medianMaxGapMinutes": 0.8505833327770234,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 63,
+        "telemetry-gap-too-large": 55,
         "low-telemetry-coverage": 4,
         "missing-ground-speed-or-duration": 7,
-        "telemetry-gap-too-large": 55,
         "too-few-speed-intervals": 4
       },
       "routeIdentifierMismatches": [],
@@ -15968,7 +16024,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KLAX",
@@ -15976,7 +16034,9 @@
         "name": "LOS ANGELES INTL",
         "lat": 33.94249638,
         "lon": -118.40804861,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -16011,7 +16071,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KMIA",
@@ -16019,7 +16081,9 @@
         "name": "MIAMI INTL",
         "lat": 25.79536111,
         "lon": -80.29011583,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1947.0114454772631,
@@ -16032,8 +16096,8 @@
       "medianMaxGapMinutes": 0.07483333349227905,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 156,
-        "telemetry-gap-too-large": 49,
         "too-few-speed-intervals": 3,
+        "telemetry-gap-too-large": 49,
         "missing-ground-speed-or-duration": 7,
         "low-telemetry-coverage": 7
       },
@@ -24601,7 +24665,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KORD",
@@ -24609,7 +24675,9 @@
         "name": "CHICAGO O'HARE INTL",
         "lat": 41.97694027,
         "lon": -87.90814972,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1338.0856905513851,
@@ -24622,8 +24690,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 364,
-        "missing-ground-speed-or-duration": 11,
         "telemetry-gap-too-large": 46,
+        "missing-ground-speed-or-duration": 11,
         "low-telemetry-coverage": 1
       },
       "routeIdentifierMismatches": [
@@ -30960,7 +31028,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EDDF",
@@ -30968,7 +31038,9 @@
         "name": "FRANKFURT MAIN",
         "lat": 50.038611111111,
         "lon": 8.5597222222222,
-        "country": "DE"
+        "country": "DE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -31001,7 +31073,9 @@
         "name": "AMSTERDAM/SCHIPHOL",
         "lat": 52.308055555556,
         "lon": 4.7641666666667,
-        "country": "NL"
+        "country": "NL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LFPG",
@@ -31009,7 +31083,9 @@
         "name": "PARIS CHARLES DE GAULLE",
         "lat": 49.00973,
         "lon": 2.54778,
-        "country": "FR"
+        "country": "FR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 472.59773277894294,
@@ -35043,7 +35119,9 @@
         "name": "AMSTERDAM/SCHIPHOL",
         "lat": 52.308055555556,
         "lon": 4.7641666666667,
-        "country": "NL"
+        "country": "NL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EDDF",
@@ -35051,7 +35129,9 @@
         "name": "FRANKFURT MAIN",
         "lat": 50.038611111111,
         "lon": 8.5597222222222,
-        "country": "DE"
+        "country": "DE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 473.6627279565939,
@@ -39011,7 +39091,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "HECA",
@@ -39019,7 +39101,9 @@
         "name": "CAIRO",
         "lat": 30.1114,
         "lon": 31.413933333333333,
-        "country": "EG"
+        "country": "EG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -39065,7 +39149,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OLBA",
@@ -39073,7 +39159,9 @@
         "name": "BEIRUT RAFIC HARIRI INTERNATIONAL AIRPOR",
         "lat": 33.8209,
         "lon": 35.4884,
-        "country": "LB"
+        "country": "LB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -39108,7 +39196,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "ORBI",
@@ -39116,7 +39206,9 @@
         "name": "BAGHDAD INTERNATIONAL AIRPORT",
         "lat": 33.2625,
         "lon": 44.2346,
-        "country": "IQ"
+        "country": "IQ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -39146,7 +39238,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VIDP",
@@ -39154,7 +39248,9 @@
         "name": "INDIRA GANDHI INTERNATIONAL AIRPORT",
         "lat": 28.5665,
         "lon": 77.1031,
-        "country": "IN"
+        "country": "IN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -39189,7 +39285,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VABB",
@@ -39197,7 +39295,9 @@
         "name": "CHHATRAPATI SHIVAJI INTERNATIONAL AIRPOR",
         "lat": 19.0887,
         "lon": 72.8679,
-        "country": "IN"
+        "country": "IN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -39243,7 +39343,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": null,
       "sampleCount": 0,
@@ -39275,7 +39377,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OOMS",
@@ -39283,7 +39387,9 @@
         "name": "MUSCAT",
         "lat": 23.5933,
         "lon": 58.2844,
-        "country": "OM"
+        "country": "OM",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 424.13977465552307,
@@ -43269,7 +43375,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OBBI",
@@ -43277,7 +43385,9 @@
         "name": "BAHRAIN",
         "lat": 26.2708,
         "lon": 50.6336,
-        "country": "BH"
+        "country": "BH",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 600.7405245290847,
@@ -43290,8 +43400,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 6,
-        "low-telemetry-coverage": 44,
         "telemetry-gap-too-large": 8,
+        "low-telemetry-coverage": 44,
         "too-few-speed-intervals": 5,
         "missing-ground-speed-or-duration": 1,
         "flight-too-short": 4
@@ -47867,7 +47977,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OERK",
@@ -47875,7 +47987,9 @@
         "name": "RIYADH / KING KHALED",
         "lat": 24.9576,
         "lon": 46.6988,
-        "country": "SA"
+        "country": "SA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -47907,7 +48021,9 @@
         "name": "HAMAD",
         "lat": 25.275555555556,
         "lon": 51.618055555556,
-        "country": "QA"
+        "country": "QA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OMDB",
@@ -47915,7 +48031,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -47967,7 +48085,9 @@
         "name": "HAMAD",
         "lat": 25.275555555556,
         "lon": 51.618055555556,
-        "country": "QA"
+        "country": "QA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OOMS",
@@ -47975,7 +48095,9 @@
         "name": "MUSCAT",
         "lat": 23.5933,
         "lon": 58.2844,
-        "country": "OM"
+        "country": "OM",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 1,
       "medianTrackKm": 776.1846103785482,
@@ -47988,8 +48110,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 86,
-        "low-telemetry-coverage": 27,
         "telemetry-gap-too-large": 31,
+        "low-telemetry-coverage": 27,
         "too-few-speed-intervals": 11,
         "flight-too-short": 2
       },
@@ -49264,7 +49386,9 @@
         "name": "HAMAD",
         "lat": 25.275555555556,
         "lon": 51.618055555556,
-        "country": "QA"
+        "country": "QA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OBBI",
@@ -49272,7 +49396,9 @@
         "name": "BAHRAIN",
         "lat": 26.2708,
         "lon": 50.6336,
-        "country": "BH"
+        "country": "BH",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -49285,8 +49411,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 216,
-        "too-few-speed-intervals": 8,
         "flight-too-short": 53,
+        "too-few-speed-intervals": 8,
         "missing-ground-speed-or-duration": 6,
         "low-telemetry-coverage": 5
       },
@@ -49323,7 +49449,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VTBS",
@@ -49331,7 +49459,9 @@
         "name": "BANGKOK/ SUVARNABHUMI",
         "lat": 13.685833333333,
         "lon": 100.74888888889,
-        "country": "TH"
+        "country": "TH",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -49381,7 +49511,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VRMM",
@@ -49389,7 +49521,9 @@
         "name": "VELANA",
         "lat": 4.196755858831878,
         "lon": 73.53107457672337,
-        "country": "MV"
+        "country": "MV",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -49421,7 +49555,9 @@
         "name": "KUALA LUMPUR/SEPANG",
         "lat": 2.7456,
         "lon": 101.71,
-        "country": "MY"
+        "country": "MY",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VTBS",
@@ -49429,7 +49565,9 @@
         "name": "BANGKOK/ SUVARNABHUMI",
         "lat": 13.685833333333,
         "lon": 100.74888888889,
-        "country": "TH"
+        "country": "TH",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -49493,7 +49631,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YMML",
@@ -49501,7 +49641,9 @@
         "name": "MELBOURNE",
         "lat": -37.669722222222,
         "lon": 144.83805555556,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 754.0685150927978,
@@ -59433,7 +59575,9 @@
         "name": "BRISBANE",
         "lat": -27.388888888889,
         "lon": 153.12611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YMML",
@@ -59441,7 +59585,9 @@
         "name": "MELBOURNE",
         "lat": -37.669722222222,
         "lon": 144.83805555556,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1471.0836597838015,
@@ -68043,7 +68189,9 @@
         "name": "BRISBANE",
         "lat": -27.388888888889,
         "lon": 153.12611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPPH",
@@ -68051,7 +68199,9 @@
         "name": "PERTH",
         "lat": -31.943333333333,
         "lon": 115.96416666667,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -68084,7 +68234,9 @@
         "name": "MELBOURNE",
         "lat": -37.669722222222,
         "lon": 144.83805555556,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPAD",
@@ -68092,7 +68244,9 @@
         "name": "ADELAIDE",
         "lat": -34.948888888889,
         "lon": 138.53111111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 692.4307012476072,
@@ -72612,7 +72766,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPAD",
@@ -72620,7 +72776,9 @@
         "name": "ADELAIDE",
         "lat": -34.948888888889,
         "lon": 138.53111111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1232.9481392766374,
@@ -81751,7 +81909,9 @@
         "name": "BRISBANE",
         "lat": -27.388888888889,
         "lon": 153.12611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPDN",
@@ -81759,7 +81919,9 @@
         "name": "DARWIN",
         "lat": -12.414166666667,
         "lon": 130.87916666667,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -81794,7 +81956,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YBCG",
@@ -81802,7 +81966,9 @@
         "name": "GOLD COAST",
         "lat": -28.166388888889,
         "lon": 153.50694444444,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 721.2087466072967,
@@ -92901,7 +93067,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SAAR",
@@ -92909,7 +93077,9 @@
         "name": "ROSARIO / ISLAS MALVINAS",
         "lat": -32.90408140080955,
         "lon": -60.78477563217355,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -92939,7 +93109,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YBBN",
@@ -92947,7 +93119,9 @@
         "name": "BRISBANE",
         "lat": -27.388888888889,
         "lon": 153.12611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 805.0620695681532,
@@ -99365,7 +99539,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SAEZ",
@@ -99373,7 +99549,9 @@
         "name": "EZEIZA / MINISTRO PISTARINI",
         "lat": -34.822,
         "lon": -58.536,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99406,7 +99584,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SBGR",
@@ -99414,7 +99594,9 @@
         "name": "GUARULHOS - SAO PAULO",
         "lat": -23.435556,
         "lon": -46.473056,
-        "country": "BR"
+        "country": "BR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99447,7 +99629,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SCCI",
@@ -99455,7 +99639,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99485,7 +99671,9 @@
         "name": "USHUAIA / MALVINAS ARGENTINAS",
         "lat": -54.84331603340204,
         "lon": -68.29563870745761,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SAEZ",
@@ -99493,7 +99681,9 @@
         "name": "EZEIZA / MINISTRO PISTARINI",
         "lat": -34.822,
         "lon": -58.536,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99523,7 +99713,9 @@
         "name": "USHUAIA / MALVINAS ARGENTINAS",
         "lat": -54.84331603340204,
         "lon": -68.29563870745761,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SCCI",
@@ -99531,7 +99723,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99561,7 +99755,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SAWH",
@@ -99569,7 +99765,9 @@
         "name": "USHUAIA / MALVINAS ARGENTINAS",
         "lat": -54.84331603340204,
         "lon": -68.29563870745761,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99599,7 +99797,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SCGZ",
@@ -99607,7 +99807,9 @@
         "name": "GUARDIAMARINA ZAÑARTU",
         "lat": -54.931,
         "lon": -67.626,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99639,7 +99841,9 @@
         "name": "CHRISTCHURCH",
         "lat": -43.489444444444,
         "lon": 172.53444444444,
-        "country": "NZ"
+        "country": "NZ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "NZWD",
@@ -99647,7 +99851,9 @@
         "name": "WILLIAMS FIELD",
         "lat": -77.8674,
         "lon": 167.057,
-        "country": "AQ"
+        "country": "AQ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99780,7 +99986,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SAWB",
@@ -99788,7 +99996,9 @@
         "name": "MARAMBIO / VICECOMODORO MARAMBIO",
         "lat": -64.23915434425388,
         "lon": -56.63065947358133,
-        "country": "AQ"
+        "country": "AQ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99821,7 +100031,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SCRM",
@@ -99829,7 +100041,9 @@
         "name": "TENIENTE RODOLFO MARSH MARTIN",
         "lat": -62.1908,
         "lon": -58.9866,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99863,7 +100077,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EGAR",
@@ -99871,7 +100087,9 @@
         "name": "ROTHERA",
         "lat": -67.5669,
         "lon": -68.127,
-        "country": "AQ"
+        "country": "AQ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -99905,7 +100123,9 @@
         "name": "CARLOS IBAÑEZ DEL CAMPO",
         "lat": -53.0036,
         "lon": -70.8536,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SCGC",
@@ -99913,7 +100133,9 @@
         "name": "UNIÓN GLACIAR",
         "lat": -79.7777,
         "lon": -83.3207,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -100091,149 +100313,6 @@
       "observations": []
     },
     {
-      "routeId": "NZCH--NZIR",
-      "directionListed": "NZCH-NZIR",
-      "split": "train",
-      "queryMode": "icao24",
-      "queryIcao24": [
-        "ae4d6a"
-      ],
-      "airportA": {
-        "ident": "NZCH",
-        "iataCode": "CHC",
-        "name": "CHRISTCHURCH",
-        "lat": -43.489444444444,
-        "lon": 172.53444444444,
-        "country": "NZ"
-      },
-      "airportB": {
-        "ident": "NZIR",
-        "iataCode": null,
-        "name": "MCMURDO STATION ICE RUNWAY",
-        "lat": -77.854,
-        "lon": 166.469,
-        "country": "AQ"
-      },
-      "sampleCount": 0,
-      "medianTrackKm": null,
-      "medianObservedTrackKm": null,
-      "p10TrackKm": null,
-      "p90TrackKm": null,
-      "medianDurationMinutes": null,
-      "medianTelemetrySpanMinutes": null,
-      "medianTelemetryCoverage": null,
-      "medianMaxGapMinutes": null,
-      "telemetryDiagnostics": {
-        "routeIdentifierMismatch": 288
-      },
-      "routeIdentifierMismatches": [
-        {
-          "routeId": "KTCM--KTCM",
-          "count": 7,
-          "directions": [
-            {
-              "direction": "KTCM>KTCM",
-              "count": 7
-            }
-          ]
-        },
-        {
-          "routeId": "KDAY--KDAY",
-          "count": 2,
-          "directions": [
-            {
-              "direction": "KDAY>KDAY",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "routeId": "KSUU--KSUU",
-          "count": 2,
-          "directions": [
-            {
-              "direction": "KSUU>KSUU",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "routeId": "KSUU--KTCM",
-          "count": 2,
-          "directions": [
-            {
-              "direction": "KTCM>KSUU",
-              "count": 2
-            }
-          ]
-        },
-        {
-          "routeId": "EGPK--KDMA",
-          "count": 1,
-          "directions": [
-            {
-              "direction": "EGPK>KDMA",
-              "count": 1
-            }
-          ]
-        },
-        {
-          "routeId": "KSUU--KWRI",
-          "count": 1,
-          "directions": [
-            {
-              "direction": "KSUU>KWRI",
-              "count": 1
-            }
-          ]
-        },
-        {
-          "routeId": "KSUU--PHNL",
-          "count": 1,
-          "directions": [
-            {
-              "direction": "KSUU>PHNL",
-              "count": 1
-            }
-          ]
-        },
-        {
-          "routeId": "KTCM--PAED",
-          "count": 1,
-          "directions": [
-            {
-              "direction": "KTCM>PAED",
-              "count": 1
-            }
-          ]
-        },
-        {
-          "routeId": "PAED--RJTY",
-          "count": 1,
-          "directions": [
-            {
-              "direction": "RJTY>PAED",
-              "count": 1
-            }
-          ]
-        },
-        {
-          "routeId": "PHNL--PHNL",
-          "count": 1,
-          "directions": [
-            {
-              "direction": "PHNL>PHNL",
-              "count": 1
-            }
-          ]
-        }
-      ],
-      "pagesScanned": 79,
-      "windowsScanned": 1,
-      "candidatesSeen": 0,
-      "observations": []
-    },
-    {
       "routeId": "YMHB--YWKS",
       "directionListed": "YMHB-YWKS",
       "split": "holdout",
@@ -100245,7 +100324,9 @@
         "name": "HOBART",
         "lat": -42.837222222222,
         "lon": 147.51333333333,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YWKS",
@@ -100253,7 +100334,9 @@
         "name": "WILKINS",
         "lat": -66.691,
         "lon": 111.524,
-        "country": "AQ"
+        "country": "AQ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -100283,7 +100366,9 @@
         "name": "DUBAI",
         "lat": 25.2528,
         "lon": 55.3644,
-        "country": "AE"
+        "country": "AE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "WSSS",
@@ -100291,7 +100376,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -100325,7 +100412,9 @@
         "name": "HAMAD",
         "lat": 25.275555555556,
         "lon": 51.618055555556,
-        "country": "QA"
+        "country": "QA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "RJAA",
@@ -100333,7 +100422,9 @@
         "name": "NARITA INTERNATIONAL AIRPORT",
         "lat": 35.7647,
         "lon": 140.386,
-        "country": "JP"
+        "country": "JP",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -100346,8 +100437,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 112,
-        "telemetry-gap-too-large": 70,
-        "too-few-speed-intervals": 2
+        "too-few-speed-intervals": 2,
+        "telemetry-gap-too-large": 70
       },
       "routeIdentifierMismatches": [
         {
@@ -100378,7 +100469,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OJAI",
@@ -100386,7 +100479,9 @@
         "name": "AMMAN/QUEEN ALIA",
         "lat": 31.7226,
         "lon": 35.9932,
-        "country": "JO"
+        "country": "JO",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -100421,7 +100516,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KBOS",
@@ -100429,7 +100526,9 @@
         "name": "GENERAL EDWARD LAWRENCE LOGAN INTL",
         "lat": 42.36294444,
         "lon": -71.00638888,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 397.2508001540077,
@@ -104200,7 +104299,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KATL",
@@ -104208,7 +104309,9 @@
         "name": "HARTSFIELD/JACKSON ATLANTA INTL",
         "lat": 33.63669961,
         "lon": -84.427864,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1363.9846887603028,
@@ -104221,8 +104324,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 272,
-        "telemetry-gap-too-large": 56,
         "missing-ground-speed-or-duration": 4,
+        "telemetry-gap-too-large": 56,
         "low-telemetry-coverage": 1
       },
       "routeIdentifierMismatches": [
@@ -111117,7 +111220,9 @@
         "name": "JOHN F KENNEDY INTL",
         "lat": 40.63992805,
         "lon": -73.77869222,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KSFO",
@@ -111125,7 +111230,9 @@
         "name": "SAN FRANCISCO INTL",
         "lat": 37.61880555,
         "lon": -122.37541666,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -111159,7 +111266,9 @@
         "name": "CHICAGO O'HARE INTL",
         "lat": 41.97694027,
         "lon": -87.90814972,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KDEN",
@@ -111167,7 +111276,9 @@
         "name": "DENVER INTL",
         "lat": 39.86166666,
         "lon": -104.67316666,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1537.1946118129472,
@@ -111180,8 +111291,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 1,
-        "low-telemetry-coverage": 10,
         "telemetry-gap-too-large": 50,
+        "low-telemetry-coverage": 10,
         "missing-ground-speed-or-duration": 4,
         "too-few-speed-intervals": 2
       },
@@ -117280,7 +117391,9 @@
         "name": "CHICAGO O'HARE INTL",
         "lat": 41.97694027,
         "lon": -87.90814972,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KATL",
@@ -117288,7 +117401,9 @@
         "name": "HARTSFIELD/JACKSON ATLANTA INTL",
         "lat": 33.63669961,
         "lon": -84.427864,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1082.365275714408,
@@ -117301,8 +117416,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 3,
-        "missing-ground-speed-or-duration": 7,
         "telemetry-gap-too-large": 31,
+        "missing-ground-speed-or-duration": 7,
         "too-few-speed-intervals": 1
       },
       "routeIdentifierMismatches": [],
@@ -122892,7 +123007,9 @@
         "name": "DALLAS-FORT WORTH INTL",
         "lat": 32.89723305,
         "lon": -97.03769472,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KLAX",
@@ -122900,7 +123017,9 @@
         "name": "LOS ANGELES INTL",
         "lat": 33.94249638,
         "lon": -118.40804861,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 2,
       "medianTrackKm": 2081.326917217224,
@@ -125276,7 +125395,9 @@
         "name": "DALLAS-FORT WORTH INTL",
         "lat": 32.89723305,
         "lon": -97.03769472,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KMIA",
@@ -125284,7 +125405,9 @@
         "name": "MIAMI INTL",
         "lat": 25.79536111,
         "lon": -80.29011583,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 2,
       "medianTrackKm": 1951.905376045148,
@@ -127908,7 +128031,9 @@
         "name": "LOS ANGELES INTL",
         "lat": 33.94249638,
         "lon": -118.40804861,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KSFO",
@@ -127916,7 +128041,9 @@
         "name": "SAN FRANCISCO INTL",
         "lat": 37.61880555,
         "lon": -122.37541666,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 609.8356116396507,
@@ -132193,7 +132320,9 @@
         "name": "LOS ANGELES INTL",
         "lat": 33.94249638,
         "lon": -118.40804861,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KLAS",
@@ -132201,7 +132330,9 @@
         "name": "HARRY REID INTL",
         "lat": 36.08034277,
         "lon": -115.15244861,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 444.1332721648447,
@@ -135972,7 +136103,9 @@
         "name": "SEATTLE-TACOMA INTL",
         "lat": 47.44988888,
         "lon": -122.31177777,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KSFO",
@@ -135980,7 +136113,9 @@
         "name": "SAN FRANCISCO INTL",
         "lat": 37.61880555,
         "lon": -122.37541666,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1263.2963899877336,
@@ -142434,7 +142569,9 @@
         "name": "HARTSFIELD/JACKSON ATLANTA INTL",
         "lat": 33.63669961,
         "lon": -84.427864,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "KMIA",
@@ -142442,7 +142579,9 @@
         "name": "MIAMI INTL",
         "lat": 25.79536111,
         "lon": -80.29011583,
-        "country": "US"
+        "country": "US",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1074.9701882628005,
@@ -148639,7 +148778,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LEMD",
@@ -148647,7 +148788,9 @@
         "name": "MADRID/BARAJAS",
         "lat": 40.472222222222,
         "lon": -3.5608333333333,
-        "country": "ES"
+        "country": "ES",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1340.8941765354139,
@@ -154626,7 +154769,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "EDDM",
@@ -154634,7 +154779,9 @@
         "name": "MUENCHEN",
         "lat": 48.3536,
         "lon": 11.7858,
-        "country": "DE"
+        "country": "DE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1003.9790721906969,
@@ -159570,7 +159717,9 @@
         "name": "LONDON HEATHROW",
         "lat": 51.4775,
         "lon": -0.46138888888889,
-        "country": "GB"
+        "country": "GB",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LIRF",
@@ -159578,7 +159727,9 @@
         "name": "ROMA / FIUMICINO",
         "lat": 41.8,
         "lon": 12.239,
-        "country": "IT"
+        "country": "IT",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1574.9847181282958,
@@ -167815,7 +167966,9 @@
         "name": "AMSTERDAM/SCHIPHOL",
         "lat": 52.308055555556,
         "lon": 4.7641666666667,
-        "country": "NL"
+        "country": "NL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LEMD",
@@ -167823,7 +167976,9 @@
         "name": "MADRID/BARAJAS",
         "lat": 40.472222222222,
         "lon": -3.5608333333333,
-        "country": "ES"
+        "country": "ES",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1531.5977443497468,
@@ -174151,7 +174306,9 @@
         "name": "PARIS CHARLES DE GAULLE",
         "lat": 49.00973,
         "lon": 2.54778,
-        "country": "FR"
+        "country": "FR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LIRF",
@@ -174159,7 +174316,9 @@
         "name": "ROMA / FIUMICINO",
         "lat": 41.8,
         "lon": 12.239,
-        "country": "IT"
+        "country": "IT",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1173.142979731177,
@@ -174172,8 +174331,8 @@
       "medianMaxGapMinutes": 0,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 162,
-        "telemetry-gap-too-large": 15,
-        "missing-ground-speed-or-duration": 9
+        "missing-ground-speed-or-duration": 9,
+        "telemetry-gap-too-large": 15
       },
       "routeIdentifierMismatches": [
         {
@@ -179825,7 +179984,9 @@
         "name": "FRANKFURT MAIN",
         "lat": 50.038611111111,
         "lon": 8.5597222222222,
-        "country": "DE"
+        "country": "DE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LIRF",
@@ -179833,7 +179994,9 @@
         "name": "ROMA / FIUMICINO",
         "lat": 41.8,
         "lon": 12.239,
-        "country": "IT"
+        "country": "IT",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 1025.1938890926685,
@@ -185214,7 +185377,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "LFPG",
@@ -185222,7 +185387,9 @@
         "name": "PARIS CHARLES DE GAULLE",
         "lat": 49.00973,
         "lon": 2.54778,
-        "country": "FR"
+        "country": "FR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 4,
       "medianTrackKm": 2297.9830265989567,
@@ -185235,10 +185402,10 @@
       "medianMaxGapMinutes": 0.5200833340485891,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 148,
-        "telemetry-gap-too-large": 37,
         "too-few-speed-intervals": 13,
-        "missing-ground-speed-or-duration": 8,
+        "telemetry-gap-too-large": 37,
         "low-telemetry-coverage": 8,
+        "missing-ground-speed-or-duration": 8,
         "flight-too-short": 2
       },
       "routeIdentifierMismatches": [
@@ -190983,7 +191150,9 @@
         "name": "ISTANBUL",
         "lat": 41.275277777778,
         "lon": 28.751944444444,
-        "country": "TR"
+        "country": "TR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "OOMS",
@@ -190991,7 +191160,9 @@
         "name": "MUSCAT",
         "lat": 23.5933,
         "lon": 58.2844,
-        "country": "OM"
+        "country": "OM",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -191025,7 +191196,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "WMKK",
@@ -191033,7 +191206,9 @@
         "name": "KUALA LUMPUR/SEPANG",
         "lat": 2.7456,
         "lon": 101.71,
-        "country": "MY"
+        "country": "MY",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 6,
       "medianTrackKm": 484.98142657390133,
@@ -196682,7 +196857,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "RPLL",
@@ -196690,7 +196867,9 @@
         "name": "NINOY AQUINO",
         "lat": 14.5086,
         "lon": 121.02,
-        "country": "PH"
+        "country": "PH",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -196736,7 +196915,9 @@
         "name": "HONG KONG",
         "lat": 22.30889,
         "lon": 113.91472,
-        "country": "CN"
+        "country": "CN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "RCTP",
@@ -196744,7 +196925,9 @@
         "name": "TAIWAN TAOYUAN INTERNATIONAL AIRPORT",
         "lat": 25.0777,
         "lon": 121.233,
-        "country": "TW"
+        "country": "TW",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -196757,8 +196940,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 26,
-        "low-telemetry-coverage": 15,
         "telemetry-gap-too-large": 51,
+        "low-telemetry-coverage": 15,
         "too-few-speed-intervals": 6
       },
       "routeIdentifierMismatches": [
@@ -196790,7 +196973,9 @@
         "name": "HONG KONG",
         "lat": 22.30889,
         "lon": 113.91472,
-        "country": "CN"
+        "country": "CN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "RJAA",
@@ -196798,7 +196983,9 @@
         "name": "NARITA INTERNATIONAL AIRPORT",
         "lat": 35.7647,
         "lon": 140.386,
-        "country": "JP"
+        "country": "JP",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -196833,7 +197020,9 @@
         "name": "NARITA INTERNATIONAL AIRPORT",
         "lat": 35.7647,
         "lon": 140.386,
-        "country": "JP"
+        "country": "JP",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "WSSS",
@@ -196841,7 +197030,9 @@
         "name": "SINGAPORE CHANGI",
         "lat": 1.3451159576023457,
         "lon": 103.99194013366014,
-        "country": "SG"
+        "country": "SG",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -196854,8 +197045,8 @@
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
         "routeIdentifierMismatch": 9,
-        "telemetry-gap-too-large": 58,
-        "too-few-speed-intervals": 14
+        "too-few-speed-intervals": 14,
+        "telemetry-gap-too-large": 58
       },
       "routeIdentifierMismatches": [],
       "pagesScanned": 1,
@@ -196875,7 +197066,9 @@
         "name": "INDIRA GANDHI INTERNATIONAL AIRPORT",
         "lat": 28.5665,
         "lon": 77.1031,
-        "country": "IN"
+        "country": "IN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "VABB",
@@ -196883,7 +197076,9 @@
         "name": "CHHATRAPATI SHIVAJI INTERNATIONAL AIRPOR",
         "lat": 19.0887,
         "lon": 72.8679,
-        "country": "IN"
+        "country": "IN",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -196940,7 +197135,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "NZAA",
@@ -196948,7 +197145,9 @@
         "name": "AUCKLAND",
         "lat": -37.008,
         "lon": 174.792,
-        "country": "NZ"
+        "country": "NZ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -196981,7 +197180,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "NZCH",
@@ -196989,7 +197190,9 @@
         "name": "CHRISTCHURCH",
         "lat": -43.489444444444,
         "lon": 172.53444444444,
-        "country": "NZ"
+        "country": "NZ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -197023,7 +197226,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPDN",
@@ -197031,7 +197236,9 @@
         "name": "DARWIN",
         "lat": -12.414166666667,
         "lon": 130.87916666667,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -197067,7 +197274,9 @@
         "name": "SYDNEY KINGSFORD SMITH",
         "lat": -33.946666666667,
         "lon": 151.17611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPPH",
@@ -197075,7 +197284,9 @@
         "name": "PERTH",
         "lat": -31.943333333333,
         "lon": 115.96416666667,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -197110,7 +197321,9 @@
         "name": "BRISBANE",
         "lat": -27.388888888889,
         "lon": 153.12611111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YBCG",
@@ -197118,7 +197331,9 @@
         "name": "GOLD COAST",
         "lat": -28.166388888889,
         "lon": 153.50694444444,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 3,
       "medianTrackKm": 327.54001284407786,
@@ -200927,7 +201142,9 @@
         "name": "ADELAIDE",
         "lat": -34.948888888889,
         "lon": 138.53111111111,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "YPPH",
@@ -200935,7 +201152,9 @@
         "name": "PERTH",
         "lat": -31.943333333333,
         "lon": 115.96416666667,
-        "country": "AU"
+        "country": "AU",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -200968,7 +201187,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SCFA",
@@ -200976,7 +201197,9 @@
         "name": "CERRO MORENO",
         "lat": -23.4444,
         "lon": -70.4449,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201006,7 +201229,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SPJC",
@@ -201014,7 +201239,9 @@
         "name": "JORGE CHAVEZ",
         "lat": -12.021666666667,
         "lon": -77.114444444444,
-        "country": "PE"
+        "country": "PE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201046,7 +201273,9 @@
         "name": "SANTIAGO INTERNACIONAL",
         "lat": -33.3941,
         "lon": -70.7935,
-        "country": "CL"
+        "country": "CL",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SKBO",
@@ -201054,7 +201283,9 @@
         "name": "EL DORADO",
         "lat": 4.702,
         "lon": -74.147,
-        "country": "CO"
+        "country": "CO",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201086,7 +201317,9 @@
         "name": "EZEIZA / MINISTRO PISTARINI",
         "lat": -34.822,
         "lon": -58.536,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SBGR",
@@ -201094,7 +201327,9 @@
         "name": "GUARULHOS - SAO PAULO",
         "lat": -23.435556,
         "lon": -46.473056,
-        "country": "BR"
+        "country": "BR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201106,8 +201341,8 @@
       "medianTelemetryCoverage": null,
       "medianMaxGapMinutes": null,
       "telemetryDiagnostics": {
-        "low-telemetry-coverage": 8,
         "telemetry-gap-too-large": 61,
+        "low-telemetry-coverage": 8,
         "too-few-speed-intervals": 2,
         "missing-ground-speed-or-duration": 1,
         "routeIdentifierMismatch": 2
@@ -201130,7 +201365,9 @@
         "name": "EZEIZA / MINISTRO PISTARINI",
         "lat": -34.822,
         "lon": -58.536,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "SACO",
@@ -201138,7 +201375,9 @@
         "name": "CORDOBA / ING. AER. A. L. V. TARAVELLA",
         "lat": -31.31,
         "lon": -64.208,
-        "country": "AR"
+        "country": "AR",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201172,7 +201411,9 @@
         "name": "JOHANNESBURG O.R. TAMBO",
         "lat": -26.133888888889,
         "lon": 28.242222222222,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": null,
       "sampleCount": 0,
@@ -201204,7 +201445,9 @@
         "name": "CAPE TOWN",
         "lat": -33.971388888889,
         "lon": 18.604166666667,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": null,
       "sampleCount": 0,
@@ -201236,7 +201479,9 @@
         "name": "JOHANNESBURG O.R. TAMBO",
         "lat": -26.133888888889,
         "lon": 28.242222222222,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "FQMA",
@@ -201244,7 +201489,9 @@
         "name": "MAPUTO AIRPORT",
         "lat": -25.9208,
         "lon": 32.5726,
-        "country": "MZ"
+        "country": "MZ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201274,7 +201521,9 @@
         "name": "JOHANNESBURG O.R. TAMBO",
         "lat": -26.133888888889,
         "lon": 28.242222222222,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "HKJK",
@@ -201282,7 +201531,9 @@
         "name": "JOMO KENYATTA",
         "lat": -1.31924,
         "lon": 36.92777,
-        "country": "KE"
+        "country": "KE",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201317,7 +201568,9 @@
         "name": "CAPE TOWN",
         "lat": -33.971388888889,
         "lon": 18.604166666667,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "FQMA",
@@ -201325,7 +201578,9 @@
         "name": "MAPUTO AIRPORT",
         "lat": -25.9208,
         "lon": 32.5726,
-        "country": "MZ"
+        "country": "MZ",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
@@ -201355,7 +201610,9 @@
         "name": "JOHANNESBURG O.R. TAMBO",
         "lat": -26.133888888889,
         "lon": 28.242222222222,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "airportB": {
         "ident": "FACT",
@@ -201363,7 +201620,9 @@
         "name": "CAPE TOWN",
         "lat": -33.971388888889,
         "lon": 18.604166666667,
-        "country": "ZA"
+        "country": "ZA",
+        "metadataSource": "adsb.aero airport index",
+        "coordinateSource": "adsb.aero airport index"
       },
       "sampleCount": 0,
       "medianTrackKm": null,
