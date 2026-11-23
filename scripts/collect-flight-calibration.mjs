@@ -443,7 +443,20 @@ async function collectRoute(route, airports, endDate, historyStart) {
     });
 
     for (const observation of details) {
-      if (observation) observations.push(observation);
+      if (!observation) continue;
+      const detailFrom = observation.startAirportIdent;
+      const detailTo = observation.endAirportIdent;
+      if (!detailFrom || !detailTo ||
+          routeKey(detailFrom, detailTo) !== expectedRouteKey) {
+        counters.detailRouteIdentifierMismatch =
+          (counters.detailRouteIdentifierMismatch || 0) + 1;
+        routeIdentifierMismatches.push({
+          from: detailFrom || null,
+          to: detailTo || null
+        });
+        continue;
+      }
+      observations.push(observation);
       if (observations.length >= SAMPLES_PER_ROUTE) break;
     }
 
