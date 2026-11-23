@@ -2,7 +2,7 @@
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp, an observed-flight-path calibration pipeline gated by independent route validation, direct visible-flat-disk chord measurements, planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
+An interactive Gleason-style north-polar radial disk with a nonlinear latitude warp, an observed-flight-path calibration pipeline gated by independent route validation, anisotropic planar polar distance measurements, planar-area tools, searchable geographic reference data, a continuous Antarctic ice-wall rim, full-screen viewing, and an adjustable comparison overlay of Alexander Gleason's 1892 map.
 
 
 ## Map layout and calibration
@@ -26,29 +26,35 @@ x = r cos(lambdaPrime)
 y = -r sin(lambdaPrime)
 ```
 
-The active observed-path fit uses a regularized-power latitude warp with exponent **1.30** and epsilon **0.005**, an integrated 12-circle profile with inner factor **1.00**, outer factor **0.50** and exponent **a = 1.0328125**, plus a smooth periodic longitude shear. The local radial multiplier is m(q) = 0.5 + 0.5(1 − q)^a and its integral is I(q) = 0.5q + 0.5[1 − (1 − q)^(a + 1)]/(a + 1). The integral mean is μ = 0.7459646426. With the fitted base scale **R_base = 7,793.2338 km**, the physical disk radius is **R_disk = μ·πR_base = 18,263.5762 km**. The 12 reference rings sample the same continuous profile at equally spaced base fractions; their local multipliers (rounded to 0.01×) are **1.00, 0.95, 0.91, 0.86, 0.81, 0.77, 0.72, 0.68, 0.63, 0.59, 0.54, 0.50**. Longitude is transformed by λ′ = λ + 4q(1 − q)F(λ), where F(λ) = a₁sinλ + b₁(1 − cosλ) + a₂sin2λ + b₂(1 − cos2λ), with coefficients (a₁, b₁, a₂, b₂) = (0.3000, −0.2164, 0.0192, 0.1200). This angular shear is periodic, returns to zero at the North Pole and Ice Wall, and has a conservative minimum angular stretch of **0.3947**, preventing longitude foldover. Each latitude parallel remains a circle, while meridians and coastline shapes are smoothly deformed. The forward and inverse display transform drives the map, map clicks, labels, cities and endpoint selection. Direct distance measurements use the Euclidean chord in that same visible flat-disk geometry; the A–B value therefore matches the red connector, and the ruler, scale bar, polygon edges and perimeter share that one measurement function.
+The active observed-path fit uses a regularized-power latitude warp with exponent **1.30** and epsilon **0.005**, an integrated 12-circle profile with inner factor **1.00**, outer factor **0.50** and exponent **a = 1.0328125**, plus a smooth periodic longitude shear. The local radial multiplier is m(q) = 0.5 + 0.5(1 − q)^a and its integral is I(q) = 0.5q + 0.5[1 − (1 − q)^(a + 1)]/(a + 1). The integral mean is μ = 0.7459646426. With the fitted base scale **R_base = 7,793.2338 km**, the physical disk radius is **R_disk = μ·πR_base = 18,263.5762 km**. The 12 reference rings sample the same continuous profile at equally spaced base fractions; their local multipliers (rounded to 0.01×) are **1.00, 0.95, 0.91, 0.86, 0.81, 0.77, 0.72, 0.68, 0.63, 0.59, 0.54, 0.50**. Longitude is transformed by λ′ = λ + 4q(1 − q)F(λ), where F(λ) = a₁sinλ + b₁(1 − cosλ) + a₂sin2λ + b₂(1 − cos2λ), with coefficients (a₁, b₁, a₂, b₂) = (0.3000, −0.2164, 0.0192, 0.1200). This angular shear is periodic, returns to zero at the North Pole and Ice Wall, and has a conservative minimum angular stretch of **0.3947**, preventing longitude foldover. Each latitude parallel remains a circle, while meridians and coastline shapes are smoothly deformed. The forward and inverse display transform drives the map, map clicks, labels, cities and endpoint selection. Direct distances integrate the straight segment in the unchanged visible disk using 64 equal planar steps. Each midpoint decomposes the step into radial dr and tangential r·dθ components; only the tangential component is weighted by w(r)=1/(1+c₁(r/R_eq)²+c₂(r/R_eq)⁴). The active c₁ and c₂ coefficients are stored with the path-fit parameters. The A–B value, red connector pill, scale bar, polygon edges/perimeter and PNG metadata all use this canonical metric.
 
 **Longitude orientation follows the printed Gleason sheet:** Greenwich (0°) points right, 90°E points up, and eastward longitudes progress counter-clockwise. The empirically fitted longitude shear moves intermediate meridians smoothly while leaving the North Pole and Antarctic rim unchanged. Coastlines, latitude rings, longitude labels, map clicks, capitals, and measurement endpoints use the same shared transform.
 
 The deployed visible transform is the **last accepted regional flat-disk fit**, from **148 qualifying observed flights across 26 training airport pairs**, with **36 observed flights across 6 independent holdout pairs**. Its original regional validation reported **5.57%** projected-path training MAPE, **4.39%** independent holdout MAPE and **6.98%** maximum holdout-route error. These scores do **not** establish whole-disk accuracy: that snapshot had no qualifying routes south of 45°S. The stricter global release gate now requires independent southern training and holdout routes south of both 45°S and 60°S, with adequate projected paths after fitting. Until a candidate passes those gates and the error limits, the last accepted coefficients remain active and the southern disk is explicitly extrapolated. The latest candidate and its rejection details are published in [the visual-path calibration report](data/flight-path-calibration-summary.json).
 
-The earlier ADS-B route-feature distance-correction model and its report are retained as research history, but the runtime direct-measurement function no longer reads or applies that multiplier. Observed flight telemetry continues to support the separate visible-map geometry calibration; it does not override a direct endpoint-to-endpoint chord measurement.
+The earlier ADS-B route-feature distance-correction model remains research history. The runtime direct-measurement function now uses the anisotropic planar polar metric; the ADS-B path fitter jointly estimates the two nonnegative tangential coefficients with the radial and longitude-warp parameters, while retaining independent holdout and southern-coverage gates.
 
 ## A–B distance and planar area measurements
 
-The map has one distance source of truth. For every pair of endpoints, the canonical direct distance is the Euclidean chord in the visible flat-disk plane:
+The map has one distance source of truth. For every pair of endpoints, the canonical direct distance is the 64-step anisotropic planar polar integral along the straight projected segment:
 
 ```text
 A' = project(A.longitude, A.latitude)
 B' = project(B.longitude, B.latitude)
-D(A,B) = hypot(B'.x - A'.x, B'.y - A'.y) × visible map kilometre scale
+Δx = (B'.x − A'.x) / 64
+Δy = (B'.y − A'.y) / 64
+At midpoint (xᵢ,yᵢ): rᵢ = hypot(xᵢ,yᵢ)
+drᵢ = (xᵢΔx + yᵢΔy) / rᵢ
+tᵢ = (xᵢΔy − yᵢΔx) / rᵢ
+w(r) = 1 / [1 + c₁(r/R_eq)² + c₂(r/R_eq)⁴]
+D(A,B) = Σᵢ₌₀⁶³ sqrt(drᵢ² + [w(rᵢ)tᵢ]²)
 ```
 
-The measurement uses the same forward radial warp, integrated 12-circle profile and periodic longitude shear as the rendered map. It is therefore the actual length of the straight red connector, expressed in the map's kilometre units—not a base-projection chord multiplied by an estimated aircraft route-mileage factor.
+The endpoints use the existing forward radial warp, integrated 12-circle profile and periodic longitude shear. Distance then integrates the straight segment in that unchanged plane. The initial c₁/c₂ defaults are 0.08/0.20, giving w(12,865 km) close to 0.49 when R_eq is about 8,945.06 km. Radial travel is not scaled. **Known constraint:** because c₁,c₂≥0, w(r) is positive and ds≥|dr| at every sample. On the unchanged Santiago–Canberra projected segment, the 64-step radial variation alone is approximately 16,539 km, already well above the requested 11,907 km upper limit for an 11,340 km benchmark. No allowed c₁/c₂ pair can bring that route within ±5% without changing the projection or allowing radial scaling.
 
 The same `measureDistanceMeters()` function powers the A–B value, the on-map connector label, local scale-bar sampling, each polygon edge label, polygon perimeter and PNG metadata. ADS-B ground-speed/time mileage is not used as an endpoint-distance correction.
 
-### Planar polygon area and visible-chord perimeter
+### Planar polygon area and anisotropic perimeter
 
 User-drawn polygon area is still computed by the shoelace formula in projected flat-disk coordinates:
 
@@ -56,7 +62,7 @@ User-drawn polygon area is still computed by the shoelace formula in projected f
 A = 1/2 × abs(sum(x_i × y_(i+1) - x_(i+1) × y_i))
 ```
 
-Every polygon edge, including closure, obtains its perimeter contribution from the same visible-flat-disk chord function as A–B. The on-map edge labels and finished polygon perimeter therefore use the same measurement as the drawn projected segments. Selected-country areas continue to use the densified projected boundary rings, subtract interior holes and sum Polygon/MultiPolygon components. Antarctica's full 360° outer-rim edge is retained.
+Every polygon edge, including closure, obtains its perimeter contribution from the same anisotropic planar metric as A–B. The on-map edge labels and finished polygon perimeter therefore use the canonical metric on each straight projected edge. Selected-country areas continue to use the densified projected boundary rings, subtract interior holes and sum Polygon/MultiPolygon components. Antarctica's full 360° outer-rim edge is retained.
 
 The scale bar samples two map coordinates at the current view anchor and measures them with the same canonical function. Canvas resizing does not change the metric.
 
@@ -94,7 +100,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Greenwich-right, 90°E-up longitude orientation
 - Smooth animated map rotation along the shortest angular path; geographic labels stay anchored to the disk while text remains screen-upright and readable
 - Measurement mode buttons expose a clear selected state, while distance/area actions show enabled and disabled availability
-- A–B distance: one visible-flat-disk chord formula is the sole direct-distance source; A–B, the red connector label, scale bar, polygon edges/perimeter and PNG exports all use the same function
+- A–B distance: one 64-step anisotropic planar polar integral is the sole direct-distance source; A–B, the red connector label, scale bar, polygon edges/perimeter and PNG exports all use the same function
 - The 60°S Restricted Line is a visual reference only and never changes the direct-line metric
 - Planar polygon area by shoelace formula with km labels on every projected boundary edge and a km² area label
 - Planar area for selected country boundaries using the same sampled projected rings as the drawn outlines, subtracting holes and summing multipart features
@@ -102,7 +108,7 @@ Source record: [Gleason's New Standard Map of the World, 1892 — Boston Public 
 - Search and select countries, capitals, and U.S. county-equivalents
 - Zoom-adaptive capital names (from 125% zoom) with collision-aware placement
 - Search and select U.S. county-equivalents using 2026 Census Gazetteer internal-point coordinates; this is a searchable point index, not a rendered county-boundary layer
-- View-centred scale bar, A–B labels and polygon perimeter use the same visible-flat-disk chord function
+- View-centred scale bar, A–B labels and polygon perimeter use the same anisotropic planar metric
 - Compact in-frame Find and Measure overlays; mode-specific distance/area details, icons, and enabled action states
 - Manual historical-scan registration using geographic/image control points
 - Full-screen map mode with automatic canvas resizing and pan preservation when the disk is rebuilt
@@ -172,7 +178,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The browser suite covers initial map loading, zoom and rotation, geographic search, visible-flat-disk A–B chord measurements, polygon perimeter and planar area, endpoint-change regression checks, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
+The browser suite covers initial map loading, zoom and rotation, geographic search, anisotropic planar A–B measurements, polygon perimeter and planar area, endpoint-change regression checks, share-link restoration, the mobile tools drawer, and PNG export. CI runs it separately from the fast Node.js unit suite.
 
 ## Run locally
 
@@ -201,13 +207,13 @@ To refresh the bundled geographic files from their pinned upstream sources, run 
 
 - Historical scan: Boston Public Library / Digital Commonwealth, item commonwealth:7h149v867; loaded only when the overlay is enabled.
 - Antarctic land, ice shelf, ice tongue and rumple surfaces: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, DOI [10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0.
-- A–B distance: the reported distance is the Euclidean chord between endpoints in the visible flat-disk projection, expressed using the map kilometre scale. It matches the red connector and is not multiplied by observed aircraft route mileage.
+- A–B distance: the reported distance is a 64-step anisotropic planar integral along the straight projected connector. It matches the connector pill; observed aircraft route mileage is not applied as an endpoint multiplier.
 
 ## Important limitations
 
 - The map is a custom radial disk with a nonlinear latitude warp. It remains a circular flat-disk construction with the North Pole at the centre and longitude-indexed positions around the Antarctic rim.
-- The visible map geometry is empirically calibrated with observed flight-path data, but direct A–B measurements are straight projected chords in that geometry. They are map-plane measurements, not flight paths, airline routes or independently surveyed ground distances.
-- The active visible-map path-calibration snapshot has no independent training or holdout route endpoint south of 60°S. The Antarctic-rim geometry is therefore an extrapolation with limited empirical support. Direct A–B measurements still use the visible chord, without an additional flown-mileage multiplier.
+- The visible map geometry is empirically calibrated with observed flight-path data, but direct A–B measurements integrate each straight projected segment with an anisotropic planar polar metric. They are map-plane measurements, not flight paths, airline routes or independently surveyed ground distances.
+- The active visible-map path-calibration snapshot has no independent training or holdout route endpoint south of 60°S. The Antarctic-rim geometry is therefore an extrapolation with limited empirical support. Direct A–B measurements use the anisotropic planar metric, without an additional flown-mileage multiplier.
 - Antarctic candidate collection is still subject to exact airport-pair checks, full-detail endpoint verification, observed-only ground-speed/time coverage and independent training/holdout gates. Aircraft identifiers and airport aliases broaden discovery only; they do not count as evidence until a route has at least three quality-qualified flights.
 - Polygon areas and perimeters remain planar measurements in projected disk coordinates. They are not survey-grade ground measurements.
 - Country, coastline, airport and capital coordinates remain as location data for rendering and endpoint selection. They are not used to calculate the calibration's distance targets.

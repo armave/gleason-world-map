@@ -510,7 +510,7 @@ function drawArea(){
   strokeMeasurementConnector('area');
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';drawUprightMapText(String(i+1),x,y);});
- // Each edge label uses the same visible flat-disk chord metric as A–B and polygon perimeter.
+ // Each edge label uses the same anisotropic planar metric as A–B and polygon perimeter.
  const edgeLabels=createProjectedSegmentLabels(areaPoints,project,measureDistanceMeters,closed);
  edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
   label.x,label.y,formatMeasurementKilometres(label.meters),'area'
@@ -537,7 +537,7 @@ function updateAreaMeasurement(){
   if(result){
    $('areaValue').textContent=formatArea(result.areaM2);
    $('areaPerimeter').textContent='Perimeter · '+formatDistance(result.perimeterM);
-   $('areaHelp').textContent='Planar area; perimeter uses the same visible flat-disk chord metric as A–B and the scale bar. Edges may cross 60°S.';
+   $('areaHelp').textContent='Planar area; perimeter uses the same anisotropic planar metric as A–B and the scale bar. Edges may cross 60°S.';
   }else{
    $('areaValue').textContent='Unavailable';
    $('areaPerimeter').textContent='Invalid polygon · check for crossing edges';
@@ -799,7 +799,7 @@ function restoreSharedState(){
  syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();
 }
-function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'),$('calibrationFormula'),$('pathCalibrationStatus'));}
+function syncRadialControls(){renderRadialCalibration($('radialRows'),$('visualRadialRows'),$('calibrationFormula'),$('pathCalibrationStatus'),$('geometryMetricFormula'));}
 function syncHistoricalControls(){
  const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
  for(const [id,key,unit] of specs){$(id).value=historical[key];$(id+'Value').textContent=unit==='°'?Number(historical[key]).toFixed(1)+unit:Math.round(historical[key]*10)/10+unit;}
@@ -862,7 +862,7 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
  const distanceMeters=measureDistanceMeters(first,second);
- // The scale bar uses the same visible-flat-disk chord metric as A–B and area edges.
+ // The scale bar uses the same anisotropic planar metric as A–B and area edges.
  return Number.isFinite(distanceMeters)?distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
@@ -940,7 +940,7 @@ function exportPNG(){
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
-   ' · visible flat-disk chord';
+   ' · anisotropic planar metric';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);

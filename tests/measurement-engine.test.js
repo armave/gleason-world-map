@@ -11,16 +11,20 @@ import {
   DISK_RADIAL_SCALE_KM,
   DISK_BASE_RADIUS_KM,
   DISK_RADIUS_KM,
+  EQUATOR_RADIUS_KM,
+  ACTIVE_PLANAR_METRIC_C1,
+  ACTIVE_PLANAR_METRIC_C2,
   flatDiskDistanceMeters,
   flatDiskLinePath,
   project
 } from '../src/core/flat-disk.js';
+import { integrateAnisotropicPlanarSegment } from '../src/core/anisotropic-planar-metric.js';
 import { FLIGHT_PATH_CALIBRATION } from '../src/core/flight-path-calibration-parameters.js';
 import { RADIAL_DISTANCE_PROFILE_MEAN, radialDistanceCorrectionFactor } from '../src/core/visual-radial-calibration.js';
 
 const point = (lat, lon) => ({ lat, lon });
 
-test('A–B distance is the visible projected chord, not a base-geometry or flight-mileage estimate', () => {
+test('A–B distance integrates the visible projected segment, not base geometry or flight mileage', () => {
   const first = point(-33.45, -70.67);
   const second = point(-35.27, 149.13);
   const result = measureDirectDistance(first, second);
@@ -32,16 +36,25 @@ test('A–B distance is the visible projected chord, not a base-geometry or flig
     line[1][1] - line[0][1]
   ) * DISK_RADIUS_KM / 480 * 1000;
 
-  assert.equal(result.metric, 'visible-flat-disk-chord');
+  assert.equal(result.metric, 'anisotropic-planar-segment');
   assert.equal(result.restricted, false);
   assert.ok(Number.isFinite(result.distanceMeters));
+  const firstKm = project(first.lon, first.lat, DISK_RADIUS_KM);
+  const secondKm = project(second.lon, second.lat, DISK_RADIUS_KM);
+  const expectedMeters = integrateAnisotropicPlanarSegment(firstKm, secondKm, {
+    equatorRadius: EQUATOR_RADIUS_KM,
+    c1: ACTIVE_PLANAR_METRIC_C1,
+    c2: ACTIVE_PLANAR_METRIC_C2
+  }) * 1000;
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
-  assert.equal(result.distanceMeters, drawnSegmentMeters);
+  assert.ok(Math.abs(result.distanceMeters - expectedMeters) < 1e-6);
+  assert.ok(result.distanceMeters < drawnSegmentMeters,
+    'tangential compression must reduce this predominantly tangential connector');
   assert.equal(result.distanceMeters, measureDistanceMeters(first, second));
-  assert.equal(result.distanceMeters, measureDirectDistance(second, first).distanceMeters);
+  assert.ok(Math.abs(result.distanceMeters - measureDirectDistance(second, first).distanceMeters) < 1e-6);
 });
 
-test('moving an endpoint to a different part of the disk changes the distance by the visible chord amount', () => {
+test('moving an endpoint to a different part of the disk changes the distance by the anisotropic metric amount', () => {
   const destination = point(-48, -66);
   const firstStart = point(18, -70);
   const relocatedStart = point(65, -150);
@@ -73,27 +86,27 @@ test('same-longitude intervals measure the radial chord in the visible disk', ()
   ]) {
     const first = point(latitudeA, 23), second = point(latitudeB, 23);
     const result = measureDirectDistance(first, second);
-    assert.equal(result.metric, 'visible-flat-disk-chord');
+    assert.equal(result.metric, 'anisotropic-planar-segment');
     assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
     assert.ok(result.distanceMeters > 0);
   }
 });
 
-test('the Antarctic rim preserves longitude-indexed positions under the visible chord metric', () => {
+test('the Antarctic rim preserves longitude-indexed positions under the anisotropic planar metric', () => {
   const first = point(-90, 0), second = point(-90, 180);
   const result = measureDirectDistance(first, second);
-  assert.equal(result.metric, 'visible-flat-disk-chord');
+  assert.equal(result.metric, 'anisotropic-planar-segment');
   assert.ok(result.distanceMeters > 17_000_000);
   assert.equal(result.distanceMeters, flatDiskDistanceMeters(first, second));
   assert.equal(result.distanceMeters,
     measureDirectDistance(second, first).distanceMeters);
 });
 
-test('longitude wrapping does not change the visible flat-disk chord', () => {
+test('longitude wrapping does not change the anisotropic flat-disk metric', () => {
   const first = point(-33.4489, -70.6693);
   const second = point(-35.2809, 149.13);
   const expected = measureDistanceMeters(first, second);
-  assert.equal(expected, measureDistanceMeters(second, first));
+  assert.ok(Math.abs(expected - measureDistanceMeters(second, first)) < 1e-6);
   assert.ok(Math.abs(expected - measureDistanceMeters(first, point(second.lat, second.lon + 720))) < 1e-6);
   assert.ok(Math.abs(expected - measureDistanceMeters(first, point(second.lat, second.lon - 1080))) < 1e-6);
 });
@@ -114,7 +127,7 @@ test('the restricted line remains the 60th parallel south', () => {
 test('crossing the 60°S reference line does not switch the direct-line metric', () => {
   const first = point(-59.9, 20), second = point(-60.1, 110);
   assert.equal(segmentCrossesRestrictedParallel(first, second), true);
-  assert.equal(measureDirectDistance(first, second).metric, 'visible-flat-disk-chord');
+  assert.equal(measureDirectDistance(first, second).metric, 'anisotropic-planar-segment');
 });
 
 test('opposite points on the 60°S parallel retain a straight, measurable connector', () => {
@@ -132,9 +145,9 @@ test('restricted-line crossing checks use the displayed longitude-deformed endpo
 test('southern local segments and one restricted-line touch remain measurable', () => {
   const first = point(-70, 10), second = point(-70, 20);
   assert.equal(segmentCrossesRestrictedParallel(first, second), false);
-  assert.equal(measureDirectDistance(first, second).metric, 'visible-flat-disk-chord');
+  assert.equal(measureDirectDistance(first, second).metric, 'anisotropic-planar-segment');
   assert.equal(measureDirectDistance(point(-60, 0), point(-70, 0)).metric,
-    'visible-flat-disk-chord');
+    'anisotropic-planar-segment');
 });
 
 test('invalid coordinates fail safely', () => {

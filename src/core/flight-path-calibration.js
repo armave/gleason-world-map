@@ -19,6 +19,12 @@ import {
   warpLongitudeRadians,
   minimumLongitudeWarpStretch
 } from './visual-longitude-calibration.js';
+import {
+  ANISOTROPIC_PLANAR_SAMPLE_COUNT,
+  DEFAULT_TANGENTIAL_SCALE_C1,
+  DEFAULT_TANGENTIAL_SCALE_C2,
+  integrateAnisotropicPlanarSegment
+} from './anisotropic-planar-metric.js';
 
 export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
   minimumFlightsPerRoute: 3,
@@ -43,6 +49,19 @@ export const FLIGHT_PATH_CALIBRATION_FILTERS = Object.freeze({
 });
 
 export const FLIGHT_PATH_PROFILE = ACTIVE_RADIAL_DISTANCE_PROFILE;
+export const DEFAULT_DISTANCE_METRIC = Object.freeze({
+  c1: DEFAULT_TANGENTIAL_SCALE_C1,
+  c2: DEFAULT_TANGENTIAL_SCALE_C2
+});
+
+function normalizeDistanceMetric(distanceMetric = DEFAULT_DISTANCE_METRIC) {
+  return {
+    c1: Number.isFinite(distanceMetric?.c1) && distanceMetric.c1 >= 0
+      ? distanceMetric.c1 : DEFAULT_DISTANCE_METRIC.c1,
+    c2: Number.isFinite(distanceMetric?.c2) && distanceMetric.c2 >= 0
+      ? distanceMetric.c2 : DEFAULT_DISTANCE_METRIC.c2
+  };
+}
 
 const DEG = Math.PI / 180;
 const median = values => {
@@ -144,9 +163,15 @@ export function unitProjectedFlightPathLength(
   trackCoordinates,
   radialWarp = DEFAULT_RADIAL_WARP,
   radialProfile = FLIGHT_PATH_PROFILE,
-  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP
+  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP,
+  distanceMetric = DEFAULT_DISTANCE_METRIC
 ) {
   if (!Array.isArray(trackCoordinates)) return NaN;
+  const metric = normalizeDistanceMetric(distanceMetric);
+  const equatorFraction = radialFractionFromUnitColatitude(0.5, radialWarp);
+  const equatorRadius = Math.PI * integratedRadialDistanceMultiplier(
+    equatorFraction, radialProfile
+  );
   let total = 0;
   let validSegments = 0;
 
@@ -160,7 +185,11 @@ export function unitProjectedFlightPathLength(
         continue;
       }
       if (previous) {
-        total += Math.hypot(current[0] - previous[0], current[1] - previous[1]);
+        total += integrateAnisotropicPlanarSegment(previous, current, {
+          equatorRadius,
+          c1: metric.c1,
+          c2: metric.c2
+        });
         validSegments++;
       }
       previous = current;
@@ -293,7 +322,8 @@ export function summarizeUsableProjectedPathCoverage(
   dataset,
   radialWarp = DEFAULT_RADIAL_WARP,
   radialProfile = FLIGHT_PATH_PROFILE,
-  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP
+  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP,
+  distanceMetric = DEFAULT_DISTANCE_METRIC
 ) {
   const records = routeFlightRecords(dataset).filter(({ route, flights }) =>
     flights.length >= FLIGHT_PATH_CALIBRATION_FILTERS.minimumFlightsPerRoute &&
@@ -303,8 +333,8 @@ export function summarizeUsableProjectedPathCoverage(
   const training = records.filter(item => item.route.split === 'train');
   const holdout = records.filter(item => item.route.split === 'holdout');
   return summarizeProjectedRouteCoverage(
-    makeRouteExamplesFromRecords(training, radialWarp, radialProfile, longitudeWarp),
-    makeRouteExamplesFromRecords(holdout, radialWarp, radialProfile, longitudeWarp)
+    makeRouteExamplesFromRecords(training, radialWarp, radialProfile, longitudeWarp, distanceMetric),
+    makeRouteExamplesFromRecords(holdout, radialWarp, radialProfile, longitudeWarp, distanceMetric)
   );
 }
 
@@ -336,7 +366,8 @@ function makeRouteExamplesFromRecords(
   records,
   radialWarp,
   radialProfile = FLIGHT_PATH_PROFILE,
-  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP
+  longitudeWarp = ACTIVE_VISUAL_LONGITUDE_WARP,
+  distanceMetric = DEFAULT_DISTANCE_METRIC
 ) {
   return records.flatMap(({ route, flights }) => {
     const measured = [];
@@ -348,7 +379,8 @@ function makeRouteExamplesFromRecords(
         flight.trackCoordinates,
         radialWarp,
         radialProfile,
-        longitudeWarp
+        longitudeWarp,
+        distanceMetric
       );
       if (Number.isFinite(unitPathLength) && unitPathLength > 0) {
         measured.push(measuredKm);
@@ -372,14 +404,22 @@ function makeRouteExamplesFromRecords(
   });
 }
 
-const GEOMETRY_START = Object.freeze([1, 1, 0, 0, 0, 0]);
-const GEOMETRY_STEPS = Object.freeze([0.1, 0.1, 0.1, 0.1, 0.06, 0.06]);
+const GEOMETRY_START = Object.freeze([
+  1, FLIGHT_PATH_PROFILE.exponent, 0, 0, 0, 0,
+  DEFAULT_TANGENTIAL_SCALE_C1, DEFAULT_TANGENTIAL_SCALE_C2
+]);
+const GEOMETRY_STEPS = Object.freeze([
+  0.1, 0.1, 0.1, 0.1, 0.06, 0.06, 0.08, 0.08
+]);
 const GEOMETRY_BOUNDS = Object.freeze([
   [0.65, 1.55], [0.7, 1.3],
   [-0.35, 0.35], [-0.35, 0.35],
-  [-0.18, 0.18], [-0.18, 0.18]
+  [-0.18, 0.18], [-0.18, 0.18],
+  [0, 2.5], [0, 2.5]
 ]);
 const LONGITUDE_WARP_REGULARIZATION = 3;
+const DISTANCE_METRIC_REGULARIZATION = 20;
+const RADIAL_PROFILE_REGULARIZATION = 20;
 const MINIMUM_ANGULAR_STRETCH = 0.35;
 
 function geometryFromVector(vector) {
@@ -392,7 +432,9 @@ function geometryFromVector(vector) {
       firstCosine: vector[3],
       secondSine: vector[4],
       secondCosine: vector[5]
-    }
+    },
+    c1: vector[6],
+    c2: vector[7]
   };
 }
 
@@ -405,7 +447,8 @@ function geometryVectorObjective(vector, records) {
     records,
     geometry.radialWarp,
     geometry.radialProfile,
-    geometry.longitudeWarp
+    geometry.longitudeWarp,
+    geometry
   );
   if (examples.length < 2) return null;
 
@@ -425,14 +468,25 @@ function geometryVectorObjective(vector, records) {
     vector[2] ** 2 + vector[3] ** 2 +
     3 * vector[4] ** 2 + 3 * vector[5] ** 2
   );
+  // Keep the additional metric coefficients near their empirically neutral
+  // seed unless the training routes provide repeatable evidence to move them.
+  const distanceMetricPenalty = DISTANCE_METRIC_REGULARIZATION * (
+    (vector[6] - DEFAULT_TANGENTIAL_SCALE_C1) ** 2 +
+    (vector[7] - DEFAULT_TANGENTIAL_SCALE_C2) ** 2
+  );
+  const radialProfilePenalty = RADIAL_PROFILE_REGULARIZATION *
+    (vector[1] - FLIGHT_PATH_PROFILE.exponent) ** 2;
   return {
-    objective: leaveOneOutMape + longitudePenalty,
+    objective: leaveOneOutMape + longitudePenalty +
+      distanceMetricPenalty + radialProfilePenalty,
     leaveOneOutMape,
     leaveOneOutMax: Math.max(...errors),
     examples,
     geometry,
     angularStretch,
-    longitudePenalty
+    longitudePenalty,
+    distanceMetricPenalty,
+    radialProfilePenalty
   };
 }
 
@@ -491,7 +545,8 @@ function summarizeNestedLeaveOneRouteOut(trainingRecords) {
       [heldOut],
       fitted.geometry.radialWarp,
       fitted.geometry.radialProfile,
-      fitted.geometry.longitudeWarp
+      fitted.geometry.longitudeWarp,
+      fitted.geometry
     )[0];
     if (!heldOutExample) continue;
     errors.push({
@@ -563,7 +618,8 @@ export function fitFlightPathCalibration(dataset) {
     holdoutRecords,
     fitted.geometry.radialWarp,
     fitted.geometry.radialProfile,
-    fitted.geometry.longitudeWarp
+    fitted.geometry.longitudeWarp,
+    fitted.geometry
   );
   const holdoutMetrics = summarizeErrors(holdoutExamples, radialScaleKm);
   const leaveOneOut = summarizeNestedLeaveOneRouteOut(trainingRecords);
@@ -577,14 +633,17 @@ export function fitFlightPathCalibration(dataset) {
   }
 
   const model = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     sourceDatasetVersion: dataset.schemaVersion,
     target: 'Observed ADS-B ground-speed/time mileage compared with projected timestamped paths of the same flights',
     radialScaleKm,
     radialWarp: fitted.geometry.radialWarp,
     radialProfile: fitted.geometry.radialProfile,
     longitudeWarp: fitted.geometry.longitudeWarp,
-    geometry: 'shared radial profile plus latitude-dependent periodic longitude shear; shear is identity at the North Pole and Ice Wall',
+    c1: fitted.geometry.c1,
+    c2: fitted.geometry.c2,
+    metricSamples: ANISOTROPIC_PLANAR_SAMPLE_COUNT,
+    geometry: 'shared radial profile plus latitude-dependent periodic longitude shear; distance uses the 64-step anisotropic planar polar metric',
     trainingRouteCount: trainingExamples.length,
     holdoutRouteCount: holdoutExamples.length
   };
@@ -599,11 +658,16 @@ export function fitFlightPathCalibration(dataset) {
       usableProjectedPathCoverage,
       selectedGeometryObjective: fitted.objective,
       selectedProfileExponent: fitted.geometry.radialProfile.exponent,
+      selectedC1: fitted.geometry.c1,
+      selectedC2: fitted.geometry.c2,
+      metricSamples: ANISOTROPIC_PLANAR_SAMPLE_COUNT,
       jointGeometryParameterCount: fitted.vector.length,
       geometryCandidatesEvaluated: fitted.evaluations,
       nestedGeometryFolds: leaveOneOut.routeCount,
       minimumAngularStretch: fitted.angularStretch,
-      longitudeWarpPenalty: fitted.longitudePenalty
+      longitudeWarpPenalty: fitted.longitudePenalty,
+      distanceMetricPenalty: fitted.distanceMetricPenalty,
+      radialProfilePenalty: fitted.radialProfilePenalty
     }
   };
 }

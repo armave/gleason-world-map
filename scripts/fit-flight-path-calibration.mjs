@@ -44,7 +44,8 @@ async function main() {
       dataset,
       fitted.model.radialWarp,
       fitted.model.radialProfile,
-      fitted.model.longitudeWarp
+      fitted.model.longitudeWarp,
+      { c1: fitted.model.c1, c2: fitted.model.c2 }
     );
   }
   const candidateUsableProjectedPathCoverage =
@@ -64,6 +65,9 @@ async function main() {
     leaveOneOutMapePercent,
     leaveOneOutMaxRouteErrorPercent,
     minimumAngularStretch,
+    c1: fitted?.model?.c1 ?? null,
+    c2: fitted?.model?.c2 ?? null,
+    metricSamples: fitted?.model?.metricSamples ?? 64,
     usableTrainingRouteCount: metrics?.training?.routeCount ?? 0,
     usableHoldoutRouteCount: metrics?.holdout?.routeCount ?? 0,
     activeProfileUsableProjectedPathCoverage: usableProjectedPathCoverage,
@@ -193,12 +197,12 @@ async function main() {
     method: {
       target: 'Independently observed ADS-B ground-speed/time mileage for each flight',
       targetFormula: 'sum(ground_speed_knots * accepted_interval_seconds / 3600) * 1.852',
-      visualMeasurement: 'Sum the Euclidean lengths of the recorded flight path segments after projecting each timestamped ADS-B position into the custom 12-circle flat-disk plane.',
+      visualMeasurement: 'Integrate each projected flat-disk path segment with 64 equal linear steps using ds=sqrt(dr^2+(w(r)*r*dtheta)^2), where w(r)=1/(1+c1*(r/R_eq)^2+c2*(r/R_eq)^4).',
       coordinatesUsedFor: 'Visual path geometry only; never used to calculate observed flight mileage.',
       sequenceHandling: 'Preserve and measure each source MultiLineString sequence independently; never draw or measure a connector across a sequence break.',
       radialProfile: 'Smooth positive power taper m(q)=outer+(inner-outer)(1-q)^a, integrated continuously and normalized to preserve the North Pole centre and Antarctic Ice Wall radius. Twelve reference circles sample the fitted curve.',
       longitudeWarp: 'lambdaPrime=lambda+4q(1-q)[a1 sin(lambda)+b1(1-cos(lambda))+a2 sin(2lambda)+b2(1-cos(2lambda))]; the periodic shear is identity at the North Pole and Ice Wall.',
-      fit: 'Jointly fit the regularized-power latitude warp, integrated 12-circle profile, four periodic longitude coefficients and one global radial scale using training airport pairs only. Longitude coefficients are regularized and constrained so the minimum angular derivative stays at least 0.35. The nested outer leave-one-route-out score refits the full geometry without each evaluated airport pair.',
+      fit: 'Jointly fit the regularized-power latitude warp, integrated 12-circle profile, four periodic longitude coefficients, nonnegative tangential metric coefficients c1/c2 and one global radial scale using training airport pairs only. Longitude coefficients are regularized and constrained so the minimum angular derivative stays at least 0.35. The nested outer leave-one-route-out score refits the full geometry without each evaluated airport pair.',
       validation: 'Nested leave-one-airport-pair-out training validation plus the preassigned independent airport-pair holdouts.'
     },
     rejectionReason: finalRejectionReason,

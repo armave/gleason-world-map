@@ -10,8 +10,10 @@ import {
   flatDiskDistanceMeters, baseFlatDiskDistanceMeters, flatDiskLinePath,
   northSouthDistanceKm, eastWestDistanceKm, flatDiskSectorAreaKm2, rad,
   flatDiskPolygonMetrics, flatDiskFeatureAreaM2, projectGeoJSONRing,
-  DISK_RADIUS_METERS
+  DISK_RADIUS_METERS, EQUATOR_RADIUS_KM,
+  ACTIVE_PLANAR_METRIC_C1, ACTIVE_PLANAR_METRIC_C2
 } from '../src/core/flat-disk.js';
+import { integrateAnisotropicPlanarSegment } from '../src/core/anisotropic-planar-metric.js';
 import { radialFractionFromUnitColatitude, radialWarpDerivative } from '../src/core/radial-warp.js';
 import { RADIAL_DISTANCE_PROFILE_MEAN, integratedRadialDistanceMultiplier, visualRadialFractionFromBaseFraction, visualRadialSpacingScale } from '../src/core/visual-radial-calibration.js';
 import { warpLongitudeRadians, wrapRadians } from '../src/core/visual-longitude-calibration.js';
@@ -108,12 +110,15 @@ test('smooth 12-circle visual calibration preserves both anchors and has no hard
   const a = point(40, 10), b = point(40, 20);
   const visual = flatDiskDistanceMeters(a, b);
   const base = baseFlatDiskDistanceMeters(a, b);
-  const projectedA = project(a.lon, a.lat, 1);
-  const projectedB = project(b.lon, b.lat, 1);
+  const projectedA = project(a.lon, a.lat, DISK_RADIUS_KM);
+  const projectedB = project(b.lon, b.lat, DISK_RADIUS_KM);
   close(
     visual,
-    Math.hypot(projectedB[0] - projectedA[0], projectedB[1] - projectedA[1]) *
-      DISK_RADIUS_KM * 1000,
+    integrateAnisotropicPlanarSegment(projectedA, projectedB, {
+      equatorRadius: EQUATOR_RADIUS_KM,
+      c1: ACTIVE_PLANAR_METRIC_C1,
+      c2: ACTIVE_PLANAR_METRIC_C2
+    }) * 1000,
     1e-7
   );
   assert.notEqual(visual, base);
@@ -148,14 +153,15 @@ test('flat-disk projection round-trips, wraps longitude and keeps Gleason orient
   assert.ok(Number.isNaN(project(0, 91, radius)[0]));
 });
 
-test('distance is the Euclidean straight segment between projected coordinates', () => {
+test('distance integrates the straight segment with the active anisotropic planar metric', () => {
   const a = point(0, 0), b = point(0, 90);
-  const projectedA = project(a.lon, a.lat, 1);
-  const projectedB = project(b.lon, b.lat, 1);
-  const expected = Math.hypot(
-    projectedB[0] - projectedA[0],
-    projectedB[1] - projectedA[1]
-  ) * DISK_RADIUS_KM * 1000;
+  const projectedA = project(a.lon, a.lat, DISK_RADIUS_KM);
+  const projectedB = project(b.lon, b.lat, DISK_RADIUS_KM);
+  const expected = integrateAnisotropicPlanarSegment(projectedA, projectedB, {
+    equatorRadius: EQUATOR_RADIUS_KM,
+    c1: ACTIVE_PLANAR_METRIC_C1,
+    c2: ACTIVE_PLANAR_METRIC_C2
+  }) * 1000;
   close(flatDiskDistanceMeters(a, b), expected, 1e-6);
   const direct = flatDiskDistanceMeters(point(90, -170), point(90, 150));
   close(direct, 0, 1e-9);
@@ -172,18 +178,16 @@ test('direct connector contains only the two projected endpoints', () => {
   const renderedLineMeters = Math.hypot(
     path[1][0] - path[0][0], path[1][1] - path[0][1]
   ) * (DISK_RADIUS_KM * 1000 / 500);
-  close(renderedLineMeters, flatDiskDistanceMeters(a, b), 1e-5);
+  assert.ok(flatDiskDistanceMeters(a, b) <= renderedLineMeters + 1e-5,
+    'the tangentially weighted planar metric cannot exceed the Euclidean length of its straight connector');
   assert.deepEqual(flatDiskLinePath(a, b, () => [NaN, 0]), []);
 });
 
-test('radial separation and same-latitude straight chord formulas are planar', () => {
+test('radial separation and same-latitude distance helpers remain planar', () => {
   close(northSouthDistanceKm(90, 0), radialDistanceFromNorthKm(0), 1e-10);
-  const projectedA = project(0, 0, 1);
-  const projectedB = project(1, 0, 1);
   close(
     eastWestDistanceKm(0, Math.PI / 180),
-    Math.hypot(projectedB[0] - projectedA[0], projectedB[1] - projectedA[1]) *
-      DISK_RADIUS_KM,
+    flatDiskDistanceMeters(point(0, 0), point(0, 1)) / 1000,
     1e-7
   );
 });

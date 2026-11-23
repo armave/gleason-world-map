@@ -1,4 +1,8 @@
-import {DISK_RADIUS_KM,radialDistanceFromNorthKm} from '../core/flat-disk.js';
+import {
+ DISK_RADIUS_KM, radialDistanceFromNorthKm, EQUATOR_RADIUS_KM,
+ ACTIVE_PLANAR_METRIC_C1, ACTIVE_PLANAR_METRIC_C2
+} from '../core/flat-disk.js';
+import {ANISOTROPIC_PLANAR_SAMPLE_COUNT} from '../core/anisotropic-planar-metric.js';
 import {FLIGHT_PATH_CALIBRATION} from '../core/flight-path-calibration-parameters.js';
 import {isGloballyValidatedFlightPathCalibration} from '../core/flight-path-calibration-status.js';
 import FLIGHT_PATH_CALIBRATION_SUMMARY from '../../data/flight-path-calibration-summary.json';
@@ -16,7 +20,7 @@ import {
  RADIAL_DISTANCE_OUTER_FACTOR
 } from '../core/visual-radial-calibration.js';
 
-export function renderRadialCalibration(radialRows,visualRows,formulaElement,statusElement){
+export function renderRadialCalibration(radialRows,visualRows,formulaElement,statusElement,geometryMetricFormula){
  const pending=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion===0||
   !isGloballyValidatedFlightPathCalibration(FLIGHT_PATH_CALIBRATION_SUMMARY);
  const baseScale=FLIGHT_PATH_CALIBRATION.radialScaleKm.toLocaleString('en-US',{maximumFractionDigits:3});
@@ -26,6 +30,13 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
  const profileMean=RADIAL_DISTANCE_PROFILE_MEAN.toFixed(6);
  const inner=RADIAL_DISTANCE_INNER_FACTOR.toFixed(2);
  const outer=RADIAL_DISTANCE_OUTER_FACTOR.toFixed(2);
+ const c1=ACTIVE_PLANAR_METRIC_C1.toFixed(6);
+ const c2=ACTIVE_PLANAR_METRIC_C2.toFixed(6);
+ const equatorRadius=EQUATOR_RADIUS_KM.toLocaleString('en-US',{maximumFractionDigits:3});
+ const metricMarkup='R_eq = '+equatorRadius+' km<br>'+
+  'w(r) = 1 / (1 + c₁ · (r / R_eq)² + c₂ · (r / R_eq)⁴)<br>'+
+  'ds = √(dr² + [w(r) · r · dθ]²)<br>'+
+  'N = '+ANISOTROPIC_PLANAR_SAMPLE_COUNT+' · c₁ = '+c1+' · c₂ = '+c2;
  const longitudeWarp=ACTIVE_VISUAL_LONGITUDE_WARP;
  const angularShift=maximumLongitudeWarpDisplacementRadians(longitudeWarp)*180/Math.PI;
  const minimumAngularStretch=minimumLongitudeWarpStretch(longitudeWarp).toFixed(3);
@@ -48,8 +59,10 @@ export function renderRadialCalibration(radialRows,visualRows,formulaElement,sta
    'a₂ = '+longitudeWarp.secondSine.toFixed(4)+' · b₂ = '+longitudeWarp.secondCosine.toFixed(4)+'<br>'+
    'max |λ′ − λ| = '+angularShift.toFixed(2)+'° · min dλ′/dλ = '+minimumAngularStretch+'<br>'+
    'x = r · cos(λ′) · y = −r · sin(λ′)<br>'+
-   'Flat-disk radius = πR_base · mean(m)';
+   'Flat-disk radius = πR_base · mean(m)<br><br>'+
+   metricMarkup;
  }
+ if(geometryMetricFormula) geometryMetricFormula.innerHTML=metricMarkup;
  if(statusElement){
   const pathStatus=pending
    ? 'Latest visual-path candidate rejected: independent southern-coverage gates failed. The last approved flat-disk parameters remain active; polar geometry is still extrapolated.'

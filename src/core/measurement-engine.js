@@ -56,11 +56,11 @@ export function measureDistanceMeters(first, second) {
 }
 
 /**
- * Measure the straight connector as a Euclidean chord in the visible flat disk.
+ * Measure the straight connector as a 64-step anisotropic planar integral in the visible flat disk.
  *
- * flatDiskDistanceMeters() uses the same forward radial warp, 12-circle profile
- * and longitude deformation as project(), so the returned kilometre value is
- * the length of the exact segment drawn between the two displayed endpoints.
+ * flatDiskDistanceMeters() integrates that same straight projected segment in
+ * the unchanged visible disk, applying the shared radius-dependent tangential
+ * weight while leaving every radial component unscaled.
  * ADS-B flown-mileage corrections are deliberately not applied to this
  * endpoint-to-endpoint map measurement.
  */
@@ -77,7 +77,7 @@ export function measureDirectDistance(first, second) {
   return {
     distanceMeters: Number.isFinite(distanceMeters) && distanceMeters >= 0
       ? distanceMeters : null,
-    metric: 'visible-flat-disk-chord',
+    metric: 'anisotropic-planar-segment',
     restricted: false
   };
 }
