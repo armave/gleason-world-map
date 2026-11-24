@@ -60,6 +60,16 @@ Two additional southern-hemisphere source programmes are under review:
 
 These sites can broaden source coverage in the southern hemisphere (roughly mid-southern latitudes), but they do not provide deep-southern or Antarctic coverage. The exact pillar IDs, certified horizontal distances, uncertainty, reference height, certification epoch and traceable coordinates for the same physical pillars must be extracted before import. The portal's coordinate-based geometric corrections must not be reproduced in this map; only its published certified length values are candidates for the observation file.
 
+### Geoscience Australia Antarctic total-station and AAGN networks
+
+The strongest high-southern lead found so far is Geoscience Australia's **Technical Report 5: Antarctic Geodesy, Summer 2000–2001**. It documents Mawson and Davis local monitoring networks and the Australian Antarctic Geodetic Network (AAGN) traverse in East Antarctica. At Mawson and Davis, a Leica TC2003 total station with precision prisms observed horizontal and vertical angles and slope distances. The report says reduced distances were corrected for temperature, humidity and pressure, and the network was least-squares adjusted in GEOLAB. It publishes adjusted coordinates and standard deviations for three local reference marks at each of AUS064 (Mawson) and AUS099 (Davis). The AAGN upgrade also publishes adjusted coordinates for selected traverse marks, including Landing Bluff, Mount Caroline Mickelson, Rubeli Bluff and Corry Rocks.
+
+This is the first source found that combines high-southern physical survey observations with published precise monument positions. However, the PDF does **not** reproduce the adjusted horizontal pair lengths or the full observation/adjustment files for the local networks. It identifies the missing primary records as AUSLIG Geodesy field books #35 and #38 (Mawson) and #37 (Davis). Those field books or their GEOLAB adjustments must be obtained before distances can be put into the fitter. The report gives slope-distance observations and coordinate outputs, but it is not acceptable to calculate the target distances from those latitude/longitude coordinates.
+
+There are also monument identity issues. The NMS 143 AAGN antenna was set up on a cairn under the assumption it was concentric with the buried station mark; the report records that the eccentric mark was not found. That coordinate is not accepted as an exact station-mark position without a resolved tie. The 2006/07 AADC report also states that deep-field ground-control GPS observations were not completed that season. Its coverage should not be overstated.
+
+Sources: [Geoscience Australia Technical Report 5 (GA5033)](https://www.ga.gov.au/bigobj/GA5033.pdf); [AADC 2006/07 Antarctic Geodesy report metadata](https://data.aad.gov.au/metadata/records/survey_2006-2007_geodesy); [AADC Antarctic survey report catalogue](https://data.aad.gov.au/aadc/portal/drill_down.cfm?id=69).
+
 ## Why the observations file is still empty
 
 The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
