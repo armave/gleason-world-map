@@ -188,7 +188,8 @@ test('legacy flight calibration workflow is manual-only and never auto-updates t
   assert.doesNotMatch(workflow, /cron:/);
   assert.match(workflow, /timeout-minutes:\s*120/);
   assert.match(workflow, /cancel-in-progress:\s*true/);
-  assert.match(workflow, /scripts\/flight-calibration-route-predicate\.mjs/);
+  assert.match(workflow, /npm run collect:flight-calibration/);
+  assert.match(workflow, /npm run fit:flight-path-calibration/);
 });
 
 
