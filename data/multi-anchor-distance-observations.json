@@ -209,6 +209,25 @@
         "do not infer or compute distances from point coordinates or CAD geometry unless a source explicitly identifies the value as a direct measured horizontal distance",
         "keep complete local survey sites in one train or holdout split"
       ]
+    },
+    {
+      "id": "japan-gsi-antarctic-control-point-survey",
+      "provider": "Geospatial Information Authority of Japan (GSI) / Japanese Antarctic Research Expedition",
+      "reference": "https://web2.gsi.go.jp/antarctic/07-e.html",
+      "dataListReference": "https://web2.gsi.go.jp/antarctic/07_index_point-e.html",
+      "historicalDataReference": "https://polaris.nipr.ac.jp/~dbase/900/gsi/pdf/Control_point_survey-j.REV1.pdf",
+      "reportedCoverage": "Antarctic control-point networks established and revised by JARE from 1956 onward. Historical EDM/theodolite network integration is concentrated in the Syowa Station hinterland (Lützow-Holm Bay) due line-of-sight limits between distant ice-free areas.",
+      "publishedMethods": "GSI records integration surveys from the 1960s and the use from the 1970s of electro-optical distance measurement (Geodimeter Model 8) and high-precision Wild T3 theodolites for long-range distance/angle networks.",
+      "publicDataStatus": "The NIPR data catalogue describes the control-point survey data as analog and released through survey reports. Public survey data lists and point particulars are available, but pairwise adjusted horizontal distances and original observations must be requested or extracted from historical reports.",
+      "contact": "jare_geo@gsi.go.jp",
+      "status": "promising East Antarctic / Syowa regional source; exact monument IDs and measured pair-distance records require extraction from the report archive or direct request",
+      "importConditions": [
+        "obtain the control point particulars and original survey reports for each candidate JARE network",
+        "extract explicit adjusted horizontal/ground distances from the report or observation record; do not derive from coordinate tables",
+        "retain the survey epoch, monument identity, distance uncertainty, instrument and datum metadata",
+        "identify any offset/eccentric antenna or witness marks separately from the physical station marks",
+        "split complete local survey networks between training and holdout"
+      ]
     }
   ]
 }
