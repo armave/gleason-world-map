@@ -68,7 +68,7 @@ test('area mode builds a polygon and calculates its planar measurements',async({
  await page.locator('#areaMode').click();
  const bounds=await page.locator('#map').boundingBox();
  const cx=bounds.x+bounds.width/2,cy=bounds.y+bounds.height/2;
- await page.mouse.click(cx-75,cy-25);await page.mouse.click(cx+80,cy-15);await page.mouse.click(cx+5,cy+95);
+ await page.mouse.click(cx-75,cy-25);await page.mouse.click(cx+80,cy-15);await page.mouse.click(cx+5,cy+25);
  await expect(page.locator('#areaVertexCount')).toHaveText('3 vertices');
  await page.locator('#finishArea').click();
  await expect(page.locator('#areaValue')).not.toHaveText('—');

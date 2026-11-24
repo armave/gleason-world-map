@@ -892,7 +892,12 @@ import { PANEL_TAGS } from './components/panels.js';
   if(query.has('quality')&&Object.hasOwn(MAP_QUALITY_OPTIONS,query.get('quality'))) {
     mapQuality=query.get('quality');$('mapQuality').value=mapQuality;
   }
-  if(query.has('r'))rotation=Number(query.get('r'))||0;
+  if(query.has('r')) {
+    const requestedRotation=Number(query.get('r'));
+    rotation=Number.isFinite(requestedRotation)?Math.max(-180,Math.min(180,requestedRotation)):0;
+    $('mapRotation').value=String(Math.round(rotation));
+    $('mapRotationValue').textContent=Math.round(rotation)+'°';
+  }
   const readPoint=(key,name)=>{
     const value=query.get(key);if(!value)return null;
     const pair=value.split(',').map(Number);
