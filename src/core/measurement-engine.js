@@ -1,4 +1,5 @@
 import { flatDiskDistanceMeters } from './flat-disk.js';
+import { measureInterruptedPetalRoute } from './interrupted-petals.js';
 
 function validPoint(point) {
   return !!point &&
@@ -9,8 +10,8 @@ function validPoint(point) {
 }
 
 /** One direct planar distance function shared by all measurement surfaces. */
-export function measureDistanceMeters(first, second) {
-  return measureDirectDistance(first, second).distanceMeters;
+export function measureDistanceMeters(first, second, layoutMode = 'gleason') {
+  return measureDirectDistance(first, second, layoutMode).distanceMeters;
 }
 
 /**
@@ -18,12 +19,16 @@ export function measureDistanceMeters(first, second) {
  * them on the pure Gleason disk. The result is a drawing-plane length, not
  * an independently validated ground route distance.
  */
-export function measureDirectDistance(first, second) {
+export function measureDirectDistance(first, second, layoutMode = 'gleason') {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
       metric: 'unavailable'
     };
+  }
+
+  if (layoutMode === 'interrupted-petals') {
+    return measureInterruptedPetalRoute(first, second);
   }
 
   const distanceMeters = flatDiskDistanceMeters(first, second);

@@ -1,5 +1,6 @@
 import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
 import {measureDirectDistance,measureDistanceMeters} from './core/measurement-engine.js';
+import {projectInterruptedPetals,projectInterruptedPetalInLobe,unprojectInterruptedPetals,measureInterruptedPetalRoute,createInterruptedPetalGoreWedges,PETALS} from './core/interrupted-petals.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
@@ -36,7 +37,7 @@ let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,country
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
-let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
+let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', layoutMode = 'gleason', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [], hoverFrame = null, pendingHoverPoint = null;
 let wheelZoomActive = false, wheelZoomResetTimer = null;
 let frameScaleBarReadingKm = Infinity;
@@ -68,18 +69,18 @@ document.documentElement.dataset.mapStyle=visualStyle;
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
 const appState=createAppState({
- mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
+ mode,layoutMode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
  selection:null,measurement:{distancePointCount:0,areaPointCount:0,areaFinished:false,endpoints:[],distanceLabel:''},
  historical:{...historical},searchQuery:''
 });
 function publishAppState(reason='map-interaction'){
  appState.update({
-  mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
+  mode,layoutMode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
   selection:selected?{type:selected.type||'unknown'}:null,
   measurement:{
    distancePointCount:points.length,areaPointCount:areaPoints.length,areaFinished,
    endpoints:points.map(point=>({name:point.name||'Map location',coordinates:fmtCoord(point.lat,point.lon)})),
-   distanceLabel:points.length===2?formatDistance(measureDirectDistance(points[0],points[1]).distanceMeters):''
+   distanceLabel:points.length===2?formatDistance(measureDirectDistance(points[0],points[1],layoutMode).distanceMeters):''
   },
   historical:{...historical}
  },{source:'map',reason});
@@ -88,6 +89,11 @@ for(const tag of PANEL_TAGS){const panel=document.querySelector(tag);if(panel)pa
 document.addEventListener('map-panel-event',event=>{
  const {id,type,value,checked}=event.detail||{},patch={};
  if(!id)return;
+ if(id==='mapLayoutMode'&&type==='change'){
+  layoutMode=value==='interrupted-petals'?'interrupted-petals':'gleason';
+  geometryBaseR=NaN;resize();syncRadialControls();updateMeasurement();updateAreaMeasurement();draw();
+  patch.layoutMode=layoutMode;
+ }
  if(id==='mapQuality'&&type==='change')patch.mapQuality=value;
  if(id==='mapStyle'&&type==='change')patch.visualStyle=value;
  if(id==='search'&&type==='input')patch.searchQuery=value;
@@ -157,8 +163,42 @@ function drawUprightMapText(text,x,y,{reserve=true,avoidReserved=false}={}){
  return true;
 }
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
-const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
-const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
+function projectForLayout(lon,lat,radius=baseR,activeLayout=layoutMode,petalIndex){
+ return activeLayout==='interrupted-petals'
+  ? (Number.isInteger(petalIndex)
+    ? projectInterruptedPetalInLobe(lon,lat,petalIndex,radius)
+    : projectInterruptedPetals(lon,lat,radius))
+  : projectFlatDisk(lon,lat,radius);
+}
+const project=(lon,lat,petalIndex)=>projectForLayout(lon,lat,baseR,layoutMode,petalIndex);
+const unproject=(x,y)=>layoutMode==='interrupted-petals'
+ ? unprojectInterruptedPetals(x,y,baseR)
+ : unprojectFlatDisk(x,y,baseR);
+function routeBetween(first,second){
+ if(layoutMode==='interrupted-petals')return measureInterruptedPetalRoute(first,second,baseR);
+ const start=project(first.lon,first.lat),end=project(second.lon,second.lat);
+ return {distanceMeters:measureDirectDistance(first,second,'gleason').distanceMeters,
+  metric:'euclidean-flat-disk-chord',segments:[[start,end]]};
+}
+function routeMidpoint(segments){
+ const lengths=segments.map(segment=>Math.hypot(segment[1][0]-segment[0][0],segment[1][1]-segment[0][1]));
+ const total=lengths.reduce((sum,value)=>sum+value,0);
+ if(!total)return segments[0]?.[0]||[0,0];
+ let remaining=total/2;
+ for(let i=0;i<segments.length;i++){
+  const [a,b]=segments[i],length=lengths[i];
+  if(remaining<=length||i===segments.length-1){
+   const t=length?remaining/length:0;
+   return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+  }
+  remaining-=length;
+ }
+ return segments.at(-1)[1];
+}
+function polygonCrossesOpenGore(vertices){
+ return layoutMode==='interrupted-petals'&&vertices.some((point,index)=>
+  routeBetween(point,vertices[(index+1)%vertices.length]).metric==='planar-gore-edge-stitch');
+}
 function resize(){
  const rect=canvas.getBoundingClientRect();
  width=rect.width;height=rect.height;
@@ -173,8 +213,11 @@ function resize(){
   }
   baseR=nextBaseR;
   const projectionBaseR=baseR,resizeGeneration=loadGeneration;
-  const fixedProject=(lon,lat)=>projectFlatDisk(lon,lat,projectionBaseR);
-  const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,fixedProject,preserveAntarcticRim);
+  const projectionLayoutMode=layoutMode;
+  const fixedProject=(lon,lat,petalIndex)=>projectForLayout(lon,lat,projectionBaseR,projectionLayoutMode,petalIndex);
+  const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(
+   feature,fixedProject,preserveAntarcticRim,undefined,projectionLayoutMode,projectionBaseR
+  );
   iceWallTexturePaths=createIceWallTexturePaths(baseR);
   pathRecords=countries.map(country=>({country,path:makeResizedPath(country.feature)}));
   countryOutlinesPath=new Path2D();
@@ -186,8 +229,9 @@ function resize(){
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
   geometryBaseR=projectionBaseR;
+  petalGoreWedges=projectionLayoutMode==='interrupted-petals'?createInterruptedPetalGoreWedges(projectionBaseR):[];
   buildCountryLayerCache();
-  if(antarcticAddData){
+  if(antarcticAddData&&projectionLayoutMode==='gleason'){
    const source=antarcticAddData;
    createAntarcticSurfacePathsAsync(source,fixedProject).then(paths=>{
     if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
@@ -196,8 +240,8 @@ function resize(){
   }
   if(coastlineData){
    const source=coastlineData;
-   createCoastlinePathAsync(source,fixedProject).then(path=>{
-    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
+   createCoastlinePathAsync(source,fixedProject,undefined,{layoutMode:projectionLayoutMode}).then(path=>{
+    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR||layoutMode!==projectionLayoutMode)return;
     coastlinePath=path;draw();
    }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
   }

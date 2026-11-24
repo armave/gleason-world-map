@@ -13,9 +13,18 @@ export function renderRadialCalibration(
   visualRows,
   formulaElement,
   statusElement,
-  geometryMetricFormula
+  geometryMetricFormula,
+  layoutMode = 'gleason'
 ) {
-  if (formulaElement) {
+  if (formulaElement && layoutMode === 'interrupted-petals') {
+    formulaElement.innerHTML =
+      'r = (90° − φ) × 111.12 km<br>' +
+      's(φ) = 1 − 0.55 × (|φ| / 90°), φ < 0°<br>' +
+      'λ_eff = λ_c + wrap(λ − λ_c) × s(φ)<br>' +
+      'x = r · cos(λ_eff)<br>' +
+      'y = −r · sin(λ_eff)<br>' +
+      'Three southern lobes · one North-Polar centre';
+  } else if (formulaElement) {
     formulaElement.innerHTML =
       'θ = 90° − φ<br>' +
       'r = θ × 60 nautical miles / degree<br>' +
@@ -27,7 +36,9 @@ export function renderRadialCalibration(
       'y = −r · sin λ';
   }
 
-  if (statusElement) {
+  if (statusElement && layoutMode === 'interrupted-petals') {
+    statusElement.textContent = 'Northern latitudes retain the Pure Gleason disk. Southern longitudes are compressed independently about the South America (−60°), Africa / Indian (+25°), and Australia / Pacific (+140°) lobe centres. Cross-lobe routes use the shortest two-segment planar path joined at matching latitude along the relevant gore edges. Open gore wedges are excluded from geographic hit-testing.';
+  } else if (statusElement) {
     statusElement.textContent =
       'Pure Gleason baseline: equal angular latitude steps produce equal radial ring spacing; ' +
       'meridians are straight rays from the North Pole. No fitted latitude warp, longitude ' +
@@ -56,7 +67,13 @@ export function renderRadialCalibration(
 
   if (visualRows) visualRows.innerHTML = '';
 
-  if (geometryMetricFormula) {
+  if (geometryMetricFormula && layoutMode === 'interrupted-petals') {
+    geometryMetricFormula.innerHTML =
+      'D_same = hypot(Δx, Δy)<br>' +
+      'D_cross = minφc [ hypot(PA, CutL(φc)) + hypot(CutR(φc), PB) ]<br>' +
+      'A = ½ · |Σ(xᵢyᵢ₊₁ − xᵢ₊₁yᵢ)|<br>' +
+      'Planar edge stitching · shoelace area in the active petal plane';
+  } else if (geometryMetricFormula) {
     geometryMetricFormula.innerHTML =
       'D = √((x₂ − x₁)² + (y₂ − y₁)²)<br>' +
       'A = ½ · |Σ(xᵢyᵢ₊₁ − xᵢ₊₁yᵢ)|<br>' +
