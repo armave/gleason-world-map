@@ -48,7 +48,7 @@ test('parser reads the horizontal adjusted column, not mark-to-mark distance', (
   assert.equal(first.endpoints.fromStation, 'BELTSVILLE 150');
   assert.equal(first.endpoints.toStation, 'BELTSVILLE 300');
   assert.equal(first.horizontalAdjustedDistanceM, 149.9929);
-  assert.equal(first.horizontalAdjustedDistanceKmCandidate, 0.1499929);
+  assert.ok(Math.abs(first.horizontalAdjustedDistanceKmCandidate - 0.1499929) < 1e-12);
   assert.equal(first.markToMarkDistanceM, 149.9979);
   assert.equal(first.reportedStandardErrorMm, 0.2);
   assert.match(first.reportedStandardErrorInterpretation, /may be optimistic/);
