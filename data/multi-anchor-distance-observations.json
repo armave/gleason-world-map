@@ -169,7 +169,7 @@
         "The published slope-distance observations are not themselves adjusted horizontal lengths; the distance basis must be obtained from the original adjustment.",
         "AAGN NMS 143 coordinates were observed with an antenna atop a cairn assumed concentric with a hidden station mark; do not use as an exact point without resolving that eccentricity.",
         "For the 2006/07 report, deep-field control-feature GPS observations were not completed because of time and aircraft payload constraints; do not infer deep interior coverage from that report.",
-        "The coordinate reference frame and epoch differ from modern RSRGD2000/LINZ marks; provenance and epoch must be preserved rather than mixing unlabelled coordinates."
+        "The coordinate reference frame and epoch differ from modern regional geodetic marks; provenance and epoch must be preserved rather than mixing unlabelled coordinates."
       ],
       "status": "promising high-southern survey network; precise adjusted endpoint coordinates are published for selected marks, but the underlying adjusted horizontal lengths/fieldbook observations are not in the accessible report and must be obtained before import",
       "importConditions": [
