@@ -1,11 +1,32 @@
 {
-  "schemaVersion": 1,
-  "description": "No qualifying independent endpoint-to-endpoint straight-line measurements have been supplied yet. Populate this file only with traceable, directly measured observations.",
+  "schemaVersion": 2,
+  "description": "No qualified physical-baseline observations are currently populated. Add only independently measured distances with traceable endpoint coordinate records, published uncertainty, and site-level holdout grouping.",
   "measurementPolicy": {
-    "eligibleType": "direct-straight-line",
-    "requiredFields": ["split", "a", "b", "distanceKm", "measurementType", "source.provider", "source.reference"],
-    "splitPolicy": "Assign complete unordered endpoint pairs to either train or holdout before fitting. Never place the same pair in both splits.",
-    "sourcePolicy": "Record the original survey, instrument, dataset row, or other traceable reference for every distance.",
+    "eligibleTypes": [
+      "direct-straight-line",
+      "direct-survey-baseline"
+    ],
+    "surveyBaseline": {
+      "measurementBasis": "adjusted-horizontal",
+      "requiredFields": [
+        "uncertaintyKm",
+        "a.coordinateSource.provider",
+        "a.coordinateSource.reference",
+        "b.coordinateSource.provider",
+        "b.coordinateSource.reference",
+        "source.groupId"
+      ],
+      "splitUnit": "complete surveyed baseline/site group"
+    },
+    "splitPolicy": "Assign entire survey baselines or sites to train or holdout before fitting. Never split segments from one baseline across the two groups.",
+    "sourcePolicy": "Record the actual survey certificate or row and coordinate reference for each exact monument. Approximate site positions are ineligible.",
+    "excludedTargets": [
+      "ADS-B flown mileage",
+      "flight track length",
+      "shortest route distance",
+      "travel time multiplied by speed",
+      "distance calculated from globe/sphere/ellipsoid/geodesic formulas"
+    ],
     "unit": "kilometres"
   },
   "observations": []
