@@ -20,7 +20,7 @@ y = -r * sin(lambda)
 
 The North Pole is at the centre. The equator is halfway from the centre to the outer rim. Equal changes in latitude produce equal changes in radius, so the parallels are concentric and evenly spaced. Meridians are straight rays. Greenwich (0°) points right; 90°E points up; eastward longitude proceeds counter-clockwise.
 
-The drawing scale sets the 180° North-Pole-to-rim radius to **20,001.6 km**. This is the map's planar coordinate scale derived from the stated 60-nautical-mile-per-degree convention. It is not a claim that every direction or region on the historical map matches independently measured ground distances.
+The drawing scale sets the 180° North-Pole-to-rim radius to **20,001.6 km**. This is the map's planar coordinate scale derived from the stated 60-nautical-mile-per-degree convention. It is not a claim that every direction or region on the historical map matches independently measured ground distances. Older ADS-B and multi-anchor calibration modules, datasets and scripts remain in the repository as research history only; the active app does not import them. The legacy flight-data workflow is manual-only.
 
 ### What is deliberately absent
 
@@ -70,7 +70,7 @@ src/
   map/                      Canvas drawing, coastlines, labels, Ice Wall
   ui/                       specialized UI renderers
 data/                       bundled map and reference datasets
-scripts/                    data-vendor and research utilities
+scripts/                    data vendors and archived research utilities
 tests/                      unit, regression and UI source checks
 e2e/                        Playwright browser tests
 .github/workflows/          test and GitHub Pages deployment workflows
