@@ -131,9 +131,19 @@ npm run inspect:linz-antarctic
 
 Create the key in your own LINZ Data Service account. Do not put it in a source file, commit it, or paste it into a public issue. The script uses WFS 2.0 paged requests, joins the Antarctic marks layer to physical Mark records, endpoint Setups, reduced Observations, observation-type/element/unit metadata, self-variance records, element-level Adoption records, and reduction-run metadata.
 
-The output defaults to the ignored local file `tmp/linz-antarctic-observation-review.json`; override this with `LINZ_REVIEW_OUTPUT` if needed. It is a diagnostic report only. It deliberately does **not** add rows to `data/multi-anchor-distance-observations.json), does not assign train/holdout splits, and does not activate a projection.
+The output defaults to the ignored local file `tmp/linz-antarctic-observation-review.json`; override this with `LINZ_REVIEW_OUTPUT` if needed. It is a diagnostic report only. It deliberately does **not** add rows to `data/multi-anchor-distance-observations.json`, does not assign train/holdout splits, and does not activate a projection.
 
 The report highlights distance-like value elements, converts only explicitly identified metre/kilometre values for review, records the exact source value and matching variance, flags any adoption link, keeps the bearing-only meaning of `SURVEYED_CLASS` distinct from distance status, and notes whether type descriptions explicitly identify a horizontal sea-level basis. If table joins do not resolve physical marks unambiguously, the affected pairs are omitted rather than guessed.
+
+
+The same inspection can be run from GitHub Actions without sending the key in chat or committing it:
+
+1. Open the repository's **Settings → Secrets and variables → Actions → New repository secret**.
+2. Set the secret name to `LINZ_LDS_API_KEY` and its value to your LINZ Data Service *data-access-only* API key.
+3. Open **Actions → Inspect LINZ Antarctic survey observations → Run workflow**.
+4. When it completes, download the `linz-antarctic-observation-review` artifact from the run.
+
+The workflow is manual-only and has read-only repository permissions. It reads the secret as an environment variable, uploads only the review JSON, and never includes the key in the artifact. The report is accessible to people with read access to this public repository, so it is a source-data review artifact rather than a private data store.
 
 A live report has not yet been generated: it requires the user's LINZ LDS API key. After generation, each candidate still needs authoritative confirmation that the distance element was measured (not calculated/adopted), its correct horizontal/sea-level reduction basis, the identity and current condition of both exact monuments, and an appropriate survey-network grouping. Only then can approved records be manually promoted into the fitting dataset.
 
