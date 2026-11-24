@@ -93,6 +93,36 @@
       "additionalReference2": "https://d-nb.info/1285195388/34",
       "preliminaryMeasurement": "A 2022 preliminary study reports an EDM EUR1–EUR2 length of 5177.1758 m ±0.0073 m (k=1).",
       "coordinateQuality": "The same preliminary study labels its five point coordinates approximate; those coordinates are not accepted as precise fitting anchors."
+    },
+    {
+      "id": "landgate-western-australia-edm-baselines",
+      "provider": "Landgate, Western Australia",
+      "reference": "https://www.landgate.wa.gov.au/location-data-and-services/surveying/instrument-calibration/",
+      "additionalReference": "https://medjil0.lb.landgate.wa.gov.au/calibrationguide/manuals/",
+      "reportedCoverage": "Three certified EDM baselines: Curtin University, Kalgoorlie and Busselton; distances are periodically re-certified and distributed through Medjil.",
+      "status": "southern-hemisphere source lead; not fit-ready until the certified pillar coordinates, exact endpoint IDs, reference-height convention and uncertainty records are obtained",
+      "importConditions": [
+        "obtain the certified horizontal distances and stated uncertainties from the current Medjil distribution",
+        "obtain the exact pillar coordinate records and coordinate uncertainties for each baseline",
+        "record the reference height and certification epoch for each distance",
+        "do not compute distances from coordinates or reapply the portal's geometric corrections",
+        "keep each complete baseline site in one train or holdout split"
+      ]
+    },
+    {
+      "id": "new-south-wales-edm-baselines",
+      "provider": "NSW Government, Surveyor General",
+      "reference": "https://www.nsw.gov.au/environment-land-and-water/surveying/surveyor-generals-directions/edm-baseline",
+      "additionalReference": "https://www.spatial.nsw.gov.au/__data/assets/pdf_file/0020/25940/SG_Direction_05.pdf",
+      "reportedCoverage": "Published EDM baseline certificates and facility information for sites including Coffs Harbour, Dubbo, Eglinton, Lethbridge Park, Seaham, Ulan and others.",
+      "status": "southern-hemisphere source lead; certificate endpoint coordinates and exact horizontal-distance/uncertainty records still need extraction",
+      "importConditions": [
+        "obtain the individual baseline certificate and identify the exact physical pillars",
+        "use certified horizontal distances only, with the reference height and uncertainty recorded",
+        "obtain traceable coordinates for the same physical pillars",
+        "retain certification epoch and site condition",
+        "keep each complete baseline site in one train or holdout split"
+      ]
     }
   ]
 }
