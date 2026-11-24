@@ -10,24 +10,25 @@ A positive-Jacobian topology check, finite output extent, uncertainty-aware fit 
 
 ## What qualifies as a distance observation
 
-Two measurement types are accepted:
+Three measurement types are accepted:
 
 - `direct-straight-line`: a traceable, independently measured straight endpoint-to-endpoint length.
 - `direct-survey-baseline`: a physical survey baseline whose published value is the **adjusted horizontal distance**, with its uncertainty and coordinate references for both exact monument marks.
+- `direct-survey-reduced-horizontal`: a recorded **measured horizontal distance reduced to sea level** from an authoritative survey-observation table, with its matching observation variance, exact monument endpoints and traceable coordinate records. This is a reduced observation, not an adjusted network output.
 
-Survey baseline records must have:
+Direct survey records (`direct-survey-baseline` or `direct-survey-reduced-horizontal`) must have:
 - `split`: `train` or `holdout`
 - `a`, `b`: stable monument IDs, their latitude/longitude inputs, and each point's `coordinateSource.provider` and `coordinateSource.reference`
-- `distanceKm`: the published adjusted horizontal distance in kilometres
-- `measurementType`: exactly `direct-survey-baseline`
-- `measurementBasis`: exactly `adjusted-horizontal`
+- `distanceKm`: the published measured horizontal distance in kilometres
+- `measurementType`: exactly `direct-survey-baseline` or `direct-survey-reduced-horizontal`
+- `measurementBasis`: exactly `adjusted-horizontal` for baseline certificates or `sea-level-horizontal` for reduced LINZ observations
 - `uncertaintyKm`: the published distance uncertainty in kilometres
 - `source.provider`, `source.reference`: provenance for the measured baseline
 - `source.groupId`: stable baseline/site identifier
 
 Every pair from one survey line or site must remain in one split. A baseline group cannot contribute some segments to training and other segments to holdout. Holdout baselines should be geographically independent from training sites.
 
-The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a direct-survey-baseline without a stated positive uncertainty is rejected.
+The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a survey observation without a stated positive uncertainty is rejected. For LINZ, the square root of the recorded distance variance in m² may be converted to one-sigma distance uncertainty in km. The observation remains labelled as a reduced distance, not an adjusted network output.
 
 Do not use airline mileage, ADS-B track length, travel time multiplied by speed, shortest-route distance, an inferred map scale, or distances calculated from globe/sphere/ellipsoid/geodesic formulas. Surveyed horizontal lengths must be taken as the published reference values, not recomputed from endpoint coordinates.
 
