@@ -120,6 +120,23 @@ The table schema and relationships are verified from LINZ's January 2022 Full La
 
 Official references: [Full Landonline Data Dictionary and Models](https://github.com/linz/linz-lds-bde-schema/blob/master/doc/lds-full-landonline-data-dictionary-and-models.md), [Geodetic data](https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data), [LDS API and WFS guidance](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/lds-apis-and-web-services), [Create an LDS API key](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/creating-api-key), and [WFS filtering and paging](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/wfs-filter-methods-and-parameters).
 
+#### Local LINZ inspection script
+
+The repository now includes a credential-safe inspection script:
+
+```bash
+export LINZ_LDS_API_KEY='your-data-access-only-key'
+npm run inspect:linz-antarctic
+```
+
+Create the key in your own LINZ Data Service account. Do not put it in a source file, commit it, or paste it into a public issue. The script uses WFS 2.0 paged requests, joins the Antarctic marks layer to physical Mark records, endpoint Setups, reduced Observations, observation-type/element/unit metadata, self-variance records, element-level Adoption records, and reduction-run metadata.
+
+The output defaults to the ignored local file `tmp/linz-antarctic-observation-review.json`; override this with `LINZ_REVIEW_OUTPUT` if needed. It is a diagnostic report only. It deliberately does **not** add rows to `data/multi-anchor-distance-observations.json), does not assign train/holdout splits, and does not activate a projection.
+
+The report highlights distance-like value elements, converts only explicitly identified metre/kilometre values for review, records the exact source value and matching variance, flags any adoption link, keeps the bearing-only meaning of `SURVEYED_CLASS` distinct from distance status, and notes whether type descriptions explicitly identify a horizontal sea-level basis. If table joins do not resolve physical marks unambiguously, the affected pairs are omitted rather than guessed.
+
+A live report has not yet been generated: it requires the user's LINZ LDS API key. After generation, each candidate still needs authoritative confirmation that the distance element was measured (not calculated/adopted), its correct horizontal/sea-level reduction basis, the identity and current condition of both exact monuments, and an appropriate survey-network grouping. Only then can approved records be manually promoted into the fitting dataset.
+
 ## Why the observations file is still empty
 
 The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
