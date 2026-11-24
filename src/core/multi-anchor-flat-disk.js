@@ -29,10 +29,10 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   maximumHoldoutMapePercent: 10,
   maximumHoldoutPairErrorPercent: 20,
   minimumHoldoutImprovementPercentagePoints: 0.25,
-  minimumJacobianDeterminant: 0.2,
-  maximumAnchorDisplacementFraction: 0.12,
-  maximumWarpDisplacementFraction: 0.12,
-  maximumRadialOvershootFraction: 1e-5,
+  minimumJacobianDeterminant: 0.03,
+  maximumAnchorDisplacementFraction: 5,
+  maximumWarpDisplacementFraction: 5,
+  maximumOutputRadiusFraction: 5,
   maximumRoundTripErrorKm: 0.01,
   maximumControlPoints: 256
 });
@@ -72,8 +72,36 @@ function normalizeObservations(input) {
       errors.push(label + ' distanceKm must be greater than 0 and at most 50000');
       return;
     }
-    if (item.measurementType !== 'direct-straight-line') {
-      errors.push(label + ' is not an eligible direct-straight-line measurement');
+    const eligibleMeasurementTypes = ['direct-straight-line', 'direct-survey-baseline'];
+    if (!eligibleMeasurementTypes.includes(item.measurementType)) {
+      errors.push(label + ' is not an eligible direct-straight-line or direct-survey-baseline measurement');
+      return;
+    }
+    if (item.measurementType === 'direct-survey-baseline') {
+      if (item.measurementBasis !== 'adjusted-horizontal') {
+        errors.push(label + ' survey baseline must declare measurementBasis=adjusted-horizontal');
+        return;
+      }
+      if (!Number.isFinite(item.uncertaintyKm) || item.uncertaintyKm <= 0 ||
+          item.uncertaintyKm > item.distanceKm) {
+        errors.push(label + ' survey baseline must include a positive uncertaintyKm no greater than distanceKm');
+        return;
+      }
+      for (const point of [item.a, item.b]) {
+        if (!point.coordinateSource ||
+            typeof point.coordinateSource.provider !== 'string' ||
+            !point.coordinateSource.provider.trim() ||
+            typeof point.coordinateSource.reference !== 'string' ||
+            !point.coordinateSource.reference.trim()) {
+          errors.push(label + ' survey baseline anchors must include coordinateSource.provider and coordinateSource.reference');
+          return;
+        }
+      }
+    }
+    if (item.uncertaintyKm !== undefined &&
+        (!Number.isFinite(item.uncertaintyKm) || item.uncertaintyKm <= 0 ||
+         item.uncertaintyKm > item.distanceKm)) {
+      errors.push(label + ' uncertaintyKm must be positive and no greater than distanceKm');
       return;
     }
     if (!item.source || typeof item.source.provider !== 'string' ||
@@ -115,9 +143,18 @@ function normalizeObservations(input) {
     observations.push({
       id: observationId,
       split: item.split,
-      a: { id: item.a.id, lat: item.a.lat, lon: item.a.lon },
-      b: { id: item.b.id, lat: item.b.lat, lon: item.b.lon },
+      a: {
+        id: item.a.id, lat: item.a.lat, lon: item.a.lon,
+        ...(item.a.coordinateSource ? { coordinateSource: item.a.coordinateSource } : {})
+      },
+      b: {
+        id: item.b.id, lat: item.b.lat, lon: item.b.lon,
+        ...(item.b.coordinateSource ? { coordinateSource: item.b.coordinateSource } : {})
+      },
       distanceKm: item.distanceKm,
+      measurementType: item.measurementType,
+      measurementBasis: item.measurementBasis ?? null,
+      uncertaintyKm: Number.isFinite(item.uncertaintyKm) ? item.uncertaintyKm : null,
       confidence: Number.isFinite(item.confidence)
         ? clamp(item.confidence, 0.1, 1) : 1,
       source: item.source
@@ -133,17 +170,6 @@ function pointOnDisk(point) {
     throw new Error('Could not project reference anchor ' + point.id);
   }
   return projected;
-}
-
-function boundaryAnchor(x, y) {
-  const radius = Math.hypot(x, y);
-  return radius < DISK_RADIUS_KM * 1e-7 ||
-    radius > DISK_RADIUS_KM * (1 - 1e-7);
-}
-
-function envelopeAt(x, y, radiusKm = DISK_RADIUS_KM) {
-  const q = clamp(Math.hypot(x, y) / radiusKm, 0, 1);
-  return 16 * q * q * (1 - q) * (1 - q);
 }
 
 function anchorCoverage(observations) {
@@ -351,16 +377,14 @@ function buildWarp(seed, fitted, anchorIds, options = {}) {
     id,
     xKm: seed[index][0],
     yKm: seed[index][1],
-    envelope: envelopeAt(seed[index][0], seed[index][1]),
     dx: fitted[index][0] - seed[index][0],
     dy: fitted[index][1] - seed[index][1]
-  })).filter(control => control.envelope > 1e-4);
+  }));
   const matrix = controls.map((first, row) => controls.map((second, column) => {
     const dx = first.xKm - second.xKm;
     const dy = first.yKm - second.yKm;
     const kernel = Math.exp(-(dx * dx + dy * dy) / (2 * sigmaKm * sigmaKm));
-    return first.envelope * second.envelope * kernel +
-      (row === column ? regularization : 0);
+    return kernel + (row === column ? regularization : 0);
   }));
   const alphaX = solveLinearSystem(matrix, controls.map(item => item.dx));
   const alphaY = solveLinearSystem(matrix, controls.map(item => item.dy));
@@ -373,7 +397,6 @@ function buildWarp(seed, fitted, anchorIds, options = {}) {
       id: item.id,
       xKm: item.xKm,
       yKm: item.yKm,
-      envelope: item.envelope,
       alphaX: alphaX[index],
       alphaY: alphaY[index]
     }))
@@ -388,24 +411,22 @@ function isValidWarpModel(model) {
     model.controls.length <= MULTI_ANCHOR_FILTERS.maximumControlPoints &&
     model.controls.every(control => control && typeof control === 'object' &&
       [
-        control.xKm, control.yKm, control.envelope, control.alphaX, control.alphaY
+        control.xKm, control.yKm, control.alphaX, control.alphaY
       ].every(Number.isFinite) &&
-      control.envelope >= 0 && control.envelope <= 1 &&
       Math.hypot(control.xKm, control.yKm) <= model.diskRadiusKm * (1 + 1e-8));
 }
 
-/** Smoothly warp a point in disk-kilometre coordinates; centre and rim stay fixed. */
+/** Smoothly warp any point in the reference disk plane; pole and rim may move. */
 export function applyMultiAnchorWarpXY(xKm, yKm, model) {
   if (!Number.isFinite(xKm) || !Number.isFinite(yKm) ||
       !isValidWarpModel(model)) return null;
-  const envelope = envelopeAt(xKm, yKm, model.diskRadiusKm);
   let dx = 0, dy = 0;
   const denominator = 2 * model.sigmaKm * model.sigmaKm;
   for (const control of model.controls) {
     const x = xKm - control.xKm;
     const y = yKm - control.yKm;
     const kernel = Math.exp(-(x * x + y * y) / denominator);
-    const weight = envelope * control.envelope * kernel;
+    const weight = kernel;
     dx += weight * control.alphaX;
     dy += weight * control.alphaY;
   }
@@ -434,7 +455,7 @@ export function inspectMultiAnchorTopology(model) {
     return {
       minimumJacobianDeterminant: -Infinity,
       maximumWarpDisplacementFraction: Infinity,
-      maximumRadialOvershootFraction: Infinity,
+      maximumMappedRadiusFraction: Infinity,
       maximumBoundaryDisplacementKm: Infinity,
       topologySampleCount: 0
     };
@@ -495,7 +516,7 @@ function topologyMetrics(model) {
       return {
         minimumJacobianDeterminant: -Infinity,
         maximumWarpDisplacementFraction: Infinity,
-        maximumRadialOvershootFraction: Infinity,
+        maximumMappedRadiusFraction: Infinity,
         maximumBoundaryDisplacementKm: Infinity,
         topologySampleCount: samples.size
       };
@@ -747,12 +768,27 @@ function optimizePositions(training, anchors, options = {}) {
       requiredRigidityRank
     );
   }
-  const edges = training.map(item => ({
-    aIndex: nodeIndex.get(item.a.id),
-    bIndex: nodeIndex.get(item.b.id),
-    distanceKm: item.distanceKm,
-    confidence: item.confidence
-  }));
+  const relativeUncertainties = training
+    .filter(item => Number.isFinite(item.uncertaintyKm))
+    .map(item => item.uncertaintyKm / item.distanceKm)
+    .sort((a, b) => a - b);
+  const medianRelativeUncertainty = relativeUncertainties.length
+    ? relativeUncertainties[Math.floor(relativeUncertainties.length / 2)]
+    : null;
+  const edges = training.map(item => {
+    const relativeUncertainty = Number.isFinite(item.uncertaintyKm)
+      ? item.uncertaintyKm / item.distanceKm : null;
+    const precisionRatio = relativeUncertainty && medianRelativeUncertainty
+      ? medianRelativeUncertainty / relativeUncertainty : 1;
+    const uncertaintyWeight = clamp(precisionRatio ** 2, 0.1, 10);
+    return {
+      aIndex: nodeIndex.get(item.a.id),
+      bIndex: nodeIndex.get(item.b.id),
+      distanceKm: item.distanceKm,
+      confidence: item.confidence * uncertaintyWeight,
+      uncertaintyKm: item.uncertaintyKm
+    };
+  });
   const totalWeight = edges.reduce((sum, edge) => sum + edge.confidence, 0);
   const firstMoment = positions.map(() => [0, 0]);
   const secondMoment = positions.map(() => [0, 0]);
@@ -771,7 +807,7 @@ function optimizePositions(training, anchors, options = {}) {
   const beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8;
   const radiusSquared = DISK_RADIUS_KM * DISK_RADIUS_KM;
   const count = Math.max(1, positions.length);
-  const fixed = seed.map(point => boundaryAnchor(point[0], point[1]));
+  const maximumAnchorRadius = DISK_RADIUS_KM * MULTI_ANCHOR_FILTERS.maximumOutputRadiusFraction;
 
   for (let iteration = 1; iteration <= iterations; iteration++) {
     const gradient = positions.map(() => [0, 0]);
@@ -796,13 +832,6 @@ function optimizePositions(training, anchors, options = {}) {
     }
 
     for (let index = 0; index < positions.length; index++) {
-      if (fixed[index]) {
-        gradient[index][0] = 0;
-        gradient[index][1] = 0;
-        positions[index][0] = seed[index][0];
-        positions[index][1] = seed[index][1];
-        continue;
-      }
       gradient[index][0] += 2 * anchorWeight *
         (positions[index][0] - seed[index][0]) / (radiusSquared * count);
       gradient[index][1] += 2 * anchorWeight *
@@ -812,7 +841,6 @@ function optimizePositions(training, anchors, options = {}) {
     const progress = iteration / iterations;
     const rate = learningRateKm * (0.15 + 0.85 * 0.5 * (1 + Math.cos(Math.PI * progress)));
     for (let index = 0; index < positions.length; index++) {
-      if (fixed[index]) continue;
       for (let axis = 0; axis < 2; axis++) {
         const value = gradient[index][axis];
         firstMoment[index][axis] = beta1 * firstMoment[index][axis] +
@@ -825,10 +853,9 @@ function optimizePositions(training, anchors, options = {}) {
           (Math.sqrt(correctedSecond) + epsilon);
       }
       const radius = Math.hypot(positions[index][0], positions[index][1]);
-      const maximumRadius = DISK_RADIUS_KM * 0.995;
-      if (radius > maximumRadius) {
-        positions[index][0] *= maximumRadius / radius;
-        positions[index][1] *= maximumRadius / radius;
+      if (radius > maximumAnchorRadius) {
+        positions[index][0] *= maximumAnchorRadius / radius;
+        positions[index][1] *= maximumAnchorRadius / radius;
       }
     }
   }
@@ -852,8 +879,8 @@ export function summarizeMultiAnchorCoverage(input) {
 }
 
 /**
- * Fit a candidate using direct-distance observations only.
- * Candidate models are returned separately and never auto-activated.
+ * Fit a candidate using direct measured-distance observations only.
+ * Candidate models may displace the pole and rim but are never auto-activated.
  */
 export function fitMultiAnchorFlatDisk(input, options = {}) {
   const normalized = normalizeObservations(input);
@@ -949,10 +976,8 @@ export function fitMultiAnchorFlatDisk(input, options = {}) {
     failures.push('Training-anchor displacement exceeds the stability limit');
   if (topology.maximumWarpDisplacementFraction > limits.maximumWarpDisplacementFraction)
     failures.push('Interpolated warp displacement exceeds the stability limit');
-  if (topology.maximumRadialOvershootFraction > limits.maximumRadialOvershootFraction)
-    failures.push('Interpolated warp extends beyond the circular disk boundary');
-  if (topology.maximumBoundaryDisplacementKm > 1e-5)
-    failures.push('Candidate deformation does not exactly preserve the pole and Antarctic rim');
+  if (topology.maximumMappedRadiusFraction > limits.maximumOutputRadiusFraction)
+    failures.push('Warped map extent exceeds the configured output safety bound');
   if (roundTrips.roundTripFailureCount > 0 ||
       roundTrips.maximumRoundTripErrorKm > limits.maximumRoundTripErrorKm) {
     failures.push('Candidate fails the forward/inverse round-trip gate');
