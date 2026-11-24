@@ -501,6 +501,7 @@ import { PANEL_TAGS } from './components/panels.js';
       $(id).classList.toggle('active',mode===value);
       $(id).setAttribute('aria-pressed',String(mode===value));
     }
+    $('measurementDetails').hidden=mode==='explore';
     $('areaDetails').hidden=mode!=='area';
     $('distanceDetails').hidden=mode!=='measure';
     $('measurementTools').dataset.activeMode=mode;
@@ -846,8 +847,8 @@ import { PANEL_TAGS } from './components/panels.js';
     else await $('mapCard').requestFullscreen();
   });
   $('mapToolsToggle').addEventListener('click',()=>{
-    const panels=$('mapToolsPanels'),open=!panels.classList.contains('open');
-    panels.classList.toggle('open',open);
+    const stack=$('mapToolsStack'),open=!stack.classList.contains('is-open');
+    stack.classList.toggle('is-open',open);
     $('mapToolsToggle').setAttribute('aria-expanded',String(open));
   });
   $('mobileToolsToggle').addEventListener('click',()=>{

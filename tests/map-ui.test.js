@@ -37,7 +37,7 @@ test('A–B readouts, route register and drawing all use the canonical route eng
 test('cross-Equator routes render two legs and matching crossing indicators',()=>{
  assert.match(app,/route\.segments/);
  assert.match(app,/route\.crossings/);
- assert.match(app,/measurementStrokeStyle\(tool,currentScale\(\)\)/);
+ assert.match(app,/measurementStrokeStyle\(tool,\s*currentScale\(\)\)/);
  assert.match(app,/Cross-Equator planar hinge/);
 });
 test('area edge labels and perimeter use the same canonical route distance',()=>{

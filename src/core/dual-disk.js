@@ -1,5 +1,5 @@
 export const KILOMETRES_PER_DEGREE = 111.12;
-export const EQUATOR_RADIUS_KM = 90 * KILOMETRES_PER_DEGREE;
+export const EQUATOR_RADIUS_KM = 10000.8;
 export const DISK_RADIUS_KM = EQUATOR_RADIUS_KM;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
 export const DISK_CENTRES = Object.freeze({ N: Object.freeze({ x: -EQUATOR_RADIUS_KM, y: 0 }), S: Object.freeze({ x: EQUATOR_RADIUS_KM, y: 0 }) });
