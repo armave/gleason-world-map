@@ -1,15 +1,11 @@
 import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
-import {measureDirectDistance,measureDistanceMeters,RESTRICTED_PARALLEL_LATITUDE} from './core/measurement-engine.js';
-import {RADIAL_DISTANCE_VISUAL_CIRCLES} from './core/visual-radial-calibration.js';
+import {measureDirectDistance,measureDistanceMeters} from './core/measurement-engine.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
 import {createFeaturePath} from './map/feature-paths.js';
 import {createVintageTextureTiles,createVintageTexturePatterns} from './map/vintage-texture.js';
 import {createAntarcticSurfacePathsAsync} from './map/antarctic-surfaces.js';
-import {FLIGHT_PATH_CALIBRATION} from './core/flight-path-calibration-parameters.js';
-import {isGloballyValidatedFlightPathCalibration} from './core/flight-path-calibration-status.js';
-import FLIGHT_PATH_CALIBRATION_SUMMARY from '../data/flight-path-calibration-summary.json';
 import {drawIceWall as renderIceWall,createIceWallTexturePaths} from './map/ice-wall.js';
 import {createCompassRoseLayout} from './map/compass.js';
 import {centeredCanvasTransform} from './map/canvas-transform.js';
@@ -218,7 +214,31 @@ function drawDiskBase(){
  }
  ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();
 }
-function drawGrid(){ctx.save();const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];for(const lat of latitudes){if(lat===RESTRICTED_PARALLEL_LATITUDE)continue;const r=baseR*radialFraction(lat);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;ctx.lineWidth=(lat===0?1.55:.65)/zoom;ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);ctx.stroke();}ctx.save();ctx.setLineDash([1.15/zoom,5/zoom]);ctx.strokeStyle=visualPalette.gridMinor;ctx.globalAlpha=.72;ctx.lineWidth=.46/zoom;for(const circle of RADIAL_DISTANCE_VISUAL_CIRCLES){if(circle.circle===1||circle.circle===12)continue;ctx.beginPath();ctx.arc(0,0,baseR*circle.visualFraction,0,Math.PI*2);ctx.stroke();}ctx.restore();ctx.setLineDash([]);for(let d=0;d<360;d+=15){ctx.beginPath();let started=false;for(let lat=90;lat>=-90;lat-=2){const [x,y]=project(d,lat);if(!Number.isFinite(x)||!Number.isFinite(y))continue;if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}ctx.strokeStyle=d%30===0?visualPalette.grid:visualPalette.gridMinor;ctx.lineWidth=(d%30===0?.82:.42)/zoom;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();}
+function drawGrid(){
+ ctx.save();
+ const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];
+ for(const lat of latitudes){
+  const radius=baseR*radialFraction(lat);
+  ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
+  ctx.strokeStyle=lat===0?visualPalette.equator:visualPalette.grid;
+  ctx.lineWidth=(lat===0?1.55:.65)/zoom;
+  ctx.setLineDash(lat===0?[]:[3/zoom,4/zoom]);
+  ctx.stroke();
+ }
+ ctx.setLineDash([]);
+ for(let degree=0;degree<360;degree+=15){
+  const angle=rad(degree);
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(baseR*Math.cos(angle),-baseR*Math.sin(angle));
+  ctx.strokeStyle=degree%30===0?visualPalette.grid:visualPalette.gridMinor;
+  ctx.lineWidth=(degree%30===0?.82:.42)/zoom;
+  ctx.stroke();
+ }
+ ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);
+ ctx.fillStyle=visualPalette.labels;ctx.fill();
+ ctx.restore();
+}
 function drawCompassRose(){
  const rose=createCompassRoseLayout(rotationRadians()),{cx,cy,radius:r,outerRadius}=rose;
  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.translate(cx,cy);
@@ -304,30 +324,6 @@ function drawIceWall(simplified=false){
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
-}
-function drawRestrictedParallel(){
- const radius=baseR*radialFraction(RESTRICTED_PARALLEL_LATITUDE);
- if(!Number.isFinite(radius)||radius<=0)return;
- ctx.save();
- ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
- ctx.strokeStyle='rgba(255,250,238,.98)';ctx.lineWidth=4.6/zoom;ctx.setLineDash([]);ctx.stroke();
- ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
- ctx.strokeStyle='#a63f38';ctx.lineWidth=2.2/zoom;ctx.setLineDash([8/zoom,5/zoom]);ctx.stroke();
- ctx.setLineDash([]);
- for(let degree=0;degree<360;degree+=10){
-  const angle=rad(degree),inner=radius-4/zoom,outer=radius+4/zoom;
-  ctx.beginPath();ctx.moveTo(inner*Math.cos(angle),-inner*Math.sin(angle));
-  ctx.lineTo(outer*Math.cos(angle),-outer*Math.sin(angle));
-  ctx.strokeStyle='rgba(142,53,46,.72)';ctx.lineWidth=1/zoom;ctx.stroke();
- }
- // Opposing callouts identify the 60°S restricted-line reference.
- const label='60°S · RESTRICTED LINE';
- ctx.font='800 '+(10/zoom)+'px ui-sans-serif,system-ui';
- for(const degree of [45,225]){
-  const angle=rad(degree),x=radius*Math.cos(angle),y=-radius*Math.sin(angle);
-  drawMeasurementLabelAtMap(x,y,label,'restricted');
- }
- ctx.restore();
 }
 function drawCapitals(allowLabels=true){
  if(!layers.capitals)return;
@@ -537,7 +533,7 @@ function updateAreaMeasurement(){
   if(result){
    $('areaValue').textContent=formatArea(result.areaM2);
    $('areaPerimeter').textContent='Perimeter · '+formatDistance(result.perimeterM);
-   $('areaHelp').textContent='Planar area; perimeter uses the same anisotropic planar metric as A–B and the scale bar. Edges may cross 60°S.';
+   $('areaHelp').textContent='Planar shoelace area; perimeter is the sum of straight Euclidean map-plane chords.';
   }else{
    $('areaValue').textContent='Unavailable';
    $('areaPerimeter').textContent='Invalid polygon · check for crossing edges';
@@ -583,7 +579,7 @@ function draw(){
  if(layers.countries)drawCountries();
  drawCoastlinesLayer(interactionSimplified);
  if(layers.antarctica)drawIceWall(interactionSimplified);
- drawHistoricalOverlay();drawRestrictedParallel();
+ drawHistoricalOverlay();
  ctx.restore();
  if(layers.grid)drawAnnotations();
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
@@ -940,18 +936,12 @@ function exportPNG(){
  if(points.length===2){
   const measurement=measureDirectDistance(points[0],points[1]);
   measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
-   ' · anisotropic planar metric';
+   ' · Euclidean disk-plane chord';
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
  outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
-  const latestPathFitAccepted=FLIGHT_PATH_CALIBRATION.sourceDatasetVersion>0&&
-   isGloballyValidatedFlightPathCalibration(FLIGHT_PATH_CALIBRATION_SUMMARY);
-  const pathFitCaption=latestPathFitAccepted
-   ? 'Visible map · globally validated ADS-B projected-path fit v'+FLIGHT_PATH_CALIBRATION.schemaVersion+
-    ' · '+FLIGHT_PATH_CALIBRATION.trainingRouteCount+' training / '+FLIGHT_PATH_CALIBRATION.holdoutRouteCount+' independent holdout route pairs'
-   : 'Visible map · last approved flat-disk parameters retained · latest ADS-B path candidate not globally validated';
-  outputCtx.fillText(pathFitCaption,14*dpr,canvas.height+53*dpr);
+  outputCtx.fillText('Pure Gleason layout · equal-spaced parallels · straight radial meridians · no fitted warps',14*dpr,canvas.height+53*dpr);
  const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
  outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
  output.toBlob(blob=>{
@@ -959,7 +949,7 @@ function exportPNG(){
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='gleason-world-map-'+generatedAt.slice(0,10)+'.png';
   document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with calibration and source metadata.';
+  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with pure Gleason geometry and source metadata.';
  },'image/png');
 }
 async function copyShareLink(){
