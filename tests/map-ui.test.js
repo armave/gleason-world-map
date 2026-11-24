@@ -332,8 +332,8 @@ test('map geometry is not reprojected when a resize leaves the disk radius uncha
  assert.match(app,/geometryBaseR=projectionBaseR/);
 });
 
-test('scale-bar calculations use the canonical anisotropic planar metric as A–B measurements',()=>{
- assert.match(app,/The scale bar uses the same anisotropic planar metric as A–B and area edges/);
+test('scale-bar calculations use the same Euclidean planar chord as A–B measurements',()=>{
+ assert.match(app,/The scale bar uses the same Euclidean planar chord as A–B and area edges/);
  assert.doesNotMatch(app,/WGS84 \/ flat-disk transition/);
  assert.doesNotMatch(app,/measurement\.restricted\?flatDiskDistanceMeters/);
 });
