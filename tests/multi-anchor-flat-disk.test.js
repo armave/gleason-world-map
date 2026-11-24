@@ -39,7 +39,7 @@ test('ADS-B flown mileage is rejected as a direct-distance calibration target', 
   }];
   const coverage = summarizeMultiAnchorCoverage(observations);
   assert.ok(coverage.validationErrors.some(item =>
-    item.includes('not an eligible direct-straight-line or direct-survey-baseline measurement')
+    item.includes('not an eligible direct-straight-line or traceable horizontal survey measurement')
   ));
 });
 
@@ -545,7 +545,7 @@ test('all observations from one surveyed baseline stay in a single train or hold
     }
   ]);
   assert.ok(coverage.validationErrors.some(item =>
-    item.includes('assigns survey baseline group SITE-02 to both training and holdout')
+    item.includes('assigns survey group SITE-02 to both training and holdout')
   ));
 });
 
