@@ -29,5 +29,49 @@
     ],
     "unit": "kilometres"
   },
-  "observations": []
+  "observations": [],
+  "sourceReview": [
+    {
+      "id": "noaa-ngs-edmi-cbl",
+      "provider": "NOAA National Geodetic Survey",
+      "reference": "https://www.ngs.noaa.gov/CBLINES/index.shtml",
+      "reportedCoverage": "More than 400 EDMI calibration baselines across the United States",
+      "publishedProducts": "Site descriptions and adjusted calibration-baseline measurements; state data files",
+      "status": "promising-local-baselines; exact monument coordinate references must be linked before import",
+      "importConditions": [
+        "use only a published adjusted horizontal distance",
+        "verify exact coordinates for both monument marks from traceable records",
+        "retain published uncertainty and instrument/epoch provenance",
+        "split complete baseline sites between training and holdout"
+      ]
+    },
+    {
+      "id": "nummela-standard-baseline",
+      "provider": "National Land Survey of Finland",
+      "reference": "https://www.maanmittauslaitos.fi/en/research/research/other-research-and-measuring-stations/nummela-standard-baseline",
+      "additionalReference": "https://www.maanmittauslaitos.fi/en/topical_issues/nummela-finland-home-worlds-most-accurate-line",
+      "reportedCoverage": "Observation pillars span 24 m to 864 m; the published full-line 2013 result is 864122.9 mm ±0.1 mm",
+      "status": "high-accuracy-source; exact underground-mark coordinate references and input distance basis must be verified",
+      "importConditions": [
+        "identify the exact physical endpoints represented by each published length",
+        "verify the measurement basis against adjusted-horizontal",
+        "obtain traceable coordinates for both endpoints",
+        "keep the complete Nummela site in one validation split"
+      ]
+    },
+    {
+      "id": "euro5000-pieniny",
+      "provider": "Warsaw University of Technology and independent verification partners",
+      "reference": "https://doi.org/10.1016/j.measurement.2026.121347",
+      "additionalReference": "https://pw.edu.pl/publikacje/establishing-euro5000-reference-baseline",
+      "reportedCoverage": "5 km reference baseline; uncertainty below 1 mm (k=2), measured through repeated GNSS and EDM campaigns and independently verified",
+      "status": "high-accuracy-source; exact monument coordinate records and line-value table must be extracted before import",
+      "importConditions": [
+        "use the published reference length and its stated uncertainty",
+        "verify exact coordinates for the two endpoint monuments",
+        "confirm the distance basis is compatible with adjusted-horizontal",
+        "keep the complete EURO5000 site in one validation split"
+      ]
+    }
+  ]
 }
