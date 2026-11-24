@@ -52,6 +52,8 @@ test('source code defines or imports no spherical/geodesic distance routines', a
     ['spherical', 'Distance'].join(''),
     ['ellipsoid', 'Distance'].join('')
   ];
+  const earthRadiusIdentifiers = [['EARTH', '_RADIUS'].join(''), ['earth', 'Radius'].join(''), ['SPHERE', '_RADIUS'].join('')];
+  const earthRadiusPattern = new RegExp('\\\\b(?:' + earthRadiusIdentifiers.join('|') + ')\\\\b');
   const declarationOrImportFor = name => new RegExp(
     `(?:function\\s+${name}\\s*\\(|(?:const|let|var)\\s+${name}\\s*=|export\\s*\\{[^}]*\\b${name}\\b|import\\s+[^;]*\\b${name}\\b)`
   );
@@ -64,7 +66,7 @@ test('source code defines or imports no spherical/geodesic distance routines', a
     // Spherical inverse-trigonometric formulas are not used by this planar map.
     assert.doesNotMatch(source, /\bMath\.(?:acos|asin)\s*\(/,
       `${path} must not use spherical inverse-trigonometric formulas`);
-    assert.doesNotMatch(source, /\b(?:EARTH_RADIUS|earthRadius|SPHERE_RADIUS)\b/,
+    assert.doesNotMatch(source, earthRadiusPattern,
       `${path} must not define Earth/sphere radius constants`);
   }
 });

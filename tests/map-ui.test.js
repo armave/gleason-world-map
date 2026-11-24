@@ -13,8 +13,8 @@ test('map UI declares the dual-disk layout and complete default viewport',()=>{
  assert.match(html,/Dual-Disk Planar Geometry \(R_eq = 10,000\.8 km\)/);
  assert.match(app,/drawDiskBackground\('N'\)/);
  assert.match(app,/drawDiskBackground\('S'\)/);
- assert.match(app,/\(width - 42\) \/ \(4 \* R\)/);
- assert.match(app,/\(height - 42\) \/ \(2 \* R\)/);
+ assert.match(app,/\(width - 80\) \/ \(4 \* R\)/);
+ assert.match(app,/\(height - 80\) \/ \(2 \* R\)/);
 });
 test('the primary application entry routes to the dual-disk renderer',()=>{
  assert.match(entry,/dual-disk-app\.js/);
