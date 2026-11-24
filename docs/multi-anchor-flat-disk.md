@@ -10,24 +10,25 @@ A positive-Jacobian topology check, finite output extent, uncertainty-aware fit 
 
 ## What qualifies as a distance observation
 
-Two measurement types are accepted:
+Three measurement types are accepted:
 
 - `direct-straight-line`: a traceable, independently measured straight endpoint-to-endpoint length.
 - `direct-survey-baseline`: a physical survey baseline whose published value is the **adjusted horizontal distance**, with its uncertainty and coordinate references for both exact monument marks.
+- `direct-survey-reduced-horizontal`: a recorded **measured horizontal distance reduced to sea level** from an authoritative survey-observation table, with its matching observation variance, exact monument endpoints and traceable coordinate records. This is a reduced observation, not an adjusted network output.
 
-Survey baseline records must have:
+Direct survey records (`direct-survey-baseline` or `direct-survey-reduced-horizontal`) must have:
 - `split`: `train` or `holdout`
 - `a`, `b`: stable monument IDs, their latitude/longitude inputs, and each point's `coordinateSource.provider` and `coordinateSource.reference`
-- `distanceKm`: the published adjusted horizontal distance in kilometres
-- `measurementType`: exactly `direct-survey-baseline`
-- `measurementBasis`: exactly `adjusted-horizontal`
+- `distanceKm`: the published measured horizontal distance in kilometres
+- `measurementType`: exactly `direct-survey-baseline` or `direct-survey-reduced-horizontal`
+- `measurementBasis`: exactly `adjusted-horizontal` for baseline certificates or `sea-level-horizontal` for reduced LINZ observations
 - `uncertaintyKm`: the published distance uncertainty in kilometres
 - `source.provider`, `source.reference`: provenance for the measured baseline
 - `source.groupId`: stable baseline/site identifier
 
 Every pair from one survey line or site must remain in one split. A baseline group cannot contribute some segments to training and other segments to holdout. Holdout baselines should be geographically independent from training sites.
 
-The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a direct-survey-baseline without a stated positive uncertainty is rejected.
+The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a survey observation without a stated positive uncertainty is rejected. For LINZ, the square root of the recorded distance variance in m² may be converted to one-sigma distance uncertainty in km. The observation remains labelled as a reduced distance, not an adjusted network output.
 
 Do not use airline mileage, ADS-B track length, travel time multiplied by speed, shortest-route distance, an inferred map scale, or distances calculated from globe/sphere/ellipsoid/geodesic formulas. Surveyed horizontal lengths must be taken as the published reference values, not recomputed from endpoint coordinates.
 
@@ -85,6 +86,39 @@ The Geospatial Information Authority of Japan (GSI) publishes an Antarctic contr
 This is a promising East Antarctic source around Syowa Station and Lützow-Holm Bay. The official GSI description also says the historical terrestrial network integration was limited to the southern surroundings of Syowa because line of sight between distant ice-free areas was difficult. Public control-point lists and particulars are available, but the actual adjusted horizontal line distances and original observations must be extracted from the report archive or requested from GSI. Coordinate tables alone are not eligible distance targets.
 
 Sources: [GSI Control Point Survey overview](https://web2.gsi.go.jp/antarctic/07-e.html); [GSI Control Point Data List and Particulars](https://web2.gsi.go.jp/antarctic/07_index_point-e.html); [NIPR data catalogue entry](https://polaris.nipr.ac.jp/~dbase/900/gsi/pdf/Control_point_survey-j.REV1.pdf).
+
+### LINZ Full Landonline survey-observation tables — highest-priority data extraction path
+
+The Antarctic Geodetic Marks layer is a point catalogue. More importantly, LINZ also publishes a **Full Landonline Dataset** containing survey-observation and mark/coordinate relationships. Its data dictionary defines the tables needed to reconstruct a measured mark-to-mark line without calculating a distance from geographic coordinates:
+
+| Data table | LDS ID | Relevant fields and purpose |
+|---|---:|---|
+| Observation | 51725 | Reduced observation type/subtype, local and remote setup IDs, observation date, status/class and measured values |
+| Observation Accuracy | 51724 | For a distance observation, `VALUE_11` is the variance in m² when both observation IDs are the same |
+| Observation Type / Element Type | 51732 / 51730 | Identifies line/point observation types, the values stored and their units |
+| Setup | 51742 | Maps local/remote setups to the endpoint node IDs, survey work and equipment |
+| Mark / Mark Name / Mark Physical State | 51989 / 51991 / 51990 | Identifies the physical monument, name/code, disturbance/replacement and latest condition |
+| Node / Coordinate | 51993 / 52018 | Links the observation endpoint to its recorded coordinate system and coordinate values |
+| Coordinate Order / Datum / Unit | 51712 / 51713 / 51748 | Describes coordinate order, reference datum and measurement units |
+| Reduction Method / Run | 51736 / 51737 | Records how reduced observations were produced |
+
+The critical join is:
+
+1. `Observation.STP_ID_LOCAL` and `STP_ID_REMOTE` reference two rows in `Setup`.
+2. Each `Setup.NOD_ID` identifies an endpoint `Node`.
+3. `Mark.NOD_ID` tells whether that node is occupied by a physical monument. `Mark Physical State` and `Mark Name` identify its condition and identity.
+4. The observation type and element-type tables identify which value is the horizontal distance and its unit.
+5. `Observation Accuracy.VALUE_11` supplies distance variance in m² for a distance observation, allowing a one-sigma uncertainty to be derived as its square root.
+
+**Admission rules:** Only measured, reduced, line-type horizontal-distance records with exact physical monument endpoints, a valid/current observation status, traceable date/work/equipment, verified metre units and a matching accuracy record are candidates. Calculated, adopted, pseudo, slope-distance, virtual-node and unresolved eccentric-mark records are excluded. The distance target is the stored observation value; endpoint coordinates are used only to locate the two anchors on the map, never to calculate that distance.
+
+#### Access and current blocker
+
+LINZ's public WFS is the intended access route. A free LINZ Data Service account and a data-access API key are required. The repository will read the key from `LINZ_LDS_API_KEY`; it must never be hard-coded or committed. WFS 2.0 supports attribute filters, JSON/CSV output and paging. LINZ recommends paged requests of no more than 250,000 features.
+
+The table schema and relationships are verified from LINZ's January 2022 Full Landonline Data Dictionary (version 2.7). The live table export has **not yet been tested** because no API key is configured. We must first establish whether the exported Landonline tables contain the 490 Antarctic layer marks and their corresponding reduced observation rows; the separate Antarctic point layer alone does not prove that all 490 have available pairwise distance observations.
+
+Official references: [Full Landonline Data Dictionary and Models](https://github.com/linz/linz-lds-bde-schema/blob/master/doc/lds-full-landonline-data-dictionary-and-models.md), [Geodetic data](https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data), [LDS API and WFS guidance](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/lds-apis-and-web-services), [Create an LDS API key](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/creating-api-key), and [WFS filtering and paging](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/wfs-filter-methods-and-parameters).
 
 ## Why the observations file is still empty
 

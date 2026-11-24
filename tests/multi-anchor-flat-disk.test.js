@@ -39,7 +39,7 @@ test('ADS-B flown mileage is rejected as a direct-distance calibration target', 
   }];
   const coverage = summarizeMultiAnchorCoverage(observations);
   assert.ok(coverage.validationErrors.some(item =>
-    item.includes('not an eligible direct-straight-line or direct-survey-baseline measurement')
+    item.includes('not an eligible direct-straight-line or traceable horizontal survey measurement')
   ));
 });
 
@@ -545,6 +545,86 @@ test('all observations from one surveyed baseline stay in a single train or hold
     }
   ]);
   assert.ok(coverage.validationErrors.some(item =>
-    item.includes('assigns survey baseline group SITE-02 to both training and holdout')
+    item.includes('assigns survey group SITE-02 to both training and holdout')
+  ));
+});
+
+
+test('measured reduced horizontal survey observations require sea-level basis, uncertainty and endpoint provenance', () => {
+  const base = {
+    split: 'train',
+    id: 'linz-observation-9001',
+    a: {
+      id: 'ROSS-MARK-A', lat: -77, lon: 166,
+      coordinateSource: { provider: 'LINZ Landonline', reference: 'coordinate row 101' }
+    },
+    b: {
+      id: 'ROSS-MARK-B', lat: -77.001, lon: 166.002,
+      coordinateSource: { provider: 'LINZ Landonline', reference: 'coordinate row 102' }
+    },
+    distanceKm: 1.234567,
+    measurementType: 'direct-survey-reduced-horizontal',
+    measurementBasis: 'sea-level-horizontal',
+    uncertaintyKm: 0.00002,
+    source: {
+      provider: 'LINZ Landonline reduced observations',
+      reference: 'Observation row 9001 / Accuracy row 9001',
+      groupId: 'ANTARCTIC-NETWORK-ROSS-01'
+    }
+  };
+  assert.deepEqual(summarizeMultiAnchorCoverage([base]).validationErrors, []);
+
+  const wrongBasis = summarizeMultiAnchorCoverage([{
+    ...base, measurementBasis: 'slope-distance'
+  }]);
+  assert.ok(wrongBasis.validationErrors.some(item =>
+    item.includes('measurementBasis=sea-level-horizontal')
+  ));
+
+  const missingUncertainty = summarizeMultiAnchorCoverage([{
+    ...base, uncertaintyKm: undefined
+  }]);
+  assert.ok(missingUncertainty.validationErrors.some(item =>
+    item.includes('survey observation must include a positive uncertaintyKm')
+  ));
+
+  const missingCoordinateSource = summarizeMultiAnchorCoverage([{
+    ...base, b: { ...base.b, coordinateSource: undefined }
+  }]);
+  assert.ok(missingCoordinateSource.validationErrors.some(item =>
+    item.includes('survey observation anchors must include coordinateSource.provider')
+  ));
+});
+
+test('all LINZ observations from one Antarctic survey network remain in one split', () => {
+  const base = {
+    a: {
+      id: 'MARK-A', lat: -77, lon: 166,
+      coordinateSource: { provider: 'LINZ', reference: 'coord A' }
+    },
+    b: {
+      id: 'MARK-B', lat: -77.001, lon: 166.002,
+      coordinateSource: { provider: 'LINZ', reference: 'coord B' }
+    },
+    distanceKm: 1.2,
+    measurementType: 'direct-survey-reduced-horizontal',
+    measurementBasis: 'sea-level-horizontal',
+    uncertaintyKm: 0.00002,
+    source: { provider: 'LINZ', reference: 'obs 1', groupId: 'SYOWA-NETWORK-01' }
+  };
+  const coverage = summarizeMultiAnchorCoverage([
+    { ...base, id: 'obs-a', split: 'train' },
+    {
+      ...base,
+      id: 'obs-b',
+      split: 'holdout',
+      b: {
+        id: 'MARK-C', lat: -77.002, lon: 166.003,
+        coordinateSource: { provider: 'LINZ', reference: 'coord C' }
+      }
+    }
+  ]);
+  assert.ok(coverage.validationErrors.some(item =>
+    item.includes('assigns survey group SYOWA-NETWORK-01 to both training and holdout')
   ));
 });

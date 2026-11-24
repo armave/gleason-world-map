@@ -75,19 +75,26 @@ function normalizeObservations(input) {
       errors.push(label + ' distanceKm must be greater than 0 and at most 50000');
       return;
     }
-    const eligibleMeasurementTypes = ['direct-straight-line', 'direct-survey-baseline'];
+    const surveyTypes = ['direct-survey-baseline', 'direct-survey-reduced-horizontal'];
+    const eligibleMeasurementTypes = ['direct-straight-line', ...surveyTypes];
     if (!eligibleMeasurementTypes.includes(item.measurementType)) {
-      errors.push(label + ' is not an eligible direct-straight-line or direct-survey-baseline measurement');
+      errors.push(label + ' is not an eligible direct-straight-line or traceable horizontal survey measurement');
       return;
     }
-    if (item.measurementType === 'direct-survey-baseline') {
-      if (item.measurementBasis !== 'adjusted-horizontal') {
-        errors.push(label + ' survey baseline must declare measurementBasis=adjusted-horizontal');
-        return;
-      }
+    if (item.measurementType === 'direct-survey-baseline' &&
+        item.measurementBasis !== 'adjusted-horizontal') {
+      errors.push(label + ' direct-survey-baseline must declare measurementBasis=adjusted-horizontal');
+      return;
+    }
+    if (item.measurementType === 'direct-survey-reduced-horizontal' &&
+        item.measurementBasis !== 'sea-level-horizontal') {
+      errors.push(label + ' direct-survey-reduced-horizontal must declare measurementBasis=sea-level-horizontal');
+      return;
+    }
+    if (surveyTypes.includes(item.measurementType)) {
       if (!Number.isFinite(item.uncertaintyKm) || item.uncertaintyKm <= 0 ||
           item.uncertaintyKm > item.distanceKm) {
-        errors.push(label + ' survey baseline must include a positive uncertaintyKm no greater than distanceKm');
+        errors.push(label + ' survey observation must include a positive uncertaintyKm no greater than distanceKm');
         return;
       }
       for (const point of [item.a, item.b]) {
@@ -96,12 +103,12 @@ function normalizeObservations(input) {
             !point.coordinateSource.provider.trim() ||
             typeof point.coordinateSource.reference !== 'string' ||
             !point.coordinateSource.reference.trim()) {
-          errors.push(label + ' survey baseline anchors must include coordinateSource.provider and coordinateSource.reference');
+          errors.push(label + ' survey observation anchors must include coordinateSource.provider and coordinateSource.reference');
           return;
         }
       }
       if (typeof item.source?.groupId !== 'string' || !item.source.groupId.trim()) {
-        errors.push(label + ' survey baseline source must include a stable source.groupId for site-level splitting');
+        errors.push(label + ' survey observation source must include a stable source.groupId for site/network-level splitting');
         return;
       }
     }
@@ -139,11 +146,11 @@ function normalizeObservations(input) {
         ' (previous split: ' + pairSplits.get(key) + ')');
       return;
     }
-    if (item.measurementType === 'direct-survey-baseline') {
+    if (surveyTypes.includes(item.measurementType)) {
       const previousSplit = surveyGroupSplits.get(item.source.groupId);
       if (previousSplit && previousSplit !== item.split) {
-        errors.push(label + ' assigns survey baseline group ' + item.source.groupId +
-          ' to both training and holdout; split the complete baseline as one group');
+        errors.push(label + ' assigns survey group ' + item.source.groupId +
+          ' to both training and holdout; split the complete survey site/network as one group');
         return;
       }
     }
@@ -154,7 +161,7 @@ function normalizeObservations(input) {
       return;
     }
     pairSplits.set(key, item.split);
-    if (item.measurementType === 'direct-survey-baseline') {
+    if (surveyTypes.includes(item.measurementType)) {
       surveyGroupSplits.set(item.source.groupId, item.split);
     }
     observationIds.add(observationId);
