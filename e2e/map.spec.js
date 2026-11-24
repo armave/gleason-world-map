@@ -24,18 +24,25 @@ test('loads the map canvas and geographic reference data', async ({ page }) => {
   expect(dimensions.cssHeight).toBeGreaterThan(280);
 });
 
-test('renders all 12 requested distance multipliers at the same radii used by the map', async ({ page }) => {
+test('renders equal-spaced Gleason latitude rings from pole to Antarctic rim', async ({ page }) => {
   await openLoadedMap(page);
 
-  const circles = page.locator('#visualRadialRows tr');
-  await expect(circles).toHaveCount(12);
-  const multipliers = await circles.locator('td:nth-child(2)').allTextContents();
-  expect(multipliers).toEqual([
-    '1.00×', '0.95×', '0.91×', '0.86×', '0.81×', '0.77×',
-    '0.72×', '0.68×', '0.63×', '0.59×', '0.54×', '0.50×'
+  const rings = page.locator('#radialRows tr');
+  await expect(rings).toHaveCount(13);
+  const latitudes = await rings.locator('td:nth-child(1)').allTextContents();
+  expect(latitudes).toEqual([
+    '90°N', '75°N', '60°N', '45°N', '30°N', '15°N', '0°',
+    '15°S', '30°S', '45°S', '60°S', '75°S', '90°S'
   ]);
-  await expect(circles.first()).toContainText('0.0%');
-  await expect(circles.last()).toContainText('100.0%');
+
+  const radii = (await rings.locator('td:nth-child(3)').allTextContents())
+    .map(value => Number(value.replace(/[^0-9.]/g, '')));
+  expect(radii[0]).toBe(0);
+  expect(radii[6]).toBe(10000.8);
+  expect(radii[12]).toBe(20001.6);
+  for (let index = 1; index < radii.length; index++) {
+    expect(radii[index] - radii[index - 1]).toBeCloseTo(1666.8, 1);
+  }
 });
 
 test('zooms and rotates the map using the visible controls', async ({ page }) => {
