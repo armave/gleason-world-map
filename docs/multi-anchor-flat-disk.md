@@ -1,57 +1,90 @@
-# Archived research: experimental multi-anchor flat-disk calibration
-
-> **Archive notice (24 November 2026):** This research proposal predates the reset to pure Gleason geometry. It is not part of the active map, and none of its experimental transforms or fitting routines are imported by the runtime projection. The active baseline remains the unwarped linear disk in `src/core/flat-disk.js`.
+# Empirical distance calibration for the flat-disk map
 
 ## Status
 
-This is a parallel research candidate. It does not replace or modify the active map projection, active coordinate inverse, or production distance engine. A fitted model is written separately and requires manual review before any runtime integration.
+This is an active research implementation on the `calibration/empirical-distance-warp-v1` branch. It fits a separate two-dimensional candidate transformation against independently measured physical distances. It does **not** replace the pure Gleason reference map or activate a candidate in the website.
 
-The current repository contains observed ADS-B ground-speed/time mileage and timestamped aircraft paths. Those are not direct endpoint-to-endpoint distances. Flown mileage includes route detours and must not be substituted for a straight-line distance target.
+The calibration is now allowed to move any mapped feature, including the North Pole centre and Antarctic outer rim. It can stretch, compress, shear locally, translate and change the overall output extent. The output does not have to remain circular. The source domain remains the original Gleason disk, while the transformed map may extend beyond its original rim.
 
-## Method
+A positive-Jacobian topology check, finite output extent, uncertainty-aware fit and independent holdout tests remain mandatory. No transform is promoted solely because it makes selected coastlines or a small set of distances look right.
 
-1. Start with the existing circular flat disk as the seed drawing plane.
-2. Load independently sourced straight-line distances between named reference anchors.
-3. Split complete unordered endpoint pairs into training and holdout sets before fitting.
-4. Adjust training-anchor positions with a confidence-weighted Huber loss to reduce relative distance error while regularizing movement from the seed map.
-5. Fit a regularized Gaussian radial-basis field to the optimized anchor displacements, excluding fixed centre/rim controls from the solve.
-6. Multiply the field by a smooth radial envelope that is zero at the North Pole and at the full Antarctic rim.
-7. Test independent holdout errors, a denser full-disk Jacobian grid plus adaptive samples around every RBF control point, forward/inverse round trips across the disk, maximum interpolated displacement, and radial-boundary overshoot. The local stencils specifically check narrow Gaussian features that can fall between uniform grid nodes.
+## What qualifies as a distance observation
 
-This is a constrained two-dimensional drawing-plane fit. It does not infer or assert the physical shape of the Earth.
+Two measurement types are accepted:
 
-## Input
+- `direct-straight-line`: a traceable, independently measured straight endpoint-to-endpoint length.
+- `direct-survey-baseline`: a physical survey baseline whose published value is the **adjusted horizontal distance**, with its uncertainty and coordinate references for both exact monument marks.
 
-Copy data/multi-anchor-distance-observations.template.json to data/multi-anchor-distance-observations.json and add records with this shape:
+Survey baseline records must have:
+- `split`: `train` or `holdout`
+- `a`, `b`: stable monument IDs, their latitude/longitude inputs, and each point's `coordinateSource.provider` and `coordinateSource.reference`
+- `distanceKm`: the published adjusted horizontal distance in kilometres
+- `measurementType`: exactly `direct-survey-baseline`
+- `measurementBasis`: exactly `adjusted-horizontal`
+- `uncertaintyKm`: the published distance uncertainty in kilometres
+- `source.provider`, `source.reference`: provenance for the measured baseline
+- `source.groupId`: stable baseline/site identifier
 
-- split: train or holdout
-- a, b: stable anchor IDs with latitude and longitude
-- distanceKm: independently measured endpoint-to-endpoint straight distance
-- measurementType: exactly direct-straight-line
-- source.provider, source.reference: traceable provenance for that specific observation
-- confidence: optional value from 0.1 to 1
+Every pair from one survey line or site must remain in one split. A baseline group cannot contribute some segments to training and other segments to holdout. Holdout baselines should be geographically independent from training sites.
 
-Do not use airline mileage, ADS-B track length, travel time multiplied by speed, or a route's flown mileage as a straight-line target. Do not calculate a distance from a globe, sphere, ellipsoid, great-circle, or geodesic formula for this project.
+The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a direct-survey-baseline without a stated positive uncertainty is rejected.
 
-The calibration requires at least 30 training and 12 independent holdout pairs, at least 12 distinct training anchors, coverage across four training latitude bands and four training longitude sectors, at least two training anchors and two independent holdout anchors south of 45°S, and at least one training plus one holdout anchor south of 60°S. This prevents a predominantly northern sample from passing as a global calibration. The training anchor graph must also be 3-vertex-connected with minimum degree three. It also computes the planar distance-constraint rigidity matrix at the seed positions and requires rank 2N−3, where N is the number of training anchors; a graph that is connected but geometrically flexible is rejected. Holdout data must cover at least eight distinct anchors, three latitude bands and four longitude sectors; at least four holdout anchors must be absent from the training anchor set. A pair may appear only once and in only one split. The fitter also reports how many holdout anchors overlap training so pair-level validation is not mistaken for geographic extrapolation validation.
+Do not use airline mileage, ADS-B track length, travel time multiplied by speed, shortest-route distance, an inferred map scale, or distances calculated from globe/sphere/ellipsoid/geodesic formulas. Surveyed horizontal lengths must be taken as the published reference values, not recomputed from endpoint coordinates.
 
-## Run
+## Sources being evaluated
 
-Run npm run fit:multi-anchor to produce a candidate summary. Run npm test for the regression suite.
+### NOAA National Geodetic Survey EDMI Calibration Baselines
 
-## Promotion gates
+The NGS EDMI Calibration Baseline programme reports more than 400 calibration lines across the United States and publishes location descriptions plus adjusted calibration-baseline measurement results. Typical baselines have several monuments and multiple measured segments. These are promising local distance constraints, but each record must include exact monument coordinates from a traceable source before it can be admitted to this dataset.
 
-- Training MAPE no greater than 8%.
-- Independent holdout MAPE no greater than 10%.
-- Maximum holdout pair error no greater than 20%.
-- Holdout MAPE improves over the current flat-disk baseline by at least 0.25 percentage points.
-- Planar rigidity matrix rank exactly 2N−3.
-- Minimum sampled Jacobian determinant at least 0.2.
-- Forward/inverse coordinate round-trip validation across a 12-ring / 48-spoke disk sample and every RBF control point, with maximum drawing-plane error no greater than 0.01 km and no failed inversions.
-- Maximum training-anchor and interpolated-warp displacement no greater than 12% of disk radius.
-- No sampled radial overshoot beyond the circular rim and numerical pole/rim displacement below 1e-5 km.
-- At least eight independent holdout anchors, three holdout latitude bands, four holdout longitude sectors, and four holdout anchors never used for fitting.
+The existence of a baseline certificate is not, by itself, enough to locate every monument precisely on this map. Approximate site pins or a site-centre coordinate are not accepted as endpoint coordinates.
 
-The fitting script writes data/multi-anchor-distance-calibration-summary.json. It writes src/core/multi-anchor-flat-disk-parameters.js only when every gate passes. Even then, it does not automatically activate the model.
+### Nummela Standard Baseline, Finland
 
-Runtime integration requires a separate change to both forward and inverse coordinate transforms and all map measurement surfaces, followed by browser tests and independent review. Until then the existing production map remains unchanged.
+The National Land Survey of Finland describes the Nummela line as a length standard with observation pillars from 24 m to 864 m. Its published full-line result is 864,122.9 mm ± 0.1 mm, and the scale is traceable to the definition of the metre. The 2024 work also describes six EDM observation pillars and a series of underlying markers.
+
+This is a high-quality European reference, but it contributes a local measurement network, not global coverage. Each segment used by the fitter must have the certified length and exact endpoint coordinate references for the physical marks.
+
+### EURO5000 Reference Baseline, Poland
+
+The 2026 EURO5000 publication describes a 5 km reference baseline established and validated in Poland using repeated GNSS and EDM campaigns. The reported measurement uncertainty is below 1 mm (k=2), with independent checks by two external institutions.
+
+This is another valuable regional constraint. It is not a substitute for measured points in other continents or the deep southern map.
+
+## Why the observations file is still empty
+
+The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
+
+The earlier ADS-B archive remains unsuitable for this task: it records flown mileage integrated from observed speed and elapsed time. A flight track is longer than, or otherwise different from, a direct straight-line endpoint measurement. The old visual-path calibration was also rejected for insufficient southern geographic coverage.
+
+## Candidate fit and safeguards
+
+Run:
+
+```bash
+npm run fit:multi-anchor
+npm test
+```
+
+The fit:
+1. validates every source record and coordinate reference;
+2. rejects duplicate endpoint pairs and split leakage within surveyed baseline groups;
+3. checks latitude/longitude coverage and independent, unseen holdout anchors;
+4. checks the planar distance-constraint rigidity rank and graph redundancy;
+5. optimizes anchor positions against measured lengths with a robust loss and a weak prior to the pure Gleason seed;
+6. fits an unconstrained Gaussian radial-basis displacement field across the full source disk, including its centre and rim;
+7. tests the Jacobian over a dense disk grid and adaptive samples around every control;
+8. tests forward/inverse round trips and the maximum transformed map extent;
+9. reports training and independent holdout errors separately.
+
+The current global acceptance requirements include at least 30 training and 12 holdout distances, 12 training anchors, broad latitude and longitude coverage, independent unseen holdout anchors, at least one training and holdout anchor south of 60°S, training MAPE at most 8%, holdout MAPE at most 10%, maximum holdout-pair error at most 20%, and no foldover. The candidate can move the pole and outer rim and can expand to five times the original radius; this is a numerical safety bound, not an assertion about final map scale.
+
+A passing candidate is still written separately. The fitting script never modifies the production projection or measurement engine. Runtime integration requires its own review, map-wide rendering and inverse-transform work, scale-bar and measurement tests, browser tests, and independent geographic validation.
+
+## Provenance links
+
+- NOAA NGS EDMI Calibration Baseline Program: https://www.ngs.noaa.gov/CBLINES/index.shtml
+- NOAA NGS baseline data products: https://geodesy.noaa.gov/CBLINES/BASELINES/
+- National Land Survey of Finland, Nummela Standard Baseline: https://www.maanmittauslaitos.fi/en/research/research/other-research-and-measuring-stations/nummela-standard-baseline
+- National Land Survey of Finland, Nummela measurement update: https://www.maanmittauslaitos.fi/en/topical_issues/nummela-finland-home-worlds-most-accurate-line
+- EURO5000 reference baseline (2026): https://doi.org/10.1016/j.measurement.2026.121347
