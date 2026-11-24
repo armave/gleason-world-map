@@ -68,117 +68,58 @@ export async function fetchNoaaCblStateCodes(options = {}) {
 }
 
 function parseMetadataLine(line, section) {
-  const designation = line.match(/BASE\s*LINE\s*DESIGNATION\s*:\s*(.+)$/i);
+  const designation = line.match(/BASE\\s*LINE\\s*DESIGNATION\\s*:\\s*(.+)$/i);
   if (designation) section.designation = designation[1].trim();
-
-  const accession = line.match(/PROJECT\s+ACCESSION\s+NUMBER\s*:\s*(.+)$/i);
+  const accession = line.match(/PROJECT\\s+ACCESSION\\s+NUMBER\\s*:\\s*(.+)$/i);
   if (accession) section.projectAccessionNumber = accession[1].trim();
-
-  const nearestTown = line.match(/NEAREST\s+TOWN\s*:\s*(.+)$/i);
+  const sourceNumber = line.match(/SOURCE\\s+NO\\.?\\s*[:#-]?\\s*(.+)$/i);
+  if (sourceNumber) section.sourceNumber = sourceNumber[1].trim();
+  const nearestTown = line.match(/NEAREST\\s+TOWN\\s*[:\\-]\\s*(.+)$/i);
   if (nearestTown) section.nearestTown = nearestTown[1].trim();
-
-  const quad = line.match(/\bQUAD\s*:\s*(.+)$/i);
+  const quad = line.match(/\\bQUAD\\s*[:\\-]\\s*(.+)$/i);
   if (quad) section.quad = quad[1].trim();
-
-  const county = line.match(/^\s*([A-Z][A-Z .'-]+ COUNTY)\s*$/i);
+  const state = line.match(/^\\s*STATE\\s*[:\\-]\\s*(.+)$/i);
+  if (state) section.state = state[1].trim();
+  const county = line.match(/^\\s*COUNTY\\s*[:\\-]\\s*(.+)$/i) || line.match(/^\\s*(.+?)\\s+COUNTY\\s*$/i);
   if (county) section.county = county[1].trim();
-
-  const adjustedDate = line.match(
-    /LIST\s+OF\s+ADJUSTED\s+DISTANCES\s*\(([^)]+)\)/i
-  );
-  if (adjustedDate) {
-    section.adjustmentDate = adjustedDate[1].trim();
-    section.inDistanceTable = true;
-  } else if (/LIST\s+OF\s+ADJUSTED\s+DISTANCES\b/i.test(line)) {
-    section.inDistanceTable = true;
-  }
-
-  if (/^\s*EXPLANATION\b/i.test(line)) section.inDistanceTable = false;
+  const adjustedDate = line.match(/LIST\\s+OF\\s+ADJUSTED\\s+DISTANCES\\s*\\(([^)]+)\\)/i);
+  if (adjustedDate) { section.adjustmentDate = adjustedDate[1].trim(); section.inDistanceTable = true; }
+  else if (/LIST\\s+OF\\s+ADJUSTED\\s+DISTANCES\\b/i.test(line)) section.inDistanceTable = true;
+  if (/^\\s*EXPLANATION\\b/i.test(line)) section.inDistanceTable = false;
 }
 
 function parseDistanceRow(line, context) {
-  // The ASCII certificate row follows the printed table order:
-  // FROM STATION, FROM ELEV., TO STATION, TO ELEV.,
-  // ADJ. DIST., HORIZONTAL ADJ. DIST., STD. MARK-MARK ERROR.
-  // Station names are separated from the numeric columns by the two
-  // elevation values. Integer numerals in monument names are not treated
-  // as measurements; the five decimal-valued fields are required.
+  // Seven source columns: FROM STATION, ELEVATION (m), TO STATION, ELEVATION (m),
+  // ADJUSTED DISTANCE HORIZONTAL (m), ADJUSTED DISTANCE MARK-MARK (m), S.E. (mm).
+  // Station labels can contain integers. The five decimal columns delimit rows.
   const matches = [...line.matchAll(FLOAT_PATTERN)];
   if (matches.length !== 5) return null;
-
   const values = matches.map(match => Number(match[0]));
   if (!values.every(Number.isFinite)) return null;
-
-  const fromStation = line.slice(0, matches[0].index).trim().replace(/\s+/g, ' ');
-  const toStation = line.slice(
-    matches[0].index + matches[0][0].length,
-    matches[1].index
-  ).trim().replace(/\s+/g, ' ');
-
-  const [
-    fromElevationM,
-    toElevationM,
-    adjustedDistanceM,
-    horizontalAdjustedDistanceM,
-    standardErrorMm
-  ] = values;
-
-  if (!fromStation || !toStation ||
-      adjustedDistanceM <= 0 ||
-      horizontalAdjustedDistanceM <= 0 ||
-      standardErrorMm <= 0) {
-    return null;
-  }
-
+  const fromStation = line.slice(0, matches[0].index).trim().replace(/\\s+/g, ' ');
+  const toStation = line.slice(matches[0].index + matches[0][0].length, matches[1].index).trim().replace(/\\s+/g, ' ');
+  const [fromElevationM, toElevationM, horizontalAdjustedDistanceM, markToMarkDistanceM, reportedStandardErrorMm] = values;
+  if (!fromStation || !toStation || horizontalAdjustedDistanceM <= 0 || markToMarkDistanceM <= 0 || reportedStandardErrorMm <= 0) return null;
   const siteName = context.designation || 'UNNAMED CBL';
-  const groupToken = context.projectAccessionNumber || siteName;
-  const groupSlug = String(groupToken).toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
+  const groupToken = context.projectAccessionNumber || context.sourceNumber || siteName;
+  const groupSlug = String(groupToken).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return {
-    source: {
-      provider: 'NOAA National Geodetic Survey EDMI Calibration Baselines',
-      reference: context.sourceUrl,
-      programReference: NOAA_CBL_PROGRAM_URL,
-      groupId: 'NOAA-CBL-' + context.stateCode.toUpperCase() + '-' + groupSlug
-    },
-    baseline: {
-      stateCode: context.stateCode.toUpperCase(),
-      designation: context.designation ?? null,
-      projectAccessionNumber: context.projectAccessionNumber ?? null,
-      nearestTown: context.nearestTown ?? null,
-      quad: context.quad ?? null,
-      county: context.county ?? null,
-      adjustmentDate: context.adjustmentDate ?? null
-    },
-    endpoints: {
-      fromStation,
-      fromElevationM,
-      toStation,
-      toElevationM,
-      coordinates: null,
-      coordinateStatus: 'not provided as exact per-monument coordinates by this file'
-    },
+    source: { provider: 'NOAA National Geodetic Survey EDMI Calibration Baselines', reference: context.sourceUrl, programReference: NOAA_CBL_PROGRAM_URL, groupId: 'NOAA-CBL-' + context.stateCode.toUpperCase() + '-' + groupSlug },
+    baseline: { stateCode: context.stateCode.toUpperCase(), state: context.state ?? null, designation: context.designation ?? null, projectAccessionNumber: context.projectAccessionNumber ?? null, sourceNumber: context.sourceNumber ?? null, nearestTown: context.nearestTown ?? null, quad: context.quad ?? null, county: context.county ?? null, adjustmentDate: context.adjustmentDate ?? null },
+    endpoints: { fromStation, fromElevationM, toStation, toElevationM, coordinates: null, coordinateStatus: 'not provided as exact per-monument coordinates by this file' },
     measurementType: 'direct-survey-baseline',
     measurementBasis: 'adjusted-horizontal',
-    adjustedDistanceM,
     horizontalAdjustedDistanceM,
     horizontalAdjustedDistanceKmCandidate: horizontalAdjustedDistanceM / 1000,
-    standardErrorMm,
-    standardErrorKmCandidate: standardErrorMm / 1000000,
-    uncertaintyField: 'STD. MARK-MARK ERROR (MM)',
+    markToMarkDistanceM,
+    reportedStandardErrorMm,
+    reportedStandardErrorInterpretation: 'NOAA describes this as an estimated adjustment standard error; it may indicate instrument repeatability more than actual baseline accuracy and may be optimistic.',
     sourceLine: context.lineNumber,
     rawSourceLine: line.trim(),
     fitReady: false,
-    fitBlockers: [
-      'Exact coordinate records for both physical monuments are not attached.',
-      'Current condition of both monuments has not been verified against the NGS CBL status map.',
-      'The source standard-error field must be checked against the horizontal-distance quantity before fitting.'
-    ]
+    fitBlockers: ['Exact coordinate records for both physical monuments are not attached.', 'The published station names are arbitrary and must be matched to exact physical monument identifiers.', 'Current condition of both monuments has not been verified.', 'The reported standard error is retained as source metadata, not assumed to be certified horizontal-distance uncertainty.']
   };
 }
-
 export function parseNoaaCblFile(text, options = {}) {
   if (typeof text !== 'string' || !text.trim()) {
     throw new Error('NOAA CBL source file is empty');
@@ -203,6 +144,9 @@ export function parseNoaaCblFile(text, options = {}) {
         sourceUrl,
         designation: null,
         projectAccessionNumber: null,
+        sourceNumber: null,
+        state: null,
+        awaitingDesignation: true,
         nearestTown: null,
         quad: null,
         county: null,
@@ -232,6 +176,14 @@ export function parseNoaaCblFile(text, options = {}) {
     if (!section) continue;
 
     parseMetadataLine(line, section);
+    if (section.designation) section.awaitingDesignation = false;
+    if (section.awaitingDesignation && line.trim() &&
+        !/^CALIBRATION\\s+BASE\\s*LINE\\s+DATA$/i.test(line.trim()) &&
+        !/^SOURCE\\s+NO\\./i.test(line.trim()) && !line.includes(':') &&
+        !/^\\*+/.test(line.trim())) {
+      section.designation = line.trim();
+      section.awaitingDesignation = false;
+    }
     if (!section.inDistanceTable || !section.designation) continue;
 
     const record = parseDistanceRow(line, {
@@ -258,6 +210,8 @@ export function parseNoaaCblFile(text, options = {}) {
       stateCode: section.stateCode.toUpperCase(),
       designation: section.designation,
       projectAccessionNumber: section.projectAccessionNumber,
+      sourceNumber: section.sourceNumber,
+      state: section.state,
       nearestTown: section.nearestTown,
       quad: section.quad,
       county: section.county,
@@ -365,7 +319,7 @@ export async function inspectNoaaCbl(options = {}) {
       ...(result.error ? { error: result.error } : {})
     })),
     records,
-    admissionNote: 'NOAA site files provide baseline descriptions and measured distances, but this review does not attach exact coordinates for each physical mark. No record is fit-ready until both endpoint monuments have traceable coordinate records, monument condition is checked, and the standard-error field is confirmed for the horizontal distance.'
+    admissionNote: 'NOAA site files provide adjusted horizontal distances, but this review does not attach exact coordinates for each physical mark. The reported standard error is preserved as metadata and is not automatically treated as baseline accuracy. No record is fit-ready until exact physical endpoints, traceable coordinates, monument condition, and defensible distance uncertainty are independently confirmed.'
   };
 }
 
