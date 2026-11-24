@@ -70,6 +70,14 @@ There are also monument identity issues. The NMS 143 AAGN antenna was set up on 
 
 Sources: [Geoscience Australia Technical Report 5 (GA5033)](https://www.ga.gov.au/bigobj/GA5033.pdf); [AADC 2006/07 Antarctic Geodesy report metadata](https://data.aad.gov.au/metadata/records/survey_2006-2007_geodesy); [AADC Antarctic survey report catalogue](https://data.aad.gov.au/aadc/portal/drill_down.cfm?id=69).
 
+### LINZ Antarctic Geodetic Marks — Ross Dependency
+
+Land Information New Zealand publishes an Antarctic Geodetic Marks point layer with **490 marks**. Each feature includes a unique geodetic code, mark name/description/type, condition, quality order and coordinates in the Ross Sea Region Geodetic Datum 2000 (RSRGD2000, EPSG:4764), with ellipsoidal height where available. LINZ states that its underlying Landonline geodetic system contains the observations between marks and that the mark records may have been established by precise differential GPS or terrestrial horizontal-angle and distance observations.
+
+This is a useful deep-southern **monument catalogue**, but the public point layer is not itself a table of measured pairwise distances. It can identify and locate physical marks, but it cannot be used to calculate the target distances from latitude/longitude. The actual Antarctic observation records between exact mark pairs, their adjusted horizontal-distance values and uncertainties still need to be obtained from the geodetic database or survey files. Mark condition also matters: inclusion in the layer does not guarantee that a mark is still physically present. Coordinate order and epoch must be interpreted using the RSRGD2000-specific accuracy definitions, not assumed to share mainland order semantics.
+
+Sources: [LINZ Antarctic Geodetic Marks layer](https://data.linz.govt.nz/layer/50789-antarctic-geodetic-marks/); [LINZ Geodetic Database](https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/linz-geodetic-database); [LINZ geodetic data access](https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data); [LINZ coordinate and height accuracy orders](https://www.linz.govt.nz/guidance/geodetic-system/coordinate-systems-used-new-zealand/coordinate-and-height-accuracy/coordinate-and-height-orders).
+
 ## Why the observations file is still empty
 
 The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
