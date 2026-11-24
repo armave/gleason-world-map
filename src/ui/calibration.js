@@ -19,7 +19,7 @@ export function renderRadialCalibration(
     formulaElement.innerHTML =
       'θ = 90° − φ<br>' +
       'r = θ × 60 nautical miles / degree<br>' +
-      'r = θ × 111.12 km<br>' +
+      'r = θ × ' + KILOMETRES_PER_DEGREE.toFixed(2) + ' km<br>' +
       'R_disk = 180° × 111.12 km = ' +
       DISK_RADIUS_KM.toLocaleString('en-US', { maximumFractionDigits: 1 }) +
       ' km<br>' +
