@@ -68,7 +68,8 @@ test('area mode builds a polygon and calculates its planar measurements',async({
  await page.locator('#areaMode').click();
  const bounds=await page.locator('#map').boundingBox();
  const cx=bounds.x+bounds.width/2,cy=bounds.y+bounds.height/2;
- await page.mouse.click(cx-75,cy-25);await page.mouse.click(cx+80,cy-15);await page.mouse.click(cx+5,cy+25);
+ // Keep all vertices well inside the Northern Disk, away from its Equator rim.
+ await page.mouse.click(cx-75,cy-25);await page.mouse.click(cx-105,cy+10);await page.mouse.click(cx-135,cy+35);
  await expect(page.locator('#areaVertexCount')).toHaveText('3 vertices');
  await page.locator('#finishArea').click();
  await expect(page.locator('#areaValue')).not.toHaveText('—');
