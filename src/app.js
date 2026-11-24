@@ -277,8 +277,7 @@ function drawGrid(){
   const angle=rad(degree);
   ctx.beginPath();
   ctx.moveTo(0,0);
-  const equatorRadius=baseR*radialFraction(0);
-  ctx.lineTo(equatorRadius*Math.cos(angle),-equatorRadius*Math.sin(angle));
+  ctx.lineTo(baseR*Math.cos(angle),-baseR*Math.sin(angle));
   ctx.strokeStyle=degree%30===0?visualPalette.grid:visualPalette.gridMinor;
   ctx.lineWidth=(degree%30===0?.82:.42)/zoom;
   ctx.stroke();
@@ -324,7 +323,8 @@ function drawInterruptedPetalGrid(){
  ctx.setLineDash([]);
  for(let longitude=0;longitude<360;longitude+=15){
   const angle=rad(longitude);ctx.beginPath();ctx.moveTo(0,0);
-  ctx.lineTo(baseR*Math.cos(angle),-baseR*Math.sin(angle));
+  const equatorRadius=baseR*radialFraction(0);
+  ctx.lineTo(equatorRadius*Math.cos(angle),-equatorRadius*Math.sin(angle));
   ctx.strokeStyle=longitude%30===0?visualPalette.grid:visualPalette.gridMinor;
   ctx.lineWidth=(longitude%30===0?.82:.42)/zoom;ctx.stroke();
  }
