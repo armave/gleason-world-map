@@ -1,4 +1,6 @@
-# Experimental multi-anchor flat-disk calibration
+# Archived research: experimental multi-anchor flat-disk calibration
+
+> **Archive notice (24 November 2026):** This research proposal predates the reset to pure Gleason geometry. It is not part of the active map, and none of its experimental transforms or fitting routines are imported by the runtime projection. The active baseline remains the unwarped linear disk in `src/core/flat-disk.js`.
 
 ## Status
 

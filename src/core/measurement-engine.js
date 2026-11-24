@@ -1,75 +1,28 @@
-import {
-  flatDiskDistanceMeters,
-  radialDistanceFromNorthKm,
-  DISK_RADIUS_KM,
-  project
-} from './flat-disk.js';
-
-export const RESTRICTED_PARALLEL_LATITUDE = -60;
-const RESTRICTED_RADIUS_KM = radialDistanceFromNorthKm(RESTRICTED_PARALLEL_LATITUDE);
-const EPSILON_KM = 1e-7;
+import { flatDiskDistanceMeters } from './flat-disk.js';
 
 function validPoint(point) {
-  return !!point && Number.isFinite(point.lat) && point.lat >= -90 &&
-    point.lat <= 90 && Number.isFinite(point.lon);
+  return !!point &&
+    Number.isFinite(point.lat) &&
+    point.lat >= -90 &&
+    point.lat <= 90 &&
+    Number.isFinite(point.lon);
 }
 
-function projectKm(point) {
-  if (!validPoint(point)) return null;
-  const projected = project(point.lon, point.lat, DISK_RADIUS_KM);
-  return projected.every(Number.isFinite) ? projected : null;
-}
-
-/** True when the straight projected connector passes across the 60°S circle. */
-export function segmentCrossesRestrictedParallel(first, second) {
-  const a = projectKm(first), b = projectKm(second);
-  if (!a || !b) return false;
-  const dx = b[0] - a[0], dy = b[1] - a[1];
-  const lengthSquared = dx * dx + dy * dy;
-  const t = lengthSquared > 1e-18
-    ? Math.max(0, Math.min(1, -(a[0] * dx + a[1] * dy) / lengthSquared))
-    : 0;
-  const closestRadius = Math.hypot(a[0] + t * dx, a[1] + t * dy);
-  const radiusA = Math.hypot(...a), radiusB = Math.hypot(...b);
-  const furthestEndpointRadius = Math.max(radiusA, radiusB);
-  const bothEndpointsOnBoundary =
-    Math.abs(radiusA - RESTRICTED_RADIUS_KM) <= EPSILON_KM &&
-    Math.abs(radiusB - RESTRICTED_RADIUS_KM) <= EPSILON_KM;
-  return closestRadius < RESTRICTED_RADIUS_KM - EPSILON_KM &&
-    (furthestEndpointRadius > RESTRICTED_RADIUS_KM + EPSILON_KM ||
-      bothEndpointsOnBoundary);
-}
-
-/** Check every straight edge of an open chain or closed polygon. */
-export function polylineCrossesRestrictedParallel(points, closed = false) {
-  if (!Array.isArray(points) || points.length < 2) return false;
-  const count = closed && points.length >= 3 ? points.length : points.length - 1;
-  for (let i = 0; i < count; i++) {
-    if (segmentCrossesRestrictedParallel(points[i], points[(i + 1) % points.length])) return true;
-  }
-  return false;
-}
-
-/** Canonical distance entry point shared by every map measurement surface. */
+/** One direct planar distance function shared by all measurement surfaces. */
 export function measureDistanceMeters(first, second) {
   return measureDirectDistance(first, second).distanceMeters;
 }
 
 /**
- * Measure the straight connector as a 64-step anisotropic planar integral in the visible flat disk.
- *
- * flatDiskDistanceMeters() integrates that same straight projected segment in
- * the unchanged visible disk, applying the shared radius-dependent tangential
- * weight while leaving every radial component unscaled.
- * ADS-B flown-mileage corrections are deliberately not applied to this
- * endpoint-to-endpoint map measurement.
+ * Measure the Euclidean chord between two geographic points after placing
+ * them on the pure Gleason disk. The result is a drawing-plane length, not
+ * an independently validated ground route distance.
  */
 export function measureDirectDistance(first, second) {
   if (!validPoint(first) || !validPoint(second)) {
     return {
       distanceMeters: null,
-      metric: 'unavailable',
-      restricted: false
+      metric: 'unavailable'
     };
   }
 
@@ -77,7 +30,6 @@ export function measureDirectDistance(first, second) {
   return {
     distanceMeters: Number.isFinite(distanceMeters) && distanceMeters >= 0
       ? distanceMeters : null,
-    metric: 'anisotropic-planar-segment',
-    restricted: false
+    metric: 'euclidean-flat-disk-chord'
   };
 }

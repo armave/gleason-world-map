@@ -1,43 +1,24 @@
 /**
- * Flat-disk geometry engine for the Gleason-style north-polar map.
- * Latitude is mapped through the fitted base fraction q(t), then through the
- * integrated smooth 1.00×→0.50× local radial-distance multiplier profile:
- * Screen fraction qv = integral(0..q, m(u) du) / mean(m).
- * The fitted power taper changes all 12 ring spacings while preserving the
- * centre and outer rim. The visible transform loads a separately gated
- * observed-ADS-B-path parameter set.
- * Direct displayed distances use the shared 64-step anisotropic planar metric.
+ * Pure Gleason-style north-polar disk.
+ *
+ * The printed layout uses equally spaced latitude parallels and straight,
+ * equally spaced radial meridians. Latitude therefore maps linearly to radius:
+ *   r = (90° - latitude) × 60 nautical miles per degree.
+ *
+ * This is a fixed planar cartographic convention. No fitted warp, longitude
+ * shear, flight-path coefficient, spherical distance or ellipsoidal formula
+ * participates in the forward transform or direct map-plane measurements.
  */
-import { FLIGHT_CALIBRATION } from './flight-calibration-parameters.js';
-import { FLIGHT_PATH_CALIBRATION } from './flight-path-calibration-parameters.js';
-import {
-  DEFAULT_TANGENTIAL_SCALE_C1,
-  DEFAULT_TANGENTIAL_SCALE_C2,
-  integrateAnisotropicPlanarSegment
-} from './anisotropic-planar-metric.js';
-import { radialFractionFromUnitColatitude, unitColatitudeFromRadialFraction } from './radial-warp.js';
-import {
-  RADIAL_DISTANCE_PROFILE_MEAN,
-  baseRadialFractionFromVisualFraction,
-  visualRadialFractionFromBaseFraction
-} from './visual-radial-calibration.js';
-import {
-  warpLongitudeRadians,
-  unwarpLongitudeRadians
-} from './visual-longitude-calibration.js';
-
-export const DISK_RADIAL_SCALE_KM = FLIGHT_PATH_CALIBRATION.radialScaleKm;
-/** Base radius used by the visible path-calibrated projection, before the 12-circle integral. */
+export const NAUTICAL_MILES_PER_DEGREE = 60;
+export const KILOMETRES_PER_NAUTICAL_MILE = 1.852;
+export const KILOMETRES_PER_DEGREE =
+  NAUTICAL_MILES_PER_DEGREE * KILOMETRES_PER_NAUTICAL_MILE;
+export const DISK_RADIAL_SCALE_KM = KILOMETRES_PER_DEGREE * 180 / Math.PI;
 export const DISK_BASE_RADIUS_KM = Math.PI * DISK_RADIAL_SCALE_KM;
-/** Final measured disk radius after integrating the active 12-circle profile. */
-export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM * RADIAL_DISTANCE_PROFILE_MEAN;
+export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
-export const ACTIVE_PLANAR_METRIC_C1 =
-  Number.isFinite(FLIGHT_PATH_CALIBRATION.c1) && FLIGHT_PATH_CALIBRATION.c1 >= 0
-    ? FLIGHT_PATH_CALIBRATION.c1 : DEFAULT_TANGENTIAL_SCALE_C1;
-export const ACTIVE_PLANAR_METRIC_C2 =
-  Number.isFinite(FLIGHT_PATH_CALIBRATION.c2) && FLIGHT_PATH_CALIBRATION.c2 >= 0
-    ? FLIGHT_PATH_CALIBRATION.c2 : DEFAULT_TANGENTIAL_SCALE_C2;
+export const EQUATOR_RADIUS_KM = DISK_RADIUS_KM / 2;
+
 
 const DEG = Math.PI / 180;
 const RAD = 180 / Math.PI;
@@ -53,79 +34,39 @@ export const wrapLongitude = longitude => {
 export function colatitudeRadians(latitudeDegrees) {
   if (!Number.isFinite(latitudeDegrees) ||
       latitudeDegrees < -90 || latitudeDegrees > 90) return NaN;
-  return Math.PI / 2 - rad(latitudeDegrees);
+  return rad(90 - latitudeDegrees);
 }
 
-/** Base radial fraction loaded by the visible flat-disk projection. */
-export function baseRadialFraction(latitudeDegrees) {
-  const theta = colatitudeRadians(latitudeDegrees);
-  if (!Number.isFinite(theta)) return NaN;
-  return radialFractionFromUnitColatitude(
-    theta / Math.PI,
-    FLIGHT_PATH_CALIBRATION.radialWarp
-  );
-}
-
-/** Base radial fraction retained for legacy calibration and geometry analysis. */
-function calibratedBaseRadialFraction(latitudeDegrees) {
-  const theta = colatitudeRadians(latitudeDegrees);
-  if (!Number.isFinite(theta)) return NaN;
-  return radialFractionFromUnitColatitude(
-    theta / Math.PI,
-    FLIGHT_CALIBRATION.radialWarp
-  );
-}
-
-/** Final radial fraction used to draw the map, including the smooth circle warp. */
+/** Normalized radial position: equal latitude changes produce equal ring gaps. */
 export function radialFraction(latitudeDegrees) {
-  const pathBaseFraction = baseRadialFraction(latitudeDegrees);
-  return Number.isFinite(pathBaseFraction)
-    ? visualRadialFractionFromBaseFraction(pathBaseFraction)
-    : NaN;
+  if (!Number.isFinite(latitudeDegrees) ||
+      latitudeDegrees < -90 || latitudeDegrees > 90) return NaN;
+  return (90 - latitudeDegrees) / 180;
 }
 
-/** Radius used by the visual map projection, in the calibrated disk plane. */
+export const baseRadialFraction = radialFraction;
+
 export function radialDistanceFromNorthKm(latitudeDegrees) {
   const fraction = radialFraction(latitudeDegrees);
   return Number.isFinite(fraction) ? DISK_RADIUS_KM * fraction : NaN;
 }
 
-/** Active flat-disk radius at the equator, used to normalize tangential weight. */
-export const EQUATOR_RADIUS_KM = radialDistanceFromNorthKm(0);
+export const baseRadialDistanceFromNorthKm = radialDistanceFromNorthKm;
 
-/** Radius in the legacy fitted base projection retained for calibration analysis. */
-export function baseRadialDistanceFromNorthKm(latitudeDegrees) {
-  const fraction = calibratedBaseRadialFraction(latitudeDegrees);
-  const calibratedBaseRadiusKm = Math.PI * FLIGHT_CALIBRATION.radialScaleKm;
-  return Number.isFinite(fraction) ? calibratedBaseRadiusKm * fraction : NaN;
-}
-
-/** Inverse of the final visual flat-disk radial transform. */
 export function latitudeFromRadialDistanceKm(radiusKm) {
   if (!Number.isFinite(radiusKm)) return NaN;
-  const visualFraction = clamp(radiusKm / DISK_RADIUS_KM, 0, 1);
-  const baseFraction = baseRadialFractionFromVisualFraction(visualFraction);
-  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_PATH_CALIBRATION.radialWarp);
-  return (Math.PI / 2 - t * Math.PI) * RAD;
+  return 90 - clamp(radiusKm / DISK_RADIUS_KM, 0, 1) * 180;
 }
 
-function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees, useBaseProjection = false) {
+function geographicPointInDiskKm(longitudeDegrees, latitudeDegrees) {
   if (!Number.isFinite(longitudeDegrees) || !Number.isFinite(latitudeDegrees) ||
       latitudeDegrees < -90 || latitudeDegrees > 90) return null;
-  const baseFraction = useBaseProjection
-    ? calibratedBaseRadialFraction(latitudeDegrees)
-    : baseRadialFraction(latitudeDegrees);
-  const radius = useBaseProjection
-    ? baseRadialDistanceFromNorthKm(latitudeDegrees)
-    : radialDistanceFromNorthKm(latitudeDegrees);
-  const sourceLongitude = rad(wrapLongitude(longitudeDegrees));
-  const longitude = useBaseProjection
-    ? sourceLongitude
-    : warpLongitudeRadians(sourceLongitude, baseFraction);
+  const radius = radialDistanceFromNorthKm(latitudeDegrees);
+  const longitude = rad(wrapLongitude(longitudeDegrees));
   return [radius * Math.cos(longitude), -radius * Math.sin(longitude)];
 }
 
-/** Convert geographic coordinates to their position on the calibrated disk. */
+/** Geographic coordinate to pure Gleason disk position, scaled to baseRadius. */
 export function project(longitudeDegrees, latitudeDegrees, baseRadius) {
   if (!Number.isFinite(baseRadius) || baseRadius <= 0) return [NaN, NaN];
   const point = geographicPointInDiskKm(longitudeDegrees, latitudeDegrees);
@@ -134,54 +75,33 @@ export function project(longitudeDegrees, latitudeDegrees, baseRadius) {
   return [point[0] * pixelsPerKm, point[1] * pixelsPerKm];
 }
 
-/** Inverse of the flat-disk coordinate transform. */
+/** Exact inverse of the linear radial disk transform. */
 export function unproject(x, y, baseRadius) {
   if (!Number.isFinite(x) || !Number.isFinite(y) ||
       !Number.isFinite(baseRadius) || baseRadius <= 0) {
     return { lat: NaN, lon: NaN };
   }
   const rho = Math.hypot(x, y);
-  const visualFraction = clamp(rho / baseRadius, 0, 1);
-  const baseFraction = baseRadialFractionFromVisualFraction(visualFraction);
-  const t = unitColatitudeFromRadialFraction(baseFraction, FLIGHT_PATH_CALIBRATION.radialWarp);
-  const theta = t * Math.PI;
-  const lat = (Math.PI / 2 - theta) * RAD;
-  const displayedLongitude = Math.atan2(-y, x);
-  const sourceLongitude = rho < 1e-9
-    ? 0
-    : unwarpLongitudeRadians(displayedLongitude, baseFraction);
-  const lon = wrapLongitude(sourceLongitude * RAD);
-  return { lat, lon };
+  const fraction = clamp(rho / baseRadius, 0, 1);
+  const lat = 90 - fraction * 180;
+  const longitude = rho < 1e-9 ? 0 : Math.atan2(-y, x) * RAD;
+  return { lat, lon: wrapLongitude(longitude) };
 }
 
-function pointInDiskKm(point, useBaseProjection = false) {
-  if (!point) return null;
-  return geographicPointInDiskKm(point.lon, point.lat, useBaseProjection);
-}
-
-/**
- * Canonical 64-step anisotropic planar distance along the straight segment
- * between visible flat-disk endpoints. The projection itself is unchanged.
- */
+/** Direct straight-line chord in the visible flat-disk plane, in metres. */
 export function flatDiskDistanceMeters(a, b) {
-  const first = pointInDiskKm(a), second = pointInDiskKm(b);
-  if (!first || !second) return null;
-  const distanceKm = integrateAnisotropicPlanarSegment(first, second, {
-    equatorRadius: EQUATOR_RADIUS_KM,
-    c1: ACTIVE_PLANAR_METRIC_C1,
-    c2: ACTIVE_PLANAR_METRIC_C2
-  });
-  return Number.isFinite(distanceKm) ? distanceKm * 1000 : null;
-}
-
-/** Legacy base-projection chord retained for calibration analysis; not the runtime ruler metric. */
-export function baseFlatDiskDistanceMeters(a, b) {
-  const first = pointInDiskKm(a, true), second = pointInDiskKm(b, true);
+  const first = a && geographicPointInDiskKm(a.lon, a.lat);
+  const second = b && geographicPointInDiskKm(b.lon, b.lat);
   if (!first || !second) return null;
   return Math.hypot(second[0] - first[0], second[1] - first[1]) * 1000;
 }
 
-/** One straight projected chord between endpoints; used by the direct-line distance tool. */
+/** Historical compatibility name; it is identical to the active planar chord. */
+export function baseFlatDiskDistanceMeters(a, b) {
+  return flatDiskDistanceMeters(a, b);
+}
+
+/** One straight projected chord between endpoints. */
 export function flatDiskLinePath(a, b, projectPoint) {
   if (!a || !b || typeof projectPoint !== 'function' ||
       ![a.lat, a.lon, b.lat, b.lon].every(Number.isFinite) ||
@@ -195,17 +115,14 @@ export function flatDiskLinePath(a, b, projectPoint) {
   return [start.slice(0, 2), end.slice(0, 2)];
 }
 
-/** Radial north–south separation in the calibrated plane, in kilometres. */
+/** Radial north–south separation in the fixed planar scale, in kilometres. */
 export function northSouthDistanceKm(latitude1, latitude2) {
   if (![latitude1, latitude2].every(Number.isFinite) ||
       [latitude1, latitude2].some(latitude => latitude < -90 || latitude > 90)) return null;
-  return Math.abs(
-    radialDistanceFromNorthKm(latitude2) -
-    radialDistanceFromNorthKm(latitude1)
-  );
+  return Math.abs(latitude2 - latitude1) * KILOMETRES_PER_DEGREE;
 }
 
-/** Same-latitude distance through the canonical anisotropic planar metric. */
+/** Straight chord between two points on one concentric latitude circle. */
 export function eastWestDistanceKm(
   latitudeDegrees,
   deltaLongitudeRadians,
@@ -213,11 +130,8 @@ export function eastWestDistanceKm(
 ) {
   if (!Number.isFinite(latitudeDegrees) || latitudeDegrees < -90 || latitudeDegrees > 90 ||
       !Number.isFinite(deltaLongitudeRadians) || !Number.isFinite(startLongitudeDegrees)) return null;
-  const distanceMeters = flatDiskDistanceMeters(
-    { lat: latitudeDegrees, lon: startLongitudeDegrees },
-    { lat: latitudeDegrees, lon: startLongitudeDegrees + deltaLongitudeRadians * RAD }
-  );
-  return Number.isFinite(distanceMeters) ? distanceMeters / 1000 : null;
+  const radius = radialDistanceFromNorthKm(latitudeDegrees);
+  return 2 * radius * Math.abs(Math.sin(deltaLongitudeRadians / 2));
 }
 
 /** Ordinary Euclidean area of a radial disk sector, in square kilometres. */
@@ -377,10 +291,7 @@ const clickPointCoordinate = point =>
   point.lat >= -90 && point.lat <= 90
     ? [point.lon, point.lat] : null;
 
-/**
- * Planar shoelace area and canonical anisotropic planar perimeter for a user polygon.
- * The same distance callback used by the A–B ruler is required for every edge.
- */
+/** Planar shoelace area and Euclidean planar perimeter for a user polygon. */
 export function flatDiskPolygonMetrics(
   vertices, projectPoint, baseRadius, measureDistanceMeters
 ) {

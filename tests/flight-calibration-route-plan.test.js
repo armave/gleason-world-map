@@ -176,20 +176,22 @@ test('the Antarctic route plan keeps whole airport pairs out of both splits', ()
 });
 
 
-test('telemetry archive refresh is monthly, main-only on push, and manually dispatchable', async () => {
+test('legacy flight calibration workflow is manual-only and never auto-updates the map', async () => {
   const workflow = await readFile(
     new URL('../.github/workflows/collect-flight-calibration.yml', import.meta.url),
     'utf8'
   );
-  assert.match(workflow, /branches:\s*\[main\]/);
-  assert.match(workflow, /scripts\/flight-calibration-route-predicate\.mjs/);
-  assert.match(workflow, /cron:\s*'15 3 1 \* \*'/);
   assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /manual only/);
+  assert.doesNotMatch(workflow, /\n\s*push:/);
+  assert.doesNotMatch(workflow, /\n\s*schedule:/);
+  assert.doesNotMatch(workflow, /cron:/);
   assert.match(workflow, /timeout-minutes:\s*120/);
   assert.match(workflow, /cancel-in-progress:\s*true/);
-  assert.doesNotMatch(workflow, /package\.json/);
-  assert.doesNotMatch(workflow, /\.github\/workflows\/collect-flight-calibration\.yml/);
+  assert.match(workflow, /npm run collect:flight-calibration/);
+  assert.match(workflow, /npm run fit:flight-path-calibration/);
 });
+
 
 test('the BAS Rothera route can query a known aircraft when endpoint geometry finds no flights', () => {
   assert.match(
