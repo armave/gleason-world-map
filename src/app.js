@@ -277,7 +277,8 @@ function drawGrid(){
   const angle=rad(degree);
   ctx.beginPath();
   ctx.moveTo(0,0);
-  ctx.lineTo(baseR*Math.cos(angle),-baseR*Math.sin(angle));
+  const equatorRadius=baseR*radialFraction(0);
+  ctx.lineTo(equatorRadius*Math.cos(angle),-equatorRadius*Math.sin(angle));
   ctx.strokeStyle=degree%30===0?visualPalette.grid:visualPalette.gridMinor;
   ctx.lineWidth=(degree%30===0?.82:.42)/zoom;
   ctx.stroke();
@@ -660,10 +661,16 @@ function drawArea(){
  const crossesGore=edgeRoutes.some(route=>route.metric==='planar-gore-edge-stitch');
  if(edgeRoutes.some(route=>route.segments.length)){
   ctx.beginPath();
-  for(const route of edgeRoutes)for(const segment of route.segments){
-   ctx.moveTo(segment[0][0],segment[0][1]);ctx.lineTo(segment[1][0],segment[1][1]);
+  if(closed&&!crossesGore){
+   const first=project(areaPoints[0].lon,areaPoints[0].lat);
+   ctx.moveTo(first[0],first[1]);
+   for(const route of edgeRoutes)ctx.lineTo(route.segments[0][1][0],route.segments[0][1][1]);
+   ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();
+  }else{
+   for(const route of edgeRoutes)for(const segment of route.segments){
+    ctx.moveTo(segment[0][0],segment[0][1]);ctx.lineTo(segment[1][0],segment[1][1]);
+   }
   }
-  if(closed&&!crossesGore){ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
   strokeMeasurementConnector('area');
  }
  areaPoints.forEach((point,index)=>{
@@ -976,6 +983,8 @@ function restoreSharedState(){
 function syncRadialControls(){
  renderRadialCalibration($('radialRows'),null,$('calibrationFormula'),$('pathCalibrationStatus'),$('geometryMetricFormula'),layoutMode);
  const petal=layoutMode==='interrupted-petals';
+ $('geometryDistanceMetric').textContent=petal?'Euclidean chord / edge stitch':'Euclidean planar chord';
+ $('geometryAreaMetric').textContent=petal?'Shoelace within petals; withheld across gores':'Planar shoelace';
  $('geometryRouteType').textContent=petal?'Euclidean / stitched planar path':'Straight projected segment';
  $('geometryModeNote').textContent=petal
   ?'Interrupted Petal Plane: one North-Polar centre; the north retains Pure Gleason placement; the south is split into three compressed lobes divided by open radial ocean gores. Cross-gore routes use two planar segments joined at the shortest matching-latitude seam. Polygon area is withheld when a polygon crosses disconnected petals.'
