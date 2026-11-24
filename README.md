@@ -20,11 +20,11 @@ y = -r * sin(lambda)
 
 The North Pole is at the centre. The equator is halfway from the centre to the outer rim. Equal changes in latitude produce equal changes in radius, so the parallels are concentric and evenly spaced. Meridians are straight rays. Greenwich (0°) points right; 90°E points up; eastward longitude proceeds counter-clockwise.
 
-The drawing scale sets the 180° North-Pole-to-rim radius to **20,001.6 km**. This is the map's planar coordinate scale derived from the stated 60-nautical-mile-per-degree convention. It is not a claim that every direction or region on the historical map matches independently measured ground distances. Older ADS-B and multi-anchor calibration modules, datasets and scripts remain in the repository as research history only; the active app does not import them. The legacy flight-data workflow is manual-only.
+The drawing scale sets the 180° North-Pole-to-rim radius to **20,001.6 km**. This is the map's planar coordinate scale derived from the stated 60-nautical-mile-per-degree convention. It is not a claim that every direction or region on the historical map matches independently measured ground distances. An independent empirical distance-calibration candidate is being developed separately from this baseline. It does not enter the active map until it passes independent holdout and topology checks. The older ADS-B fit remains archived because flown mileage is not a direct endpoint measurement.
 
 ### What is deliberately absent
 
-The active projection does not apply a fitted latitude warp, longitude shear, 12-circle radial profile, ADS-B-derived coefficients, anisotropic distance weights, spherical geometry, ellipsoidal geometry, or geodesic distance formulas. No runtime calibration pipeline is allowed to change the baseline geometry.
+The active projection does not apply a fitted latitude warp, longitude shear, 12-circle radial profile, ADS-B-derived coefficients, anisotropic distance weights, spherical geometry, ellipsoidal geometry, or geodesic distance formulas. The pure Gleason geometry remains the comparison baseline. A separate research candidate may deform the map only after traceable physical length observations and independent validation are available.
 
 A–B distance and polygon perimeter use ordinary Euclidean lengths in the displayed 2D plane. Polygon area uses the planar shoelace formula. These measurements describe the drawing plane; they must not be presented as independently validated ground distances or surface areas.
 

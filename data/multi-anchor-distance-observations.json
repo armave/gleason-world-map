@@ -1,12 +1,80 @@
 {
-  "schemaVersion": 1,
-  "description": "No qualifying independent endpoint-to-endpoint straight-line measurements have been supplied yet. Populate this file only with traceable, directly measured observations.",
+  "schemaVersion": 2,
+  "description": "No qualified physical-baseline observations are currently populated. Add only independently measured distances with traceable endpoint coordinate records, published uncertainty, and site-level holdout grouping.",
   "measurementPolicy": {
-    "eligibleType": "direct-straight-line",
-    "requiredFields": ["split", "a", "b", "distanceKm", "measurementType", "source.provider", "source.reference"],
-    "splitPolicy": "Assign complete unordered endpoint pairs to either train or holdout before fitting. Never place the same pair in both splits.",
-    "sourcePolicy": "Record the original survey, instrument, dataset row, or other traceable reference for every distance.",
+    "eligibleTypes": [
+      "direct-straight-line",
+      "direct-survey-baseline"
+    ],
+    "surveyBaseline": {
+      "measurementBasis": "adjusted-horizontal",
+      "requiredFields": [
+        "uncertaintyKm",
+        "a.coordinateSource.provider",
+        "a.coordinateSource.reference",
+        "b.coordinateSource.provider",
+        "b.coordinateSource.reference",
+        "source.groupId"
+      ],
+      "splitUnit": "complete surveyed baseline/site group"
+    },
+    "splitPolicy": "Assign entire survey baselines or sites to train or holdout before fitting. Never split segments from one baseline across the two groups.",
+    "sourcePolicy": "Record the actual survey certificate or row and coordinate reference for each exact monument. Approximate site positions are ineligible.",
+    "excludedTargets": [
+      "ADS-B flown mileage",
+      "flight track length",
+      "shortest route distance",
+      "travel time multiplied by speed",
+      "distance calculated from globe/sphere/ellipsoid/geodesic formulas"
+    ],
     "unit": "kilometres"
   },
-  "observations": []
+  "observations": [],
+  "sourceReview": [
+    {
+      "id": "noaa-ngs-edmi-cbl",
+      "provider": "NOAA National Geodetic Survey",
+      "reference": "https://www.ngs.noaa.gov/CBLINES/index.shtml",
+      "reportedCoverage": "More than 400 EDMI calibration baselines across the United States",
+      "publishedProducts": "Site descriptions and adjusted calibration-baseline measurements; state data files",
+      "status": "promising-local-baselines; exact monument coordinate references must be linked before import",
+      "importConditions": [
+        "use only a published adjusted horizontal distance",
+        "verify exact coordinates for both monument marks from traceable records",
+        "retain published uncertainty and instrument/epoch provenance",
+        "split complete baseline sites between training and holdout"
+      ]
+    },
+    {
+      "id": "nummela-standard-baseline",
+      "provider": "National Land Survey of Finland",
+      "reference": "https://www.maanmittauslaitos.fi/en/research/research/other-research-and-measuring-stations/nummela-standard-baseline",
+      "additionalReference": "https://www.maanmittauslaitos.fi/en/topical_issues/nummela-finland-home-worlds-most-accurate-line",
+      "reportedCoverage": "Observation pillars span 24 m to 864 m; the published full-line 2013 result is 864122.9 mm ±0.1 mm",
+      "status": "high-accuracy-source; exact underground-mark coordinate references and input distance basis must be verified",
+      "importConditions": [
+        "identify the exact physical endpoints represented by each published length",
+        "verify the measurement basis against adjusted-horizontal",
+        "obtain traceable coordinates for both endpoints",
+        "keep the complete Nummela site in one validation split"
+      ]
+    },
+    {
+      "id": "euro5000-pieniny",
+      "provider": "Warsaw University of Technology and independent verification partners",
+      "reference": "https://doi.org/10.1016/j.measurement.2026.121347",
+      "additionalReference": "https://pw.edu.pl/publikacje/establishing-euro5000-reference-baseline",
+      "reportedCoverage": "5 km reference baseline; uncertainty below 1 mm (k=2), measured through repeated GNSS and EDM campaigns and independently verified",
+      "status": "measurement-lead-only; preliminary point coordinates are explicitly approximate and final reference coordinates/lengths must be extracted before import",
+      "importConditions": [
+        "use the published reference length and its stated uncertainty",
+        "verify exact coordinates for the two endpoint monuments",
+        "confirm the distance basis is compatible with adjusted-horizontal",
+        "keep the complete EURO5000 site in one validation split"
+      ],
+      "additionalReference2": "https://d-nb.info/1285195388/34",
+      "preliminaryMeasurement": "A 2022 preliminary study reports an EDM EUR1–EUR2 length of 5177.1758 m ±0.0073 m (k=1).",
+      "coordinateQuality": "The same preliminary study labels its five point coordinates approximate; those coordinates are not accepted as precise fitting anchors."
+    }
+  ]
 }
