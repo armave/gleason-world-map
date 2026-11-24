@@ -31,7 +31,7 @@ test('capital markers with invalid screen coordinates are ignored', () => {
 });
 
 test('every capital marker is placed through the shared dual-disk projection', () => {
-  assert.match(app, /const point = project\(capital\.lat,capital\.lon\)/);
+  assert.match(app, /const point = project\(capital\.lat,\s*capital\.lon\)/);
   assert.match(app, /function drawCapitals\(\)/);
   assert.match(app, /ctx\.arc\(point\.x, point\.y/);
 });
