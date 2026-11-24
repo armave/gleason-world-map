@@ -68,24 +68,24 @@ export async function fetchNoaaCblStateCodes(options = {}) {
 }
 
 function parseMetadataLine(line, section) {
-  const designation = line.match(/BASE\\s*LINE\\s*DESIGNATION\\s*:\\s*(.+)$/i);
+  const designation = line.match(/BASE\s*LINE\s*DESIGNATION\s*:\s*(.+)$/i);
   if (designation) section.designation = designation[1].trim();
-  const accession = line.match(/PROJECT\\s+ACCESSION\\s+NUMBER\\s*:\\s*(.+)$/i);
+  const accession = line.match(/PROJECT\s+ACCESSION\s+NUMBER\s*:\s*(.+)$/i);
   if (accession) section.projectAccessionNumber = accession[1].trim();
-  const sourceNumber = line.match(/SOURCE\\s+NO\\.?\\s*[:#-]?\\s*(.+)$/i);
+  const sourceNumber = line.match(/SOURCE\s+NO\.?\s*[:#-]?\s*(.+)$/i);
   if (sourceNumber) section.sourceNumber = sourceNumber[1].trim();
-  const nearestTown = line.match(/NEAREST\\s+TOWN\\s*[:\\-]\\s*(.+)$/i);
+  const nearestTown = line.match(/NEAREST\s+TOWN\s*[:\-]\s*(.+)$/i);
   if (nearestTown) section.nearestTown = nearestTown[1].trim();
-  const quad = line.match(/\\bQUAD\\s*[:\\-]\\s*(.+)$/i);
+  const quad = line.match(/\bQUAD\s*[:\-]\s*(.+)$/i);
   if (quad) section.quad = quad[1].trim();
-  const state = line.match(/^\\s*STATE\\s*[:\\-]\\s*(.+)$/i);
+  const state = line.match(/^\s*STATE\s*[:\-]\s*(.+)$/i);
   if (state) section.state = state[1].trim();
-  const county = line.match(/^\\s*COUNTY\\s*[:\\-]\\s*(.+)$/i) || line.match(/^\\s*(.+?)\\s+COUNTY\\s*$/i);
+  const county = line.match(/^\s*COUNTY\s*[:\-]\s*(.+)$/i) || line.match(/^\s*(.+?)\s+COUNTY\s*$/i);
   if (county) section.county = county[1].trim();
-  const adjustedDate = line.match(/LIST\\s+OF\\s+ADJUSTED\\s+DISTANCES\\s*\\(([^)]+)\\)/i);
+  const adjustedDate = line.match(/LIST\s+OF\s+ADJUSTED\s+DISTANCES\s*\\(([^)]+)\\)/i);
   if (adjustedDate) { section.adjustmentDate = adjustedDate[1].trim(); section.inDistanceTable = true; }
-  else if (/LIST\\s+OF\\s+ADJUSTED\\s+DISTANCES\\b/i.test(line)) section.inDistanceTable = true;
-  if (/^\\s*EXPLANATION\\b/i.test(line)) section.inDistanceTable = false;
+  else if (/LIST\s+OF\s+ADJUSTED\s+DISTANCES\b/i.test(line)) section.inDistanceTable = true;
+  if (/^\s*EXPLANATION\b/i.test(line)) section.inDistanceTable = false;
 }
 
 function parseDistanceRow(line, context) {
@@ -96,8 +96,8 @@ function parseDistanceRow(line, context) {
   if (matches.length !== 5) return null;
   const values = matches.map(match => Number(match[0]));
   if (!values.every(Number.isFinite)) return null;
-  const fromStation = line.slice(0, matches[0].index).trim().replace(/\\s+/g, ' ');
-  const toStation = line.slice(matches[0].index + matches[0][0].length, matches[1].index).trim().replace(/\\s+/g, ' ');
+  const fromStation = line.slice(0, matches[0].index).trim().replace(/\s+/g, ' ');
+  const toStation = line.slice(matches[0].index + matches[0][0].length, matches[1].index).trim().replace(/\s+/g, ' ');
   const [fromElevationM, toElevationM, horizontalAdjustedDistanceM, markToMarkDistanceM, reportedStandardErrorMm] = values;
   if (!fromStation || !toStation || horizontalAdjustedDistanceM <= 0 || markToMarkDistanceM <= 0 || reportedStandardErrorMm <= 0) return null;
   const siteName = context.designation || 'UNNAMED CBL';
@@ -138,7 +138,7 @@ export function parseNoaaCblFile(text, options = {}) {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
 
-    if (/CALIBRATION\s+BASE\s+LINE\s+DATA/i.test(line)) {
+    if (/CALIBRATION\s+BASE\s*LINE\s+DATA/i.test(line)) {
       section = {
         stateCode,
         sourceUrl,
@@ -163,6 +163,9 @@ export function parseNoaaCblFile(text, options = {}) {
         sourceUrl,
         designation: null,
         projectAccessionNumber: null,
+        sourceNumber: null,
+        state: null,
+        awaitingDesignation: false,
         nearestTown: null,
         quad: null,
         county: null,
@@ -178,8 +181,8 @@ export function parseNoaaCblFile(text, options = {}) {
     parseMetadataLine(line, section);
     if (section.designation) section.awaitingDesignation = false;
     if (section.awaitingDesignation && line.trim() &&
-        !/^CALIBRATION\\s+BASE\\s*LINE\\s+DATA$/i.test(line.trim()) &&
-        !/^SOURCE\\s+NO\\./i.test(line.trim()) && !line.includes(':') &&
+        !/^CALIBRATION\s+BASE\s*LINE\s+DATA$/i.test(line.trim()) &&
+        !/^SOURCE\s+NO\./i.test(line.trim()) && !line.includes(':') &&
         !/^\\*+/.test(line.trim())) {
       section.designation = line.trim();
       section.awaitingDesignation = false;
@@ -233,7 +236,7 @@ async function fetchStateFile(stateCode, fetchImpl, options = {}) {
   });
   requireResponse(response, 'NOAA CBL ' + stateCode.toUpperCase());
   const text = await response.text();
-  if (!/CALIBRATION\s+BASE\s+LINE\s+DATA/i.test(text)) {
+  if (!/CALIBRATION\s+BASE\s*LINE\s+DATA/i.test(text)) {
     throw new Error('NOAA CBL ' + stateCode.toUpperCase() +
       ': response did not contain a calibration baseline data record');
   }
