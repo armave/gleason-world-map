@@ -66,7 +66,6 @@ test('the global warp can move the pole and displace the full Antarctic rim', ()
       id: 'control',
       xKm: DISK_RADIUS_KM * 0.4,
       yKm: DISK_RADIUS_KM * 0.1,
-      envelope: 0.8,
       alphaX: 500,
       alphaY: -250
     }]
@@ -94,7 +93,6 @@ test('topology diagnostics detect a deliberately folded and oversized disk warp'
       id: 'aggressive-control',
       xKm: DISK_RADIUS_KM * 0.5,
       yKm: 0,
-      envelope: 1,
       alphaX: -50000,
       alphaY: 30000
     }]
@@ -334,7 +332,7 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
       '; max holdout error ' + result.metrics.holdout.maxAbsolutePercent +
       '; anchor displacement ' + result.metrics.maximumDisplacementFraction +
       '; interpolated displacement ' + result.metrics.maximumWarpDisplacementFraction +
-      '; radial overshoot ' + result.metrics.maximumRadialOvershootFraction +
+      '; mapped radius fraction ' + result.metrics.maximumMappedRadiusFraction +
       '; max RBF coefficient ' + Math.max(0, ...result.candidateModel.controls.map(
         control => Math.hypot(control.alphaX, control.alphaY)
       )) +
@@ -465,7 +463,7 @@ test('survey baseline observations require adjusted-horizontal distance, uncerta
     measurementType: 'direct-survey-baseline',
     measurementBasis: 'adjusted-horizontal',
     uncertaintyKm: 0.0000001,
-    source: { provider: 'Survey authority', reference: 'baseline certificate 01' }
+    source: { provider: 'Survey authority', reference: 'baseline certificate 01', groupId: 'SITE-NUMMELA-01' }
   };
   assert.deepEqual(summarizeMultiAnchorCoverage([base]).validationErrors, []);
 
@@ -517,4 +515,38 @@ test('the calibration can expand the map beyond its original circular rim and in
   const diagnostics = inspectMultiAnchorTopology(model);
   assert.ok(diagnostics.maximumMappedRadiusFraction > 1);
   assert.ok(diagnostics.minimumJacobianDeterminant > 0.03);
+});
+
+
+test('all observations from one surveyed baseline stay in a single train or holdout split', () => {
+  const base = {
+    a: {
+      id: 'MARK-A', lat: 60, lon: 24,
+      coordinateSource: { provider: 'Survey authority', reference: 'mark A coordinates' }
+    },
+    b: {
+      id: 'MARK-B', lat: 60.001, lon: 24.001,
+      coordinateSource: { provider: 'Survey authority', reference: 'mark B coordinates' }
+    },
+    distanceKm: 0.2,
+    measurementType: 'direct-survey-baseline',
+    measurementBasis: 'adjusted-horizontal',
+    uncertaintyKm: 0.000001,
+    source: { provider: 'Survey authority', reference: 'baseline 02', groupId: 'SITE-02' }
+  };
+  const coverage = summarizeMultiAnchorCoverage([
+    { ...base, id: 'site02-ab', split: 'train' },
+    {
+      ...base,
+      id: 'site02-ac',
+      split: 'holdout',
+      b: {
+        id: 'MARK-C', lat: 60.002, lon: 24.002,
+        coordinateSource: { provider: 'Survey authority', reference: 'mark C coordinates' }
+      }
+    }
+  ]);
+  assert.ok(coverage.validationErrors.some(item =>
+    item.includes('assigns survey baseline group SITE-02 to both training and holdout')
+  ));
 });
