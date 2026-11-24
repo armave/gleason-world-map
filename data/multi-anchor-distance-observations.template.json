@@ -1,19 +1,40 @@
 {
-  "schemaVersion": 1,
-  "description": "Populate with independent, sourced endpoint-to-endpoint straight-line measurements. Do not insert ADS-B flown mileage, route duration, flight-track length, or distances calculated from a spherical/ellipsoidal formula.",
+  "schemaVersion": 2,
+  "description": "Template only. Do not add values until measured length, uncertainty and exact endpoint coordinate provenance are all available.",
   "measurementPolicy": {
-    "eligibleType": "direct-straight-line",
-    "requiredFields": [
-      "split",
-      "a",
-      "b",
-      "distanceKm",
-      "measurementType",
-      "source.provider",
-      "source.reference"
+    "eligibleTypes": [
+      "direct-straight-line",
+      "direct-survey-baseline"
     ],
-    "splitPolicy": "Assign complete unordered endpoint pairs to either train or holdout before fitting. Never place the same pair in both splits.",
-    "sourcePolicy": "Record the original survey, instrument, dataset row, or other traceable reference for every distance.",
+    "surveyBaseline": {
+      "measurementBasis": "adjusted-horizontal",
+      "requiredFields": [
+        "split",
+        "a",
+        "b",
+        "distanceKm",
+        "measurementType",
+        "measurementBasis",
+        "uncertaintyKm",
+        "source.provider",
+        "source.reference",
+        "source.groupId",
+        "a.coordinateSource.provider",
+        "a.coordinateSource.reference",
+        "b.coordinateSource.provider",
+        "b.coordinateSource.reference"
+      ]
+    },
+    "splitPolicy": "Hold out complete baseline/site groups, not individual adjacent segments.",
+    "coordinatePolicy": "Coordinates must identify the exact monument endpoints and have their own provider/reference. Approximate site-centre coordinates are not acceptable.",
+    "sourcePolicy": "Record measured horizontal distance, its stated uncertainty and the source certificate or dataset row. Never derive distance from coordinates.",
+    "excludedTargets": [
+      "ADS-B flown mileage",
+      "flight track length",
+      "shortest route distance",
+      "travel time multiplied by speed",
+      "globe/sphere/ellipsoid/geodesic-derived distance"
+    ],
     "unit": "kilometres"
   },
   "observations": []
