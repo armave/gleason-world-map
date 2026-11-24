@@ -33,6 +33,7 @@ const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
+let petalGoreWedges = [];
 let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,countryLayerDpr=NaN,countryOutlinesPath=null;
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
@@ -256,9 +257,11 @@ function drawDiskBase(){
   ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
   ctx.globalAlpha=.72;ctx.fillStyle=waterTexture;ctx.fillRect(-baseR,-baseR,baseR*2,baseR*2);ctx.restore();
  }
- ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();
+ if(layoutMode==='interrupted-petals')drawInterruptedPetalRim();
+ else{ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
 }
 function drawGrid(){
+ if(layoutMode==='interrupted-petals'){drawInterruptedPetalGrid();return;}
  ctx.save();
  const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];
  for(const lat of latitudes){
@@ -281,6 +284,78 @@ function drawGrid(){
  }
  ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);
  ctx.fillStyle=visualPalette.labels;ctx.fill();
+ ctx.restore();
+}
+function drawInterruptedPetalRim(){
+ ctx.save();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.setLineDash([]);
+ for(const petal of PETALS){
+  ctx.beginPath();
+  for(let i=0;i<=180;i++){
+   const longitude=petal.west+(petal.east-petal.west)*i/180;
+   const point=project(longitude,-90,petal.id);
+   if(i===0)ctx.moveTo(point[0],point[1]);else ctx.lineTo(point[0],point[1]);
+  }
+  ctx.stroke();
+ }
+ ctx.restore();
+}
+function drawInterruptedPetalGrid(){
+ ctx.save();
+ for(const latitude of [75,60,45,30,15,0]){
+  const radius=baseR*radialFraction(latitude);
+  ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
+  ctx.strokeStyle=latitude===0?visualPalette.equator:visualPalette.grid;
+  ctx.lineWidth=(latitude===0?1.55:.65)/zoom;
+  ctx.setLineDash(latitude===0?[]:[3/zoom,4/zoom]);ctx.stroke();
+ }
+ for(const latitude of [-15,-30,-45,-60,-75]){
+  for(const petal of PETALS){
+   ctx.beginPath();
+   for(let i=0;i<=120;i++){
+    const longitude=petal.west+(petal.east-petal.west)*i/120;
+    const point=project(longitude,latitude,petal.id);
+    if(i===0)ctx.moveTo(point[0],point[1]);else ctx.lineTo(point[0],point[1]);
+   }
+   ctx.strokeStyle=visualPalette.grid;ctx.lineWidth=.65/zoom;
+   ctx.setLineDash([3/zoom,4/zoom]);ctx.stroke();
+  }
+ }
+ ctx.setLineDash([]);
+ for(let longitude=0;longitude<360;longitude+=15){
+  const angle=rad(longitude);ctx.beginPath();ctx.moveTo(0,0);
+  ctx.lineTo(baseR*Math.cos(angle),-baseR*Math.sin(angle));
+  ctx.strokeStyle=longitude%30===0?visualPalette.grid:visualPalette.gridMinor;
+  ctx.lineWidth=(longitude%30===0?.82:.42)/zoom;ctx.stroke();
+ }
+ for(const petal of PETALS){
+  for(let longitude=Math.ceil(petal.west/15)*15;longitude<=petal.east;longitude+=15){
+   ctx.beginPath();
+   for(let i=0;i<=90;i++){
+    const latitude=-90*i/90,point=project(longitude,latitude,petal.id);
+    if(i===0)ctx.moveTo(point[0],point[1]);else ctx.lineTo(point[0],point[1]);
+   }
+   const seam=longitude===petal.west||longitude===petal.east;
+   ctx.strokeStyle=seam?visualPalette.equator:(longitude%30===0?visualPalette.grid:visualPalette.gridMinor);
+   ctx.lineWidth=(seam?1.05:longitude%30===0?.82:.42)/zoom;ctx.stroke();
+  }
+ }
+ ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);
+ ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();
+}
+function drawPetalGoreMasks(){
+ if(layoutMode!=='interrupted-petals'||!petalGoreWedges.length)return;
+ ctx.save();ctx.setLineDash([]);ctx.lineJoin='round';ctx.lineCap='round';
+ for(const wedge of petalGoreWedges){
+  if(wedge.polygon.length<3)continue;
+  ctx.beginPath();ctx.moveTo(wedge.polygon[0][0],wedge.polygon[0][1]);
+  for(let i=1;i<wedge.polygon.length;i++)ctx.lineTo(wedge.polygon[i][0],wedge.polygon[i][1]);
+  ctx.closePath();ctx.fillStyle=visualPalette.canvas;ctx.fill();
+  for(const edge of [wedge.edgeA,wedge.edgeB]){
+   ctx.beginPath();ctx.moveTo(edge[0][0],edge[0][1]);
+   for(let i=1;i<edge.length;i++)ctx.lineTo(edge[i][0],edge[i][1]);
+   ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.15/zoom;ctx.stroke();
+  }
+ }
  ctx.restore();
 }
 function drawCompassRose(){
@@ -323,9 +398,48 @@ function drawCompassRose(){
  ctx.restore();
 }
 function drawAnnotations(){
- ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75];
- for(const lat of ringLabels){const [x,y]=project(225,lat),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y,{avoidReserved:true});}
- for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a),{avoidReserved:true});}}
+ ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';
+ const latitudes=layoutMode==='interrupted-petals'?[75,60,45,30,15,0]:[75,60,45,30,15,0,-15,-30,-45,-60,-75];
+ for(const latitude of latitudes){
+  const point=project(225,latitude);
+  const label=latitude===0?'EQUATOR':Math.abs(latitude)+'°'+(latitude>0?'N':'S');
+  ctx.font=(latitude===0?'700 ':'600 ')+(latitude===0?9.5:8.5)/Math.max(.85,zoom*.65)+'px ui-sans-serif,system-ui';
+  ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,point[0],point[1],{avoidReserved:true});
+ }
+ if(layoutMode==='interrupted-petals'){
+  for(const petal of PETALS){
+   for(const latitude of [-30,-60]){
+    const point=project(petal.center,latitude,petal.id);
+    ctx.font='600 '+(8.5/Math.max(.85,zoom*.65))+'px ui-sans-serif,system-ui';
+    ctx.fillStyle=visualPalette.labels;drawUprightMapText(Math.abs(latitude)+'°S',point[0],point[1],{avoidReserved:true});
+   }
+   for(let longitude=petal.west;longitude<=petal.east+.001;longitude+=15){
+    const point=project(longitude,-90,petal.id),rho=Math.hypot(point[0],point[1]);
+    if(!rho)continue;
+    const major=longitude%15===0,outer=major?1.022:1.009;
+    ctx.beginPath();ctx.moveTo(point[0]*1.004,point[1]*1.004);
+    ctx.lineTo(point[0]*outer,point[1]*outer);
+    ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(major?1:.55)/zoom;ctx.stroke();
+    if(major){
+     ctx.font='600 '+(8.5/Math.max(.85,zoom*.6))+'px ui-sans-serif,system-ui';
+     ctx.fillStyle=visualPalette.labels;
+     drawUprightMapText(lonName(longitude),point[0]*1.06,point[1]*1.06,{avoidReserved:true});
+    }
+   }
+  }
+ }else{
+  for(let degree=0;degree<360;degree+=5){
+   const angle=rad(degree),r1=baseR*(degree%15===0?1.012:1.004),r2=baseR*1.022;
+   ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(degree%15===0?1:.55)/zoom;
+   ctx.beginPath();ctx.moveTo(r1*Math.cos(angle),-r1*Math.sin(angle));
+   ctx.lineTo(r2*Math.cos(angle),-r2*Math.sin(angle));ctx.stroke();
+   if(degree%15===0){
+    const radius=baseR*1.055;ctx.fillStyle=visualPalette.labels;
+    ctx.font='600 '+(9/Math.max(.85,zoom*.6))+'px ui-sans-serif,system-ui';
+    drawUprightMapText(lonName(degree),radius*Math.cos(angle),-radius*Math.sin(angle),{avoidReserved:true});
+   }
+  }
+ }
  ctx.restore();
 }
 function buildCountryLayerCache(){
@@ -364,7 +478,15 @@ function drawCountries(){
 }
 function drawCoastlinesLayer(simplified=false){if(simplified||!layers.coastlines||!coastlinePath)return;if(mapQuality==='high'&&frameScaleBarReadingKm<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
 function drawIceWall(simplified=false){
- renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),simplified?null:antarcticSurfacePaths,simplified?null:iceWallTexturePaths);
+ if(layoutMode==='interrupted-petals'){
+  if(antarcticaPath){
+   ctx.save();ctx.fillStyle=visualStyle==='clean'?'#f3f6f2':'#f4efe2';
+   ctx.fill(antarcticaPath,'evenodd');ctx.strokeStyle=visualPalette.rim;
+   ctx.lineWidth=1.05/zoom;ctx.stroke(antarcticaPath);ctx.restore();
+  }
+ }else{
+  renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),simplified?null:antarcticSurfacePaths,simplified?null:iceWallTexturePaths);
+ }
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
