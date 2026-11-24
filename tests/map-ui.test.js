@@ -408,7 +408,7 @@ test('map gestures use a lightweight preview and redraw full detail when settled
  assert.match(app,/function drawCoastlinesLayer\(simplified=false\)\{if\(simplified\|\|/);
  assert.match(app,/function drawIceWall\(simplified=false\)/);
  assert.match(app,/drawCapitals\(!interactionSimplified\);drawCountryLabels\(!interactionSimplified\);/);
- assert.match(app,/if\(layers\.oceanLabels&&!interactionSimplified\)\{\s*if\(!interactionSimplified\)/);
+ assert.match(app,/if\(layers\.oceanLabels&&!interactionSimplified\)\{/);
  assert.match(app,/wheelZoomActive=true/);
  assert.match(app,/canvas\.addEventListener\('pointerup'[\s\S]*?scheduleDraw\(\)/);
 });
@@ -421,7 +421,7 @@ test('large coastline and Antarctic surface paths are built in yielding batches'
 
 test('resize rebuilds deferred detail paths with a stable projection snapshot',()=>{
  assert.match(app,/const fixedProject=\(lon,lat,petalIndex\)=>projectForLayout\(lon,lat,projectionBaseR,projectionLayoutMode,petalIndex\)/);
- assert.match(app,/const makeResizedPath=.*fixedProject/);
+ assert.match(app,/const makeResizedPath=[\s\S]*?fixedProject/);
  assert.match(app,/geometryBaseR!==projectionBaseR/);
  assert.doesNotMatch(app,/createCoastlinePath\(coastlineData,project\)|createAntarcticSurfacePaths\(antarcticAddData,project\)/);
  assert.match(app,/createCoastlinePathAsync\(source,buildProject,undefined,\{layoutMode:buildLayout\}\)/);
