@@ -4,8 +4,8 @@ import {readFile} from 'node:fs/promises';
 const app=await readFile(new URL('../src/dual-disk-app.js',import.meta.url),'utf8');
 
 test('default framing includes both complete, touching disks',()=>{
- assert.match(app,/\(width - 42\) \/ \(4 \* R\)/);
- assert.match(app,/\(height - 42\) \/ \(2 \* R\)/);
+ assert.match(app,/\(width - 80\) \/ \(4 \* R\)/);
+ assert.match(app,/\(height - 80\) \/ \(2 \* R\)/);
  assert.match(app,/drawDiskBackground\('N'\)/);
  assert.match(app,/drawDiskBackground\('S'\)/);
 });

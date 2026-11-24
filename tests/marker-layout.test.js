@@ -37,7 +37,7 @@ test('every capital marker is placed through the shared dual-disk projection', (
 });
 
 test('default viewport fits both full circular disks side by side', () => {
-  assert.match(app, /fitScale = Math\.min\(\(width - 42\) \/ \(4 \* R\), \(height - 42\) \/ \(2 \* R\)\)/);
+  assert.match(app, /fitScale = Math\.min\(\(width - 80\) \/ \(4 \* R\), \(height - 80\) \/ \(2 \* R\)\)/);
   assert.match(app, /drawDiskBackground\('N'\)/);
   assert.match(app, /drawDiskBackground\('S'\)/);
   assert.match(html, /id="resetView"[^>]*title="Fit both disks and reset orientation">Fit both disks/);

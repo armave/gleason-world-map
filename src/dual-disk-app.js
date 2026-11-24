@@ -81,7 +81,7 @@ import { PANEL_TAGS } from './components/panels.js';
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    fitScale = Math.min((width - 42) / (4 * R), (height - 42) / (2 * R));
+    fitScale = Math.min((width - 80) / (4 * R), (height - 80) / (2 * R));
     if (!Number.isFinite(fitScale) || fitScale <= 0) fitScale = 1;
     draw();
   }
