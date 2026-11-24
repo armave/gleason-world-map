@@ -19,9 +19,6 @@ export const DISK_RADIUS_KM = DISK_BASE_RADIUS_KM;
 export const DISK_RADIUS_METERS = DISK_RADIUS_KM * 1000;
 export const EQUATOR_RADIUS_KM = DISK_RADIUS_KM / 2;
 
-/** Compatibility exports: the pure Gleason plane applies no metric correction. */
-export const ACTIVE_PLANAR_METRIC_C1 = 0;
-export const ACTIVE_PLANAR_METRIC_C2 = 0;
 
 const DEG = Math.PI / 180;
 const RAD = 180 / Math.PI;
