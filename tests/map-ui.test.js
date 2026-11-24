@@ -194,33 +194,24 @@ test('latitude grid includes intermediate parallels, an emphasized equator, long
 });
 
 
-test('calibration panel and PNG export share the latest global path-fit acceptance state',()=>{
- assert.match(calibrationUi,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
- assert.match(calibrationUi,/FLIGHT_CALIBRATION_SUMMARY/);
- assert.match(calibrationUi,/Legacy route-mileage model report: latest candidate rejected/);
- assert.match(calibrationUi,/correction is not applied to direct map measurements/);
- assert.match(calibrationUi,/No route-mileage multiplier is applied to the A–B ruler, scale bar or polygon measurements/);
- assert.match(calibrationUi,/isGloballyValidatedFlightPathCalibration/);
- assert.match(calibrationUi,/Latest visual-path candidate rejected/);
- assert.match(calibrationUi,/The last approved flat-disk parameters remain active/);
- assert.match(calibrationUi,/Latest accepted visible-map fit/);
- assert.match(app,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
- assert.match(app,/isGloballyValidatedFlightPathCalibration/);
- assert.match(app,/latest ADS-B path candidate not globally validated/);
- assert.match(app,/last approved flat-disk parameters retained/);
- assert.match(app,/globally validated ADS-B projected-path fit/);
+test('calibration UI documents the pure Gleason formula and equal ring intervals',()=>{
+ assert.match(calibrationUi,/60 nautical miles \/ degree/);
+ assert.match(calibrationUi,/equal angular latitude steps/);
+ assert.match(calibrationUi,/No fitted latitude warp, longitude/);
+ assert.match(calibrationUi,/independent real-world references/);
+ assert.match(html,/Pure Gleason disk geometry/);
+ assert.match(html,/id="calibrationFormula"/);
+ assert.match(html,/id="pathCalibrationStatus"/);
+ assert.doesNotMatch(html,/id="visualRadialRows"/);
+ assert.doesNotMatch(app,/FLIGHT_PATH_CALIBRATION|FLIGHT_PATH_CALIBRATION_SUMMARY|isGloballyValidatedFlightPathCalibration/);
 });
 
-test('map draws the same 12 radial reference circles listed in the calibration panel',()=>{
- assert.match(app,/RADIAL_DISTANCE_VISUAL_CIRCLES/);
- assert.match(app,/for\(const circle of RADIAL_DISTANCE_VISUAL_CIRCLES\)/);
- assert.match(app,/baseR\*circle\.visualFraction/);
- assert.match(calibrationUi,/RADIAL_DISTANCE_VISUAL_CIRCLES\.map/);
- assert.match(calibrationUi,/distanceMultiplier\.toFixed\(2\)/);
- assert.match(html,/Display multiplier/);
-  assert.match(html,/timestamped ADS-B path vertices/);
- assert.match(html,/Anisotropic planar segment distance/);
-  assert.match(html,/continuous radial profile used for the visible map is a positive smooth taper/);
+test('grid uses evenly spaced Gleason parallels and straight 15-degree meridians',()=>{
+ assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);
+ assert.match(app,/for\(let degree=0;degree<360;degree\+=15\)/);
+ assert.match(app,/ctx\.lineTo\(baseR\*Math\.cos\(angle\),-baseR\*Math\.sin\(angle\)\)/);
+ assert.doesNotMatch(app,/RADIAL_DISTANCE_VISUAL_CIRCLES|visualFraction/);
+ assert.doesNotMatch(html,/12-circle|Restricted Line|anisotropic/i);
 });
 
 test('direct A/B coordinate entry and visible-chord measurement help are available',()=>{
@@ -239,17 +230,12 @@ test('direct A/B coordinate entry and visible-chord measurement help are availab
  assert.match(app,/Natural Earth outline remains active/);
 });
 
-test('PNG exports include date, measurement and model/source metadata',()=>{
+test('PNG exports include date, measurement and pure Gleason source metadata',()=>{
  assert.match(app,/function exportPNG\(\)/);
  assert.match(app,/outputCtx\.fillText\('GLEASON-STYLE FLAT-DISK MAP/);
- assert.match(app,/globally validated ADS-B projected-path fit/);
- assert.match(app,/latest ADS-B path candidate not globally validated/);
- assert.match(app,/last approved flat-disk parameters retained/);
- assert.match(app,/isGloballyValidatedFlightPathCalibration/);
- assert.match(app,/FLIGHT_PATH_CALIBRATION_SUMMARY/);
+ assert.match(app,/Pure Gleason layout · equal-spaced parallels · straight radial meridians/);
+ assert.doesNotMatch(app,/FLIGHT_PATH_CALIBRATION|ADS-B projected-path fit|anisotropic/i);
  assert.match(app,/SCAR Antarctic Digital Database v7\.13/);
- assert.match(app,/FLIGHT_PATH_CALIBRATION\.schemaVersion/);
- assert.match(app,/FLIGHT_PATH_CALIBRATION\.trainingRouteCount/);
 });
 
 test('distance connector is one straight projected segment measured in the map plane',()=>{
@@ -262,21 +248,19 @@ test('distance connector is one straight projected segment measured in the map p
 });
 
 
-test('A–B, scale bar, polygon edges and PNG use one anisotropic planar distance function',()=>{
+test('A–B, scale bar, polygon edges and PNG share the Euclidean disk-plane metric',()=>{
  assert.match(html,/<span>Distance A–B<\/span>/);
- assert.match(html,/Anisotropic planar segment distance/);
- assert.doesNotMatch(html,/flightDistanceValue|flightDistanceSub|secondary-distance-reading|calibrationSupport|calibrationRoutes/);
- assert.match(html,/id="visualRadialRows"/);
- assert.match(html,/1\.00×[\s\S]*0\.50×/);
+ assert.match(html,/Euclidean flat-disk chord/);
+ assert.doesNotMatch(html,/anisotropic|flightDistanceValue|flightDistanceSub|secondary-distance-reading|12-circle|Restricted Line/i);
  assert.match(app,/measureDistanceMeters\(first,second\)/);
  assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,measureDistanceMeters,closed\)/);
  assert.match(app,/flatDiskPolygonMetrics\(areaPoints,project,baseR,measureDistanceMeters\)/);
  assert.match(app,/const distanceMeters=measureDistanceMeters\(first,second\)/);
- assert.match(app,/A–B distance '\+formatDistance\(measurement\.distanceMeters\)/);
- assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
- assert.doesNotMatch(app,/endpointDistanceEstimateMeters|endpointDistanceCalibration|flightDistanceValue|ADS-B route-feature correction/);
+ assert.match(app,/Euclidean disk-plane chord/);
+ assert.doesNotMatch(app,/endpointDistanceEstimateMeters|endpointDistanceCalibration|ADS-B route-feature correction|anisotropic/i);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
 });
+
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
  assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
@@ -322,21 +306,11 @@ test('compact measurement dock is embedded in the map viewport',()=>{
  assert.match(app,/\$\('areaDetails'\)\.hidden=mode!=='area'/);
 });
 
-test('60°S callouts identify the restricted line and rotate with the map',()=>{
- assert.match(html,/60°S · Restricted Line/);
- assert.doesNotMatch(html,/metric transition/i);
- assert.match(app,/function drawRestrictedParallel\(\)/);
- assert.match(app,/ctx\.setLineDash\(\[8\/zoom,5\/zoom\]\)/);
- assert.match(app,/for\(const degree of \[45,225\]\)/);
- assert.match(app,/60°S · RESTRICTED LINE/);
- assert.doesNotMatch(app,/60°S · METRIC TRANSITION/);
- assert.match(app,/let readableAngle=\(\(angle\+Math\.PI\/2\)%Math\.PI\+Math\.PI\)%Math\.PI-Math\.PI\/2/);
- assert.match(app,/ctx\.translate\(labelX,labelY\);ctx\.rotate\(readableAngle\)/);
- assert.doesNotMatch(app,/segmentCrossesRestrictedParallel/);
- assert.doesNotMatch(app,/polylineCrossesRestrictedParallel/);
+test('obsolete restricted-line overlay is absent from the pure Gleason map',()=>{
+ assert.doesNotMatch(html,/60°S · Restricted Line|Restricted Line/);
+ assert.doesNotMatch(app,/drawRestrictedParallel|RESTRICTED_PARALLEL_LATITUDE|60°S · RESTRICTED LINE/);
  assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
 });
-
 
 test('Antarctica remains separately rendered but can be selected and searched',()=>{
  assert.match(app,/antarcticaCountry=antarcticaFeature\?/);
@@ -382,7 +356,7 @@ test('pointer, hover and wheel interactions coalesce expensive work to animation
  assert.doesNotMatch(pointer[0],/draw\(\)/);
 });
 
-test('scale-bar measurement uses the same canonical calibrated metric as A–B',()=>{
+test('scale-bar measurement uses the same canonical Euclidean map-plane metric as A–B',()=>{
  const scaleMetric=app.slice(app.indexOf('function flatDiskDistanceForScalePixels'),app.indexOf('function scaleBarReadingKm'));
  assert.match(scaleMetric,/measureDistanceMeters\(first,second\)/);
  assert.doesNotMatch(scaleMetric,/flatDiskDistanceMeters/);
