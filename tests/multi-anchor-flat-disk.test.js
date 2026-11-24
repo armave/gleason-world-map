@@ -157,7 +157,6 @@ test('round-trip diagnostics cover the disk and control points', () => {
       id: 'control',
       xKm: DISK_RADIUS_KM * 0.4,
       yKm: DISK_RADIUS_KM * 0.1,
-      envelope: 0.8,
       alphaX: 120,
       alphaY: -70
     }]
@@ -176,7 +175,6 @@ test('the numerical inverse recovers an interior point after candidate warping',
       id: 'control',
       xKm: DISK_RADIUS_KM * 0.4,
       yKm: DISK_RADIUS_KM * 0.1,
-      envelope: 0.8,
       alphaX: 120,
       alphaY: -70
     }]
