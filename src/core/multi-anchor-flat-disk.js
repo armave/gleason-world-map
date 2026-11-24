@@ -1,13 +1,15 @@
 /**
- * Experimental multi-anchor calibration for a circular flat-disk map.
+ * Empirical multi-anchor calibration for the Gleason flat-disk reference.
  *
- * Fitting targets must be independently measured straight-line endpoint
- * distances. Aircraft mileage, flight duration, track length, and endpoint
- * coordinates converted through any spherical/ellipsoidal formula are not
- * acceptable substitutes for those measurements.
+ * Fitting targets are independently measured endpoint-to-endpoint lengths.
+ * Survey baselines must provide an adjusted horizontal length, its stated
+ * uncertainty, and traceable coordinate references for both physical marks.
+ * Flown mileage and distances calculated from geographic coordinates are not
+ * eligible observations.
  *
- * This module produces a candidate beside production geometry. It never
- * changes the active map projection or the production distance engine.
+ * Candidate transforms may translate, stretch, contract and locally relocate
+ * the pole, rim and intermediate map features. The pure Gleason map remains
+ * a separate reference baseline.
  */
 import { DISK_RADIUS_KM, project } from './flat-disk.js';
 
