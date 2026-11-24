@@ -1,129 +1,118 @@
-# Flat Disk World Map
+# Dual-Disk Planar World Map
 
 [View Online](https://armave.github.io/gleason-world-map/)
 
-An interactive 2D reconstruction of the circular north-polar layout used in Alexander Gleason's *New Standard Map of the World* (1892). The active map geometry is intentionally kept simple and explicit: equally spaced latitude parallels, straight radial meridians, and a continuous circular outer rim.
+An interactive, entirely two-dimensional map composed of two equal-radius circular disks hinged at the Equator. The Northern Disk is centred on the North Pole; the Southern Disk is centred on the South Pole. The application uses one projection function for geographic features, map annotations, measurement endpoints, area outlines, route connectors and exports.
 
-## Pure Gleason geometric baseline
+## Dual-disk geometry
 
-The map is a drawing plane, not a 3D globe. Its baseline follows the historical sheet's stated convention that one degree of latitude represents 60 nautical miles.
+The Equator radius is fixed by the requested planar scale:
 
-For latitude \(\phi\) and longitude \(\lambda\):
+\[
+R_{eq}=90\times111.12=10{,}000.8\ \text{km}
+\]
 
-```text
-theta = 90 degrees - phi
-r = theta * 60 nautical miles per degree
-r = theta * 111.12 km
-x = r * cos(lambda)
-y = -r * sin(lambda)
-```
+For latitude \(\phi\) and longitude \(\lambda\), project(lat, lon) returns { x, y, disk }, with coordinates in kilometres.
 
-The North Pole is at the centre. The equator is halfway from the centre to the outer rim. Equal changes in latitude produce equal changes in radius, so the parallels are concentric and evenly spaced. Meridians are straight rays. Greenwich (0°) points right; 90°E points up; eastward longitude proceeds counter-clockwise.
+Northern Disk, for \(\phi\ge0\), centred at \((-R_{eq},0)\):
 
-The drawing scale sets the 180° North-Pole-to-rim radius to **20,001.6 km**. This is the map's planar coordinate scale derived from the stated 60-nautical-mile-per-degree convention. It is not a claim that every direction or region on the historical map matches independently measured ground distances. An independent empirical distance-calibration candidate is being developed separately from this baseline. It does not enter the active map until it passes independent holdout and topology checks. The older ADS-B fit remains archived because flown mileage is not a direct endpoint measurement.
+\[
+r_N=(90-\phi)\times111.12
+\]
+\[
+x_N=-R_{eq}+r_N\cos\lambda,\qquad y_N=r_N\sin\lambda
+\]
 
-### What is deliberately absent
+Southern Disk, for \(\phi<0\), centred at \((+R_{eq},0)\):
 
-The active projection does not apply a fitted latitude warp, longitude shear, 12-circle radial profile, ADS-B-derived coefficients, anisotropic distance weights, spherical geometry, ellipsoidal geometry, or geodesic distance formulas. The pure Gleason geometry remains the comparison baseline. A separate research candidate may deform the map only after traceable physical length observations and independent validation are available.
+\[
+r_S=(90+\phi)\times111.12
+\]
+\[
+x_S=+R_{eq}-r_S\cos\lambda,\qquad y_S=r_S\sin\lambda
+\]
 
-A–B distance and polygon perimeter use ordinary Euclidean lengths in the displayed 2D plane. Polygon area uses the planar shoelace formula. These measurements describe the drawing plane; they must not be presented as independently validated ground distances or surface areas.
+The two disks have the same radius. The North Pole and South Pole are their respective centres. At Greenwich, the two Equator rim points coincide at the hinge point \((0,0)\). Longitude orientation in the Southern Disk is mirrored in x, as specified.
 
-### Recalibration policy
+## Planar distance engine
 
-Future corrections must be introduced as isolated, reviewable layers rather than hidden inside the base projection. Each proposed change should identify its source observations, control points, uncertainty, fitting method, and independent holdout results. A change must not be promoted merely because it makes a few selected routes or coastlines look better. The first public measured-length source under review is NOAA NGS's EDMI Calibration Baseline archive. Its horizontal adjusted distances are kept distinct from mark-to-mark distances, and its reported standard error is not automatically treated as baseline accuracy. The original Gleason baseline remains available as the unchanged comparison layer.
+For endpoints on the same disk, distance is the Euclidean chord:
 
-The 1892 source scan is available through the [Boston Public Library / Digital Commonwealth catalogue](https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z). For historical context, see the [New Standard Map background](https://www.newstandardmap.com/about/) and the [Norman B. Leventhal Map & Education Center catalogue](https://collections.leventhalmap.org/).
+\[
+D=\sqrt{(x_B-x_A)^2+(y_B-y_A)^2}
+\]
 
-## Features
+For endpoints on opposite disks, the engine searches the matching Equator longitude \(\lambda_{eq}\) that minimizes the sum of the two planar legs:
 
-- Circular north-polar disk with evenly spaced latitude parallels and straight radial meridians
-- Separate Natural Earth country boundaries, physical coastlines and island shorelines
-- Continuous Antarctic outer rim with optional white ice-wall styling
-- Search and select countries and capitals
-- U.S. county-equivalent search using Census Gazetteer internal-point coordinates
-- A–B straight-line measurement in the visible map plane
-- Planar polygon area and Euclidean perimeter measurements
-- Locally sampled map-plane scale bar
-- Optional 1892 historical scan overlay with opacity, crop and manual control-point registration
-- Pan, zoom, rotate and full-screen map viewing
-- Share URLs that preserve view, layers, measurement endpoints, polygon vertices and historical registration points
-- PNG export
+\[
+D=\min_{\lambda_{eq}\in[-180^\circ,180^\circ]}
+\left(
+\lVert A-E_N(\lambda_{eq})\rVert+
+\lVert E_S(\lambda_{eq})-B\rVert
+\right)
+\]
 
-## Technology and project structure
+The minimizer is found with 72 coarse intervals followed by golden-section refinement. The output contains the canonical distance, one or two straight route segments, both seam markers and the selected crossing longitude. The distance readout, connector pill, Route Register, area-edge labels and PNG rendering use this same route result.
 
-The interface uses Lit web components and Vite. The map is rendered with Canvas 2D. Projection and measurement code is kept in the core modules and is independent of the UI framework.
+## Equator clipping and map layers
 
-```text
-index.html                  page shell and Lit panel templates
-styles.css                  application and map styling
-vite.config.js              Vite build configuration
-src/
-  main.js                   Vite entry point
-  app.js                    map initialization and interactions
-  app/
-    state.js                observable immutable application state
-    map-controller.js       redraw scheduler
-  components/
-    panels.js               declarative Lit UI panels
-  core/                     projection and planar measurements
-  data/                     geographic data validation and loading
-  map/                      Canvas drawing, coastlines, labels, Ice Wall
-  ui/                       specialized UI renderers
-data/                       bundled map and reference datasets
-scripts/                    data vendors and archived research utilities
-tests/                      unit, regression and UI source checks
-e2e/                        Playwright browser tests
-.github/workflows/          test and GitHub Pages deployment workflows
-```
+GeoJSON polygon rings are clipped into separate Northern and Southern fragments at latitude zero before projection. Coastline polylines that cross the Equator are split at an interpolated crossing and the crossing point is projected separately onto each disk. The renderer uses the common projection for country borders, islands, coastlines, Antarctica, latitude rings, meridian lines, capital markers, country/capital labels, route endpoints and area vertices.
+
+The initial viewport fits the complete side-by-side bounds: four Equator radii wide and two radii high. Pan, zoom and rotation are display transforms applied after projection.
+
+## Benchmark compatibility note
+
+The geometry above is a precise specification, but it does not make all five requested approximate real-world distance targets mathematically compatible with the specified Euclidean rules. Tests preserve the exact output rather than apply hidden scale factors or route-specific corrections:
+
+| Route | Dual-disk planar result | Requested reference |
+|---|---:|---:|
+| Moscow–Bamako | 6,525.8 km | ~6,320 km |
+| Montevideo–Pretoria | 8,946.8 km | ~7,580 km |
+| Santiago–Canberra | 11,627.3 km | ~11,340 km |
+| Windhoek–Canberra | 12,416.5 km | ~12,250 km |
+| Washington, D.C.–Canberra | 18,092.0 km | ~15,960 km |
+
+Three examples fall within 5% of the supplied reference; Montevideo–Pretoria and Washington–Canberra do not. In particular, Montevideo–Pretoria is a same-disk route, so the requested same-disk Euclidean chord cannot be adjusted by changing the Equator optimizer. Passing all five targets would require changing at least one of the stated projection or distance rules. The application does not claim these planar values are independently verified ground distances.
+
+## Data and implementation
+
+The interface uses Lit web components and Vite; the map is drawn on Canvas 2D.
+
+- Country boundaries and coastlines: Natural Earth
+- Capital coordinates: bundled country/capital reference dataset
+- U.S. county-equivalent search points: 2026 U.S. Census Gazetteer
+- Antarctic boundary: bundled Natural Earth Antarctica feature; its border is drawn on the Southern Disk
+
+The retired multi-anchor fitting experiment is isolated in src/core/legacy-flat-disk.js and is not imported by the map renderer or active distance engine.
 
 ## Run locally
 
 Use Node.js 20.19+ or 22.12+.
 
-Install dependencies and start the development server:
+    npm install
+    npm run dev
+    npm test
+    npm run build
 
-```bash
-npm install
-npm run dev
-```
+For browser tests:
 
-Build and preview the production app:
+    npx playwright install chromium
+    npm run test:e2e
 
-```bash
-npm run build
-npm run preview
-```
+## Project structure
 
-Run the unit and regression tests:
-
-```bash
-npm test
-```
-
-Run the browser tests:
-
-```bash
-npx playwright install chromium
-npm run test:e2e
-```
-
-The browser suite exercises map loading, zoom and rotation, geographic search, measurements, polygon area, share-link restoration, mobile tools and PNG export.
-
-## Geographic data sources
-
-Country and Antarctica boundaries at multiple Natural Earth scales are bundled under `data/countries/`. Physical coastlines and island shorelines are stored separately. Data are pinned to the upstream source revisions recorded in `data/metadata.json`.
-
-Capital coordinates are stored in `data/capitals.json`. U.S. county-equivalent search points use 2026 Census Gazetteer internal-point coordinates. Antarctic land, ice shelf and related surfaces use the SCAR Antarctic Digital Database v7.13 bundle when available.
-
-- Historical map scan: Alexander Gleason, *New Standard Map of the World* (1892), Boston Public Library / Digital Commonwealth, item [commonwealth:7h149v867](https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z)
-- Antarctic surface data: SCAR Antarctic Digital Database v7.13, British Antarctic Survey / UK Polar Data Centre, [DOI 10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb](https://doi.org/10.5285/1c81cf24-576f-43df-be72-a5c7dbb51ffb), CC BY 4.0
-- Natural Earth vector data: public domain
-- Capital data source and license information: `data/capital-data-LICENSE.txt`
-
-To refresh the vendored Natural Earth and related geography files, use `npm run vendor:data`. To rebuild the SCAR Antarctic bundle, use `npm run vendor:antarctica`.
-
-## Deploy with GitHub Pages
-
-Set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The deployment workflow builds the app and publishes the `dist/` directory on pushes to `main`.
-
-Expected URL: https://armave.github.io/gleason-world-map/
+    src/
+      app.js                      entry shim
+      dual-disk-app.js            dual-disk canvas renderer and interactions
+      core/
+        dual-disk.js              single projection, clipping, planar areas and route geometry
+        measurement-engine.js     canonical distance API
+        flat-disk.js              public re-exports of the dual-disk core
+        legacy-flat-disk.js       isolated research baseline only
+      data/                       bundled map and reference datasets
+      map/
+        coastlines.js              Equator-split coastline projection
+        feature-paths.js           Equator-clipped polygon paths
+        measurements.js            canonical route segments and edge labels
+      ui/
+        calibration.js             dual-disk geometry panel
