@@ -212,3 +212,45 @@ test('exports the rendered map as a PNG download', async ({ page }) => {
 
   expect(download.suggestedFilename()).toMatch(/^gleason-world-map-\d{4}-\d{2}-\d{2}\.png$/);
 });
+
+
+test('switches between interrupted petals and the untouched Pure Gleason default', async ({ page }) => {
+  await openLoadedMap(page);
+  const selector = page.locator('#mapLayoutMode');
+  await expect(selector).toHaveValue('gleason');
+  await expect(page.locator('#activeLayoutLabel')).toHaveText('Pure Gleason Disk');
+
+  await selector.selectOption('interrupted-petals');
+  await expect(page.locator('#activeLayoutLabel')).toHaveText('Interrupted Petal Plane');
+  await expect(page.locator('#geometryModeNote')).toContainText('three compressed lobes');
+  await expect(page.locator('#geometryMetricFormula')).toContainText('D_cross');
+
+  await selector.selectOption('gleason');
+  await expect(page.locator('#activeLayoutLabel')).toHaveText('Pure Gleason Disk');
+  await expect(page.locator('#geometryModeNote')).toContainText('equally spaced latitude circles');
+});
+
+test('cross-gore distance register uses the stitched planar route', async ({ page }) => {
+  await openLoadedMap(page);
+  await page.locator('#mapLayoutMode').selectOption('interrupted-petals');
+  await page.locator('#measureMode').click();
+
+  await page.locator('#coordALat').fill('-34.85');
+  await page.locator('#coordALon').fill('-56.17');
+  await page.locator('#applyCoordsA').click();
+  await page.locator('#coordBLat').fill('-25.70');
+  await page.locator('#coordBLon').fill('28.22');
+  await page.locator('#applyCoordsB').click();
+
+  await expect(page.locator('#distanceValue')).not.toHaveText('—');
+  await expect(page.locator('#distanceSub')).toContainText('stitched petal route');
+  await expect(page.locator('#routeDistanceValue')).toHaveText(await page.locator('#distanceValue').textContent());
+  await expect(page.locator('#routeRegisterStatus')).toContainText('same canonical measurement');
+});
+
+test('restores the interrupted petal layout from a share URL', async ({ page }) => {
+  await openLoadedMap(page, '/?layout=interrupted-petals&a=-34.85,-56.17&b=-25.70,28.22');
+  await expect(page.locator('#mapLayoutMode')).toHaveValue('interrupted-petals');
+  await expect(page.locator('#activeLayoutLabel')).toHaveText('Interrupted Petal Plane');
+  await expect(page.locator('#distanceSub')).toContainText('stitched petal route');
+});

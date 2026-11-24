@@ -127,3 +127,32 @@ To refresh the vendored Natural Earth and related geography files, use `npm run 
 Set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. The deployment workflow builds the app and publishes the `dist/` directory on pushes to `main`.
 
 Expected URL: https://armave.github.io/gleason-world-map/
+
+
+## Interrupted Petal Planar Layout
+
+The map includes an isolated **Interrupted Petal Plane** layout that can be selected in the Map Layers panel or shared through the layout=interrupted-petals URL parameter. The default remains the unchanged Pure Gleason Disk.
+
+The petal layout uses the same single North-Polar centre and the same radial scale \(r=(90°-\phi)\times111.12\text{ km}\). Northern points are unchanged from Pure Gleason. South of the Equator, longitude is compressed around three sector centres:
+
+- South America: \(-120°\) to \(-20°\), centre \(-60°\)
+- Africa / Indian: \(-20°\) to \(+80°\), centre \(+25°\)
+- Australia / Pacific: \(+80°\) to \(+240°\), centre \(+140°\)
+
+The southern angular scale is \(s(\phi)=1-0.55(|\phi|/90°)\), with \(\lambda_{\mathrm{eff}}=\lambda_c+\operatorname{wrap}(\lambda-\lambda_c)s(\phi)\). Each petal is a separate planar lobe. The open radial gores are not geographic space and map clicks within them are rejected.
+
+Same-petal and northern routes use a Euclidean planar chord. A route whose endpoints lie in different southern petals uses the shortest two planar segments from each endpoint to the relevant adjacent gore edge, minimized over a common cut latitude. The seam transition itself has zero length; no distance is assigned across the empty gap. Polygons spanning disconnected petals retain a stitched perimeter but do not display a single shoelace area, because that would incorrectly fill an open gore.
+
+### Supplied mileage benchmarks
+
+The five route mileages supplied for calibration are preserved as reference observations, not used as hidden fit targets. With the specified k=0.55 projection and the specified edge-stitch rule, the deterministic planar outputs are:
+
+| Route | Supplied reference | Specified planar output |
+|---|---:|---:|
+| Moscow–Bamako | 6,320 km | 6,526 km |
+| Montevideo–Pretoria | 7,580 km | 15,201 km |
+| Santiago–Canberra | 11,340 km | 20,651 km |
+| Windhoek–Canberra | 12,250 km | 22,849 km |
+| Washington, D.C.–Canberra | 15,960 km | 18,421 km |
+
+These discrepancies are intentional test fixtures documenting the incompatibility between the supplied observations and the specified geometry/route metric. The coefficient is not silently tuned and the benchmark values are not hard-coded as route distances. A different calibration would require an explicit change to the stated projection or seam-cost model.

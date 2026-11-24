@@ -4,6 +4,7 @@ import {
   DISK_RADIUS_KM,
   project as projectGleason
 } from '../src/core/flat-disk.js';
+import { measureDirectDistance, measureDistanceMeters } from '../src/core/measurement-engine.js';
 import {
   PETALS,
   getPetalIndex,
@@ -61,6 +62,10 @@ test('inverse projection round-trips petal interiors and rejects open gore wedge
   }
   const north = unprojectInterruptedPetals(0, -100, 600);
   assert.ok(Number.isFinite(north.lat));
+  const radius = (90 + 45) * 111.12;
+  const gapAngle = -19.3 * Math.PI / 180;
+  const gore = unprojectInterruptedPetals(radius * Math.cos(gapAngle), -radius * Math.sin(gapAngle));
+  assert.ok(Number.isNaN(gore.lat) && Number.isNaN(gore.lon));
 });
 
 test('same-petal and northern routes are planar Euclidean chords', () => {
@@ -112,4 +117,33 @@ test('GeoJSON rings are clipped into northern and southern lobe pieces', () => {
 test('invalid coordinates fail safely', () => {
   assert.equal(measureInterruptedPetalRoute(point(91, 0), point(0, 0)).distanceMeters, null);
   assert.ok(projectInterruptedPetals(0, 91)[0] !== projectInterruptedPetals(0, 91)[0]);
+});
+
+
+test('measurement engine dispatches to the single canonical petal route function', () => {
+  const first = point(-34.85, -56.17);
+  const second = point(-25.7, 28.22);
+  const route = measureDirectDistance(first, second, 'interrupted-petals');
+  assert.equal(route.metric, 'planar-gore-edge-stitch');
+  assert.equal(route.segments.length, 2);
+  assert.equal(route.distanceMeters, measureDistanceMeters(first, second, 'interrupted-petals'));
+  const baseline = measureDirectDistance(first, second, 'gleason');
+  assert.equal(baseline.metric, 'euclidean-flat-disk-chord');
+  assert.equal(baseline.segments, undefined);
+});
+
+test('the five supplied mileage benchmarks remain visible beside the specified planar outputs', () => {
+  const cases = [
+    { name: 'Moscow–Bamako', a: point(55.75, 37.60), b: point(12.65, -8.00), observedKm: 6320, planarKm: 6525.8159 },
+    { name: 'Montevideo–Pretoria', a: point(-34.85, -56.17), b: point(-25.70, 28.22), observedKm: 7580, planarKm: 15200.6462 },
+    { name: 'Santiago–Canberra', a: point(-33.45, -70.67), b: point(-35.27, 149.13), observedKm: 11340, planarKm: 20651.0072 },
+    { name: 'Windhoek–Canberra', a: point(-22.57, 17.08), b: point(-35.27, 149.13), observedKm: 12250, planarKm: 22848.6245 },
+    { name: 'Washington, D.C.–Canberra', a: point(38.89, -77.05), b: point(-35.27, 149.13), observedKm: 15960, planarKm: 18421.4796 }
+  ];
+  for (const item of cases) {
+    const result = measureInterruptedPetalRoute(item.a, item.b);
+    assert.ok(Number.isFinite(result.distanceMeters), item.name);
+    assert.ok(Math.abs(result.distanceMeters / 1000 - item.planarKm) < 0.05, item.name);
+    assert.ok(item.observedKm > 0);
+  }
 });

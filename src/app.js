@@ -1120,14 +1120,16 @@ function exportPNG(){
  outputCtx.fillText('GLEASON-STYLE FLAT-DISK MAP · GENERATED '+generatedAt.slice(0,10),14*dpr,canvas.height+16*dpr);
  let measurementText='A–B measurement: not set';
  if(points.length===2){
-  const measurement=measureDirectDistance(points[0],points[1]);
+  const measurement=measureDirectDistance(points[0],points[1],layoutMode);
   measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
-   ' · Euclidean disk-plane chord';
+   (layoutMode==='interrupted-petals'?' · planar petal route':' · Euclidean disk-plane chord');
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
  outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
-  outputCtx.fillText('Pure Gleason layout · equal-spaced parallels · straight radial meridians · no fitted warps',14*dpr,canvas.height+53*dpr);
+  outputCtx.fillText(layoutMode==='interrupted-petals'
+   ?'Interrupted Petal Plane · one North-Polar centre · three southern lobes · open radial gores'
+   :'Pure Gleason layout · equal-spaced parallels · straight radial meridians · no fitted warps',14*dpr,canvas.height+53*dpr);
  const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
  outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
  output.toBlob(blob=>{
@@ -1135,7 +1137,7 @@ function exportPNG(){
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='gleason-world-map-'+generatedAt.slice(0,10)+'.png';
   document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with pure Gleason geometry and source metadata.';
+  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with '+(layoutMode==='interrupted-petals'?'interrupted-petal':'Pure Gleason')+' geometry and source metadata.';
  },'image/png');
 }
 async function copyShareLink(){
@@ -1215,9 +1217,10 @@ async function load(){
    coastlineData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    const source=coastlineData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
-    createCoastlinePathAsync(source,buildProject).then(path=>{
-     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
+    const source=coastlineData,buildBaseR=baseR,buildLayout=layoutMode;
+    const buildProject=(lon,lat,petalIndex)=>projectForLayout(lon,lat,buildBaseR,buildLayout,petalIndex);
+    createCoastlinePathAsync(source,buildProject,undefined,{layoutMode:buildLayout}).then(path=>{
+     if(generation!==loadGeneration||geometryBaseR!==buildBaseR||layoutMode!==buildLayout)return;
      coastlinePath=path;draw();
     }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
    });
@@ -1228,11 +1231,13 @@ async function load(){
    antarcticAddData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    const source=antarcticAddData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
-    createAntarcticSurfacePathsAsync(source,buildProject).then(paths=>{
-     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
-     antarcticSurfacePaths=paths;draw();
-    }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
+    if(layoutMode==='gleason'){
+     const source=antarcticAddData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
+     createAntarcticSurfacePathsAsync(source,buildProject).then(paths=>{
+      if(generation!==loadGeneration||geometryBaseR!==buildBaseR||layoutMode!=='gleason')return;
+      antarcticSurfacePaths=paths;draw();
+     }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
+    }
    });
   }).catch(error=>console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error));
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}

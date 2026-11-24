@@ -10,10 +10,10 @@ function seamCrossing(firstLongitude, firstLatitude, secondLongitude, secondLati
   const start=Math.floor((low-seam)/360)-1,end=Math.ceil((high-seam)/360)+1;
   for(let turn=start;turn<=end;turn++){
    const boundary=seam+turn*360;
-   if(boundary<=low+1e-10||boundary>=high-1e-10)continue;
+   if(boundary<low-1e-10||boundary>high+1e-10)continue;
    const t=(boundary-firstLongitude)/(secondLongitude-firstLongitude);
    const latitude=firstLatitude+(secondLatitude-firstLatitude)*t;
-   if(t>0&&t<1&&latitude<0)candidates.push({longitude:boundary,latitude,t});
+   if(t>0&&t<=1+1e-10&&latitude<0)candidates.push({longitude:boundary,latitude,t});
   }
  }
  candidates.sort((a,b)=>a.t-b.t);
