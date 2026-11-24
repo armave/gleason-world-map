@@ -29,7 +29,8 @@ export function project(lat, lon, diskOverride = null) {
     return { x: NaN, y: NaN, disk: null };
   }
   const longitude = rad(wrapLongitude(lon));
-  const radius = (disk === 'N' ? 90 - lat : 90 + lat) * KILOMETRES_PER_DEGREE;
+  const radius = lat === 0 ? EQUATOR_RADIUS_KM :
+    (disk === 'N' ? 90 - lat : 90 + lat) * KILOMETRES_PER_DEGREE;
   const centre = DISK_CENTRES[disk];
   return disk === 'N'
     ? { x: centre.x + radius * Math.cos(longitude), y: radius * Math.sin(longitude), disk }
@@ -305,7 +306,8 @@ export function flatDiskFeatureAreaM2(feature, projectPoint = project) {
 
 export function radialDistanceFromNorthKm(latitude) {
   if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return NaN;
-  return (90 - Math.abs(latitude)) * KILOMETRES_PER_DEGREE;
+  return Math.abs(latitude) === 0 ? EQUATOR_RADIUS_KM :
+    (90 - Math.abs(latitude)) * KILOMETRES_PER_DEGREE;
 }
 export const radialFraction = latitude =>
   Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
