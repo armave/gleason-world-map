@@ -99,7 +99,7 @@ function parseDistanceRow(line, context) {
   const fromStation = line.slice(0, matches[0].index).trim().replace(/\s+/g, ' ');
   const toStation = line.slice(matches[0].index + matches[0][0].length, matches[1].index).trim().replace(/\s+/g, ' ');
   const [fromElevationM, toElevationM, horizontalAdjustedDistanceM, markToMarkDistanceM, reportedStandardErrorMm] = values;
-  if (!fromStation || !toStation || horizontalAdjustedDistanceM <= 0 || markToMarkDistanceM <= 0 || reportedStandardErrorMm <= 0) return null;
+  if (!fromStation || !toStation || horizontalAdjustedDistanceM <= 0 || markToMarkDistanceM <= 0 || reportedStandardErrorMm < 0) return null;
   const siteName = context.designation || 'UNNAMED CBL';
   const groupToken = context.projectAccessionNumber || context.sourceNumber || siteName;
   const groupSlug = String(groupToken).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
