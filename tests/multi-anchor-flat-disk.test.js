@@ -28,7 +28,7 @@ test('empty input is rejected without producing active parameters', () => {
   assert.ok(result.failures.some(item => item.includes('deep-southern holdout anchors south of 60 degrees south')));
 });
 
-test('ADS-B flown mileage is rejected as a straight-line calibration target', () => {
+test('ADS-B flown mileage is rejected as a direct-distance calibration target', () => {
   const observations = [{
     split: 'train',
     a: { id: 'A', lat: 10, lon: 10 },
@@ -39,7 +39,7 @@ test('ADS-B flown mileage is rejected as a straight-line calibration target', ()
   }];
   const coverage = summarizeMultiAnchorCoverage(observations);
   assert.ok(coverage.validationErrors.some(item =>
-    item.includes('not an eligible direct-straight-line measurement')
+    item.includes('not an eligible direct-straight-line or direct-survey-baseline measurement')
   ));
 });
 
@@ -58,7 +58,7 @@ test('duplicate endpoint pairs cannot be placed in both training and holdout', (
   assert.ok(coverage.validationErrors.some(item => item.includes('duplicates endpoint pair')));
 });
 
-test('the boundary envelope leaves the pole and full Antarctic rim fixed', () => {
+test('the global warp can move the pole and displace the full Antarctic rim', () => {
   const model = {
     diskRadiusKm: DISK_RADIUS_KM,
     sigmaKm: DISK_RADIUS_KM * 0.2,
@@ -73,8 +73,8 @@ test('the boundary envelope leaves the pole and full Antarctic rim fixed', () =>
   };
   const centre = applyMultiAnchorWarpXY(0, 0, model);
   const rim = applyMultiAnchorWarpXY(DISK_RADIUS_KM, 0, model);
-  assert.deepEqual(centre, [0, 0]);
-  assert.deepEqual(rim, [DISK_RADIUS_KM, 0]);
+  assert.ok(Math.hypot(centre[0], centre[1]) > 1);
+  assert.ok(Math.hypot(rim[0], rim[1]) > DISK_RADIUS_KM);
   for (let index = 0; index < 72; index++) {
     const angle = 2 * Math.PI * index / 72;
     const point = [
@@ -82,7 +82,7 @@ test('the boundary envelope leaves the pole and full Antarctic rim fixed', () =>
       DISK_RADIUS_KM * Math.sin(angle)
     ];
     const mapped = applyMultiAnchorWarpXY(point[0], point[1], model);
-    assert.ok(Math.hypot(mapped[0] - point[0], mapped[1] - point[1]) < 1e-8);
+    assert.ok(Math.hypot(mapped[0] - point[0], mapped[1] - point[1]) > 0);
   }
 });
 
@@ -102,7 +102,7 @@ test('topology diagnostics detect a deliberately folded and oversized disk warp'
   const diagnostics = inspectMultiAnchorTopology(model);
   assert.ok(diagnostics.minimumJacobianDeterminant < 0.2);
   assert.ok(diagnostics.maximumWarpDisplacementFraction > 0.12);
-  assert.ok(diagnostics.maximumBoundaryDisplacementKm < 1e-5);
+  assert.ok(diagnostics.maximumBoundaryDisplacementKm > 0);
 });
 
 test('adaptive topology sampling detects a narrow off-grid foldover', () => {
@@ -113,8 +113,6 @@ test('adaptive topology sampling detects a narrow off-grid foldover', () => {
   const angle = Math.PI / 144;
   const xKm = controlRadius * Math.cos(angle);
   const yKm = controlRadius * Math.sin(angle);
-  const envelope = 16 * (controlRadius / radiusKm) ** 2 *
-    (1 - controlRadius / radiusKm) ** 2;
   const model = {
     diskRadiusKm: radiusKm,
     sigmaKm: radiusKm * 0.00025,
@@ -122,7 +120,6 @@ test('adaptive topology sampling detects a narrow off-grid foldover', () => {
       id: 'off-grid-control',
       xKm,
       yKm,
-      envelope,
       alphaX: 30,
       alphaY: 0
     }]
@@ -246,10 +243,6 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
     lon: longitudes[index]
   }));
   const seed = anchors.map(point => project(point.lon, point.lat, DISK_RADIUS_KM));
-  const envelopeAt = ([x, y]) => {
-    const q = Math.min(1, Math.hypot(x, y) / DISK_RADIUS_KM);
-    return 16 * q * q * (1 - q) * (1 - q);
-  };
   const sigmaKm = DISK_RADIUS_KM * 0.35;
   const truth = {
     diskRadiusKm: DISK_RADIUS_KM,
@@ -267,7 +260,6 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
         id: 'smooth-truth-' + index,
         xKm: point[0],
         yKm: point[1],
-        envelope: envelopeAt(point),
         alphaX,
         alphaY
       };
@@ -365,10 +357,10 @@ test('synthetic held-out pairs verify recovery of a known smooth disk deformatio
       maxHoldoutPairError: result.metrics.holdout.maxAbsolutePercent
     })
   );
-  assert.ok(result.metrics.maximumDisplacementFraction < 0.12);
-  assert.ok(result.metrics.maximumWarpDisplacementFraction < 0.12);
-  assert.ok(result.metrics.maximumRadialOvershootFraction <= 1e-5);
-  assert.ok(result.metrics.maximumBoundaryDisplacementKm < 1e-5);
+  assert.ok(result.metrics.maximumDisplacementFraction <= 5);
+  assert.ok(result.metrics.maximumWarpDisplacementFraction <= 5);
+  assert.ok(result.metrics.maximumMappedRadiusFraction <= 5);
+  assert.ok(result.metrics.maximumBoundaryDisplacementKm > 0);
   assert.ok(result.metrics.roundTripSampleCount > 500);
   assert.equal(result.metrics.roundTripFailureCount, 0);
   assert.ok(result.metrics.maximumRoundTripErrorKm <= 0.01);
@@ -454,4 +446,75 @@ test('coverage reports unseen holdout anchors separately from pair counts', () =
   assert.equal(coverage.holdoutAnchorCount, 2);
   assert.equal(coverage.unseenHoldoutAnchorCount, 2);
   assert.equal(coverage.holdoutAnchorOverlapCount, 0);
+});
+
+
+test('survey baseline observations require adjusted-horizontal distance, uncertainty and endpoint coordinate provenance', () => {
+  const base = {
+    split: 'train',
+    id: 'survey-line-01',
+    a: {
+      id: 'MONUMENT-A', lat: 40, lon: -75,
+      coordinateSource: { provider: 'Survey authority', reference: 'coordinate record A' }
+    },
+    b: {
+      id: 'MONUMENT-B', lat: 40.001, lon: -74.999,
+      coordinateSource: { provider: 'Survey authority', reference: 'coordinate record B' }
+    },
+    distanceKm: 0.8641229,
+    measurementType: 'direct-survey-baseline',
+    measurementBasis: 'adjusted-horizontal',
+    uncertaintyKm: 0.0000001,
+    source: { provider: 'Survey authority', reference: 'baseline certificate 01' }
+  };
+  assert.deepEqual(summarizeMultiAnchorCoverage([base]).validationErrors, []);
+
+  const wrongBasis = summarizeMultiAnchorCoverage([{
+    ...base, measurementBasis: 'slope-distance'
+  }]);
+  assert.ok(wrongBasis.validationErrors.some(item =>
+    item.includes('measurementBasis=adjusted-horizontal')
+  ));
+
+  const missingUncertainty = summarizeMultiAnchorCoverage([{
+    ...base, uncertaintyKm: undefined
+  }]);
+  assert.ok(missingUncertainty.validationErrors.some(item =>
+    item.includes('must include a positive uncertaintyKm')
+  ));
+
+  const missingCoordinateSource = summarizeMultiAnchorCoverage([{
+    ...base, a: { ...base.a, coordinateSource: undefined }
+  }]);
+  assert.ok(missingCoordinateSource.validationErrors.some(item =>
+    item.includes('coordinateSource.provider and coordinateSource.reference')
+  ));
+});
+
+test('the calibration can expand the map beyond its original circular rim and invert expanded points', () => {
+  const model = {
+    diskRadiusKm: DISK_RADIUS_KM,
+    sigmaKm: DISK_RADIUS_KM * 0.5,
+    controls: [{
+      id: 'global-shift-control',
+      xKm: DISK_RADIUS_KM * 0.5,
+      yKm: 0,
+      alphaX: 10000,
+      alphaY: 0
+    }]
+  };
+  const centre = applyMultiAnchorWarpXY(0, 0, model);
+  const originalRim = [DISK_RADIUS_KM, 0];
+  const mappedRim = applyMultiAnchorWarpXY(originalRim[0], originalRim[1], model);
+  assert.ok(centre[0] > 5000, 'pole should be allowed to move');
+  assert.ok(Math.hypot(...mappedRim) > DISK_RADIUS_KM,
+    'the fitted outer rim should be allowed to expand beyond the baseline circle');
+
+  const recovered = invertMultiAnchorWarpXY(mappedRim[0], mappedRim[1], model);
+  assert.ok(recovered, 'inverse must accept target coordinates outside the original disk');
+  assert.ok(Math.hypot(recovered[0] - originalRim[0], recovered[1] - originalRim[1]) < 0.01);
+
+  const diagnostics = inspectMultiAnchorTopology(model);
+  assert.ok(diagnostics.maximumMappedRadiusFraction > 1);
+  assert.ok(diagnostics.minimumJacobianDeterminant > 0.03);
 });
