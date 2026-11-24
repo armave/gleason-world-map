@@ -65,13 +65,16 @@
       "reference": "https://doi.org/10.1016/j.measurement.2026.121347",
       "additionalReference": "https://pw.edu.pl/publikacje/establishing-euro5000-reference-baseline",
       "reportedCoverage": "5 km reference baseline; uncertainty below 1 mm (k=2), measured through repeated GNSS and EDM campaigns and independently verified",
-      "status": "high-accuracy-source; exact monument coordinate records and line-value table must be extracted before import",
+      "status": "measurement-lead-only; preliminary point coordinates are explicitly approximate and final reference coordinates/lengths must be extracted before import",
       "importConditions": [
         "use the published reference length and its stated uncertainty",
         "verify exact coordinates for the two endpoint monuments",
         "confirm the distance basis is compatible with adjusted-horizontal",
         "keep the complete EURO5000 site in one validation split"
-      ]
+      ],
+      "additionalReference2": "https://d-nb.info/1285195388/34",
+      "preliminaryMeasurement": "A 2022 preliminary study reports an EDM EUR1–EUR2 length of 5177.1758 m ±0.0073 m (k=1).",
+      "coordinateQuality": "The same preliminary study labels its five point coordinates approximate; those coordinates are not accepted as precise fitting anchors."
     }
   ]
 }
