@@ -9,8 +9,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 test('the active Gleason projection and measurement runtime do not import the retired anisotropic metric', async () => {
   const activePaths = [
     'src/app.js',
+    'src/dual-disk-app.js',
+    'src/core/dual-disk.js',
     'src/core/flat-disk.js',
     'src/core/measurement-engine.js',
+    'src/map/feature-paths.js',
+    'src/map/coastlines.js',
+    'src/map/measurements.js',
+    'src/data/geojson.js',
     'src/ui/calibration.js'
   ];
   for (const relativePath of activePaths) {
