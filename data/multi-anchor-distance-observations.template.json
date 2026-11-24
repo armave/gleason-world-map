@@ -1,10 +1,11 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "description": "Template only. Do not add values until measured length, uncertainty and exact endpoint coordinate provenance are all available.",
   "measurementPolicy": {
     "eligibleTypes": [
       "direct-straight-line",
-      "direct-survey-baseline"
+      "direct-survey-baseline",
+      "direct-survey-reduced-horizontal"
     ],
     "surveyBaseline": {
       "measurementBasis": "adjusted-horizontal",
@@ -35,7 +36,32 @@
       "travel time multiplied by speed",
       "globe/sphere/ellipsoid/geodesic-derived distance"
     ],
-    "unit": "kilometres"
+    "unit": "kilometres",
+    "surveyTypes": {
+      "direct-survey-baseline": {
+        "measurementBasis": "adjusted-horizontal",
+        "requiredFields": [
+          "uncertaintyKm",
+          "a.coordinateSource.provider",
+          "a.coordinateSource.reference",
+          "b.coordinateSource.provider",
+          "b.coordinateSource.reference",
+          "source.groupId"
+        ]
+      },
+      "direct-survey-reduced-horizontal": {
+        "measurementBasis": "sea-level-horizontal",
+        "requiredFields": [
+          "uncertaintyKm",
+          "a.coordinateSource.provider",
+          "a.coordinateSource.reference",
+          "b.coordinateSource.provider",
+          "b.coordinateSource.reference",
+          "source.groupId"
+        ]
+      }
+    },
+    "surveySplitPolicy": "Keep complete survey baseline/site/network groups in one split."
   },
   "observations": []
 }
