@@ -26,6 +26,7 @@ async function main() {
     sourceDataset: INPUT_PATH,
     sourceDatasetVersion: input.schemaVersion ?? null,
     measurementPolicy: input.measurementPolicy ?? null,
+    sourceReview: input.sourceReview ?? [],
     accepted: fit.accepted,
     status: fit.status,
     failures: fit.failures,
