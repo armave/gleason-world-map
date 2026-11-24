@@ -1,121 +1,180 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  KILOMETRES_PER_DEGREE, EQUATOR_RADIUS_KM, DISK_RADIUS_KM, DISK_RADIUS_METERS,
-  project, unproject, radialFraction, radialDistanceFromNorthKm,
-  latitudeFromRadialDistanceKm, colatitudeRadians, flatDiskDistanceMeters,
-  flatDiskLinePath, northSouthDistanceKm, eastWestDistanceKm,
-  flatDiskSectorAreaKm2, flatDiskPolygonMetrics, flatDiskFeatureAreaM2,
-  projectGeoJSONRingParts
-} from '../src/core/dual-disk.js';
-import { measureDistanceMeters } from '../src/core/measurement-engine.js';
-const point=(lat,lon)=>({lat,lon});
-const close=(actual,expected,tolerance=1e-7)=>assert.ok(Math.abs(actual-expected)<=tolerance,actual+' != '+expected);
+  NAUTICAL_MILES_PER_DEGREE,
+  KILOMETRES_PER_NAUTICAL_MILE,
+  KILOMETRES_PER_DEGREE,
+  DISK_RADIUS_KM,
+  DISK_RADIUS_METERS,
+  EQUATOR_RADIUS_KM,
+  colatitudeRadians,
+  radialFraction,
+  radialDistanceFromNorthKm,
+  latitudeFromRadialDistanceKm,
+  project,
+  unproject,
+  flatDiskDistanceMeters,
+  baseFlatDiskDistanceMeters,
+  flatDiskLinePath,
+  northSouthDistanceKm,
+  eastWestDistanceKm,
+  flatDiskSectorAreaKm2,
+  flatDiskPolygonMetrics,
+  flatDiskFeatureAreaM2,
+  projectGeoJSONRing
+} from '../src/core/flat-disk.js';
 
-test('both equal planar disks use the specified 10,000.8 km Equator radius',()=>{
- assert.equal(KILOMETRES_PER_DEGREE,111.12);
- assert.equal(EQUATOR_RADIUS_KM,10000.8);
- assert.equal(DISK_RADIUS_KM,10000.8);
- assert.equal(DISK_RADIUS_METERS,10000800);
+const close = (actual, expected, tolerance = 1e-8) =>
+  assert.ok(Math.abs(actual - expected) <= tolerance,
+    `${actual} is not within ${tolerance} of ${expected}`);
+const point = (lat, lon) => ({ lat, lon });
+const projectKm = (lon, lat) => project(lon, lat, DISK_RADIUS_KM);
+
+test('pure Gleason scale uses 60 nautical miles per degree on a linear disk', () => {
+  assert.equal(NAUTICAL_MILES_PER_DEGREE, 60);
+  assert.equal(KILOMETRES_PER_NAUTICAL_MILE, 1.852);
+  assert.equal(KILOMETRES_PER_DEGREE, 111.12);
+  close(DISK_RADIUS_KM, 180 * 111.12, 1e-9);
+  close(DISK_RADIUS_METERS, DISK_RADIUS_KM * 1000, 1e-6);
+  close(EQUATOR_RADIUS_KM, DISK_RADIUS_KM / 2, 1e-9);
+  close(colatitudeRadians(90), 0);
+  close(colatitudeRadians(0), Math.PI / 2);
+  close(colatitudeRadians(-90), Math.PI);
 });
-test('North and South Poles are disk centres and Greenwich hinge points coincide',()=>{
- const northPole=project(90,25),southPole=project(-90,-125);
- close(northPole.x,-EQUATOR_RADIUS_KM);close(northPole.y,0);
- close(southPole.x,EQUATOR_RADIUS_KM);close(southPole.y,0);
- const northHinge=project(0,0,'N'),southHinge=project(0,0,'S');
- assert.deepEqual(northHinge,{x:0,y:0,disk:'N'});
- assert.deepEqual(southHinge,{x:0,y:0,disk:'S'});
- assert.deepEqual(project(0,0),northHinge);
+
+test('equal latitude increments create equal radial spacing from pole to rim', () => {
+  const expectedStep = DISK_RADIUS_KM / 12;
+  const latitudes = [90, 75, 60, 45, 30, 15, 0, -15, -30, -45, -60, -75, -90];
+  const radii = latitudes.map(radialDistanceFromNorthKm);
+  close(radii[0], 0);
+  close(radii.at(-1), DISK_RADIUS_KM);
+  for (let i = 1; i < radii.length; i++) {
+    close(radii[i] - radii[i - 1], expectedStep, 1e-8);
+  }
+  for (let lat = 90; lat >= -90; lat -= 1) {
+    const fraction = radialFraction(lat);
+    close(fraction, (90 - lat) / 180);
+    close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat);
+  }
+  assert.ok(Number.isNaN(radialFraction(91)));
+  close(northSouthDistanceKm(90, 75), 1666.8);
 });
-test('the two disks preserve the specified mirrored east-west orientation',()=>{
- const northEast=project(0,90,'N'),southEast=project(0,90,'S');
- close(northEast.x,-EQUATOR_RADIUS_KM);close(northEast.y,EQUATOR_RADIUS_KM);
- close(southEast.x,EQUATOR_RADIUS_KM);close(southEast.y,EQUATOR_RADIUS_KM);
- const northWest=project(0,-90,'N'),southWest=project(0,-90,'S');
- close(northWest.y,-EQUATOR_RADIUS_KM);close(southWest.y,-EQUATOR_RADIUS_KM);
- assert.equal(northEast.disk,'N');assert.equal(southEast.disk,'S');
+
+test('forward and inverse mapping preserve the Gleason longitude orientation', () => {
+  const radius = 700;
+  close(Math.hypot(...project(0, 90, radius)), 0);
+  const equator = project(0, 0, radius);
+  close(equator[0], radius / 2);
+  close(equator[1], 0);
+  const east = project(90, 0, radius);
+  close(east[0], 0, 1e-8);
+  close(east[1], -radius / 2);
+  const west = project(-90, 0, radius);
+  close(west[0], 0, 1e-8);
+  close(west[1], radius / 2);
+
+  for (const [lat, lon] of [
+    [41.7151, 44.8271],
+    [0, 0],
+    [-32.5, 151.2],
+    [75, -179.4],
+    [-88, 90]
+  ]) {
+    const [x, y] = project(lon, lat, radius);
+    const decoded = unproject(x, y, radius);
+    close(decoded.lat, lat);
+    close(((decoded.lon - lon + 540) % 360) - 180, 0);
+  }
+  assert.deepEqual(project(180, 10, radius), project(-180, 10, radius));
+  assert.deepEqual(project(540, 10, radius), project(-180, 10, radius));
+  assert.ok(Number.isNaN(project(0, 91, radius)[0]));
 });
-test('projection and inverse projection round-trip ordinary points in both disks',()=>{
- for(const [lat,lon] of [[41.7151,44.8271],[75,-179.4],[32.5,151.2],[-32.5,151.2],[-75,-179.4],[-88,90]]) {
-  const projected=project(lat,lon),decoded=unproject(projected.x,projected.y);
-  close(decoded.lat,lat,1e-8);
-  close(((decoded.lon-lon+540)%360)-180,0,1e-8);
-  assert.equal(decoded.disk,lat>=0?'N':'S');
- }
- assert.deepEqual(project(10,540),project(10,180));
+
+test('Antarctic rim stays a circle and longitude selects a position on it', () => {
+  const radius = 600;
+  const rimPoints = [0, 90, 180, 270].map(lon => project(lon, -90, radius));
+  for (const [x, y] of rimPoints) close(Math.hypot(x, y), radius);
+  close(Math.hypot(
+    rimPoints[0][0] - rimPoints[2][0],
+    rimPoints[0][1] - rimPoints[2][1]
+  ), 2 * radius);
 });
-test('latitude rings use equal radial spacing independently on each disk',()=>{
- const latitudes=[90,75,60,45,30,15,0,-15,-30,-45,-60,-75,-90];
- const radii=latitudes.map(radialDistanceFromNorthKm);
- close(radii[0],0);close(radii[6],EQUATOR_RADIUS_KM);close(radii[12],0);
- for(let i=1;i<=6;i++)close(radii[i]-radii[i-1],1666.8);
- for(let i=7;i<latitudes.length;i++)close(radii[i-1]-radii[i],1666.8);
- for(const lat of [-90,-60,-15,0,15,60,90]) {
-  close(radialFraction(lat),radialDistanceFromNorthKm(lat)/EQUATOR_RADIUS_KM);
- }
- close(latitudeFromRadialDistanceKm(1666.8,'N'),75);
- close(latitudeFromRadialDistanceKm(1666.8,'S'),-75);
- close(colatitudeRadians(90),0);close(colatitudeRadians(0),Math.PI/2);
- close(northSouthDistanceKm(90,75),1666.8);
+
+test('A–B uses the Euclidean chord in the projected 2D plane', () => {
+  const first = point(0, 0), second = point(0, 90);
+  const a = project(first.lon, first.lat, DISK_RADIUS_KM);
+  const b = project(second.lon, second.lat, DISK_RADIUS_KM);
+  const expected = Math.hypot(b[0] - a[0], b[1] - a[1]) * 1000;
+  close(flatDiskDistanceMeters(first, second), expected, 1e-6);
+  close(baseFlatDiskDistanceMeters(first, second), expected, 1e-6);
+  close(flatDiskDistanceMeters(first, second),
+    flatDiskDistanceMeters(second, first), 1e-6);
+  close(flatDiskDistanceMeters(point(90, -170), point(90, 150)), 0);
+  close(flatDiskDistanceMeters(point(0, 180), point(0, -180)), 0);
+  assert.equal(flatDiskDistanceMeters(point(91, 0), second), null);
 });
-test('same-disk distance is exactly the projected Euclidean chord',()=>{
- const first=point(55,30),second=point(22,-8);
- const a=project(first.lat,first.lon),b=project(second.lat,second.lon);
- const expected=Math.hypot(b.x-a.x,b.y-a.y)*1000;
- close(flatDiskDistanceMeters(first,second),expected,1e-6);
- close(measureDistanceMeters(first,second),expected,1e-6);
- assert.equal(project(0,180).x,project(0,-180).x);
- assert.equal(flatDiskDistanceMeters(point(91,0),second),null);
+
+test('straight connector contains exactly the two projected endpoints', () => {
+  const a = point(40.17, 44.5), b = point(-8.0476, -34.877);
+  const path = flatDiskLinePath(a, b, projectKm);
+  assert.equal(path.length, 2);
+  assert.deepEqual(path[0], projectKm(a.lon, a.lat));
+  assert.deepEqual(path[1], projectKm(b.lon, b.lat));
+  close(Math.hypot(path[1][0] - path[0][0], path[1][1] - path[0][1]) * 1000,
+    flatDiskDistanceMeters(a, b), 1e-5);
+  assert.deepEqual(flatDiskLinePath(a, b, () => [NaN, 0]), []);
 });
-test('cross-Equator line path contains the two independent hinge chords',()=>{
- const first=point(38.89,-77.05),second=point(-35.27,149.13);
- const path=flatDiskLinePath(first,second);
- assert.equal(path.length,2);
- assert.notDeepEqual(path[0][1],path[1][0]);
- for(const segment of path)assert.equal(segment.length,2);
+
+test('same-latitude helper measures a planar chord and sector area remains Euclidean', () => {
+  const radius = radialDistanceFromNorthKm(25);
+  close(eastWestDistanceKm(25, Math.PI / 3),
+    2 * radius * Math.sin(Math.PI / 6));
+  close(flatDiskSectorAreaKm2(0, DISK_RADIUS_KM, 2 * Math.PI),
+    Math.PI * DISK_RADIUS_KM ** 2);
+  assert.equal(eastWestDistanceKm(91, 1), null);
 });
-test('latitude helpers and planar sector area remain Euclidean',()=>{
- const radius=radialDistanceFromNorthKm(25);
- close(eastWestDistanceKm(25,Math.PI/3),2*radius*Math.sin(Math.PI/6));
- close(flatDiskSectorAreaKm2(0,EQUATOR_RADIUS_KM,2*Math.PI),Math.PI*EQUATOR_RADIUS_KM**2);
- assert.equal(eastWestDistanceKm(91,1),null);
+
+test('polygon area uses shoelace and perimeter sums Euclidean map-plane chords', () => {
+  const vertices = [
+    point(-10, -10), point(-10, 10),
+    point(10, 10), point(10, -10)
+  ];
+  const result = flatDiskPolygonMetrics(
+    vertices, projectKm, DISK_RADIUS_KM, flatDiskDistanceMeters
+  );
+  assert.ok(result && result.areaM2 > 0 && result.perimeterM > 0);
+  const expectedPerimeter = vertices.reduce((sum, vertex, index) =>
+    sum + flatDiskDistanceMeters(vertex, vertices[(index + 1) % vertices.length]), 0);
+  close(result.perimeterM, expectedPerimeter, 1e-5);
+
+  const crossed = [
+    point(-10, -10), point(10, 10),
+    point(-10, 10), point(10, -10)
+  ];
+  assert.equal(flatDiskPolygonMetrics(
+    crossed, projectKm, DISK_RADIUS_KM, flatDiskDistanceMeters
+  ), null);
 });
-test('GeoJSON rings crossing the Equator produce separate Northern and Southern parts',()=>{
- const ring=[[-20,-20],[20,-20],[20,20],[-20,20],[-20,-20]];
- const parts=projectGeoJSONRingParts(ring,project,{maxStepDegrees:2});
- assert.deepEqual(parts.map(part=>part.disk),['N','S']);
- for(const part of parts) {
-  assert.ok(part.points.length>3);
-  assert.ok(part.points.every(pair=>pair.every(Number.isFinite)));
- }
-});
-test('dateline-crossing rings clip with short wrapped edges on both disks',()=>{
- const ring=[[170,10],[160,10],[160,-10],[-170,-10],[170,10]];
- const parts=projectGeoJSONRingParts(ring,project,{maxStepDegrees:1});
- assert.deepEqual(parts.map(part=>part.disk),['N','S']);
- const north=parts.find(part=>part.disk==='N');
- const south=parts.find(part=>part.disk==='S');
- assert.ok(north.points.every(([x,y])=>Number.isFinite(x)&&Number.isFinite(y)));
- assert.ok(south.points.every(([x,y])=>Number.isFinite(x)&&Number.isFinite(y)));
- assert.ok(north.points.every(([x])=>x < -EQUATOR_RADIUS_KM));
- assert.ok(south.points.every(([x])=>x > EQUATOR_RADIUS_KM));
-});
-test('planar polygon area and perimeter use clipped geometry and canonical edge routes',()=>{
- const vertices=[point(10,-10),point(10,10),point(25,10),point(25,-10)];
- const result=flatDiskPolygonMetrics(vertices,project,measureDistanceMeters);
- assert.ok(result&&result.areaM2>0&&result.perimeterM>0);
- const perimeter=vertices.reduce((sum,item,index)=>sum+
-  measureDistanceMeters(item,vertices[(index+1)%vertices.length]),0);
- close(result.perimeterM,perimeter,1e-5);
- const crossed=[point(10,-10),point(-10,10),point(-10,-10),point(10,10)];
- const crossedResult=flatDiskPolygonMetrics(crossed,project,measureDistanceMeters);
- assert.ok(crossedResult&&crossedResult.areaM2>0);
-});
-test('GeoJSON feature area subtracts clipped holes and rejects unsupported geometry',()=>{
- const ring=[[-20,10],[20,10],[20,30],[-20,30],[-20,10]];
- const hole=[[-5,15],[-5,20],[5,20],[5,15],[-5,15]];
- const shell=flatDiskFeatureAreaM2({geometry:{type:'Polygon',coordinates:[ring]}},project);
- const withHole=flatDiskFeatureAreaM2({geometry:{type:'Polygon',coordinates:[ring,hole]}},project);
- assert.ok(shell>0&&withHole>0&&withHole<shell);
- assert.equal(flatDiskFeatureAreaM2({geometry:{type:'Point',coordinates:[0,0]}},project),null);
+
+test('GeoJSON rings use the same projection and polygon area subtracts holes', () => {
+  const ring = [[-10, -10], [10, -10], [10, 10], [-10, 10], [-10, -10]];
+  const projected = projectGeoJSONRing(ring, projectKm, { maxStepDegrees: 2 });
+  assert.ok(projected && projected.length > ring.length);
+  const feature = {
+    geometry: {
+      type: 'Polygon',
+      coordinates: [
+        ring,
+        [[-2, -2], [-2, 2], [2, 2], [2, -2], [-2, -2]]
+      ]
+    }
+  };
+  const full = flatDiskFeatureAreaM2({
+    geometry: { type: 'Polygon', coordinates: [ring] }
+  }, projectKm, DISK_RADIUS_KM);
+  const withHole = flatDiskFeatureAreaM2(feature, projectKm, DISK_RADIUS_KM);
+  assert.ok(full > 0 && withHole > 0 && withHole < full);
+  assert.equal(flatDiskFeatureAreaM2({
+    geometry: { type: 'Point', coordinates: [0, 0] }
+  }, projectKm, DISK_RADIUS_KM), null);
 });

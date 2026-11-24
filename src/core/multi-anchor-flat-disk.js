@@ -11,7 +11,7 @@
  * the pole, rim and intermediate map features. The pure Gleason map remains
  * a separate reference baseline.
  */
-import { DISK_RADIUS_KM, project } from './legacy-flat-disk.js';
+import { DISK_RADIUS_KM, project } from './flat-disk.js';
 
 export const MULTI_ANCHOR_FILTERS = Object.freeze({
   minimumTrainingObservations: 30,

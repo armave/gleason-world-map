@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dual-Disk Planar Map | Interactive Flat Atlas</title>
-<meta name="description" content="Interactive two-disk planar map with searchable geography, Euclidean route measurements and an Antarctic Ice Wall rim.">
+<title>Gleason Flat-Disk Map | 1892 Vintage Interactive Atlas</title>
+<meta name="description" content="Interactive 1892-inspired vintage Gleason-style flat-disk map with searchable geography, measurements, rotation and a continuous Antarctic Ice Wall.">
 <link rel="stylesheet" href="./styles.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2229%22 fill=%22%23dcecf0%22 stroke=%22%234f8799%22 stroke-width=%223%22/%3E%3Cpath d=%22M32 3 A29 29 0 0 1 32 61 A29 29 0 0 1 32 3%22 fill=%22none%22 stroke=%22%234f8799%22 stroke-width=%222%22/%3E%3C/svg%3E">
 
@@ -14,12 +14,12 @@
   <div class="title-cartouche">
     <div class="title-ribbon" aria-label="Historical map title">
       <span aria-hidden="true">✥</span>
-      <span>DUAL-DISK PLANAR MAP OF THE WORLD</span>
+      <span>NEW STANDARD MAP OF THE WORLD</span>
       <span aria-hidden="true">✥</span>
     </div>
     <div class="kicker">Interactive cartographic instrument</div>
-    <h1>Dual-Disk Planar Map</h1>
-    <div class="subtitle">Two equal flat circular disks · Equator hinge · continuous Antarctic Ice Wall</div>
+    <h1>Gleason Flat-Disk Map</h1>
+    <div class="subtitle">1892-inspired engraved cartography · interactive flat-disk geometry · continuous Antarctic Ice Wall</div>
     <div class="title-imprint"><span>POLAR DISK ATLAS</span><span>1892 VINTAGE EDITION</span><span>ANTARCTIC RIM COMPLETE</span></div>
   </div>
 </header>
@@ -29,7 +29,7 @@
       <div class="map-status-group"><div class="status" id="status">Loading geographic data…</div><span id="zoomReadout" class="zoom-readout" title="Map zoom level">100%</span></div>
       <div class="map-actions">
         <button id="fullscreenMap" aria-label="Enter full screen map">Full screen</button>
-        <button id="resetView" type="button" title="Fit both disks and reset orientation">Fit both disks</button>
+        <button id="resetView" type="button" title="Fit the complete disk and reset orientation">Fit disk</button>
         <button id="zoomOut">− Zoom</button>
         <button id="zoomIn">+ Zoom</button>
         <button id="exportPNG">Export PNG</button>
@@ -44,7 +44,7 @@
       <button id="resetRotation" type="button">North-up</button>
     </div>
     <div class="map-viewport" id="mapViewport" aria-busy="true">
-      <canvas id="map" aria-label="Interactive dual-disk planar world map"></canvas>
+      <canvas id="map" aria-label="Interactive north-polar disk world map"></canvas>
       <div class="map-tools-stack" id="mapToolsStack">
         <button class="map-tools-toggle" id="mapToolsToggle" type="button" aria-expanded="false" aria-controls="mapToolsPanels">Find &amp; Measure</button>
         <div class="map-tools-panels" id="mapToolsPanels">
@@ -61,7 +61,7 @@
         </div>
       </div>
     </div>
-    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Scale units: planar km</span><span>Two side-by-side circular disks · clipped coastlines and borders · white Antarctic Ice Wall · concentric latitude rings · radial meridians</span><span>Country names appear when zoomed · capital names at regional scale · routes use a chord or two-leg Equator hinge</span></div>
+    <div class="map-legend"><span>Drag to pan · Shift-drag or use controls to rotate · Scroll to zoom · Scale units: flat-disk km</span><span>Blue oceans · detailed coastlines & islands · white Antarctic rim · equal-spaced latitude parallels · straight radial meridians</span><span>Country names fade out in close-up · Capital names appear at regional scale · distances are straight map-plane chords</span></div>
   </main>
   <button id="mobileToolsToggle" class="mobile-tools-toggle" type="button" aria-expanded="false" aria-controls="toolsPanel">Open map tools</button>
   <aside id="toolsPanel">
@@ -70,10 +70,10 @@
     <map-route-panel data-lit-panel></map-route-panel>
     <map-calibration-panel data-lit-panel></map-calibration-panel>
     <map-geometry-panel data-lit-panel></map-geometry-panel>
-
+<map-historical-panel data-lit-panel></map-historical-panel>
   </aside>
 </div>
-<div class="footer">Country boundaries and coastlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); the Antarctic boundary is rendered on the Southern Disk as the Ice Wall boundary. The map uses two equal-radius 2D circular disks of radius 10,000.8 km hinged at the Equator. Northern and Southern coordinates share one projection function. Same-disk distances are Euclidean planar chords; cross-Equator distances are the sum of two planar chords through the optimized matching Equator-rim longitude. Polygon boundaries and coastlines are clipped at latitude 0° before projection. These are distances and areas in the requested planar model and are not independently validated ground-distance claims. Historical reference: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library / Digital Commonwealth.</div>
+<div class="footer">Country outlines use Natural Earth; capitals use country-data; U.S. county-equivalent search points use the 2026 U.S. Census Gazetteer (public domain); Antarctic surfaces use the Natural Earth fallback, with SCAR Antarctic Digital Database (BAS, v7.13, CC BY 4.0) detail when the vendored bundle is available. The map baseline follows the historical Gleason disk layout: the North Pole is at the centre, longitude meridians are straight radial rays, and equal latitude increments are placed at equal radial intervals. The drawing convention assigns 60 nautical miles (111.12 km) to each degree of latitude, giving a 20,001.6 km outer-disk radius in the planar coordinate model. This is a historical planar construction, not independent proof of real-world distances or shapes; validation against external observations is kept separate from the drawing geometry. The A–B readout, scale bar and polygon perimeter use ordinary Euclidean lengths in the displayed map plane; polygon area uses the planar shoelace formula. Country, coastline, airport and capital coordinates are geographic reference data for rendering and search. Historical layer: Alexander Gleason, “New Standard Map of the World” (1892), Boston Public Library, Norman B. Leventhal Map & Education Center, Digital Commonwealth item commonwealth:7h149v867; catalogue rights statement: “No known copyright restrictions.”</div>
 
 <!-- Lit templates retained as light-DOM-compatible sources during the incremental migration. -->
 <template id="find-panel-template">
@@ -100,7 +100,7 @@
           <div class="map-measure-reading distance-reading primary-distance-reading">
             <span>Distance A–B</span>
             <div class="measure-value" id="distanceValue">—</div>
-            <div class="measure-sub" id="distanceSub">Same-disk chord / Cross-Equator hinge route</div>
+            <div class="measure-sub" id="distanceSub">Euclidean flat-disk chord</div>
           </div>
           <div class="map-measure-reading area-reading">
             <span>Area</span>
@@ -110,7 +110,7 @@
         </div>
         <div class="map-measure-details" id="measurementDetails" hidden>
           <div id="distanceDetails">
-            <p class="small" id="measureHelp">Choose two places anywhere on either disk to measure distance.</p>
+            <p class="small" id="measureHelp">Choose two places anywhere on the disk to measure distance.</p>
             <div id="endpointRows" class="measurement-endpoints">
               <div class="point-row"><span class="point-badge a">A</span><span class="muted">Not set</span><span></span></div>
               <div class="point-row"><span class="point-badge b">B</span><span class="muted">Not set</span><span></span></div>
@@ -129,7 +129,7 @@
                 <button id="applyCoordsB" type="button" disabled>Set B</button>
               </div>
             </div>
-            <p class="small" id="measurementMethod">Same-disk routes use one 2D chord; cross-Equator routes use two straight segments via the optimized Equator hinge.</p>
+            <p class="small" id="measurementMethod">A–B integrates the straight projected segment with 64 planar midpoint steps and a radius-dependent tangential weight.</p>
             <div class="endpoint-actions"><button id="clearMeasure" type="button" disabled><span class="tool-icon" aria-hidden="true">×</span> Clear distance</button></div>
           </div>
           <div id="areaDetails" hidden>
@@ -158,6 +158,7 @@
         <label><input type="checkbox" id="layerCapitalNames" checked> Capital names (from 2,500 km)</label>
         <label><input type="checkbox" id="layerCountryNames" checked> Country names (16,000–500 km)</label>
         <label><input type="checkbox" id="layerAntarctica" checked> Antarctica / ice wall</label>
+        <label><input type="checkbox" id="layerOceanLabels" checked> Ocean & sea names</label>
         <label><input type="checkbox" id="layerCoastlines" checked> Coastlines & islands</label>
       </div>
       <div class="range-control">
@@ -218,7 +219,7 @@
 </template>
 <template id="calibration-panel-template">
 <section class="panel">
-      <h2>Dual-Disk planar geometry</h2>
+      <h2>Pure Gleason disk geometry</h2>
       <div class="formula" id="calibrationFormula"></div>
       <p class="note" id="pathCalibrationStatus" style="margin:8px 0 0">The pure Gleason geometry baseline loads here.</p>
       <table class="cal-table" style="margin-top:9px">
@@ -229,15 +230,15 @@
 </template>
 <template id="geometry-panel-template">
 <section class="panel">
-      <h2>Dual-Disk Planar Geometry (R_eq = 10,000.8 km)</h2>
+      <h2>Flat-disk geometry</h2>
       <div class="info-grid">
-        <div class="info-box"><span>Coordinate units</span><strong>2D planar km</strong></div>
-        <div class="info-box"><span>Distance</span><strong>Euclidean chord / hinge</strong></div>
+        <div class="info-box"><span>Coordinate units</span><strong>Flat-disk km</strong></div>
+        <div class="info-box"><span>Distance</span><strong>Euclidean planar chord</strong></div>
         <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
-        <div class="info-box"><span>A–B line</span><strong>One or two straight segments</strong></div>
+        <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
       </div>
       <div class="formula" id="geometryMetricFormula"></div>
-      <p class="note" style="margin:8px 0 0">Two equal-radius flat circular disks are centred at (−R_eq, 0) and (+R_eq, 0). The Equator forms the rim of each disk, with Greenwich at the shared hinge (0, 0). Same-disk routes use a Euclidean chord; cross-Equator routes use two Euclidean chords joined at the minimizing Equator longitude. Every geographic layer is projected through the same function.</p>
+      <p class="note" style="margin:8px 0 0">The map uses a fixed north-polar disk drawing plane. Latitude circles are evenly spaced; meridians are straight rays, with Greenwich pointing right and 90°E pointing up. The A–B value and red connector are the same Euclidean chord in that plane. The scale bar and polygon perimeter use the same planar length convention, while polygon area uses the shoelace formula. These are map-plane quantities; they are not asserted to be independently validated ground distances or surface areas.</p>
     </section>
 </template>
 <template id="historical-panel-template">

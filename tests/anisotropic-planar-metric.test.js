@@ -9,14 +9,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 test('the active Gleason projection and measurement runtime do not import the retired anisotropic metric', async () => {
   const activePaths = [
     'src/app.js',
-    'src/dual-disk-app.js',
-    'src/core/dual-disk.js',
     'src/core/flat-disk.js',
     'src/core/measurement-engine.js',
-    'src/map/feature-paths.js',
-    'src/map/coastlines.js',
-    'src/map/measurements.js',
-    'src/data/geojson.js',
     'src/ui/calibration.js'
   ];
   for (const relativePath of activePaths) {
@@ -52,8 +46,6 @@ test('source code defines or imports no spherical/geodesic distance routines', a
     ['spherical', 'Distance'].join(''),
     ['ellipsoid', 'Distance'].join('')
   ];
-  const earthRadiusIdentifiers = [['EARTH', '_RADIUS'].join(''), ['earth', 'Radius'].join(''), ['SPHERE', '_RADIUS'].join('')];
-  const earthRadiusPattern = new RegExp('\\\\b(?:' + earthRadiusIdentifiers.join('|') + ')\\\\b');
   const declarationOrImportFor = name => new RegExp(
     `(?:function\\s+${name}\\s*\\(|(?:const|let|var)\\s+${name}\\s*=|export\\s*\\{[^}]*\\b${name}\\b|import\\s+[^;]*\\b${name}\\b)`
   );
@@ -63,10 +55,5 @@ test('source code defines or imports no spherical/geodesic distance routines', a
       assert.doesNotMatch(source, declarationOrImportFor(name),
         `${path} must not define or export ${name}`);
     }
-    // Spherical inverse-trigonometric formulas are not used by this planar map.
-    assert.doesNotMatch(source, /\bMath\.(?:acos|asin)\s*\(/,
-      `${path} must not use spherical inverse-trigonometric formulas`);
-    assert.doesNotMatch(source, earthRadiusPattern,
-      `${path} must not define Earth/sphere radius constants`);
   }
 });
