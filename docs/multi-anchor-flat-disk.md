@@ -35,21 +35,30 @@ Do not use airline mileage, ADS-B track length, travel time multiplied by speed,
 
 ### NOAA National Geodetic Survey EDMI Calibration Baselines
 
-The NGS EDMI Calibration Baseline programme reports more than 400 calibration lines across the United States and publishes location descriptions plus adjusted calibration-baseline measurement results. Typical baselines have several monuments and multiple measured segments. These are promising local distance constraints, but each record must include exact monument coordinates from a traceable source before it can be admitted to this dataset.
+The NGS EDMI Calibration Baseline programme reports more than 400 calibration lines across the United States. The typical design uses four marks near 0, 150, 430 and 1,400 m. NGS publishes adjusted distances between mark pairs, monument descriptions and elevation differences; its technical material distinguishes mark-to-mark distances from horizontal distances. Only the published horizontal values match this fitter's distance definition.
 
-The existence of a baseline certificate is not, by itself, enough to locate every monument precisely on this map. Approximate site pins or a site-centre coordinate are not accepted as endpoint coordinates.
+There is a decisive coordinate limitation: NGS's own survey-mark guidance says accurate horizontal or vertical positions are not normally available for the CBL marks. The CBL site marker or a general location description is not a precise coordinate for each monument. Consequently, CBL values are high-quality local length references but are **not yet fit-ready geographic anchors**. Each monument requires a separate, traceable coordinate record with uncertainty and reference frame/epoch before a length can enter the optimizer. The CBL file's adjusted distance alone cannot locate its endpoints on the map.
 
 ### Nummela Standard Baseline, Finland
 
-The National Land Survey of Finland describes the Nummela line as a length standard with observation pillars from 24 m to 864 m. Its published full-line result is 864,122.9 mm ± 0.1 mm, and the scale is traceable to the definition of the metre. The 2024 work also describes six EDM observation pillars and a series of underlying markers.
+The National Land Survey of Finland describes the Nummela line as a length standard with observation pillars from 24 m to 864 m. Its published full-line result is 864,122.9 mm ± 0.1 mm, traceable to the definition of the metre. A 2026 FIG paper describes six EDM observation pillars at 0, 24, 72, 216, 432 and 864 m, but notes that the precision baseline itself is preserved between six underground markers about two metres away from the pillar line. That connection is checked annually by theodolite-based projection measurements with up to 0.2 mm standard uncertainty.
 
-This is a high-quality European reference, but it contributes a local measurement network, not global coverage. Each segment used by the fitter must have the certified length and exact endpoint coordinate references for the physical marks.
+The exact physical endpoints therefore matter: an observation-pillar coordinate is not automatically the coordinate of the underground marker defining the measured baseline. This is a high-quality European local reference, but it contributes neither global coverage nor fit-ready anchors until exact coordinates for the underground marker endpoints are traceable.
 
 ### EURO5000 Reference Baseline, Poland
 
 The 2026 EURO5000 publication describes a 5 km reference baseline established and validated in Poland using repeated GNSS and EDM campaigns. The reported measurement uncertainty is below 1 mm (k=2), with independent checks by two external institutions.
 
-This is another valuable regional constraint. A 2022 preliminary study reports an EDM EUR1–EUR2 result of 5,177.1758 m ± 0.0073 m (k=1), but the point coordinates in that study are explicitly described as approximate. Those approximate coordinates are not inserted as fitting anchors. The final reference values and precise monument coordinate records still need to be obtained. It is not a substitute for measured points in other continents or the deep southern map.
+This is another valuable regional constraint. The 2022 preliminary study reports an EDM EUR1–EUR2 result of 5,177.1758 m ± 0.0073 m (k=1), with several approximate inter-pillar lengths; its five published latitude/longitude positions are explicitly captioned as approximate. They are not precise anchor coordinates and have not been inserted into the fitting dataset. The 2026 publication establishes the final 5 km standard with uncertainty below 1 mm (k=2), but the final reference-distance table and precise coordinate records for each exact pillar still need to be extracted from the source. It does not provide southern-hemisphere or global coverage by itself.
+
+### Australian EDM calibration baselines
+
+Two additional southern-hemisphere source programmes are under review:
+
+- Landgate maintains three certified EDM baselines in Western Australia at Curtin University, Kalgoorlie and Busselton. Certified distances and calibration records are supplied through the Medjil portal, with periodic re-certification.
+- The NSW Surveyor General publishes EDM baseline certificates and facility information for multiple sites, including Coffs Harbour, Dubbo, Eglinton, Lethbridge Park, Seaham and Ulan.
+
+These sites can broaden source coverage in the southern hemisphere (roughly mid-southern latitudes), but they do not provide deep-southern or Antarctic coverage. The exact pillar IDs, certified horizontal distances, uncertainty, reference height, certification epoch and traceable coordinates for the same physical pillars must be extracted before import. The portal's coordinate-based geometric corrections must not be reproduced in this map; only its published certified length values are candidates for the observation file.
 
 ## Why the observations file is still empty
 

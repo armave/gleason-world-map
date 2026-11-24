@@ -37,13 +37,23 @@
       "reference": "https://www.ngs.noaa.gov/CBLINES/index.shtml",
       "reportedCoverage": "More than 400 EDMI calibration baselines across the United States",
       "publishedProducts": "Site descriptions and adjusted calibration-baseline measurements; state data files",
-      "status": "promising-local-baselines; exact monument coordinate references must be linked before import",
+      "status": "high-quality local lengths; not fit-ready as geographic anchors without a separate, traceable coordinate survey for each exact monument",
       "importConditions": [
-        "use only a published adjusted horizontal distance",
-        "verify exact coordinates for both monument marks from traceable records",
-        "retain published uncertainty and instrument/epoch provenance",
+        "select the published horizontal adjusted distance, not the mark-to-mark slope distance",
+        "obtain exact horizontal coordinates for the same monument marks from a separate traceable coordinate survey",
+        "record coordinate uncertainty and reference frame/epoch for each mark",
+        "retain published distance uncertainty, instrument and observation epoch",
         "split complete baseline sites between training and holdout"
-      ]
+      ],
+      "additionalReferences": [
+        "https://geodesy.noaa.gov/CBLINES/BASELINES/",
+        "https://www.ngs.noaa.gov/web/about_ngs/history/Survey_Mark_Art.pdf",
+        "https://geodesy.noaa.gov/library/pdfs/NOAA_TM_NOS_NGS_0008.pdf",
+        "https://www.fisheries.noaa.gov/inport/item/39910"
+      ],
+      "publishedConfiguration": "A standard line uses four marks at approximately 0, 150, 430 and 1400 m; published products include adjusted distances between mark pairs, descriptions and elevation differences.",
+      "measurementBasisNote": "NGS publishes both mark-to-mark and horizontal distances; only the horizontal values are compatible with this fitter.",
+      "coordinateQuality": "NGS states accurate horizontal or vertical positions are not normally available for CBL marks. The CBL site map position or general location description is not exact monument coordinate data."
     },
     {
       "id": "nummela-standard-baseline",
@@ -51,13 +61,20 @@
       "reference": "https://www.maanmittauslaitos.fi/en/research/research/other-research-and-measuring-stations/nummela-standard-baseline",
       "additionalReference": "https://www.maanmittauslaitos.fi/en/topical_issues/nummela-finland-home-worlds-most-accurate-line",
       "reportedCoverage": "Observation pillars span 24 m to 864 m; the published full-line 2013 result is 864122.9 mm ±0.1 mm",
-      "status": "high-accuracy-source; exact underground-mark coordinate references and input distance basis must be verified",
+      "status": "high-accuracy local length source; not fit-ready until exact coordinates are sourced for the underground marker endpoints, not just the observation pillars",
       "importConditions": [
-        "identify the exact physical endpoints represented by each published length",
-        "verify the measurement basis against adjusted-horizontal",
-        "obtain traceable coordinates for both endpoints",
+        "identify whether each published distance refers to a pillar centre or an underground baseline marker",
+        "obtain exact coordinate references for the physical endpoints used by the length certificate",
+        "record coordinate reference frame, epoch and uncertainty",
+        "use the certified distance and its stated uncertainty",
         "keep the complete Nummela site in one validation split"
-      ]
+      ],
+      "additionalReferences": [
+        "https://fig.net/resources/proceedings/fig_proceedings/fig2026/papers/ts07a/TS07A_jokela_haekli_et_al_13703.pdf",
+        "https://www.maanmittauslaitos.fi/en/topical_issues/nummela-finland-home-worlds-most-accurate-line"
+      ],
+      "pillarAndMarkNote": "The 2026 FIG paper describes six EDM observation pillars at 0, 24, 72, 216, 432 and 864 m, while the precision baseline itself is preserved between six underground markers about 2 m from the pillar line. The pillar coordinates, if sourced, are not automatically coordinates of the physical baseline endpoints.",
+      "undergroundMarkerNote": "The underground marker line is checked annually with theodolite-based projection measurements; the paper reports up to 0.2 mm standard uncertainty for that connection."
     },
     {
       "id": "euro5000-pieniny",
@@ -65,16 +82,47 @@
       "reference": "https://doi.org/10.1016/j.measurement.2026.121347",
       "additionalReference": "https://pw.edu.pl/publikacje/establishing-euro5000-reference-baseline",
       "reportedCoverage": "5 km reference baseline; uncertainty below 1 mm (k=2), measured through repeated GNSS and EDM campaigns and independently verified",
-      "status": "measurement-lead-only; preliminary point coordinates are explicitly approximate and final reference coordinates/lengths must be extracted before import",
+      "status": "high-accuracy local length source; preliminary published positions are approximate; final exact mark coordinates and final reference-distance tables required before import",
       "importConditions": [
-        "use the published reference length and its stated uncertainty",
-        "verify exact coordinates for the two endpoint monuments",
-        "confirm the distance basis is compatible with adjusted-horizontal",
+        "extract the final reference distance table from the 2026 publication",
+        "obtain precise coordinates for each exact pillar/monument mark from the final GNSS adjustment or official source",
+        "do not reuse the 2022 approximate point coordinates as fitting positions",
+        "record reference frame, epoch and coordinate uncertainty for each point",
         "keep the complete EURO5000 site in one validation split"
       ],
       "additionalReference2": "https://d-nb.info/1285195388/34",
       "preliminaryMeasurement": "A 2022 preliminary study reports an EDM EUR1–EUR2 length of 5177.1758 m ±0.0073 m (k=1).",
       "coordinateQuality": "The same preliminary study labels its five point coordinates approximate; those coordinates are not accepted as precise fitting anchors."
+    },
+    {
+      "id": "landgate-western-australia-edm-baselines",
+      "provider": "Landgate, Western Australia",
+      "reference": "https://www.landgate.wa.gov.au/location-data-and-services/surveying/instrument-calibration/",
+      "additionalReference": "https://medjil0.lb.landgate.wa.gov.au/calibrationguide/manuals/",
+      "reportedCoverage": "Three certified EDM baselines: Curtin University, Kalgoorlie and Busselton; distances are periodically re-certified and distributed through Medjil.",
+      "status": "southern-hemisphere source lead; not fit-ready until the certified pillar coordinates, exact endpoint IDs, reference-height convention and uncertainty records are obtained",
+      "importConditions": [
+        "obtain the certified horizontal distances and stated uncertainties from the current Medjil distribution",
+        "obtain the exact pillar coordinate records and coordinate uncertainties for each baseline",
+        "record the reference height and certification epoch for each distance",
+        "do not compute distances from coordinates or reapply the portal's geometric corrections",
+        "keep each complete baseline site in one train or holdout split"
+      ]
+    },
+    {
+      "id": "new-south-wales-edm-baselines",
+      "provider": "NSW Government, Surveyor General",
+      "reference": "https://www.nsw.gov.au/environment-land-and-water/surveying/surveyor-generals-directions/edm-baseline",
+      "additionalReference": "https://www.spatial.nsw.gov.au/__data/assets/pdf_file/0020/25940/SG_Direction_05.pdf",
+      "reportedCoverage": "Published EDM baseline certificates and facility information for sites including Coffs Harbour, Dubbo, Eglinton, Lethbridge Park, Seaham, Ulan and others.",
+      "status": "southern-hemisphere source lead; certificate endpoint coordinates and exact horizontal-distance/uncertainty records still need extraction",
+      "importConditions": [
+        "obtain the individual baseline certificate and identify the exact physical pillars",
+        "use certified horizontal distances only, with the reference height and uncertainty recorded",
+        "obtain traceable coordinates for the same physical pillars",
+        "retain certification epoch and site condition",
+        "keep each complete baseline site in one train or holdout split"
+      ]
     }
   ]
 }
