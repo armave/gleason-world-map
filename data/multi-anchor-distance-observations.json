@@ -151,6 +151,82 @@
         "retain the reported coordinate and distance uncertainty, reference frame, epoch, instrument and atmospheric corrections",
         "keep each complete local station network/site in one train or holdout split",
         "exclude the NMS 143 eccentric/cairn coordinate until the exact station-mark position is resolved"
+      ],
+      "fieldbookAccess": {
+        "repository": "Geoscience Australia N.H. (Doc) Fisher Geoscience Library",
+        "contact": "reference.library@ga.gov.au",
+        "reference": "https://www.ga.gov.au/data-pubs/library",
+        "serviceReference": "https://www.ga.gov.au/data-pubs/library/library-services",
+        "requestedRecords": [
+          "AUSLIG Geodesy #35",
+          "AUSLIG Geodesy #37",
+          "AUSLIG Geodesy #38"
+        ],
+        "requestPurpose": "Request scans or inspection copies of the 2000/2001 Mawson and Davis total-station observation fieldbooks, including reduced distance observations, horizontal/vertical angle readings, instrument height/target height, meteorological corrections and adjustment reports.",
+        "status": "retrieval route identified; records not yet obtained"
+      }
+    },
+    {
+      "id": "linz-antarctic-geodetic-marks-ross-dependency",
+      "provider": "Toitū Te Whenua Land Information New Zealand",
+      "reference": "https://data.linz.govt.nz/layer/50789-antarctic-geodetic-marks/",
+      "additionalReferences": [
+        "https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/linz-geodetic-database",
+        "https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data",
+        "https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/geodetic-mark-data-lds",
+        "https://www.linz.govt.nz/guidance/geodetic-system/coordinate-systems-used-new-zealand/coordinate-and-height-accuracy/coordinate-and-height-orders"
+      ],
+      "reportedCoverage": "490 Antarctic geodetic mark records for the Ross Dependency; layer includes unique geodetic code, name, mark type, mark condition, coordinate order, latitude/longitude and optional ellipsoidal height.",
+      "coordinateReference": "Ross Sea Region Geodetic Datum 2000 (RSRGD2000), EPSG:4764.",
+      "coordinateSource": "LINZ Landonline geodetic mark records. LINZ states the better-ranked marks use precise differential GPS and other marks may use precise horizontal angle and distance observations.",
+      "status": "valuable deep-southern physical mark catalogue; coordinates and mark metadata are available, but the point layer does not itself supply pairwise observed horizontal distance constraints",
+      "caveats": [
+        "a coordinate point record is not a directly measured endpoint-to-endpoint distance",
+        "the existence of a mark in the layer does not imply that the physical mark is currently present; condition/status must be checked",
+        "mark coordinate reference epoch, coordinate order and its Antarctica-specific interpretation must be preserved",
+        "the full geodetic database is stated to contain observations between marks, but public availability of the underlying Antarctic terrestrial observation records must be established",
+        "do not derive calibration distances from the published latitude/longitude coordinates"
+      ],
+      "importConditions": [
+        "use the layer only to catalogue and identify stable physical monument IDs and coordinate provenance",
+        "obtain original LINZ/Landonline terrestrial observations or another authoritative record that publishes measured horizontal distances for exact mark pairs",
+        "obtain each observation's measurement type, uncertainty, reference epoch and endpoint mark IDs",
+        "confirm current mark condition and exact monument identity",
+        "keep complete survey networks/sites in one train or holdout split",
+        "do not calculate pair distances from coordinate differences or from any spherical/ellipsoidal/geodesic method"
+      ]
+    },
+    {
+      "id": "aadc-2010-11-davis-mawson-survey-files",
+      "provider": "Australian Antarctic Data Centre / Geoscience Australia",
+      "reference": "https://data.aad.gov.au/aadc/portal/drill_down.cfm?id=69",
+      "reportedCoverage": "Download item survey_2010-11_davis_mawson.zip (265 kB), described as CAD and Word files from surveys at Davis and Mawson documented in part 7 of the 2010/11 Antarctic Geodesy Field Report.",
+      "status": "additional primary-file lead; file contents and presence of adjusted direct horizontal line lengths not yet inspected",
+      "importConditions": [
+        "obtain and inspect the original CAD and Word files",
+        "identify whether they contain original adjusted horizontal distances tied to exact geodetic mark IDs",
+        "preserve source units, survey epoch, measurement method and uncertainty",
+        "do not infer or compute distances from point coordinates or CAD geometry unless a source explicitly identifies the value as a direct measured horizontal distance",
+        "keep complete local survey sites in one train or holdout split"
+      ]
+    },
+    {
+      "id": "japan-gsi-antarctic-control-point-survey",
+      "provider": "Geospatial Information Authority of Japan (GSI) / Japanese Antarctic Research Expedition",
+      "reference": "https://web2.gsi.go.jp/antarctic/07-e.html",
+      "dataListReference": "https://web2.gsi.go.jp/antarctic/07_index_point-e.html",
+      "historicalDataReference": "https://polaris.nipr.ac.jp/~dbase/900/gsi/pdf/Control_point_survey-j.REV1.pdf",
+      "reportedCoverage": "Antarctic control-point networks established and revised by JARE from 1956 onward. Historical EDM/theodolite network integration is concentrated in the Syowa Station hinterland (Lützow-Holm Bay) due line-of-sight limits between distant ice-free areas.",
+      "publishedMethods": "GSI records integration surveys from the 1960s and the use from the 1970s of electro-optical distance measurement (Geodimeter Model 8) and high-precision Wild T3 theodolites for long-range distance/angle networks.",
+      "publicDataStatus": "The NIPR data catalogue describes the control-point survey data as analog and released through survey reports. Public survey data lists and point particulars are available, but pairwise adjusted horizontal distances and original observations must be requested or extracted from historical reports.",
+      "contact": "jare_geo@gsi.go.jp",
+      "status": "promising East Antarctic / Syowa regional source; exact monument IDs and measured pair-distance records require extraction from the report archive or direct request",
+      "importConditions": [
+        "obtain the control point particulars and original survey reports for each candidate JARE network",
+        "extract explicit adjusted horizontal/ground distances from the report or observation record; do not derive from coordinate tables",
+        "retain the survey epoch, monument identity, distance uncertainty, instrument and datum metadata",
+        "identify any offset/eccentric antenna or witness marks separately from the physical station marks",
+        "split complete local survey networks between training and holdout"
       ]
     }
   ]
