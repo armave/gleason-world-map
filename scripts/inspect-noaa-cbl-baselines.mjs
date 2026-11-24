@@ -183,7 +183,7 @@ export function parseNoaaCblFile(text, options = {}) {
     if (section.awaitingDesignation && line.trim() &&
         !/^CALIBRATION\s+BASE\s*LINE\s+DATA$/i.test(line.trim()) &&
         !/^SOURCE\s+NO\./i.test(line.trim()) && !line.includes(':') &&
-        !/^\\*+/.test(line.trim())) {
+        !line.trim().startsWith('*')) {
       section.designation = line.trim();
       section.awaitingDesignation = false;
     }
