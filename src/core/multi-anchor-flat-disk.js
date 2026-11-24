@@ -466,7 +466,7 @@ export function inspectMultiAnchorTopology(model) {
 function topologyMetrics(model) {
   let minimumJacobianDeterminant = Infinity;
   let maximumWarpDisplacementKm = 0;
-  let maximumRadialOvershootKm = 0;
+  let maximumMappedRadiusKm = 0;
   let maximumBoundaryDisplacementKm = 0;
   const radiusKm = model.diskRadiusKm;
   const radialSamples = 64;
@@ -523,9 +523,8 @@ function topologyMetrics(model) {
     }
     const displacement = Math.hypot(mapped[0] - x, mapped[1] - y);
     maximumWarpDisplacementKm = Math.max(maximumWarpDisplacementKm, displacement);
-    maximumRadialOvershootKm = Math.max(
-      maximumRadialOvershootKm,
-      Math.max(0, Math.hypot(mapped[0], mapped[1]) - radiusKm)
+    maximumMappedRadiusKm = Math.max(
+      maximumMappedRadiusKm, Math.hypot(mapped[0], mapped[1])
     );
     minimumJacobianDeterminant = Math.min(
       minimumJacobianDeterminant, jacobianDeterminant(x, y, model)
@@ -546,12 +545,15 @@ function topologyMetrics(model) {
       maximumBoundaryDisplacementKm,
       Math.hypot(mapped[0] - x, mapped[1] - y)
     );
+    maximumMappedRadiusKm = Math.max(
+      maximumMappedRadiusKm, Math.hypot(mapped[0], mapped[1])
+    );
   }
 
   return {
     minimumJacobianDeterminant,
     maximumWarpDisplacementFraction: maximumWarpDisplacementKm / radiusKm,
-    maximumRadialOvershootFraction: maximumRadialOvershootKm / radiusKm,
+    maximumMappedRadiusFraction: maximumMappedRadiusKm / radiusKm,
     maximumBoundaryDisplacementKm,
     topologySampleCount: samples.size
   };
