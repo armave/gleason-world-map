@@ -553,21 +553,21 @@ test('all observations from one surveyed baseline stay in a single train or hold
 test('measured reduced horizontal survey observations require sea-level basis, uncertainty and endpoint provenance', () => {
   const base = {
     split: 'train',
-    id: 'linz-observation-9001',
+    id: 'sample-reduced-observation-9001',
     a: {
       id: 'ROSS-MARK-A', lat: -77, lon: 166,
-      coordinateSource: { provider: 'LINZ Landonline', reference: 'coordinate row 101' }
+      coordinateSource: { provider: 'Synthetic test coordinate source', reference: 'coordinate row 101' }
     },
     b: {
       id: 'ROSS-MARK-B', lat: -77.001, lon: 166.002,
-      coordinateSource: { provider: 'LINZ Landonline', reference: 'coordinate row 102' }
+      coordinateSource: { provider: 'Synthetic test coordinate source', reference: 'coordinate row 102' }
     },
     distanceKm: 1.234567,
     measurementType: 'direct-survey-reduced-horizontal',
     measurementBasis: 'sea-level-horizontal',
     uncertaintyKm: 0.00002,
     source: {
-      provider: 'LINZ Landonline reduced observations',
+      provider: 'Synthetic test observation source',
       reference: 'Observation row 9001 / Accuracy row 9001',
       groupId: 'ANTARCTIC-NETWORK-ROSS-01'
     }
@@ -596,21 +596,21 @@ test('measured reduced horizontal survey observations require sea-level basis, u
   ));
 });
 
-test('all LINZ observations from one Antarctic survey network remain in one split', () => {
+test('all reduced-horizontal observations from one survey network remain in one split', () => {
   const base = {
     a: {
       id: 'MARK-A', lat: -77, lon: 166,
-      coordinateSource: { provider: 'LINZ', reference: 'coord A' }
+      coordinateSource: { provider: 'Synthetic test source', reference: 'coord A' }
     },
     b: {
       id: 'MARK-B', lat: -77.001, lon: 166.002,
-      coordinateSource: { provider: 'LINZ', reference: 'coord B' }
+      coordinateSource: { provider: 'Synthetic test source', reference: 'coord B' }
     },
     distanceKm: 1.2,
     measurementType: 'direct-survey-reduced-horizontal',
     measurementBasis: 'sea-level-horizontal',
     uncertaintyKm: 0.00002,
-    source: { provider: 'LINZ', reference: 'obs 1', groupId: 'SYOWA-NETWORK-01' }
+    source: { provider: 'Synthetic test source', reference: 'obs 1', groupId: 'SYNTHETIC-ANTARCTIC-NETWORK-01' }
   };
   const coverage = summarizeMultiAnchorCoverage([
     { ...base, id: 'obs-a', split: 'train' },
@@ -620,11 +620,11 @@ test('all LINZ observations from one Antarctic survey network remain in one spli
       split: 'holdout',
       b: {
         id: 'MARK-C', lat: -77.002, lon: 166.003,
-        coordinateSource: { provider: 'LINZ', reference: 'coord C' }
+        coordinateSource: { provider: 'Synthetic test source', reference: 'coord C' }
       }
     }
   ]);
   assert.ok(coverage.validationErrors.some(item =>
-    item.includes('assigns survey group SYOWA-NETWORK-01 to both training and holdout')
+    item.includes('assigns survey group SYNTHETIC-ANTARCTIC-NETWORK-01 to both training and holdout')
   ));
 });

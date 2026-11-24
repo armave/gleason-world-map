@@ -21,14 +21,14 @@ Direct survey records (`direct-survey-baseline` or `direct-survey-reduced-horizo
 - `a`, `b`: stable monument IDs, their latitude/longitude inputs, and each point's `coordinateSource.provider` and `coordinateSource.reference`
 - `distanceKm`: the published measured horizontal distance in kilometres
 - `measurementType`: exactly `direct-survey-baseline` or `direct-survey-reduced-horizontal`
-- `measurementBasis`: exactly `adjusted-horizontal` for baseline certificates or `sea-level-horizontal` for reduced LINZ observations
+- `measurementBasis`: exactly `adjusted-horizontal` for baseline certificates or `sea-level-horizontal` for direct survey observations reduced to sea level
 - `uncertaintyKm`: the published distance uncertainty in kilometres
 - `source.provider`, `source.reference`: provenance for the measured baseline
 - `source.groupId`: stable baseline/site identifier
 
 Every pair from one survey line or site must remain in one split. A baseline group cannot contribute some segments to training and other segments to holdout. Holdout baselines should be geographically independent from training sites.
 
-The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a survey observation without a stated positive uncertainty is rejected. For LINZ, the square root of the recorded distance variance in m² may be converted to one-sigma distance uncertainty in km. The observation remains labelled as a reduced distance, not an adjusted network output.
+The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a survey observation without a stated positive uncertainty is rejected. For any source that publishes a measured reduced-horizontal observation and its matching variance, the square root of that variance may be converted to one-sigma distance uncertainty in kilometres. Preserve the distinction between a reduced observation and an adjusted network output.
 
 Do not use airline mileage, ADS-B track length, travel time multiplied by speed, shortest-route distance, an inferred map scale, or distances calculated from globe/sphere/ellipsoid/geodesic formulas. Surveyed horizontal lengths must be taken as the published reference values, not recomputed from endpoint coordinates.
 
@@ -36,9 +36,33 @@ Do not use airline mileage, ADS-B track length, travel time multiplied by speed,
 
 ### NOAA National Geodetic Survey EDMI Calibration Baselines
 
-The NGS EDMI Calibration Baseline programme reports more than 400 calibration lines across the United States. The typical design uses four marks near 0, 150, 430 and 1,400 m. NGS publishes adjusted distances between mark pairs, monument descriptions and elevation differences; its technical material distinguishes mark-to-mark distances from horizontal distances. Only the published horizontal values match this fitter's distance definition.
+The National Geodetic Survey (NGS) publishes more than 400 EDMI Calibration Baselines (CBLs) across the United States. The public archive provides state-level ASCII files with baseline descriptions and adjusted pairwise distances. NGS describes these CBLs as local length standards and publishes adjusted distances between the marks.
 
-There is a decisive coordinate limitation: NGS's own survey-mark guidance says accurate horizontal or vertical positions are not normally available for the CBL marks. The CBL site marker or a general location description is not a precise coordinate for each monument. Consequently, CBL values are high-quality local length references but are **not yet fit-ready geographic anchors**. Each monument requires a separate, traceable coordinate record with uncertainty and reference frame/epoch before a length can enter the optimizer. The CBL file's adjusted distance alone cannot locate its endpoints on the map.
+Use only the **ADJUSTED DISTANCE HORIZONTAL (m)** column. The same table also contains **ADJUSTED DISTANCE MARK-MARK (m)**, which NOAA defines as the spatial chord between the centres of the disks. The horizontal value is defined at the mean elevation of the two stations and is the only column compatible with this project's horizontal-length target. Never substitute the mark-to-mark value.
+
+The seven published columns are FROM STATION; ELEVATION (m); TO STATION; ELEVATION (m); ADJUSTED DISTANCE HORIZONTAL (m); ADJUSTED DISTANCE MARK-MARK (m); and S.E. (mm). NOAA notes that station names are arbitrary and may not match the stamping on the physical monument disks. NOAA also cautions that the published standard error is estimated from the adjustment and may indicate repeatability of the instruments used to measure the baseline more than actual baseline accuracy; it may be optimistic. The importer therefore retains S.E. as source metadata and does not automatically convert it into uncertaintyKm.
+
+The CBL files provide independently measured local horizontal lengths, but they do not by themselves provide fit-ready map anchors. The exact physical monument IDs must be resolved for both station labels, traceable horizontal coordinates for those same marks must be obtained independently, and the current condition of each monument must be checked. Approximate site-map positions or general site locations are not acceptable anchor coordinates. Keep each complete site group intact in either training or holdout.
+
+Sources: [NGS CBL program overview](https://geodesy.noaa.gov/CBLINES/CBL_One_Pager.pdf); [state baseline files](https://geodesy.noaa.gov/CBLINES/BASELINES/); [NOAA Technical Memorandum NOS NGS-10, Use of Calibration Base Lines](https://www.ngs.noaa.gov/PUBS_LIB/TMNOSNGS10.pdf).
+
+#### Public NOAA inspection script
+
+No API key is required. Inspect all state files currently listed in the archive:
+
+```bash
+npm run inspect:noaa-cbl
+```
+
+Or inspect a selected state file:
+
+```bash
+npm run inspect:noaa-cbl -- --state md
+```
+
+The optional NOAA_CBL_STATES comma-separated environment variable selects multiple two-letter state codes; NOAA_CBL_REVIEW_OUTPUT changes the report path. The report defaults to tmp/noaa-cbl-baseline-review.json, which is ignored by Git. A manual GitHub Actions workflow can also run the public inspection and upload the report as a short-lived workflow artifact.
+
+The report is review-only. It records the exact horizontal adjusted distance, the separate mark-to-mark value, the reported standard error and its caveat, baseline/site metadata, and source-line provenance. It does not attach guessed coordinates, derive target lengths from coordinate data, populate the fitting dataset, or activate a map deformation.
 
 ### Nummela Standard Baseline, Finland
 
@@ -71,14 +95,6 @@ There are also monument identity issues. The NMS 143 AAGN antenna was set up on 
 
 Sources: [Geoscience Australia Technical Report 5 (GA5033)](https://www.ga.gov.au/bigobj/GA5033.pdf); [AADC 2006/07 Antarctic Geodesy report metadata](https://data.aad.gov.au/metadata/records/survey_2006-2007_geodesy); [AADC Antarctic survey report catalogue](https://data.aad.gov.au/aadc/portal/drill_down.cfm?id=69).
 
-### LINZ Antarctic Geodetic Marks — Ross Dependency
-
-Land Information New Zealand publishes an Antarctic Geodetic Marks point layer with **490 marks**. Each feature includes a unique geodetic code, mark name/description/type, condition, quality order and coordinates in the Ross Sea Region Geodetic Datum 2000 (RSRGD2000, EPSG:4764), with ellipsoidal height where available. LINZ states that its underlying Landonline geodetic system contains the observations between marks and that the mark records may have been established by precise differential GPS or terrestrial horizontal-angle and distance observations.
-
-This is a useful deep-southern **monument catalogue**, but the public point layer is not itself a table of measured pairwise distances. It can identify and locate physical marks, but it cannot be used to calculate the target distances from latitude/longitude. The actual Antarctic observation records between exact mark pairs, their adjusted horizontal-distance values and uncertainties still need to be obtained from the geodetic database or survey files. Mark condition also matters: inclusion in the layer does not guarantee that a mark is still physically present. Coordinate order and epoch must be interpreted using the RSRGD2000-specific accuracy definitions, not assumed to share mainland order semantics.
-
-Sources: [LINZ Antarctic Geodetic Marks layer](https://data.linz.govt.nz/layer/50789-antarctic-geodetic-marks/); [LINZ Geodetic Database](https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/linz-geodetic-database); [LINZ geodetic data access](https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data); [LINZ coordinate and height accuracy orders](https://www.linz.govt.nz/guidance/geodetic-system/coordinate-systems-used-new-zealand/coordinate-and-height-accuracy/coordinate-and-height-orders).
-
 ### Japanese GSI Antarctic Control Point Survey
 
 The Geospatial Information Authority of Japan (GSI) publishes an Antarctic control-point programme and a data list/particulars index for JARE survey marks. Its method history notes that the network was integrated from the 1960s and that the 1970s introduced Geodimeter Model 8 electro-optical distance measurements and high-precision Wild T3 theodolites for long-distance control. The NIPR data catalogue describes the historical control-point survey material as analog, with results published through survey reports, and identifies the GSI Antarctic geodesy contact as jare_geo@gsi.go.jp.
@@ -87,69 +103,9 @@ This is a promising East Antarctic source around Syowa Station and Lützow-Holm 
 
 Sources: [GSI Control Point Survey overview](https://web2.gsi.go.jp/antarctic/07-e.html); [GSI Control Point Data List and Particulars](https://web2.gsi.go.jp/antarctic/07_index_point-e.html); [NIPR data catalogue entry](https://polaris.nipr.ac.jp/~dbase/900/gsi/pdf/Control_point_survey-j.REV1.pdf).
 
-### LINZ Full Landonline survey-observation tables — highest-priority data extraction path
-
-The Antarctic Geodetic Marks layer is a point catalogue. More importantly, LINZ also publishes a **Full Landonline Dataset** containing survey-observation and mark/coordinate relationships. Its data dictionary defines the tables needed to reconstruct a measured mark-to-mark line without calculating a distance from geographic coordinates:
-
-| Data table | LDS ID | Relevant fields and purpose |
-|---|---:|---|
-| Observation | 51725 | Reduced observation type/subtype, local and remote setup IDs, observation date, status/class and measured values |
-| Observation Accuracy | 51724 | For a distance observation, `VALUE_11` is the variance in m² when both observation IDs are the same |
-| Observation Type / Element Type | 51732 / 51730 | Identifies line/point observation types, the values stored and their units |
-| Setup | 51742 | Maps local/remote setups to the endpoint node IDs, survey work and equipment |
-| Mark / Mark Name / Mark Physical State | 51989 / 51991 / 51990 | Identifies the physical monument, name/code, disturbance/replacement and latest condition |
-| Node / Coordinate | 51993 / 52018 | Links the observation endpoint to its recorded coordinate system and coordinate values |
-| Coordinate Order / Datum / Unit | 51712 / 51713 / 51748 | Describes coordinate order, reference datum and measurement units |
-| Reduction Method / Run | 51736 / 51737 | Records how reduced observations were produced |
-
-The critical join is:
-
-1. `Observation.STP_ID_LOCAL` and `STP_ID_REMOTE` reference two rows in `Setup`.
-2. Each `Setup.NOD_ID` identifies an endpoint `Node`.
-3. `Mark.NOD_ID` tells whether that node is occupied by a physical monument. `Mark Physical State` and `Mark Name` identify its condition and identity.
-4. The observation type and element-type tables identify which value is the horizontal distance and its unit.
-5. `Observation Accuracy.VALUE_11` supplies distance variance in m² for a distance observation, allowing a one-sigma uncertainty to be derived as its square root.
-
-**Admission rules:** Only measured, reduced, line-type horizontal-distance records with exact physical monument endpoints, a valid/current observation status, traceable date/work/equipment, verified metre units and a matching accuracy record are candidates. Calculated, adopted, pseudo, slope-distance, virtual-node and unresolved eccentric-mark records are excluded. The distance target is the stored observation value; endpoint coordinates are used only to locate the two anchors on the map, never to calculate that distance.
-
-#### Access and current blocker
-
-LINZ's public WFS is the intended access route. A free LINZ Data Service account and a data-access API key are required. The repository will read the key from `LINZ_LDS_API_KEY`; it must never be hard-coded or committed. WFS 2.0 supports attribute filters, JSON/CSV output and paging. LINZ recommends paged requests of no more than 250,000 features.
-
-The table schema and relationships are verified from LINZ's January 2022 Full Landonline Data Dictionary (version 2.7). The live table export has **not yet been tested** because no API key is configured. We must first establish whether the exported Landonline tables contain the 490 Antarctic layer marks and their corresponding reduced observation rows; the separate Antarctic point layer alone does not prove that all 490 have available pairwise distance observations.
-
-Official references: [Full Landonline Data Dictionary and Models](https://github.com/linz/linz-lds-bde-schema/blob/master/doc/lds-full-landonline-data-dictionary-and-models.md), [Geodetic data](https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data), [LDS API and WFS guidance](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/lds-apis-and-web-services), [Create an LDS API key](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/creating-api-key), and [WFS filtering and paging](https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/wfs-filter-methods-and-parameters).
-
-#### Local LINZ inspection script
-
-The repository now includes a credential-safe inspection script:
-
-```bash
-export LINZ_LDS_API_KEY='your-data-access-only-key'
-npm run inspect:linz-antarctic
-```
-
-Create the key in your own LINZ Data Service account. Do not put it in a source file, commit it, or paste it into a public issue. The script uses WFS 2.0 paged requests, joins the Antarctic marks layer to physical Mark records, endpoint Setups, reduced Observations, observation-type/element/unit metadata, self-variance records, element-level Adoption records, and reduction-run metadata.
-
-The output defaults to the ignored local file `tmp/linz-antarctic-observation-review.json`; override this with `LINZ_REVIEW_OUTPUT` if needed. It is a diagnostic report only. It deliberately does **not** add rows to `data/multi-anchor-distance-observations.json`, does not assign train/holdout splits, and does not activate a projection.
-
-The report highlights distance-like value elements, converts only explicitly identified metre/kilometre values for review, records the exact source value and matching variance, flags any adoption link, keeps the bearing-only meaning of `SURVEYED_CLASS` distinct from distance status, and notes whether type descriptions explicitly identify a horizontal sea-level basis. If table joins do not resolve physical marks unambiguously, the affected pairs are omitted rather than guessed.
-
-
-The same inspection can be run from GitHub Actions without sending the key in chat or committing it:
-
-1. Open the repository's **Settings → Secrets and variables → Actions → New repository secret**.
-2. Set the secret name to `LINZ_LDS_API_KEY` and its value to your LINZ Data Service *data-access-only* API key.
-3. Open **Actions → Inspect LINZ Antarctic survey observations → Run workflow**.
-4. When it completes, download the `linz-antarctic-observation-review` artifact from the run.
-
-The workflow is manual-only and has read-only repository permissions. It reads the secret as an environment variable, uploads only the review JSON, and never includes the key in the artifact. The report is accessible to people with read access to this public repository, so it is a source-data review artifact rather than a private data store.
-
-A live report has not yet been generated: it requires the user's LINZ LDS API key. After generation, each candidate still needs authoritative confirmation that the distance element was measured (not calculated/adopted), its correct horizontal/sea-level reduction basis, the identity and current condition of both exact monuments, and an appropriate survey-network grouping. Only then can approved records be manually promoted into the fitting dataset.
-
 ## Why the observations file is still empty
 
-The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
+The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. NOAA now provides a public pipeline for reviewing its horizontal adjusted baseline values, but station labels still need to be tied to exact monument IDs and traceable endpoint coordinates. Its reported standard error is not assumed to be baseline accuracy. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
 
 The earlier ADS-B archive remains unsuitable for this task: it records flown mileage integrated from observed speed and elapsed time. A flight track is longer than, or otherwise different from, a direct straight-line endpoint measurement. The old visual-path calibration was also rejected for insufficient southern geographic coverage.
 

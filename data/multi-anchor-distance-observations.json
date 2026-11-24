@@ -65,10 +65,11 @@
       "publishedProducts": "Site descriptions and adjusted calibration-baseline measurements; state data files",
       "status": "high-quality local lengths; not fit-ready as geographic anchors without a separate, traceable coordinate survey for each exact monument",
       "importConditions": [
-        "select the published horizontal adjusted distance, not the mark-to-mark slope distance",
-        "obtain exact horizontal coordinates for the same monument marks from a separate traceable coordinate survey",
-        "record coordinate uncertainty and reference frame/epoch for each mark",
-        "retain published distance uncertainty, instrument and observation epoch",
+        "use only the published ADJUSTED DISTANCE HORIZONTAL value, never ADJUSTED DISTANCE MARK-MARK",
+        "match each arbitrary station label to the exact physical monument identifier before locating endpoints",
+        "obtain traceable exact coordinates for both same physical monuments, including coordinate uncertainty and reference frame/epoch",
+        "preserve NOAA's reported standard error as source metadata; it may reflect instrument repeatability and may be optimistic, so do not automatically use it as baseline accuracy or uncertaintyKm",
+        "check current monument condition/status and retain the baseline adjustment epoch",
         "split complete baseline sites between training and holdout"
       ],
       "additionalReferences": [
@@ -78,8 +79,9 @@
         "https://www.fisheries.noaa.gov/inport/item/39910"
       ],
       "publishedConfiguration": "A standard line uses four marks at approximately 0, 150, 430 and 1400 m; published products include adjusted distances between mark pairs, descriptions and elevation differences.",
-      "measurementBasisNote": "NGS publishes both mark-to-mark and horizontal distances; only the horizontal values are compatible with this fitter.",
-      "coordinateQuality": "NGS states accurate horizontal or vertical positions are not normally available for CBL marks. The CBL site map position or general location description is not exact monument coordinate data."
+      "measurementBasisNote": "NOAA distinguishes adjusted horizontal distance, defined at the mean elevation of the two stations, from adjusted mark-to-mark distance, defined as the spatial chord between disk centres. Only the horizontal value is eligible.",
+      "coordinateQuality": "The state files identify baseline stations and provide site descriptions, but do not supply verified exact coordinate records for each physical endpoint. Match station labels to monument IDs and obtain traceable coordinates independently before fitting.",
+      "standardErrorNote": "NOAA describes S.E. as an estimated adjustment result that may reflect instrument repeatability more than baseline accuracy, and may be optimistic. Do not automatically use it as uncertaintyKm."
     },
     {
       "id": "nummela-standard-baseline",
@@ -167,7 +169,7 @@
         "The published slope-distance observations are not themselves adjusted horizontal lengths; the distance basis must be obtained from the original adjustment.",
         "AAGN NMS 143 coordinates were observed with an antenna atop a cairn assumed concentric with a hidden station mark; do not use as an exact point without resolving that eccentricity.",
         "For the 2006/07 report, deep-field control-feature GPS observations were not completed because of time and aircraft payload constraints; do not infer deep interior coverage from that report.",
-        "The coordinate reference frame and epoch differ from modern RSRGD2000/LINZ marks; provenance and epoch must be preserved rather than mixing unlabelled coordinates."
+        "The coordinate reference frame and epoch differ from modern regional geodetic marks; provenance and epoch must be preserved rather than mixing unlabelled coordinates."
       ],
       "status": "promising high-southern survey network; precise adjusted endpoint coordinates are published for selected marks, but the underlying adjusted horizontal lengths/fieldbook observations are not in the accessible report and must be obtained before import",
       "importConditions": [
@@ -191,36 +193,6 @@
         "requestPurpose": "Request scans or inspection copies of the 2000/2001 Mawson and Davis total-station observation fieldbooks, including reduced distance observations, horizontal/vertical angle readings, instrument height/target height, meteorological corrections and adjustment reports.",
         "status": "retrieval route identified; records not yet obtained"
       }
-    },
-    {
-      "id": "linz-antarctic-geodetic-marks-ross-dependency",
-      "provider": "Toitū Te Whenua Land Information New Zealand",
-      "reference": "https://data.linz.govt.nz/layer/50789-antarctic-geodetic-marks/",
-      "additionalReferences": [
-        "https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/linz-geodetic-database",
-        "https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data",
-        "https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/geodetic-mark-data-lds",
-        "https://www.linz.govt.nz/guidance/geodetic-system/coordinate-systems-used-new-zealand/coordinate-and-height-accuracy/coordinate-and-height-orders"
-      ],
-      "reportedCoverage": "490 Antarctic geodetic mark records for the Ross Dependency; layer includes unique geodetic code, name, mark type, mark condition, coordinate order, latitude/longitude and optional ellipsoidal height.",
-      "coordinateReference": "Ross Sea Region Geodetic Datum 2000 (RSRGD2000), EPSG:4764.",
-      "coordinateSource": "LINZ Landonline geodetic mark records. LINZ states the better-ranked marks use precise differential GPS and other marks may use precise horizontal angle and distance observations.",
-      "status": "valuable deep-southern physical mark catalogue; coordinates and mark metadata are available, but the point layer does not itself supply pairwise observed horizontal distance constraints",
-      "caveats": [
-        "a coordinate point record is not a directly measured endpoint-to-endpoint distance",
-        "the existence of a mark in the layer does not imply that the physical mark is currently present; condition/status must be checked",
-        "mark coordinate reference epoch, coordinate order and its Antarctica-specific interpretation must be preserved",
-        "the full geodetic database is stated to contain observations between marks, but public availability of the underlying Antarctic terrestrial observation records must be established",
-        "do not derive calibration distances from the published latitude/longitude coordinates"
-      ],
-      "importConditions": [
-        "use the layer only to catalogue and identify stable physical monument IDs and coordinate provenance",
-        "obtain original LINZ/Landonline terrestrial observations or another authoritative record that publishes measured horizontal distances for exact mark pairs",
-        "obtain each observation's measurement type, uncertainty, reference epoch and endpoint mark IDs",
-        "confirm current mark condition and exact monument identity",
-        "keep complete survey networks/sites in one train or holdout split",
-        "do not calculate pair distances from coordinate differences or from any spherical/ellipsoidal/geodesic method"
-      ]
     },
     {
       "id": "aadc-2010-11-davis-mawson-survey-files",
@@ -254,268 +226,6 @@
         "identify any offset/eccentric antenna or witness marks separately from the physical station marks",
         "split complete local survey networks between training and holdout"
       ]
-    },
-    {
-      "id": "linz-full-landonline-survey-observations-ross-dependency",
-      "provider": "Toitū Te Whenua Land Information New Zealand (LINZ)",
-      "reference": "https://github.com/linz/linz-lds-bde-schema/blob/master/doc/lds-full-landonline-data-dictionary-and-models.md",
-      "additionalReferences": [
-        "https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data",
-        "https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/lds-apis-and-web-services",
-        "https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/creating-api-key",
-        "https://www.linz.govt.nz/guidance/data-service/linz-data-service-guide/web-services/wfs-filter-methods-and-parameters",
-        "https://data.linz.govt.nz/layer/50789-antarctic-geodetic-marks/"
-      ],
-      "reportedCoverage": "Full Landonline dataset includes survey, physical mark, node, coordinate, reduced survey observation, observation accuracy, setup, adjustment and survey work tables. LINZ's separate Antarctic geodetic layer exposes 490 Ross Dependency mark records; whether the full observation export includes qualifying Antarctic records must be verified after retrieval.",
-      "keyTables": {
-        "observation": {
-          "tableId": 51725,
-          "fields": [
-            "ID",
-            "OBT_TYPE",
-            "OBT_SUB_TYPE",
-            "STP_ID_LOCAL",
-            "STP_ID_REMOTE",
-            "OBS_ID",
-            "COS_ID",
-            "RDN_ID",
-            "REF_DATETIME",
-            "STATUS",
-            "GEODETIC_CLASS",
-            "SURVEYED_CLASS",
-            "VALUE_1",
-            "VALUE_2",
-            "VALUE_3"
-          ]
-        },
-        "observationAccuracy": {
-          "tableId": 51724,
-          "fields": [
-            "OBN_ID1",
-            "OBN_ID2",
-            "VALUE_11"
-          ],
-          "distanceVarianceNote": "For distance observations where OBN_ID1=OBN_ID2, VALUE_11 is the variance in square metres."
-        },
-        "observationElementType": {
-          "tableId": 51730,
-          "fields": [
-            "TYPE",
-            "DESCRIPTION",
-            "UOM_CODE",
-            "FORMAT_CODE"
-          ]
-        },
-        "observationType": {
-          "tableId": 51732,
-          "fields": [
-            "TYPE",
-            "SUB_TYPE",
-            "VECTOR_TYPE",
-            "OET_TYPE_1",
-            "OET_TYPE_2",
-            "OET_TYPE_3",
-            "DESCRIPTION"
-          ]
-        },
-        "setup": {
-          "tableId": 51742,
-          "fields": [
-            "ID",
-            "NOD_ID",
-            "TYPE",
-            "VALID_FLAG",
-            "EQUIPMENT_TYPE",
-            "WRK_ID"
-          ]
-        },
-        "mark": {
-          "tableId": 51989,
-          "fields": [
-            "ID",
-            "NOD_ID",
-            "STATUS",
-            "TYPE",
-            "CATEGORY",
-            "COUNTRY",
-            "DISTURBED",
-            "REPLACED",
-            "DESC"
-          ]
-        },
-        "markName": {
-          "tableId": 51991,
-          "fields": [
-            "MRK_ID",
-            "TYPE",
-            "NAME"
-          ]
-        },
-        "markPhysicalState": {
-          "tableId": 51990,
-          "fields": [
-            "MRK_ID",
-            "WRK_ID",
-            "CONDITION",
-            "STATUS",
-            "REF_DATETIME",
-            "LATEST_CONDITION",
-            "LATEST_COND_DATE",
-            "DESCRIPTION"
-          ]
-        },
-        "node": {
-          "layerId": 51993,
-          "fields": [
-            "ID",
-            "COS_ID_OFFICIAL",
-            "TYPE",
-            "STATUS",
-            "SIT_ID",
-            "WRK_ID_CREATED"
-          ]
-        },
-        "coordinate": {
-          "tableId": 52018,
-          "fields": [
-            "ID",
-            "COS_ID",
-            "NOD_ID",
-            "STATUS",
-            "SOURCE",
-            "VALUE1",
-            "VALUE2",
-            "VALUE3",
-            "WRK_ID_CREATED",
-            "COR_ID"
-          ]
-        },
-        "coordinateOrder": {
-          "tableId": 51712,
-          "fields": [
-            "ID",
-            "DISPLAY",
-            "DESCRIPTION",
-            "DTM_ID",
-            "ERROR"
-          ]
-        },
-        "datum": {
-          "tableId": 51713,
-          "fields": [
-            "ID",
-            "NAME",
-            "TYPE",
-            "REF_DATETIME",
-            "STATUS",
-            "CODE"
-          ]
-        },
-        "coordinateSystem": {
-          "tableId": 51709,
-          "fields": [
-            "ID",
-            "COS_ID",
-            "DESCRIPTION",
-            "SHAPE"
-          ]
-        },
-        "ordinateType": {
-          "tableId": 51735,
-          "fields": [
-            "TYPE",
-            "UOM_CODE",
-            "DESCRIPTION"
-          ]
-        },
-        "unitOfMeasure": {
-          "tableId": 51748,
-          "fields": [
-            "CODE",
-            "DESCRIPTION"
-          ]
-        },
-        "reductionMethod": {
-          "tableId": 51736,
-          "fields": [
-            "ID",
-            "STATUS",
-            "DESCRIPTION",
-            "NAME"
-          ]
-        },
-        "reductionRun": {
-          "tableId": 51737,
-          "fields": [
-            "ID",
-            "RDM_ID",
-            "DATETIME",
-            "DESCRIPTION",
-            "SOFTWARE_USED"
-          ]
-        },
-        "adoption": {
-          "tableId": 51706,
-          "fields": [
-            "OBN_ID_NEW",
-            "OBN_ID_ORIG",
-            "SUR_WRK_ID_ORIG",
-            "FACTOR_1",
-            "FACTOR_2",
-            "FACTOR_3"
-          ],
-          "purpose": "Element-level links identifying observation values adopted from earlier surveys."
-        },
-        "adjustmentRun": {
-          "tableId": 51981,
-          "fields": [
-            "ID",
-            "ADM_ID",
-            "COS_ID",
-            "STATUS",
-            "ADJUST_DATETIME",
-            "DESCRIPTION",
-            "SUM_SQRD_RESIDUALS",
-            "REDUNDANCY",
-            "WRK_ID"
-          ],
-          "purpose": "Metadata for network adjustment runs."
-        }
-      },
-      "relationship": {
-        "physicalMarkToNode": "Mark.NOD_ID -> Node.ID",
-        "coordinateToNode": "Coordinate.NOD_ID -> Node.ID",
-        "setupToNode": "Setup.NOD_ID -> Node.ID",
-        "observationToSetups": "Observation.STP_ID_LOCAL and STP_ID_REMOTE -> Setup.ID",
-        "observationToAccuracy": "Observation.ID -> ObservationAccuracy.OBN_ID1/OBN_ID2",
-        "observationTypeToValueMeaning": "Observation.OBT_TYPE/OBT_SUB_TYPE -> ObservationType; OET_TYPE_1..3 -> ObservationElementType -> UnitOfMeasure"
-      },
-      "acceptanceFilters": [
-        "Confirm endpoint nodes are exact physical Antarctic geodetic marks, not virtual nodes, eccentric witness marks or offset antenna points.",
-        "Use only line observations whose observation/element type identifies a horizontal distance and whose unit lookup confirms metres.",
-        "Require the distance element itself to be classified as measured. SURVEYED_CLASS is described as a bearing-derived annotation and cannot alone prove a distance is measured.",
-        "Exclude calculated, adopted, re-adopted, re-calculated and pseudo distance components. Use the element-level Adoption table; if the distance component cannot be isolated, exclude the whole observation.",
-        "Require the record to be a reduced observation with exact endpoint setups, observation date, work ID and valid status.",
-        "Confirm the source defines the stored distance as horizontal and reduced to sea level. Do not use EDM slope distance, spatial chord, or coordinate-derived distance.",
-        "Use the stored reduced distance as a direct-survey-reduced-horizontal target, not as an adjusted-horizontal baseline unless a separate published adjustment product confirms that basis.",
-        "Read the matching distance variance and convert its square-root standard deviation from metres to kilometres. Retain the confidence and class metadata.",
-        "Do not assume the observation is adjusted: adjusted reduced observations are not retained in the Landonline table and are regenerated from adjusted coordinates.",
-        "Retain endpoint mark ID/name/condition, node ID, coordinate system, datum, coordinate order, coordinate source and reference epoch.",
-        "Exclude marks recorded as destroyed, not found, disturbed or replaced unless the exact active physical monument and observation epoch are resolved."
-      ],
-      "access": {
-        "service": "LINZ Data Service Web Feature Service (WFS) 2.0.0",
-        "requiresFreeAccountAndApiKey": true,
-        "keyEnvironmentVariable": "LINZ_LDS_API_KEY",
-        "queryPath": "https://data.linz.govt.nz/services;key=YOUR_API_KEY/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=table-TABLE_ID&outputFormat=json",
-        "paging": "Use STARTINDEX and COUNT paging; LINZ recommends batches no larger than 250,000 records.",
-        "status": "schema verified; live Antarctic row coverage and data-key access still untested"
-      },
-      "status": "strongest identified candidate for acquiring recorded Antarctic survey distances and variances; requires an LDS data-access API key and a live check that Antarctic mark-node observation records are present in the exported tables",
-      "adjustmentCaveat": "Landonline's dictionary says adjusted reduced observations can be regenerated from adjusted coordinates and are not retained as table rows. Table 51725 therefore exposes reduced observations, not automatically the final adjusted distance. The calibration record must preserve this distinction and must not describe a reduced input observation as adjusted.",
-      "distanceClassificationCaveat": "The SURVEYED_CLASS field description specifically refers to how the bearing was derived, so it is not by itself sufficient proof that a distance element is measured. LINZ LandXML defines separate azimuthType and distanceType values; only a per-distance measured classification or equivalent original survey record can qualify.",
-      "adoptionCaveat": "Adoption table 51706 links a new observation value to an original value and is explicitly element-level. Adopted distance components must be excluded; if the export cannot determine which component the adoption applies to, conservatively exclude that observation.",
-      "reportedObservationBasis": "Landonline reduced horizontal observations (measured distance elements, sea-level-reduced metres), not adjusted observation outputs. The final adjusted reduced observations are regenerated from adjusted coordinates and are not retained."
     }
   ]
 }

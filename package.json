@@ -19,7 +19,7 @@
     "test:all": "npm test && npm run test:e2e",
     "fit:flight-path-calibration": "node scripts/fit-flight-path-calibration.mjs",
     "fit:multi-anchor": "node scripts/fit-multi-anchor-flat-disk.mjs",
-    "inspect:linz-antarctic": "node scripts/inspect-linz-antarctic-observations.mjs"
+    "inspect:noaa-cbl": "node scripts/inspect-noaa-cbl-baselines.mjs"
   },
   "dependencies": {
     "lit": "3.3.3"

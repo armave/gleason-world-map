@@ -30,7 +30,7 @@ A–B distance and polygon perimeter use ordinary Euclidean lengths in the displ
 
 ### Recalibration policy
 
-Future corrections must be introduced as isolated, reviewable layers rather than hidden inside the base projection. Each proposed change should identify its source observations, control points, uncertainty, fitting method, and independent holdout results. A change must not be promoted merely because it makes a few selected routes or coastlines look better. The original Gleason baseline remains available as the unchanged comparison layer.
+Future corrections must be introduced as isolated, reviewable layers rather than hidden inside the base projection. Each proposed change should identify its source observations, control points, uncertainty, fitting method, and independent holdout results. A change must not be promoted merely because it makes a few selected routes or coastlines look better. The first public measured-length source under review is NOAA NGS's EDMI Calibration Baseline archive. Its horizontal adjusted distances are kept distinct from mark-to-mark distances, and its reported standard error is not automatically treated as baseline accuracy. The original Gleason baseline remains available as the unchanged comparison layer.
 
 The 1892 source scan is available through the [Boston Public Library / Digital Commonwealth catalogue](https://ark.digitalcommonwealth.org/ark:/50959/7h149v85z). For historical context, see the [New Standard Map background](https://www.newstandardmap.com/about/) and the [Norman B. Leventhal Map & Education Center catalogue](https://collections.leventhalmap.org/).
 

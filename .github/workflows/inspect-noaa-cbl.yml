@@ -1,0 +1,38 @@
+name: Inspect NOAA NGS calibration baselines
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noaa-cbl-baseline-inspection
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run unit and regression tests
+        run: npm test
+      - name: Inspect public NOAA CBL state files
+        env:
+          NOAA_CBL_REVIEW_OUTPUT: tmp/noaa-cbl-baseline-review.json
+        run: npm run inspect:noaa-cbl
+      - name: Upload NOAA CBL baseline review report
+        if: success()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: noaa-cbl-baseline-review
+          path: tmp/noaa-cbl-baseline-review.json
+          if-no-files-found: error
+          retention-days: 7
