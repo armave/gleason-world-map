@@ -537,7 +537,9 @@ async function main() {
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   main().catch(error => {
-    console.error(error.stack || error);
+    const message = String(error?.stack || error);
+    const secret = process.env.LINZ_LDS_API_KEY;
+    console.error(secret ? message.split(secret).join('[REDACTED]') : message);
     process.exitCode = 1;
   });
 }
