@@ -146,8 +146,9 @@ async function fetchByIds(apiKey, typeName, field, ids, options = {}) {
       cqlFilter: filter
     }));
   }
-  const idField = field;
-  return [...new Map(output.map(row => [String(row[idField]), row])).values()];
+  // Keep one-to-many relationships intact (names, physical states and accuracy
+  // covariance rows can have multiple records for the same foreign key).
+  return output;
 }
 
 function mapBy(rows, field) {
@@ -285,7 +286,8 @@ export function buildObservationReviewRecord({
     id: `LINZ-OBS-${observation.ID}`,
     endpoints: { a: localEndpoint, b: remoteEndpoint },
     candidateDistanceElements: elements,
-    candidateMeasurementType: 'direct-survey-reduced-horizontal',
+    candidateMeasurementType: elements.some(item => item.possibleBasis === 'sea-level-horizontal')
+      ? 'direct-survey-reduced-horizontal' : null,
     candidateMeasurementBasis: elements.some(item => item.possibleBasis === 'sea-level-horizontal')
       ? 'sea-level-horizontal' : null,
     confidenceEvidence: {
@@ -354,7 +356,7 @@ export function buildObservationReviewRecord({
       ...(!localEndpoint || !remoteEndpoint ? ['Both endpoints did not resolve to current Antarctic physical marks'] : []),
       ...(elements.some(item => item.possibleBasis !== 'sea-level-horizontal')
         ? ['Horizontal/sea-level distance basis is not explicit in the type metadata'] : []),
-      ['Measured-vs-calculated distance component still requires authoritative element-level confirmation']
+      'Measured-vs-calculated distance component still requires authoritative element-level confirmation'
     ]
   };
 }
