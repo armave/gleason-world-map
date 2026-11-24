@@ -434,13 +434,6 @@ function drawMeasurementLabelAtMap(x,y,text,kind='distance'){
  if(labelX+boxWidth/2<0||labelX-boxWidth/2>width||
     labelY+boxHeight/2<0||labelY-boxHeight/2>height){ctx.restore();return;}
  const isArea=kind==='area',isRouteB=kind==='route-b';
- if(kind==='restricted'){
-  // Keep the callout attached to its map coordinate, but constrain its text
-  // to the readable half-plane so rotation never leaves it vertical/upside-down.
-  const angle=rotationRadians();
-  let readableAngle=((angle+Math.PI/2)%Math.PI+Math.PI)%Math.PI-Math.PI/2;
-  ctx.translate(labelX,labelY);ctx.rotate(readableAngle);labelX=0;labelY=0;
- }
  ctx.fillStyle='rgba(255,250,238,.96)';
  const labelColor=isArea?'#3f7285':isRouteB?'#3c7189':'#b45c39';
  ctx.strokeStyle=labelColor;
@@ -682,7 +675,7 @@ function updateMeasurement(){
   $('distanceSub').textContent=Number.isFinite(measurement.distanceMeters)
    ?'Visible flat-disk chord · same endpoints as the red connector'
    :'Flat-disk distance unavailable for these coordinates';
-  $('measureHelp').textContent='The distance is the Euclidean length of the straight red connector in the visible flat-disk plane, converted using the map kilometre scale. The same function powers A–B, the connector label, scale-bar sampling, polygon edge labels and polygon perimeter. ADS-B flight-mileage corrections do not alter direct map measurements. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
+  $('measureHelp').textContent='The distance is the Euclidean length of the straight red connector in the visible flat-disk plane, converted using the map kilometre scale. The same function powers A–B, the connector label, scale-bar sampling, polygon edge labels and polygon perimeter. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
  }else{
   $('distanceValue').textContent='—';
   $('distanceSub').textContent='Set two endpoints to calculate the canonical distance';
