@@ -1,22 +1,8 @@
-name: Collect flight telemetry calibration sample
+name: Archived research — legacy flight calibration (manual only)
 on:
-  push:
-    branches: [main]
-    paths:
-      - scripts/collect-flight-calibration.mjs
-      - scripts/flight-calibration-route-predicate.mjs
-      - scripts/flight-calibration-airport-metadata.mjs
-      - scripts/fit-flight-calibration.mjs
-      - scripts/fit-flight-path-calibration.mjs
-      - src/core/flight-path-calibration.js
-      - src/core/flight-path-calibration-parameters.js
-      - src/core/flight-telemetry.js
-      - src/core/flight-calibration-fit.js
-  # Refresh the historical route sample after new seasonal flight activity
-  # has entered the archive. Manual dispatch remains available for diagnostics.
-  schedule:
-    - cron: '15 3 1 * *'
   workflow_dispatch:
+    # Retained for reproducibility of the old experiment; it does not calibrate
+    # or modify the pure Gleason runtime projection automatically.
 permissions:
   contents: write
 concurrency:
