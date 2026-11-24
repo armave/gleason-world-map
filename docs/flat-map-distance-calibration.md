@@ -1,6 +1,6 @@
-# Legacy ADS-B route-mileage correction and flight-path calibration
+# Archived research: ADS-B distance and flight-path calibration
 
-> **Current status:** This document preserves the former ADS-B route-feature correction and telemetry methodology for historical reference. The runtime A–B ruler, red connector label, scale bar, polygon perimeter and PNG metadata now use one canonical 64-step anisotropic planar polar metric through `measureDirectDistance()`, `measureDistanceMeters()` and `flatDiskDistanceMeters()`. The active coefficients are stored in `src/core/flight-path-calibration-parameters.js`; their defaults are c1=0.08 and c2=0.20. The visual radial/longitude projection is unchanged.
+> **Archive notice (24 November 2026):** This document records superseded experiments. Its formulas, coefficients, quality scores and runtime descriptions are historical and do not describe the active map. The active app now uses the pure Gleason planar baseline in `src/core/flat-disk.js`: linear latitude-to-radius placement, straight radial meridians and Euclidean map-plane measurements. The former workflow has been reduced to manual-only research and does not modify the active projection.
 
 ## Historical purpose and scope
 
