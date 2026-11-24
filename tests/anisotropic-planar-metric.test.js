@@ -61,5 +61,10 @@ test('source code defines or imports no spherical/geodesic distance routines', a
       assert.doesNotMatch(source, declarationOrImportFor(name),
         `${path} must not define or export ${name}`);
     }
+    // Spherical inverse-trigonometric formulas are not used by this planar map.
+    assert.doesNotMatch(source, /\bMath\.(?:acos|asin)\s*\(/,
+      `${path} must not use spherical inverse-trigonometric formulas`);
+    assert.doesNotMatch(source, /\b(?:EARTH_RADIUS|earthRadius|SPHERE_RADIUS)\b/,
+      `${path} must not define Earth/sphere radius constants`);
   }
 });

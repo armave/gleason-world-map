@@ -179,25 +179,19 @@ export function clipRingToHemisphere(vertices, disk) {
       Math.abs(coordinates[0][1] - coordinates.at(-1)[1]) < EPSILON) coordinates.pop();
   if (coordinates.length < 3) return null;
 
-  // Unwrap longitudes only to interpolate short dateline-safe ring edges.
-  const unwrapped = [coordinates[0].slice()];
-  for (let index = 1; index < coordinates.length; index++) {
-    const previous = unwrapped.at(-1);
-    const raw = coordinates[index][0] - previous[0];
-    const delta = ((raw + 540) % 360) - 180;
-    unwrapped.push([previous[0] + delta, coordinates[index][1]]);
-  }
   const inside = latitude => disk === 'N' ? latitude >= -EPSILON : latitude <= EPSILON;
   const output = [];
-  for (let index = 0; index < unwrapped.length; index++) {
-    const current = unwrapped[index];
-    const previous = unwrapped[(index + unwrapped.length - 1) % unwrapped.length];
+  for (let index = 0; index < coordinates.length; index++) {
+    const current = coordinates[index];
+    const previous = coordinates[(index + coordinates.length - 1) % coordinates.length];
     const currentInside = inside(current[1]);
     const previousInside = inside(previous[1]);
     if (currentInside !== previousInside) {
       const denominator = current[1] - previous[1];
       const t = Math.abs(denominator) < EPSILON ? 0 : -previous[1] / denominator;
-      output.push([previous[0] + (current[0] - previous[0]) * t, 0]);
+      const rawDelta = current[0] - previous[0];
+      const deltaLongitude = ((rawDelta + 540) % 360) - 180;
+      output.push([wrapLongitude(previous[0] + deltaLongitude * t), 0]);
     }
     if (currentInside) output.push(current.slice());
   }
@@ -218,7 +212,8 @@ function projectRingFragment(vertices, projectPoint, disk, maxStepDegrees) {
   for (let index = 0; index < clipped.length; index++) {
     const start = clipped[index];
     const end = clipped[(index + 1) % clipped.length];
-    const deltaLon = end[0] - start[0];
+    const rawDeltaLon = end[0] - start[0];
+    const deltaLon = ((rawDeltaLon + 540) % 360) - 180;
     const deltaLat = end[1] - start[1];
     const steps = Math.max(1, Math.ceil(Math.max(Math.abs(deltaLon), Math.abs(deltaLat)) / maxStepDegrees));
     for (let step = 0; step < steps; step++) {

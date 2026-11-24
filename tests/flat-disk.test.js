@@ -89,6 +89,17 @@ test('GeoJSON rings crossing the Equator produce separate Northern and Southern 
   assert.ok(part.points.every(pair=>pair.every(Number.isFinite)));
  }
 });
+test('dateline-crossing rings clip with short wrapped edges on both disks',()=>{
+ const ring=[[170,10],[160,10],[160,-10],[-170,-10],[170,10]];
+ const parts=projectGeoJSONRingParts(ring,project,{maxStepDegrees:1});
+ assert.deepEqual(parts.map(part=>part.disk),['N','S']);
+ const north=parts.find(part=>part.disk==='N');
+ const south=parts.find(part=>part.disk==='S');
+ assert.ok(north.points.every(([x,y])=>Number.isFinite(x)&&Number.isFinite(y)));
+ assert.ok(south.points.every(([x,y])=>Number.isFinite(x)&&Number.isFinite(y)));
+ assert.ok(north.points.every(([x])=>x < -EQUATOR_RADIUS_KM));
+ assert.ok(south.points.every(([x])=>x > EQUATOR_RADIUS_KM));
+});
 test('planar polygon area and perimeter use clipped geometry and canonical edge routes',()=>{
  const vertices=[point(10,-10),point(10,10),point(25,10),point(25,-10)];
  const result=flatDiskPolygonMetrics(vertices,project,measureDistanceMeters);
