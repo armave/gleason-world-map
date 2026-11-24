@@ -30,8 +30,8 @@ export const MULTI_ANCHOR_FILTERS = Object.freeze({
   maximumHoldoutPairErrorPercent: 20,
   minimumHoldoutImprovementPercentagePoints: 0.25,
   minimumJacobianDeterminant: 0.03,
-  maximumAnchorDisplacementFraction: 5,
-  maximumWarpDisplacementFraction: 5,
+  maximumAnchorDisplacementFraction: 6,
+  maximumWarpDisplacementFraction: 6,
   maximumOutputRadiusFraction: 5,
   maximumRoundTripErrorKm: 0.01,
   maximumControlPoints: 256
@@ -51,6 +51,7 @@ function normalizeObservations(input) {
   const observations = [];
   const anchors = new Map();
   const pairSplits = new Map();
+  const surveyGroupSplits = new Map();
   const observationIds = new Set();
 
   if (!Array.isArray(input)) {
@@ -97,6 +98,10 @@ function normalizeObservations(input) {
           return;
         }
       }
+      if (typeof item.source?.groupId !== 'string' || !item.source.groupId.trim()) {
+        errors.push(label + ' survey baseline source must include a stable source.groupId for site-level splitting');
+        return;
+      }
     }
     if (item.uncertaintyKm !== undefined &&
         (!Number.isFinite(item.uncertaintyKm) || item.uncertaintyKm <= 0 ||
@@ -132,6 +137,14 @@ function normalizeObservations(input) {
         ' (previous split: ' + pairSplits.get(key) + ')');
       return;
     }
+    if (item.measurementType === 'direct-survey-baseline') {
+      const previousSplit = surveyGroupSplits.get(item.source.groupId);
+      if (previousSplit && previousSplit !== item.split) {
+        errors.push(label + ' assigns survey baseline group ' + item.source.groupId +
+          ' to both training and holdout; split the complete baseline as one group');
+        return;
+      }
+    }
     const observationId = typeof item.id === 'string' && item.id
       ? item.id : 'pair-' + index;
     if (observationIds.has(observationId)) {
@@ -139,6 +152,9 @@ function normalizeObservations(input) {
       return;
     }
     pairSplits.set(key, item.split);
+    if (item.measurementType === 'direct-survey-baseline') {
+      surveyGroupSplits.set(item.source.groupId, item.split);
+    }
     observationIds.add(observationId);
     observations.push({
       id: observationId,
@@ -564,8 +580,14 @@ export function invertMultiAnchorWarpXY(targetX, targetY, model, options = {}) {
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY) ||
       !options || typeof options !== 'object' ||
       !isValidWarpModel(model) ||
-      Math.hypot(targetX, targetY) > model.diskRadiusKm * (1 + 1e-8)) return null;
+      Math.hypot(targetX, targetY) >
+        model.diskRadiusKm * MULTI_ANCHOR_FILTERS.maximumOutputRadiusFraction) return null;
   let x = targetX, y = targetY;
+  const initialRadius = Math.hypot(x, y);
+  if (initialRadius > model.diskRadiusKm) {
+    x *= model.diskRadiusKm / initialRadius;
+    y *= model.diskRadiusKm / initialRadius;
+  }
   const toleranceKm = options.toleranceKm ?? 1e-5;
   const maximumIterations = options.maximumIterations ?? 40;
   if (!Number.isFinite(toleranceKm) || toleranceKm <= 0 ||
@@ -796,7 +818,7 @@ function optimizePositions(training, anchors, options = {}) {
   const secondMoment = positions.map(() => [0, 0]);
   const iterations = options.iterations ?? 2000;
   const learningRateKm = options.learningRateKm ?? 8;
-  const anchorWeight = options.anchorWeight ?? 0.03;
+  const anchorWeight = options.anchorWeight ?? 0.003;
   const huberDelta = options.huberDelta ?? 0.08;
   if (!Number.isInteger(iterations) || iterations < 100 || iterations > 20000) {
     throw new Error('Optimizer iterations must be an integer from 100 to 20000');
