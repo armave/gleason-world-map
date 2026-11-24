@@ -78,6 +78,14 @@ This is a useful deep-southern **monument catalogue**, but the public point laye
 
 Sources: [LINZ Antarctic Geodetic Marks layer](https://data.linz.govt.nz/layer/50789-antarctic-geodetic-marks/); [LINZ Geodetic Database](https://www.linz.govt.nz/products-services/geodetic/geodetic-marks/linz-geodetic-database); [LINZ geodetic data access](https://www.linz.govt.nz/products-services/data/types-linz-data/geodetic-data); [LINZ coordinate and height accuracy orders](https://www.linz.govt.nz/guidance/geodetic-system/coordinate-systems-used-new-zealand/coordinate-and-height-accuracy/coordinate-and-height-orders).
 
+### Japanese GSI Antarctic Control Point Survey
+
+The Geospatial Information Authority of Japan (GSI) publishes an Antarctic control-point programme and a data list/particulars index for JARE survey marks. Its method history notes that the network was integrated from the 1960s and that the 1970s introduced Geodimeter Model 8 electro-optical distance measurements and high-precision Wild T3 theodolites for long-distance control. The NIPR data catalogue describes the historical control-point survey material as analog, with results published through survey reports, and identifies the GSI Antarctic geodesy contact as jare_geo@gsi.go.jp.
+
+This is a promising East Antarctic source around Syowa Station and Lützow-Holm Bay. The official GSI description also says the historical terrestrial network integration was limited to the southern surroundings of Syowa because line of sight between distant ice-free areas was difficult. Public control-point lists and particulars are available, but the actual adjusted horizontal line distances and original observations must be extracted from the report archive or requested from GSI. Coordinate tables alone are not eligible distance targets.
+
+Sources: [GSI Control Point Survey overview](https://web2.gsi.go.jp/antarctic/07-e.html); [GSI Control Point Data List and Particulars](https://web2.gsi.go.jp/antarctic/07_index_point-e.html); [NIPR data catalogue entry](https://polaris.nipr.ac.jp/~dbase/900/gsi/pdf/Control_point_survey-j.REV1.pdf).
+
 ## Why the observations file is still empty
 
 The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
