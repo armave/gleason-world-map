@@ -506,7 +506,7 @@ function drawArea(){
   strokeMeasurementConnector('area');
  }
  areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';drawUprightMapText(String(i+1),x,y);});
- // Each edge label uses the same anisotropic planar metric as A–B and polygon perimeter.
+ // Each edge label uses the same Euclidean map-plane chord as A–B and polygon perimeter.
  const edgeLabels=createProjectedSegmentLabels(areaPoints,project,measureDistanceMeters,closed);
  edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
   label.x,label.y,formatMeasurementKilometres(label.meters),'area'
@@ -853,12 +853,12 @@ function scaleBarReferencePixels(anchor=scaleAnchorWorld(),scaleZoom=zoom){
 }
 function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  if(!Number.isFinite(px)||px<=0||!Number.isFinite(scaleZoom)||scaleZoom<=0||!Number.isFinite(baseR)||baseR<=0)return Infinity;
- // Calibrate the horizontal screen direction at the current view anchor using the same flat-disk metric as A–B.
+ // Measure the horizontal screen direction at the current view anchor using the same flat-disk chord as A–B.
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
  const distanceMeters=measureDistanceMeters(first,second);
- // The scale bar uses the same anisotropic planar metric as A–B and area edges.
+ // The scale bar uses the same Euclidean planar chord as A–B and area edges.
  return Number.isFinite(distanceMeters)?distanceMeters/1000:Infinity;
 }
 function scaleBarReadingKm(anchor=scaleAnchorWorld(),scaleZoom=zoom){
