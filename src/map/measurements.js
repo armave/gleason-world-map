@@ -2,7 +2,7 @@ import { measureDirectDistance } from '../core/measurement-engine.js';
 
 const CONNECTOR_STYLES = Object.freeze({
  distance: Object.freeze({
-  color:'#b45c39',halo:'rgba(255,250,238,.96)',lineWidth:2.8,haloExtra:2.1,dash:Object.freeze([8,5])
+  color:'#c0392b',halo:'rgba(255,250,238,.96)',lineWidth:2.8,haloExtra:2.1,dash:Object.freeze([])
  }),
  area: Object.freeze({
   color:'#3f7285',halo:'rgba(255,250,238,.96)',lineWidth:2.4,haloExtra:2.1,dash:Object.freeze([7,4])
