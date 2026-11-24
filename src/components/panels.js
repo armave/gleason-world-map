@@ -59,6 +59,11 @@ class TemplatePanel extends LitElement {
     const mode = snapshot.mode || 'explore';
     this.dataset.activeMode = mode;
     this.querySelector('.lit-panel-content')?.setAttribute('data-active-mode', mode);
+    const layoutSelect = this.querySelector('#mapLayoutMode');
+    if (layoutSelect) layoutSelect.value = snapshot.layoutMode === 'interrupted-petals' ? 'interrupted-petals' : 'gleason';
+    const layoutLabel = this.querySelector('#activeLayoutLabel');
+    if (layoutLabel) layoutLabel.textContent = snapshot.layoutMode === 'interrupted-petals'
+      ? 'Interrupted Petal Plane' : 'Pure Gleason Disk';
     if (this.localName !== 'map-route-panel') return;
 
     const measurement = snapshot.measurement || {};

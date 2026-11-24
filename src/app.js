@@ -1,5 +1,6 @@
 import {rad,clamp,radialFraction,project as projectFlatDisk,unproject as unprojectFlatDisk,flatDiskLinePath,flatDiskPolygonMetrics,flatDiskFeatureAreaM2} from './core/flat-disk.js';
 import {measureDirectDistance,measureDistanceMeters} from './core/measurement-engine.js';
+import {projectInterruptedPetals,projectInterruptedPetalInLobe,unprojectInterruptedPetals,measureInterruptedPetalRoute,createInterruptedPetalGoreWedges,PETALS} from './core/interrupted-petals.js';
 import {norm,fmtCoord,lonName,formatDistance,formatArea} from './core/format.js';
 import {isoFor,nameFor,hashColor as hashColorForPalette,centroidOfFeature} from './data/geojson.js';
 import {HISTORICAL_SCAN_URL,MAP_QUALITY_OPTIONS,loadCountryDataset,loadCapitalDataset,loadCountyDataset,loadCoastlineDataset,loadAntarcticAddDataset} from './data/datasets.js';
@@ -32,11 +33,12 @@ const $ = id => document.getElementById(id);
 const canvas = $('map'), ctx = canvas.getContext('2d');
 let features = [], countries = [], capitals = [], counties = [], searchIndex = [], pathRecords = [], antarcticaFeature = null, antarcticaCountry = null, antarcticaPath = null, antarcticAddData = null, antarcticSurfacePaths = null, iceWallTexturePaths = null, coastlineData = null, coastlinePath = null, landMaskPath = null, geometryBaseR = NaN, capitalByIso = new Map(), countryByIso = new Map();
 let labelCollisionBoxes = [];
+let petalGoreWedges = [];
 let countryLayerCanvas=null,countryLayerBaseR=NaN,countryLayerStyle=null,countryLayerDpr=NaN,countryOutlinesPath=null;
 let baseR = 300, width = 800, height = 650, dpr = 1;
 const MIN_ZOOM=1,MAX_ZOOM_SEARCH=20000,MAX_SCALE_BAR_READING_KM=50,SCALE_BAR_HEADROOM=.82,SCALE_BAR_MAX_WIDTH_PX=190;
 const MAX_REGISTRATION_POINTS=30;
-let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
+let zoom = 1, panX = 0, panY = 0, rotationDegrees = 0, rotationAnimationFrame = null, rotationAnimationTarget = 0, mode = 'explore', layoutMode = 'gleason', points = [], areaPoints = [], areaFinished = false, selected = null, hoveredCountry = null, hoveredCapital = null;
 let pointerDown = null, didDrag = false, searchResults = [], hoverFrame = null, pendingHoverPoint = null;
 let wheelZoomActive = false, wheelZoomResetTimer = null;
 let frameScaleBarReadingKm = Infinity;
@@ -68,18 +70,18 @@ document.documentElement.dataset.mapStyle=visualStyle;
 let registrationPoints = [], registrationPickActive = false, pendingRegistrationGeo = null;
 const layers = {countries:true,countryNames:true,grid:true,capitals:true,capitalNames:true,antarctica:true,oceanLabels:true,coastlines:true};
 const appState=createAppState({
- mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
+ mode,layoutMode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
  selection:null,measurement:{distancePointCount:0,areaPointCount:0,areaFinished:false,endpoints:[],distanceLabel:''},
  historical:{...historical},searchQuery:''
 });
 function publishAppState(reason='map-interaction'){
  appState.update({
-  mode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
+  mode,layoutMode,view:{zoom,panX,panY,rotationDegrees},mapQuality,visualStyle,layers:{...layers},
   selection:selected?{type:selected.type||'unknown'}:null,
   measurement:{
    distancePointCount:points.length,areaPointCount:areaPoints.length,areaFinished,
    endpoints:points.map(point=>({name:point.name||'Map location',coordinates:fmtCoord(point.lat,point.lon)})),
-   distanceLabel:points.length===2?formatDistance(measureDirectDistance(points[0],points[1]).distanceMeters):''
+   distanceLabel:points.length===2?formatDistance(measureDirectDistance(points[0],points[1],layoutMode).distanceMeters):''
   },
   historical:{...historical}
  },{source:'map',reason});
@@ -88,6 +90,11 @@ for(const tag of PANEL_TAGS){const panel=document.querySelector(tag);if(panel)pa
 document.addEventListener('map-panel-event',event=>{
  const {id,type,value,checked}=event.detail||{},patch={};
  if(!id)return;
+ if(id==='mapLayoutMode'&&type==='change'){
+  layoutMode=value==='interrupted-petals'?'interrupted-petals':'gleason';
+  geometryBaseR=NaN;resize();syncRadialControls();updateMeasurement();updateAreaMeasurement();draw();
+  patch.layoutMode=layoutMode;
+ }
  if(id==='mapQuality'&&type==='change')patch.mapQuality=value;
  if(id==='mapStyle'&&type==='change')patch.visualStyle=value;
  if(id==='search'&&type==='input')patch.searchQuery=value;
@@ -157,8 +164,42 @@ function drawUprightMapText(text,x,y,{reserve=true,avoidReserved=false}={}){
  return true;
 }
 function screenToWorld(sx,sy){return screenToWorldPoint(sx,sy,zoom,panX,panY,width,height,rotationRadians());}
-const project=(lon,lat)=>projectFlatDisk(lon,lat,baseR);
-const unproject=(x,y)=>unprojectFlatDisk(x,y,baseR);
+function projectForLayout(lon,lat,radius=baseR,activeLayout=layoutMode,petalIndex){
+ return activeLayout==='interrupted-petals'
+  ? (Number.isInteger(petalIndex)
+    ? projectInterruptedPetalInLobe(lon,lat,petalIndex,radius)
+    : projectInterruptedPetals(lon,lat,radius))
+  : projectFlatDisk(lon,lat,radius);
+}
+const project=(lon,lat,petalIndex)=>projectForLayout(lon,lat,baseR,layoutMode,petalIndex);
+const unproject=(x,y)=>layoutMode==='interrupted-petals'
+ ? unprojectInterruptedPetals(x,y,baseR)
+ : unprojectFlatDisk(x,y,baseR);
+function routeBetween(first,second){
+ if(layoutMode==='interrupted-petals')return measureInterruptedPetalRoute(first,second,baseR);
+ const start=project(first.lon,first.lat),end=project(second.lon,second.lat);
+ return {distanceMeters:measureDirectDistance(first,second,'gleason').distanceMeters,
+  metric:'euclidean-flat-disk-chord',segments:[[start,end]]};
+}
+function routeMidpoint(segments){
+ const lengths=segments.map(segment=>Math.hypot(segment[1][0]-segment[0][0],segment[1][1]-segment[0][1]));
+ const total=lengths.reduce((sum,value)=>sum+value,0);
+ if(!total)return segments[0]?.[0]||[0,0];
+ let remaining=total/2;
+ for(let i=0;i<segments.length;i++){
+  const [a,b]=segments[i],length=lengths[i];
+  if(remaining<=length||i===segments.length-1){
+   const t=length?remaining/length:0;
+   return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+  }
+  remaining-=length;
+ }
+ return segments.at(-1)[1];
+}
+function polygonCrossesOpenGore(vertices){
+ return layoutMode==='interrupted-petals'&&vertices.some((point,index)=>
+  routeBetween(point,vertices[(index+1)%vertices.length]).metric==='planar-gore-edge-stitch');
+}
 function resize(){
  const rect=canvas.getBoundingClientRect();
  width=rect.width;height=rect.height;
@@ -173,8 +214,11 @@ function resize(){
   }
   baseR=nextBaseR;
   const projectionBaseR=baseR,resizeGeneration=loadGeneration;
-  const fixedProject=(lon,lat)=>projectFlatDisk(lon,lat,projectionBaseR);
-  const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(feature,fixedProject,preserveAntarcticRim);
+  const projectionLayoutMode=layoutMode;
+  const fixedProject=(lon,lat,petalIndex)=>projectForLayout(lon,lat,projectionBaseR,projectionLayoutMode,petalIndex);
+  const makeResizedPath=(feature,preserveAntarcticRim=false)=>createFeaturePath(
+   feature,fixedProject,preserveAntarcticRim,undefined,projectionLayoutMode,projectionBaseR
+  );
   iceWallTexturePaths=createIceWallTexturePaths(baseR);
   pathRecords=countries.map(country=>({country,path:makeResizedPath(country.feature)}));
   countryOutlinesPath=new Path2D();
@@ -186,8 +230,9 @@ function resize(){
   for(const record of pathRecords)landMaskPath.addPath(record.path);
   if(antarcticaPath)landMaskPath.addPath(antarcticaPath);
   geometryBaseR=projectionBaseR;
+  petalGoreWedges=projectionLayoutMode==='interrupted-petals'?createInterruptedPetalGoreWedges(projectionBaseR):[];
   buildCountryLayerCache();
-  if(antarcticAddData){
+  if(antarcticAddData&&projectionLayoutMode==='gleason'){
    const source=antarcticAddData;
    createAntarcticSurfacePathsAsync(source,fixedProject).then(paths=>{
     if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
@@ -196,8 +241,8 @@ function resize(){
   }
   if(coastlineData){
    const source=coastlineData;
-   createCoastlinePathAsync(source,fixedProject).then(path=>{
-    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR)return;
+   createCoastlinePathAsync(source,fixedProject,undefined,{layoutMode:projectionLayoutMode}).then(path=>{
+    if(resizeGeneration!==loadGeneration||geometryBaseR!==projectionBaseR||layoutMode!==projectionLayoutMode)return;
     coastlinePath=path;draw();
    }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
   }
@@ -212,9 +257,11 @@ function drawDiskBase(){
   ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
   ctx.globalAlpha=.72;ctx.fillStyle=waterTexture;ctx.fillRect(-baseR,-baseR,baseR*2,baseR*2);ctx.restore();
  }
- ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();
+ if(layoutMode==='interrupted-petals')drawInterruptedPetalRim();
+ else{ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.stroke();}
 }
 function drawGrid(){
+ if(layoutMode==='interrupted-petals'){drawInterruptedPetalGrid();return;}
  ctx.save();
  const latitudes=[75,60,45,30,15,0,-15,-30,-45,-60,-75];
  for(const lat of latitudes){
@@ -237,6 +284,79 @@ function drawGrid(){
  }
  ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);
  ctx.fillStyle=visualPalette.labels;ctx.fill();
+ ctx.restore();
+}
+function drawInterruptedPetalRim(){
+ ctx.save();ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.5/zoom;ctx.setLineDash([]);
+ for(const petal of PETALS){
+  ctx.beginPath();
+  for(let i=0;i<=180;i++){
+   const longitude=petal.west+(petal.east-petal.west)*i/180;
+   const point=project(longitude,-90,petal.id);
+   if(i===0)ctx.moveTo(point[0],point[1]);else ctx.lineTo(point[0],point[1]);
+  }
+  ctx.stroke();
+ }
+ ctx.restore();
+}
+function drawInterruptedPetalGrid(){
+ ctx.save();
+ for(const latitude of [75,60,45,30,15,0]){
+  const radius=baseR*radialFraction(latitude);
+  ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);
+  ctx.strokeStyle=latitude===0?visualPalette.equator:visualPalette.grid;
+  ctx.lineWidth=(latitude===0?1.55:.65)/zoom;
+  ctx.setLineDash(latitude===0?[]:[3/zoom,4/zoom]);ctx.stroke();
+ }
+ for(const latitude of [-15,-30,-45,-60,-75]){
+  for(const petal of PETALS){
+   ctx.beginPath();
+   for(let i=0;i<=120;i++){
+    const longitude=petal.west+(petal.east-petal.west)*i/120;
+    const point=project(longitude,latitude,petal.id);
+    if(i===0)ctx.moveTo(point[0],point[1]);else ctx.lineTo(point[0],point[1]);
+   }
+   ctx.strokeStyle=visualPalette.grid;ctx.lineWidth=.65/zoom;
+   ctx.setLineDash([3/zoom,4/zoom]);ctx.stroke();
+  }
+ }
+ ctx.setLineDash([]);
+ for(let longitude=0;longitude<360;longitude+=15){
+  const angle=rad(longitude);ctx.beginPath();ctx.moveTo(0,0);
+  const equatorRadius=baseR*radialFraction(0);
+  ctx.lineTo(equatorRadius*Math.cos(angle),-equatorRadius*Math.sin(angle));
+  ctx.strokeStyle=longitude%30===0?visualPalette.grid:visualPalette.gridMinor;
+  ctx.lineWidth=(longitude%30===0?.82:.42)/zoom;ctx.stroke();
+ }
+ for(const petal of PETALS){
+  for(let longitude=Math.ceil(petal.west/15)*15;longitude<=petal.east;longitude+=15){
+   ctx.beginPath();
+   for(let i=0;i<=90;i++){
+    const latitude=-90*i/90,point=project(longitude,latitude,petal.id);
+    if(i===0)ctx.moveTo(point[0],point[1]);else ctx.lineTo(point[0],point[1]);
+   }
+   const seam=longitude===petal.west||longitude===petal.east;
+   ctx.strokeStyle=seam?visualPalette.equator:(longitude%30===0?visualPalette.grid:visualPalette.gridMinor);
+   ctx.lineWidth=(seam?1.05:longitude%30===0?.82:.42)/zoom;ctx.stroke();
+  }
+ }
+ ctx.beginPath();ctx.arc(0,0,2.4/zoom,0,Math.PI*2);
+ ctx.fillStyle=visualPalette.labels;ctx.fill();ctx.restore();
+}
+function drawPetalGoreMasks(){
+ if(layoutMode!=='interrupted-petals'||!petalGoreWedges.length)return;
+ ctx.save();ctx.setLineDash([]);ctx.lineJoin='round';ctx.lineCap='round';
+ for(const wedge of petalGoreWedges){
+  if(wedge.polygon.length<3)continue;
+  ctx.beginPath();ctx.moveTo(wedge.polygon[0][0],wedge.polygon[0][1]);
+  for(let i=1;i<wedge.polygon.length;i++)ctx.lineTo(wedge.polygon[i][0],wedge.polygon[i][1]);
+  ctx.closePath();ctx.fillStyle=visualPalette.canvas;ctx.fill();
+  for(const edge of [wedge.edgeA,wedge.edgeB]){
+   ctx.beginPath();ctx.moveTo(edge[0][0],edge[0][1]);
+   for(let i=1;i<edge.length;i++)ctx.lineTo(edge[i][0],edge[i][1]);
+   ctx.strokeStyle=visualPalette.rim;ctx.lineWidth=1.15/zoom;ctx.stroke();
+  }
+ }
  ctx.restore();
 }
 function drawCompassRose(){
@@ -279,9 +399,48 @@ function drawCompassRose(){
  ctx.restore();
 }
 function drawAnnotations(){
- ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';const ringLabels=[75,60,45,30,15,0,-15,-30,-45,-60,-75];
- for(const lat of ringLabels){const [x,y]=project(225,lat),label=lat===0?'EQUATOR':`${Math.abs(lat)}°${lat>0?'N':'S'}`;ctx.font=`${lat===0?'700':'600'} ${(lat===0?9.5:8.5)/Math.max(.85,zoom*.65)}px ui-sans-serif,system-ui`;ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,x,y,{avoidReserved:true});}
- for(let d=0;d<360;d+=5){const a=rad(d),r1=baseR*(d%15===0?1.012:1.004),r2=baseR*1.022;ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(d%15===0?1:.55)/zoom;ctx.beginPath();ctx.moveTo(r1*Math.cos(a),-r1*Math.sin(a));ctx.lineTo(r2*Math.cos(a),-r2*Math.sin(a));ctx.stroke();if(d%15===0){const rt=baseR*1.055;ctx.fillStyle=visualPalette.labels;ctx.font=`600 ${9/Math.max(.85,zoom*.6)}px ui-sans-serif,system-ui`;drawUprightMapText(lonName(d),rt*Math.cos(a),-rt*Math.sin(a),{avoidReserved:true});}}
+ ctx.save();ctx.setLineDash([]);ctx.textAlign='center';ctx.textBaseline='middle';
+ const latitudes=layoutMode==='interrupted-petals'?[75,60,45,30,15,0]:[75,60,45,30,15,0,-15,-30,-45,-60,-75];
+ for(const latitude of latitudes){
+  const point=project(225,latitude);
+  const label=latitude===0?'EQUATOR':Math.abs(latitude)+'°'+(latitude>0?'N':'S');
+  ctx.font=(latitude===0?'700 ':'600 ')+(latitude===0?9.5:8.5)/Math.max(.85,zoom*.65)+'px ui-sans-serif,system-ui';
+  ctx.fillStyle=visualPalette.labels;drawUprightMapText(label,point[0],point[1],{avoidReserved:true});
+ }
+ if(layoutMode==='interrupted-petals'){
+  for(const petal of PETALS){
+   for(const latitude of [-30,-60]){
+    const point=project(petal.center,latitude,petal.id);
+    ctx.font='600 '+(8.5/Math.max(.85,zoom*.65))+'px ui-sans-serif,system-ui';
+    ctx.fillStyle=visualPalette.labels;drawUprightMapText(Math.abs(latitude)+'°S',point[0],point[1],{avoidReserved:true});
+   }
+   for(let longitude=petal.west;longitude<=petal.east+.001;longitude+=15){
+    const point=project(longitude,-90,petal.id),rho=Math.hypot(point[0],point[1]);
+    if(!rho)continue;
+    const major=longitude%15===0,outer=major?1.022:1.009;
+    ctx.beginPath();ctx.moveTo(point[0]*1.004,point[1]*1.004);
+    ctx.lineTo(point[0]*outer,point[1]*outer);
+    ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(major?1:.55)/zoom;ctx.stroke();
+    if(major){
+     ctx.font='600 '+(8.5/Math.max(.85,zoom*.6))+'px ui-sans-serif,system-ui';
+     ctx.fillStyle=visualPalette.labels;
+     drawUprightMapText(lonName(longitude),point[0]*1.06,point[1]*1.06,{avoidReserved:true});
+    }
+   }
+  }
+ }else{
+  for(let degree=0;degree<360;degree+=5){
+   const angle=rad(degree),r1=baseR*(degree%15===0?1.012:1.004),r2=baseR*1.022;
+   ctx.strokeStyle=visualPalette.labels;ctx.lineWidth=(degree%15===0?1:.55)/zoom;
+   ctx.beginPath();ctx.moveTo(r1*Math.cos(angle),-r1*Math.sin(angle));
+   ctx.lineTo(r2*Math.cos(angle),-r2*Math.sin(angle));ctx.stroke();
+   if(degree%15===0){
+    const radius=baseR*1.055;ctx.fillStyle=visualPalette.labels;
+    ctx.font='600 '+(9/Math.max(.85,zoom*.6))+'px ui-sans-serif,system-ui';
+    drawUprightMapText(lonName(degree),radius*Math.cos(angle),-radius*Math.sin(angle),{avoidReserved:true});
+   }
+  }
+ }
  ctx.restore();
 }
 function buildCountryLayerCache(){
@@ -320,7 +479,15 @@ function drawCountries(){
 }
 function drawCoastlinesLayer(simplified=false){if(simplified||!layers.coastlines||!coastlinePath)return;if(mapQuality==='high'&&frameScaleBarReadingKm<=500)return;renderCoastlines(ctx,coastlinePath,zoom,visualPalette);}
 function drawIceWall(simplified=false){
- renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),simplified?null:antarcticSurfacePaths,simplified?null:iceWallTexturePaths);
+ if(layoutMode==='interrupted-petals'){
+  if(antarcticaPath){
+   ctx.save();ctx.fillStyle=visualStyle==='clean'?'#f3f6f2':'#f4efe2';
+   ctx.fill(antarcticaPath,'evenodd');ctx.strokeStyle=visualPalette.rim;
+   ctx.lineWidth=1.05/zoom;ctx.stroke(antarcticaPath);ctx.restore();
+  }
+ }else{
+  renderIceWall(ctx,antarcticaPath,baseR,zoom,rotationRadians(),simplified?null:antarcticSurfacePaths,simplified?null:iceWallTexturePaths);
+ }
  if(selected?.type==='country'&&selected.country?.iso==='ATA'&&antarcticaPath){
   ctx.save();ctx.strokeStyle='#a44d2b';ctx.lineWidth=2.6/zoom;ctx.stroke(antarcticaPath);ctx.restore();
  }
@@ -462,50 +629,65 @@ function projectedPolygonLabelAnchor(vertices){
 }
 function drawMeasure(){
  if(points.length===2){
-  // Draw and measure one straight projected A–B segment in the flat-disk plane.
-  const path=flatDiskLinePath(points[0],points[1],project);
-  if(path.length===2){
-   ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);ctx.lineTo(path[1][0],path[1][1]);
+  const route=routeBetween(points[0],points[1]);
+  if(route.segments.length){
+   ctx.beginPath();
+   for(const segment of route.segments){
+    ctx.moveTo(segment[0][0],segment[0][1]);ctx.lineTo(segment[1][0],segment[1][1]);
+   }
    strokeMeasurementConnector('distance');
-   const measurement=measureDirectDistance(points[0],points[1]);
-   const label=formatMeasurementKilometres(measurement.distanceMeters);
-   drawMeasurementLabelAtMap(
-    (path[0][0]+path[1][0])/2,(path[0][1]+path[1][1])/2,label,'distance'
-   );
+   const midpoint=routeMidpoint(route.segments);
+   drawMeasurementLabelAtMap(midpoint[0],midpoint[1],formatMeasurementKilometres(route.distanceMeters),'distance');
   }
  }
- points.forEach((p,i)=>{
-  const [x,y]=project(p.lon,p.lat);
+ points.forEach((point,index)=>{
+  const [x,y]=project(point.lon,point.lat);
   ctx.beginPath();ctx.arc(x,y,6/zoom,0,Math.PI*2);
-  ctx.fillStyle=i===0?'#b35b36':'#3c7189';ctx.fill();
+  ctx.fillStyle=index===0?'#b35b36':'#3c7189';ctx.fill();
   ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.8/zoom;ctx.stroke();
-  ctx.font=`bold ${8/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='#fff';drawUprightMapText(i===0?'A':'B',x,y+.3/zoom);
-  const caption=String(p.name||fmtCoord(p.lat,p.lon)).replace(/\s+/g,' ').trim();
+  ctx.font='bold '+(8/zoom)+'px ui-sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#fff';drawUprightMapText(index===0?'A':'B',x,y+.3/zoom);
+  const caption=String(point.name||fmtCoord(point.lat,point.lon)).replace(/\s+/g,' ').trim();
   const compact=caption.length>26?caption.slice(0,23)+'…':caption;
-  if(zoom>=1.05&&compact)drawMeasurementLabelAtMap(x+16/zoom,y-14/zoom,(i===0?'A':'B')+' · '+compact,i===0?'route-a':'route-b');
+  if(zoom>=1.05&&compact)drawMeasurementLabelAtMap(x+16/zoom,y-14/zoom,(index===0?'A':'B')+' · '+compact,index===0?'route-a':'route-b');
  });
 }
 function drawArea(){
  if(!areaPoints.length)return;
  ctx.save();
  const closed=areaFinished&&areaPoints.length>=3;
- const segments=createProjectedMeasurementSegments(areaPoints,project,closed);
- if(segments.length){
+ const edgeRoutes=areaPoints.slice(0,closed?areaPoints.length:Math.max(0,areaPoints.length-1)).map((point,index)=>
+  routeBetween(point,areaPoints[(index+1)%areaPoints.length]));
+ const crossesGore=edgeRoutes.some(route=>route.metric==='planar-gore-edge-stitch');
+ if(edgeRoutes.some(route=>route.segments.length)){
   ctx.beginPath();
-  const first=project(areaPoints[0].lon,areaPoints[0].lat);ctx.moveTo(first[0],first[1]);
-  for(const segment of segments)ctx.lineTo(segment[1][0],segment[1][1]);
-  if(closed){ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();}
+  if(closed&&!crossesGore){
+   const first=project(areaPoints[0].lon,areaPoints[0].lat);
+   ctx.moveTo(first[0],first[1]);
+   for(const route of edgeRoutes)ctx.lineTo(route.segments[0][1][0],route.segments[0][1][1]);
+   ctx.closePath();ctx.fillStyle='rgba(79,126,143,.18)';ctx.fill();
+  }else{
+   for(const route of edgeRoutes)for(const segment of route.segments){
+    ctx.moveTo(segment[0][0],segment[0][1]);ctx.lineTo(segment[1][0],segment[1][1]);
+   }
+  }
   strokeMeasurementConnector('area');
  }
- areaPoints.forEach((point,i)=>{const [x,y]=project(point.lon,point.lat);ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`bold ${7/zoom}px ui-sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';drawUprightMapText(String(i+1),x,y);});
- // Each edge label uses the same Euclidean map-plane chord as A–B and polygon perimeter.
- const edgeLabels=createProjectedSegmentLabels(areaPoints,project,measureDistanceMeters,closed);
+ areaPoints.forEach((point,index)=>{
+  const [x,y]=project(point.lon,point.lat);
+  ctx.beginPath();ctx.arc(x,y,5/zoom,0,Math.PI*2);
+  ctx.fillStyle='#4f7e8f';ctx.fill();ctx.strokeStyle='#fffdf6';ctx.lineWidth=1.4/zoom;ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='bold '+(7/zoom)+'px ui-sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  drawUprightMapText(String(index+1),x,y);
+ });
+ const edgeLabels=crossesGore?[]:createProjectedSegmentLabels(
+  areaPoints,project,(a,b)=>measureDistanceMeters(a,b,layoutMode),closed
+ );
  edgeLabels.forEach(label=>drawMeasurementLabelAtMap(
   label.x,label.y,formatMeasurementKilometres(label.meters),'area'
  ));
- if(closed){
-  const metrics=flatDiskPolygonMetrics(areaPoints,project,baseR,measureDistanceMeters);
+ if(closed&&!crossesGore){
+  const metrics=flatDiskPolygonMetrics(areaPoints,project,baseR,(a,b)=>measureDistanceMeters(a,b,layoutMode));
   const anchor=projectedPolygonLabelAnchor(areaPoints);
   if(metrics&&anchor)drawMeasurementLabelAtMap(anchor.x,anchor.y,formatMeasurementSquareKilometres(metrics.areaM2),'area');
  }
@@ -522,11 +704,19 @@ function syncMeasurementActionButtons(){
 function updateAreaMeasurement(){
  $('areaVertexCount').textContent=areaPoints.length+' vertices';
  if(areaFinished&&areaPoints.length>=3){
-  const result=flatDiskPolygonMetrics(areaPoints,project,baseR,measureDistanceMeters);
-  if(result){
+  const crossesGore=polygonCrossesOpenGore(areaPoints);
+  const perimeterM=areaPoints.reduce((sum,point,index)=>sum+
+   measureDistanceMeters(point,areaPoints[(index+1)%areaPoints.length],layoutMode),0);
+  const result=crossesGore?null:flatDiskPolygonMetrics(areaPoints,project,baseR,
+   (a,b)=>measureDistanceMeters(a,b,layoutMode));
+  if(crossesGore){
+   $('areaValue').textContent='Unavailable across gores';
+   $('areaPerimeter').textContent='Perimeter · '+formatDistance(perimeterM);
+   $('areaHelp').textContent='This polygon spans disconnected petals, so one shoelace area would fill an open gore. Its perimeter still uses the canonical stitched planar route.';
+  }else if(result){
    $('areaValue').textContent=formatArea(result.areaM2);
    $('areaPerimeter').textContent='Perimeter · '+formatDistance(result.perimeterM);
-   $('areaHelp').textContent='Planar shoelace area; perimeter is the sum of straight Euclidean map-plane chords.';
+   $('areaHelp').textContent='Planar shoelace area; perimeter uses the canonical active-layout route metric.';
   }else{
    $('areaValue').textContent='Unavailable';
    $('areaPerimeter').textContent='Invalid polygon · check for crossing edges';
@@ -558,15 +748,14 @@ function drawHistoricalOverlay(){
 }
 function draw(){
  if(!width||!height)return;
- // Keep gestures responsive; detailed overlays return on the settled frame.
  const interactionSimplified=Boolean((pointerDown&&didDrag)||wheelZoomActive||rotationAnimationFrame!==null);
  const scaleLayout=calculateScaleBarLayout();
  frameScaleBarReadingKm=scaleLayout?.targetKm??Infinity;
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);ctx.fillStyle=visualPalette.canvas;ctx.fillRect(0,0,width,height);
  const paperTexture=vintageTexturePattern(ctx,'paper');
  if(paperTexture){ctx.save();ctx.globalAlpha=.8;ctx.fillStyle=paperTexture;ctx.fillRect(0,0,width,height);ctx.restore();}
- labelCollisionBoxes=[];reserveScreenUiCollisionBoxes();ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
- // Draw geographic geometry first; labels are placed afterward against a shared collision map.
+ labelCollisionBoxes=[];reserveScreenUiCollisionBoxes();
+ ctx.save();ctx.translate(width/2+panX,height/2+panY);ctx.scale(zoom,zoom);ctx.rotate(rotationRadians());drawDiskBase();
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  if(layers.grid)drawGrid();
  if(layers.countries)drawCountries();
@@ -577,20 +766,17 @@ function draw(){
  if(layers.grid)drawAnnotations();
  ctx.save();ctx.beginPath();ctx.arc(0,0,baseR,0,Math.PI*2);ctx.clip();
  drawCapitals(!interactionSimplified);drawCountryLabels(!interactionSimplified);
- if(layers.oceanLabels){
-  if(!interactionSimplified){
-   const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,frameScaleBarReadingKm,{
-    width,height,panX,panY,rotation:rotationRadians(),palette:visualPalette,reservedBoxes:labelCollisionBoxes,selectNonOverlappingLabels,
-    isLand:(x,y)=>landMaskPath?ctx.isPointInPath(landMaskPath,x,y,'evenodd'):pathRecords.some(rec=>ctx.isPointInPath(rec.path,x,y,'evenodd'))
-   });
-   labelCollisionBoxes.push(...oceanBoxes);
-  }
+ if(layers.oceanLabels&&!interactionSimplified){
+  const oceanBoxes=drawOceanLabels(ctx,project,baseR,zoom,frameScaleBarReadingKm,{
+   width,height,panX,panY,rotation:rotationRadians(),palette:visualPalette,reservedBoxes:labelCollisionBoxes,selectNonOverlappingLabels,
+   isLand:(x,y)=>landMaskPath?ctx.isPointInPath(landMaskPath,x,y,'evenodd'):pathRecords.some(rec=>ctx.isPointInPath(rec.path,x,y,'evenodd'))
+  });
+  labelCollisionBoxes.push(...oceanBoxes);
  }
+ drawPetalGoreMasks();
  drawMeasure();drawArea();
- ctx.restore();
- ctx.restore();
- drawCompassRose();
- drawScaleBar(scaleLayout);updateViewReadout(frameScaleBarReadingKm);
+ ctx.restore();ctx.restore();
+ drawCompassRose();drawScaleBar(scaleLayout);updateViewReadout(frameScaleBarReadingKm);
 }
 function updateViewReadout(localScale=frameScaleBarReadingKm){
  const readout=$('zoomReadout');if(!readout)return;
@@ -662,26 +848,27 @@ function updateMeasurement(){
  syncCoordinateInputs();
  const box=$('endpointRows');box.innerHTML='';
  for(let i=0;i<2;i++){
-  const p=points[i],row=document.createElement('div');row.className='point-row';
+  const point=points[i],row=document.createElement('div');row.className='point-row';
   const badge=document.createElement('span');badge.className='point-badge '+(i===0?'a':'b');badge.textContent=i?'B':'A';
-  const name=document.createElement('span');name.textContent=p?p.name:'Not set';
-  const coord=document.createElement('span');coord.className='muted';coord.textContent=p?fmtCoord(p.lat,p.lon):'';
+  const name=document.createElement('span');name.textContent=point?point.name:'Not set';
+  const coord=document.createElement('span');coord.className='muted';coord.textContent=point?fmtCoord(point.lat,point.lon):'';
   row.append(badge,name,coord);box.append(row);
  }
  if(points.length===2){
-  const measurement=measureDirectDistance(points[0],points[1]);
-  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)
-   ?formatDistance(measurement.distanceMeters):'Unavailable';
+  const measurement=measureDirectDistance(points[0],points[1],layoutMode);
+  $('distanceValue').textContent=Number.isFinite(measurement.distanceMeters)?formatDistance(measurement.distanceMeters):'Unavailable';
   $('distanceSub').textContent=Number.isFinite(measurement.distanceMeters)
-   ?'Visible flat-disk chord · same endpoints as the red connector'
-   :'Flat-disk distance unavailable for these coordinates';
-  $('measureHelp').textContent='The distance is the Euclidean length of the straight red connector in the visible flat-disk plane, converted using the map kilometre scale. The same function powers A–B, the connector label, scale-bar sampling, polygon edge labels and polygon perimeter. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
+   ?(layoutMode==='interrupted-petals'?'Planar chord / stitched petal route · same geometry as the red connector':'Visible flat-disk chord · same endpoints as the red connector')
+   :'Flat-plane distance unavailable for these coordinates';
+  $('measureHelp').textContent=layoutMode==='interrupted-petals'
+   ?'Northern points retain Pure Gleason placement. Southern same-petal routes use Euclidean chords; routes between southern petals use the shortest two-segment path stitched at matching latitude along the gore edges. The connector, distance readout, scale bar and polygon perimeter use the same canonical planar route function.'
+   :'The distance is the Euclidean length of the straight red connector in the visible flat-disk plane. The same function powers A–B, the connector label, scale-bar sampling and polygon perimeter. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
  }else{
   $('distanceValue').textContent='—';
   $('distanceSub').textContent='Set two endpoints to calculate the canonical distance';
   $('measureHelp').textContent=points.length===1
-   ?'Point A set. Click anywhere on the disk to set point B.'
-   :'Choose two places anywhere on the disk, or select a capital and assign it to A or B.';
+   ?'Point A set. Click anywhere on the map to set point B.'
+   :'Choose two places on the map, or select a capital and assign it to A or B.';
  }
  syncMeasurementActionButtons();
  publishAppState('measurement');
@@ -732,6 +919,10 @@ function assignSelection(idx){if(!selected)return;let p;if(selected.type==='capi
 function onMapClick(x,y){
  if(Math.hypot(x,y)>baseR*1.012)return;
  const q=unproject(x,y);
+ if(!Number.isFinite(q.lat)||!Number.isFinite(q.lon)){
+  if(layoutMode==='interrupted-petals')$('status').textContent='Open gore wedge · no geographic coordinate at this map position.';
+  return;
+ }
  if(registrationPickActive){const snap=findCapitalAt(x,y,10);const p=snap?{lat:snap.lat,lon:snap.lon}:q;registrationPickActive=false;pendingRegistrationGeo=p;$('registrationStatus').textContent=`Map point selected: ${fmtCoord(p.lat,p.lon)}${snap?' · snapped to '+snap.city:''}. Now click the same feature in the scan preview.`;$('pickRegistrationPoint').textContent='Pick another map point';return;}
  const cap=findCapitalAt(x,y,10);
  if(mode==='measure'){if(points.length>=2)points=[];const p=cap?{lat:cap.lat,lon:cap.lon,name:`${cap.city} (${cap.countryName||''})`}:q;setPoint(points.length===0?0:1,{...p,name:p.name||fmtCoord(p.lat,p.lon)});return;}
@@ -765,6 +956,7 @@ function drawSearchResults(q){
 }
 function restoreSharedState(){
  const q=new URLSearchParams(window.location.search),z=Number(q.get('z'));
+ const requestedLayout=q.get('layout');layoutMode=requestedLayout==='interrupted-petals'?'interrupted-petals':'gleason';
  const requestedStyle=q.get('style');if(requestedStyle&&Object.hasOwn(VISUAL_STYLES,requestedStyle))applyVisualStyle(requestedStyle,false);
  const requestedRotation=Number(q.get('r'));if(q.has('r')&&Number.isFinite(requestedRotation))rotationDegrees=normalizeRotation(requestedRotation);
  rotationAnimationTarget=rotationDegrees;
@@ -784,11 +976,20 @@ function restoreSharedState(){
   const tie=q.get('gc');if(tie){registrationPoints=tie.split(';').map(v=>v.split(',').map(Number)).filter(v=>v.length===4&&v.every(Number.isFinite)&&v[0]>=0&&v[0]<=1&&v[1]>=0&&v[1]<=1&&Math.abs(v[2])<=90&&Math.abs(v[3])<=180).map(v=>({u:v[0],v:v[1],lat:v[2],lon:v[3]})).slice(0,MAX_REGISTRATION_POINTS);}
  if(areaPoints.length)mode='area';else if(points.length)mode='measure';
  for(const [id,key] of [['layerCountries','countries'],['layerGrid','grid'],['layerCapitals','capitals'],['layerCapitalNames','capitalNames'],['layerAntarctica','antarctica'],['layerCountryNames','countryNames'],['layerOceanLabels','oceanLabels'],['layerCoastlines','coastlines']])$(id).checked=layers[key];
- $('mapStyle').value=visualStyle;syncRotationControls();
+ $('mapStyle').value=visualStyle;$('mapLayoutMode').value=layoutMode;syncRotationControls();
  syncRadialControls();syncHistoricalControls();$('historicalEnabled').checked=historical.enabled;if(historical.enabled)loadHistoricalScan();
  setModeUI();updateMeasurement();updateAreaMeasurement();updateRegistrationUI();
 }
-function syncRadialControls(){renderRadialCalibration($('radialRows'),null,$('calibrationFormula'),$('pathCalibrationStatus'),$('geometryMetricFormula'));}
+function syncRadialControls(){
+ renderRadialCalibration($('radialRows'),null,$('calibrationFormula'),$('pathCalibrationStatus'),$('geometryMetricFormula'),layoutMode);
+ const petal=layoutMode==='interrupted-petals';
+ $('geometryDistanceMetric').textContent=petal?'Euclidean chord / edge stitch':'Euclidean planar chord';
+ $('geometryAreaMetric').textContent=petal?'Shoelace within petals; withheld across gores':'Planar shoelace';
+ $('geometryRouteType').textContent=petal?'Euclidean / stitched planar path':'Straight projected segment';
+ $('geometryModeNote').textContent=petal
+  ?'Interrupted Petal Plane: one North-Polar centre; the north retains Pure Gleason placement; the south is split into three compressed lobes divided by open radial ocean gores. Cross-gore routes use two planar segments joined at the shortest matching-latitude seam. Polygon area is withheld when a polygon crosses disconnected petals.'
+  :'Pure Gleason Disk: one North-Polar centre, equally spaced latitude circles and straight radial meridians. Distances and perimeters are Euclidean map-plane lengths; polygon area uses the planar shoelace formula.';
+}
 function syncHistoricalControls(){
  const specs=[['historicalOpacity','opacity','%'],['historicalCenterX','centerX','%'],['historicalCenterY','centerY','%'],['historicalDiameter','diameter','%'],['historicalScale','scale','%'],['historicalRotation','rotation','°']];
  for(const [id,key,unit] of specs){$(id).value=historical[key];$(id+'Value').textContent=unit==='°'?Number(historical[key]).toFixed(1)+unit:Math.round(historical[key]*10)/10+unit;}
@@ -833,6 +1034,7 @@ function niceScaleFloor(value){
  return (fraction>=5?5:fraction>=2?2:1)*power;
 }
 function constrainScaleAnchor(anchor){
+ if(layoutMode==='interrupted-petals')return {x:0,y:0};
  let x=Number.isFinite(anchor?.x)?anchor.x:0,y=Number.isFinite(anchor?.y)?anchor.y:0;
  const rho=Math.hypot(x,y),limit=baseR*.85;
  if(rho>limit&&rho>0){x*=limit/rho;y*=limit/rho;}
@@ -850,7 +1052,7 @@ function flatDiskDistanceForScalePixels(px,anchor,scaleZoom=zoom){
  const halfWorld=unrotatePoint(px/(2*scaleZoom),0,rotationRadians());
  const first=unproject(anchor.x-halfWorld.x,anchor.y-halfWorld.y);
  const second=unproject(anchor.x+halfWorld.x,anchor.y+halfWorld.y);
- const distanceMeters=measureDistanceMeters(first,second);
+ const distanceMeters=measureDistanceMeters(first,second,layoutMode);
  // The scale bar uses the same Euclidean planar chord as A–B and area edges.
  return Number.isFinite(distanceMeters)?distanceMeters/1000:Infinity;
 }
@@ -927,14 +1129,16 @@ function exportPNG(){
  outputCtx.fillText('GLEASON-STYLE FLAT-DISK MAP · GENERATED '+generatedAt.slice(0,10),14*dpr,canvas.height+16*dpr);
  let measurementText='A–B measurement: not set';
  if(points.length===2){
-  const measurement=measureDirectDistance(points[0],points[1]);
+  const measurement=measureDirectDistance(points[0],points[1],layoutMode);
   measurementText='A–B distance '+formatDistance(measurement.distanceMeters)+
-   ' · Euclidean disk-plane chord';
+   (layoutMode==='interrupted-petals'?' · planar petal route':' · Euclidean disk-plane chord');
  }
  outputCtx.font='600 '+(10*dpr)+'px ui-sans-serif,system-ui';
  outputCtx.fillText(measurementText,14*dpr,canvas.height+35*dpr);
  outputCtx.font=(9*dpr)+'px ui-sans-serif,system-ui';
-  outputCtx.fillText('Pure Gleason layout · equal-spaced parallels · straight radial meridians · no fitted warps',14*dpr,canvas.height+53*dpr);
+  outputCtx.fillText(layoutMode==='interrupted-petals'
+   ?'Interrupted Petal Plane · one North-Polar centre · three southern lobes · open radial gores'
+   :'Pure Gleason layout · equal-spaced parallels · straight radial meridians · no fitted warps',14*dpr,canvas.height+53*dpr);
  const antarcticSource=antarcticAddData?'Data from the SCAR Antarctic Digital Database v7.13 (CC BY 4.0)':'Natural Earth Antarctic outline · BAS ADD surface detail unavailable';
  outputCtx.fillText('Natural Earth country boundaries · '+antarcticSource,14*dpr,canvas.height+70*dpr);
  output.toBlob(blob=>{
@@ -942,12 +1146,12 @@ function exportPNG(){
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='gleason-world-map-'+generatedAt.slice(0,10)+'.png';
   document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with pure Gleason geometry and source metadata.';
+  setTimeout(()=>URL.revokeObjectURL(url),1000);$('status').textContent='PNG exported with '+(layoutMode==='interrupted-petals'?'interrupted-petal':'Pure Gleason')+' geometry and source metadata.';
  },'image/png');
 }
 async function copyShareLink(){
  const url=new URL(window.location.href);url.search='';
- url.searchParams.set('z',zoom.toFixed(3));url.searchParams.set('px',(panX/baseR).toFixed(4));url.searchParams.set('py',(panY/baseR).toFixed(4));url.searchParams.set('r',rotationDegrees.toFixed(1));url.searchParams.set('style',visualStyle);
+ url.searchParams.set('z',zoom.toFixed(3));url.searchParams.set('px',(panX/baseR).toFixed(4));url.searchParams.set('py',(panY/baseR).toFixed(4));url.searchParams.set('r',rotationDegrees.toFixed(1));url.searchParams.set('style',visualStyle);url.searchParams.set('layout',layoutMode);
  url.searchParams.set('ly',[layers.countries,layers.grid,layers.capitals,layers.capitalNames,layers.antarctica,layers.countryNames,layers.oceanLabels,layers.coastlines].map(v=>v?'1':'0').join(''));
   url.searchParams.set('flat','1');
  url.searchParams.set('hist',[historical.enabled?1:0,historical.opacity,historical.centerX,historical.centerY,historical.diameter,historical.scale].join(','));url.searchParams.set('hr',historical.rotation.toFixed(1));
@@ -1022,9 +1226,10 @@ async function load(){
    coastlineData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    const source=coastlineData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
-    createCoastlinePathAsync(source,buildProject).then(path=>{
-     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
+    const source=coastlineData,buildBaseR=baseR,buildLayout=layoutMode;
+    const buildProject=(lon,lat,petalIndex)=>projectForLayout(lon,lat,buildBaseR,buildLayout,petalIndex);
+    createCoastlinePathAsync(source,buildProject,undefined,{layoutMode:buildLayout}).then(path=>{
+     if(generation!==loadGeneration||geometryBaseR!==buildBaseR||layoutMode!==buildLayout)return;
      coastlinePath=path;draw();
     }).catch(error=>console.warn('Coastline geometry could not be prepared:',error));
    });
@@ -1035,11 +1240,13 @@ async function load(){
    antarcticAddData=raw;
    runWhenIdle(()=>{
     if(generation!==loadGeneration)return;
-    const source=antarcticAddData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
-    createAntarcticSurfacePathsAsync(source,buildProject).then(paths=>{
-     if(generation!==loadGeneration||geometryBaseR!==buildBaseR)return;
-     antarcticSurfacePaths=paths;draw();
-    }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
+    if(layoutMode==='gleason'){
+     const source=antarcticAddData,buildBaseR=baseR,buildProject=(lon,lat)=>projectFlatDisk(lon,lat,buildBaseR);
+     createAntarcticSurfacePathsAsync(source,buildProject).then(paths=>{
+      if(generation!==loadGeneration||geometryBaseR!==buildBaseR||layoutMode!=='gleason')return;
+      antarcticSurfacePaths=paths;draw();
+     }).catch(error=>console.warn('Antarctic surface geometry could not be prepared; Natural Earth ice wall remains active:',error));
+    }
    });
   }).catch(error=>console.warn('Antarctic Digital Database unavailable; Natural Earth outline remains active:',error));
  }catch(err){if(generation!==loadGeneration)return;showLoadError(err);}

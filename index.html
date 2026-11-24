@@ -147,6 +147,13 @@
 <template id="layers-panel-template">
 <section class="panel">
       <h2>Map layers</h2>
+      <div class="range-control"><label for="mapLayoutMode"><span>Projection layout</span><span id="activeLayoutLabel">Pure Gleason Disk</span></label>
+        <select id="mapLayoutMode" class="control-select" aria-describedby="mapLayoutModeHelp">
+          <option value="gleason" selected>Pure Gleason Disk</option>
+          <option value="interrupted-petals">Interrupted Petal Plane</option>
+        </select>
+        <div class="small" id="mapLayoutModeHelp">Switches between the untouched Pure Gleason baseline and a three-petal southern planar layout. Both use one North-Polar centre.</div>
+      </div>
       <div class="range-control"><label for="mapStyle"><span>Map appearance</span><span>Saved on this device</span></label>
         <select id="mapStyle" class="control-select" aria-describedby="mapStyleHelp"><option value="vintage" selected>1892 Vintage</option><option value="atlas">Classic Atlas</option><option value="clean">Clean Explorer</option></select>
         <div class="small" id="mapStyleHelp">Changes the map palette and interface theme without changing projection or measurement calculations.</div>
@@ -230,15 +237,15 @@
 </template>
 <template id="geometry-panel-template">
 <section class="panel">
-      <h2>Flat-disk geometry</h2>
+      <h2>Active planar geometry</h2>
       <div class="info-grid">
         <div class="info-box"><span>Coordinate units</span><strong>Flat-disk km</strong></div>
-        <div class="info-box"><span>Distance</span><strong>Euclidean planar chord</strong></div>
-        <div class="info-box"><span>Area</span><strong>Planar shoelace</strong></div>
-        <div class="info-box"><span>A–B line</span><strong>Straight projected segment</strong></div>
+        <div class="info-box"><span>Distance</span><strong id="geometryDistanceMetric">Euclidean planar chord</strong></div>
+        <div class="info-box"><span>Area</span><strong id="geometryAreaMetric">Planar shoelace</strong></div>
+        <div class="info-box"><span>A–B line</span><strong id="geometryRouteType">Straight projected segment</strong></div>
       </div>
       <div class="formula" id="geometryMetricFormula"></div>
-      <p class="note" style="margin:8px 0 0">The map uses a fixed north-polar disk drawing plane. Latitude circles are evenly spaced; meridians are straight rays, with Greenwich pointing right and 90°E pointing up. The A–B value and red connector are the same Euclidean chord in that plane. The scale bar and polygon perimeter use the same planar length convention, while polygon area uses the shoelace formula. These are map-plane quantities; they are not asserted to be independently validated ground distances or surface areas.</p>
+      <p class="note" id="geometryModeNote" style="margin:8px 0 0">The selected layout supplies the shared projection and planar measurement geometry. These are map-plane quantities, not independently validated surface distances or areas.</p>
     </section>
 </template>
 <template id="historical-panel-template">

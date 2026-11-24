@@ -75,7 +75,7 @@ test('capital labels grow in close-up views and collision boxes track their size
 
 test('ocean surface is blue, ocean and sea names are a toggleable shareable layer, and ice wall is white',()=>{
  assert.match(app,/ctx\.fillStyle=visualPalette\.water/);
- assert.match(app,/if\(layers\.oceanLabels\)\{/);
+ assert.match(app,/if\(layers\.oceanLabels&&!interactionSimplified\)\{/);
  assert.match(app,/selectNonOverlappingLabels,\s*isLand:/);
  assert.match(app,/layers\.oceanLabels,layers\.coastlines\].map\(v=>v\?'1':'0'\)/);
  assert.match(html,/id="layerOceanLabels" checked/);
@@ -155,7 +155,7 @@ test('water label land detection uses one prebuilt land mask including Antarctic
 
 test('visual presets are selectable, remembered and keep the flat-disk projection independent',()=>{
  assert.match(html,/id="mapStyle"/);assert.match(html,/1892 Vintage/);assert.match(html,/Classic Atlas/);assert.match(html,/Clean Explorer/);
- assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,baseR\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath/);
+ assert.match(app,/STYLE_STORAGE_KEY/);assert.match(app,/applyVisualStyle/);assert.match(app,/projectFlatDisk\(lon,lat,radius\)/);assert.match(app,/measureDirectDistance/);assert.match(app,/flatDiskLinePath/);assert.doesNotMatch(app,/geodesicLinePath/);
 });
 test('1892 Vintage is the default visual style without changing flat-disk map geometry',()=>{
  assert.match(html,/option value="vintage" selected>1892 Vintage/);
@@ -170,12 +170,12 @@ test('1892 Vintage is the default visual style without changing flat-disk map ge
 test('country-area calculations share rendered rings and preserve the Antarctic rim', () => {
   assert.match(featurePaths, /projectGeoJSONRing/);
   assert.match(app, /preserveAntarcticRim:c\.iso==='ATA'\|\|c\.name==='Antarctica'/);
-  assert.match(html, /<span>A–B line<\/span><strong>Straight projected segment<\/strong>/);
-  assert.match(app, /measureDirectDistance\(points\[0\],points\[1\]\)/);
+  assert.match(html, /<span>A–B line<\/span><strong id="geometryRouteType">Straight projected segment<\/strong>/);
+  assert.match(app, /measureDirectDistance\(points\[0\],points\[1\],layoutMode\)/);
   assert.doesNotMatch(html, /flightDistanceValue|flightDistanceSub|secondary-distance-reading/);
   assert.doesNotMatch(app, /endpointDistanceEstimateMeters|endpointDistanceCalibration|predictEndpointDistance/);
   assert.match(app, /measureDistanceMeters/);
-  assert.match(app, /flatDiskPolygonMetrics\(areaPoints,project,baseR,measureDistanceMeters\)/);
+  assert.match(app, /flatDiskPolygonMetrics\(areaPoints,project,baseR,\(a,b\)=>measureDistanceMeters\(a,b,layoutMode\)\)/);
   assert.doesNotMatch(app, /geodesicLinePath/);
   assert.doesNotMatch(app, /Flat-disk chord · Antarctic band involved/);
 });
@@ -188,7 +188,7 @@ test('map orientation is display-only, pointer-safe and included in share links'
 });
 test('latitude grid includes intermediate parallels, an emphasized equator, longitude ticks and compass rose',()=>{
  assert.match(app,/latitudes=\[75,60,45,30,15,0,-15,-30,-45,-60,-75\]/);assert.match(app,/visualPalette\.equator/);
-  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),null,\$\('calibrationFormula'\),\$\('pathCalibrationStatus'\),\$\('geometryMetricFormula'\)\)/);
+  assert.match(app,/renderRadialCalibration\(\$\('radialRows'\),null,\$\('calibrationFormula'\),\$\('pathCalibrationStatus'\),\$\('geometryMetricFormula'\),layoutMode\)/);
  assert.match(html,/id="calibrationFormula"/);assert.match(html,/id="pathCalibrationStatus"/);assert.doesNotMatch(html,/id="visualRadialRows"/);
  assert.match(app,/function drawCompassRose\(\)/);
 });
@@ -230,7 +230,7 @@ test('direct A/B coordinate entry and visible-chord measurement help are availab
  assert.match(app,/Natural Earth outline remains active/);
 });
 
-test('PNG exports include date, measurement and pure Gleason source metadata',()=>{
+test('PNG exports include date, active measurement and active layout metadata',()=>{
  assert.match(app,/function exportPNG\(\)/);
  assert.match(app,/outputCtx\.fillText\('GLEASON-STYLE FLAT-DISK MAP/);
  assert.match(app,/Pure Gleason layout · equal-spaced parallels · straight radial meridians/);
@@ -238,24 +238,24 @@ test('PNG exports include date, measurement and pure Gleason source metadata',()
  assert.match(app,/SCAR Antarctic Digital Database v7\.13/);
 });
 
-test('distance connector is one straight projected segment measured in the map plane',()=>{
- assert.match(app,/const path=flatDiskLinePath\(points\[0\],points\[1\],project\)/);
- assert.match(app,/ctx\.lineTo\(path\[1\]\[0\],path\[1\]\[1\]\)/);
- assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
+test('distance connector follows canonical projected route segments',()=>{
+ assert.match(app,/const route=routeBetween\(points\[0\],points\[1\]\)/);
+ assert.match(app,/for\(const segment of route\.segments\)/);
+ assert.match(app,/measureDirectDistance\(points\[0\],points\[1\],layoutMode\)/);
  assert.doesNotMatch(app,/geodesicLinePath/);
  assert.match(app,/strokeMeasurementConnector\('distance'\)/);
  assert.match(html,/Straight projected segment/);
 });
 
 
-test('A–B, scale bar, polygon edges and PNG share the Euclidean disk-plane metric',()=>{
+test('A–B, scale bar, polygon edges and PNG share the active planar layout metric',()=>{
  assert.match(html,/<span>Distance A–B<\/span>/);
  assert.match(html,/Euclidean flat-disk chord/);
  assert.doesNotMatch(html,/anisotropic|flightDistanceValue|flightDistanceSub|secondary-distance-reading|12-circle|Restricted Line/i);
- assert.match(app,/measureDistanceMeters\(first,second\)/);
- assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,measureDistanceMeters,closed\)/);
- assert.match(app,/flatDiskPolygonMetrics\(areaPoints,project,baseR,measureDistanceMeters\)/);
- assert.match(app,/const distanceMeters=measureDistanceMeters\(first,second\)/);
+ assert.match(app,/measureDistanceMeters\(first,second,layoutMode\)/);
+ assert.match(app,/createProjectedSegmentLabels\(\s*areaPoints,project,\(a,b\)=>measureDistanceMeters\(a,b,layoutMode\),closed\s*\)/);
+ assert.match(app,/flatDiskPolygonMetrics\(areaPoints,project,baseR,\(a,b\)=>measureDistanceMeters\(a,b,layoutMode\)\)/);
+ assert.match(app,/const distanceMeters=measureDistanceMeters\(first,second,layoutMode\)/);
  assert.match(app,/Euclidean disk-plane chord/);
  assert.doesNotMatch(app,/endpointDistanceEstimateMeters|endpointDistanceCalibration|ADS-B route-feature correction|anisotropic/i);
  assert.doesNotMatch(app,/greatCircleDistanceMeters|great-circle|spherical/);
@@ -263,10 +263,10 @@ test('A–B, scale bar, polygon edges and PNG share the Euclidean disk-plane met
 
 test('distance and area drawings render km labels on their measurement geometry',()=>{
  assert.match(app,/function drawMeasurementLabelAtMap\(/);
- assert.match(app,/const label=formatMeasurementKilometres\(measurement\.distanceMeters\)/);
+ assert.match(app,/formatMeasurementKilometres\(route\.distanceMeters\)/);
  assert.match(app,/distanceValue'\)\.textContent=Number\.isFinite\(measurement\.distanceMeters\)/);
- assert.match(app,/drawMeasurementLabelAtMap\([\s\S]*?label,'distance'/);
- assert.match(app,/createProjectedSegmentLabels\(areaPoints,project,measureDistanceMeters,closed\)/);
+ assert.match(app,/drawMeasurementLabelAtMap\(midpoint\[0\],midpoint\[1\],formatMeasurementKilometres\(route\.distanceMeters\),'distance'/);
+ assert.match(app,/createProjectedSegmentLabels\(\s*areaPoints,project,\(a,b\)=>measureDistanceMeters\(a,b,layoutMode\),closed\s*\)/);
  assert.match(app,/edgeLabels\.forEach\(label=>drawMeasurementLabelAtMap/);
  assert.match(app,/drawMeasurementLabelAtMap\(anchor\.x,anchor\.y,formatMeasurementSquareKilometres\(metrics\.areaM2\),'area'\)/);
  assert.match(app,/function formatMeasurementSquareKilometres\(/);
@@ -309,7 +309,7 @@ test('compact measurement dock is embedded in the map viewport',()=>{
 test('obsolete restricted-line overlay is absent from the pure Gleason map',()=>{
  assert.doesNotMatch(html,/60°S · Restricted Line|Restricted Line/);
  assert.doesNotMatch(app,/drawRestrictedParallel|RESTRICTED_PARALLEL_LATITUDE|60°S · RESTRICTED LINE/);
- assert.match(app,/measureDirectDistance\(points\[0\],points\[1\]\)/);
+ assert.match(app,/measureDirectDistance\(points\[0\],points\[1\],layoutMode\)/);
 });
 
 test('Antarctica remains separately rendered but can be selected and searched',()=>{
@@ -358,7 +358,7 @@ test('pointer, hover and wheel interactions coalesce expensive work to animation
 
 test('scale-bar measurement uses the same canonical Euclidean map-plane metric as A–B',()=>{
  const scaleMetric=app.slice(app.indexOf('function flatDiskDistanceForScalePixels'),app.indexOf('function scaleBarReadingKm'));
- assert.match(scaleMetric,/measureDistanceMeters\(first,second\)/);
+ assert.match(scaleMetric,/measureDistanceMeters\(first,second,layoutMode\)/);
  assert.doesNotMatch(scaleMetric,/flatDiskDistanceMeters/);
 });
 test('scale-bar measurement is calculated once per frame and uses a pixel-accurate search',()=>{
@@ -408,7 +408,7 @@ test('map gestures use a lightweight preview and redraw full detail when settled
  assert.match(app,/function drawCoastlinesLayer\(simplified=false\)\{if\(simplified\|\|/);
  assert.match(app,/function drawIceWall\(simplified=false\)/);
  assert.match(app,/drawCapitals\(!interactionSimplified\);drawCountryLabels\(!interactionSimplified\);/);
- assert.match(app,/if\(layers\.oceanLabels\)\{\s*if\(!interactionSimplified\)/);
+ assert.match(app,/if\(layers\.oceanLabels&&!interactionSimplified\)\{/);
  assert.match(app,/wheelZoomActive=true/);
  assert.match(app,/canvas\.addEventListener\('pointerup'[\s\S]*?scheduleDraw\(\)/);
 });
@@ -420,11 +420,11 @@ test('large coastline and Antarctic surface paths are built in yielding batches'
 
 
 test('resize rebuilds deferred detail paths with a stable projection snapshot',()=>{
- assert.match(app,/const fixedProject=\(lon,lat\)=>projectFlatDisk\(lon,lat,projectionBaseR\)/);
- assert.match(app,/const makeResizedPath=.*fixedProject/);
+ assert.match(app,/const fixedProject=\(lon,lat,petalIndex\)=>projectForLayout\(lon,lat,projectionBaseR,projectionLayoutMode,petalIndex\)/);
+ assert.match(app,/const makeResizedPath=[\s\S]*?fixedProject/);
  assert.match(app,/geometryBaseR!==projectionBaseR/);
  assert.doesNotMatch(app,/createCoastlinePath\(coastlineData,project\)|createAntarcticSurfacePaths\(antarcticAddData,project\)/);
- assert.match(app,/createCoastlinePathAsync\(source,buildProject\)/);
+ assert.match(app,/createCoastlinePathAsync\(source,buildProject,undefined,\{layoutMode:buildLayout\}\)/);
  assert.match(app,/createAntarcticSurfacePathsAsync\(source,buildProject\)/);
 });
 
@@ -480,7 +480,7 @@ test('engraved title cartouche and live route register are wired to shared measu
   assert.match(panels,/this\.localName !== 'map-route-panel'/);
   assert.match(panels,/measurement\.endpoints/);
   assert.match(app,/endpoints:points\.map\(point=>\(\{name:point\.name\|\|'Map location',coordinates:fmtCoord\(point\.lat,point\.lon\)\}\)\)/);
-  assert.match(app,/distanceLabel:points\.length===2\?formatDistance\(measureDirectDistance\(points\[0\],points\[1\]\)\.distanceMeters\):''/);
+  assert.match(app,/distanceLabel:points\.length===2\?formatDistance\(measureDirectDistance\(points\[0\],points\[1\],layoutMode\)\.distanceMeters\):''/);
   assert.match(app,/drawMeasurementLabelAtMap\(x\+16\/zoom,y-14\/zoom/);
   assert.match(styles,/\.route-register-panel/);
 });

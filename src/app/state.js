@@ -1,6 +1,7 @@
 const NESTED_STATE_KEYS = new Set(['view','layers','measurement','historical']);
 const DEFAULT_STATE = Object.freeze({
   mode:'explore',
+  layoutMode:'gleason',
   view:Object.freeze({zoom:1,panX:0,panY:0,rotationDegrees:0}),
   mapQuality:'medium',
   visualStyle:'atlas',
@@ -31,6 +32,7 @@ export function createAppState(initialState = {}) {
     ? initialState
     : {};
   const merged = {...DEFAULT_STATE,...initial};
+  merged.layoutMode = initial.layoutMode === 'interrupted-petals' ? 'interrupted-petals' : 'gleason';
   for (const key of NESTED_STATE_KEYS) {
     merged[key] = {...DEFAULT_STATE[key],...(initial[key] || {})};
   }
@@ -43,7 +45,9 @@ export function createAppState(initialState = {}) {
     }
     const next = {...snapshot};
     for (const [key,value] of Object.entries(patch)) {
-      if (NESTED_STATE_KEYS.has(key) && value && typeof value === 'object' && !Array.isArray(value)) {
+      if (key === 'layoutMode') {
+        next.layoutMode = value === 'interrupted-petals' ? 'interrupted-petals' : 'gleason';
+      } else if (NESTED_STATE_KEYS.has(key) && value && typeof value === 'object' && !Array.isArray(value)) {
         next[key] = {...(snapshot[key] || {}),...value};
       } else {
         next[key] = value;
@@ -53,7 +57,9 @@ export function createAppState(initialState = {}) {
       if (NESTED_STATE_KEYS.has(key) && patch[key] && typeof patch[key] === 'object') {
         return Object.entries(patch[key]).some(([nestedKey,value]) => snapshot[key]?.[nestedKey] !== value);
       }
-      return snapshot[key] !== patch[key];
+      return key === 'layoutMode'
+        ? snapshot.layoutMode !== (patch.layoutMode === 'interrupted-petals' ? 'interrupted-petals' : 'gleason')
+        : snapshot[key] !== patch[key];
     });
     if (!changed) return snapshot;
     snapshot = freezeSnapshot(next);
