@@ -21,14 +21,14 @@ Direct survey records (`direct-survey-baseline` or `direct-survey-reduced-horizo
 - `a`, `b`: stable monument IDs, their latitude/longitude inputs, and each point's `coordinateSource.provider` and `coordinateSource.reference`
 - `distanceKm`: the published measured horizontal distance in kilometres
 - `measurementType`: exactly `direct-survey-baseline` or `direct-survey-reduced-horizontal`
-- `measurementBasis`: exactly `adjusted-horizontal` for baseline certificates or `sea-level-horizontal` for reduced LINZ observations
+- `measurementBasis`: exactly `adjusted-horizontal` for baseline certificates or `sea-level-horizontal` for direct survey observations reduced to sea level
 - `uncertaintyKm`: the published distance uncertainty in kilometres
 - `source.provider`, `source.reference`: provenance for the measured baseline
 - `source.groupId`: stable baseline/site identifier
 
 Every pair from one survey line or site must remain in one split. A baseline group cannot contribute some segments to training and other segments to holdout. Holdout baselines should be geographically independent from training sites.
 
-The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a survey observation without a stated positive uncertainty is rejected. For LINZ, the square root of the recorded distance variance in m² may be converted to one-sigma distance uncertainty in km. The observation remains labelled as a reduced distance, not an adjusted network output.
+The fitter weights surveyed lengths by their stated relative uncertainty, normalised to the median relative uncertainty and clamped to prevent a single record from dominating. Uncertainty is not invented when missing; a survey observation without a stated positive uncertainty is rejected. For any source that publishes a measured reduced-horizontal observation and its matching variance, the square root of that variance may be converted to one-sigma distance uncertainty in kilometres. Preserve the distinction between a reduced observation and an adjusted network output.
 
 Do not use airline mileage, ADS-B track length, travel time multiplied by speed, shortest-route distance, an inferred map scale, or distances calculated from globe/sphere/ellipsoid/geodesic formulas. Surveyed horizontal lengths must be taken as the published reference values, not recomputed from endpoint coordinates.
 
