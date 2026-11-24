@@ -151,7 +151,20 @@
         "retain the reported coordinate and distance uncertainty, reference frame, epoch, instrument and atmospheric corrections",
         "keep each complete local station network/site in one train or holdout split",
         "exclude the NMS 143 eccentric/cairn coordinate until the exact station-mark position is resolved"
-      ]
+      ],
+      "fieldbookAccess": {
+        "repository": "Geoscience Australia N.H. (Doc) Fisher Geoscience Library",
+        "contact": "reference.library@ga.gov.au",
+        "reference": "https://www.ga.gov.au/data-pubs/library",
+        "serviceReference": "https://www.ga.gov.au/data-pubs/library/library-services",
+        "requestedRecords": [
+          "AUSLIG Geodesy #35",
+          "AUSLIG Geodesy #37",
+          "AUSLIG Geodesy #38"
+        ],
+        "requestPurpose": "Request scans or inspection copies of the 2000/2001 Mawson and Davis total-station observation fieldbooks, including reduced distance observations, horizontal/vertical angle readings, instrument height/target height, meteorological corrections and adjustment reports.",
+        "status": "retrieval route identified; records not yet obtained"
+      }
     },
     {
       "id": "linz-antarctic-geodetic-marks-ross-dependency",
@@ -181,6 +194,20 @@
         "confirm current mark condition and exact monument identity",
         "keep complete survey networks/sites in one train or holdout split",
         "do not calculate pair distances from coordinate differences or from any spherical/ellipsoidal/geodesic method"
+      ]
+    },
+    {
+      "id": "aadc-2010-11-davis-mawson-survey-files",
+      "provider": "Australian Antarctic Data Centre / Geoscience Australia",
+      "reference": "https://data.aad.gov.au/aadc/portal/drill_down.cfm?id=69",
+      "reportedCoverage": "Download item survey_2010-11_davis_mawson.zip (265 kB), described as CAD and Word files from surveys at Davis and Mawson documented in part 7 of the 2010/11 Antarctic Geodesy Field Report.",
+      "status": "additional primary-file lead; file contents and presence of adjusted direct horizontal line lengths not yet inspected",
+      "importConditions": [
+        "obtain and inspect the original CAD and Word files",
+        "identify whether they contain original adjusted horizontal distances tied to exact geodetic mark IDs",
+        "preserve source units, survey epoch, measurement method and uncertainty",
+        "do not infer or compute distances from point coordinates or CAD geometry unless a source explicitly identifies the value as a direct measured horizontal distance",
+        "keep complete local survey sites in one train or holdout split"
       ]
     }
   ]
