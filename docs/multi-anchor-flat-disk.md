@@ -51,6 +51,15 @@ The 2026 EURO5000 publication describes a 5 km reference baseline established an
 
 This is another valuable regional constraint. The 2022 preliminary study reports an EDM EUR1–EUR2 result of 5,177.1758 m ± 0.0073 m (k=1), with several approximate inter-pillar lengths; its five published latitude/longitude positions are explicitly captioned as approximate. They are not precise anchor coordinates and have not been inserted into the fitting dataset. The 2026 publication establishes the final 5 km standard with uncertainty below 1 mm (k=2), but the final reference-distance table and precise coordinate records for each exact pillar still need to be extracted from the source. It does not provide southern-hemisphere or global coverage by itself.
 
+### Australian EDM calibration baselines
+
+Two additional southern-hemisphere source programmes are under review:
+
+- Landgate maintains three certified EDM baselines in Western Australia at Curtin University, Kalgoorlie and Busselton. Certified distances and calibration records are supplied through the Medjil portal, with periodic re-certification.
+- The NSW Surveyor General publishes EDM baseline certificates and facility information for multiple sites, including Coffs Harbour, Dubbo, Eglinton, Lethbridge Park, Seaham and Ulan.
+
+These sites can broaden source coverage in the southern hemisphere (roughly mid-southern latitudes), but they do not provide deep-southern or Antarctic coverage. The exact pillar IDs, certified horizontal distances, uncertainty, reference height, certification epoch and traceable coordinates for the same physical pillars must be extracted before import. The portal's coordinate-based geometric corrections must not be reproduced in this map; only its published certified length values are candidates for the observation file.
+
 ## Why the observations file is still empty
 
 The repository currently has no observation records that satisfy the complete requirements of measured length **and** exact endpoint coordinate provenance. Published baseline length alone is not enough. No NOAA, Nummela or EURO5000 values have been fabricated into the input file.
