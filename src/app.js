@@ -862,7 +862,7 @@ function updateMeasurement(){
    :'Flat-plane distance unavailable for these coordinates';
   $('measureHelp').textContent=layoutMode==='interrupted-petals'
    ?'Northern points retain Pure Gleason placement. Southern same-petal routes use Euclidean chords; routes between southern petals use the shortest two-segment path stitched at matching latitude along the gore edges. The connector, distance readout, scale bar and polygon perimeter use the same canonical planar route function.'
-   :'The distance is the Euclidean length of the straight red connector in the visible flat-disk plane. The same function powers A–B, the connector label, scale-bar sampling and polygon perimeter.';
+   :'The distance is the Euclidean length of the straight red connector in the visible flat-disk plane. The same function powers A–B, the connector label, scale-bar sampling and polygon perimeter. The map remains a circular flat disk with its North Pole centre and longitude-indexed Antarctic rim.';
  }else{
   $('distanceValue').textContent='—';
   $('distanceSub').textContent='Set two endpoints to calculate the canonical distance';
