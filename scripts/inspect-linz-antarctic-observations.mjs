@@ -402,12 +402,22 @@ export async function inspectLinzAntarctic(apiKey, options = {}) {
     apiKey, LINZ_TABLES.setups, 'ID', allSetupIds, queryOptions
   );
   const setupById = mapBy(allSetups, 'ID');
-  const nodeToMark = new Map(markRows.map(row => [String(row.NOD_ID), row]));
+  const marksByNode = new Map();
+  for (const mark of markRows) {
+    const key = String(mark.NOD_ID);
+    if (!marksByNode.has(key)) marksByNode.set(key, []);
+    marksByNode.get(key).push(mark);
+  }
+  const ambiguousNodeCount = [...marksByNode.values()].filter(rows => rows.length !== 1).length;
+  const uniqueMarkForNode = nodeId => {
+    const rows = marksByNode.get(String(nodeId)) ?? [];
+    return rows.length === 1 ? rows[0] : null;
+  };
   const paired = observations.map(observation => {
     const local = setupById.get(String(observation.STP_ID_LOCAL));
     const remote = setupById.get(String(observation.STP_ID_REMOTE));
-    const localMark = local && nodeToMark.get(String(local.NOD_ID));
-    const remoteMark = remote && nodeToMark.get(String(remote.NOD_ID));
+    const localMark = local && uniqueMarkForNode(local.NOD_ID);
+    const remoteMark = remote && uniqueMarkForNode(remote.NOD_ID);
     return { observation, local, remote, localMark, remoteMark };
   }).filter(row => row.localMark && row.remoteMark);
 
@@ -485,6 +495,7 @@ export async function inspectLinzAntarctic(apiKey, options = {}) {
       physicalMarkRowsMatched: markRows.length,
       layerMarkIdsWithoutMarkRow: missingMarkRowCount,
       markNodeCount: nodeIds.length,
+      nodeIdsWithAmbiguousPhysicalMarks: ambiguousNodeCount,
       setupRowsForAntarcticNodes: setupRows.length,
       observationRowsTouchingAntarcticSetups: observations.length,
       observationRowsWithBothEndpointsInAntarcticLayer: paired.length,
