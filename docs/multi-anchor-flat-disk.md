@@ -49,7 +49,7 @@ This is a high-quality European reference, but it contributes a local measuremen
 
 The 2026 EURO5000 publication describes a 5 km reference baseline established and validated in Poland using repeated GNSS and EDM campaigns. The reported measurement uncertainty is below 1 mm (k=2), with independent checks by two external institutions.
 
-This is another valuable regional constraint. It is not a substitute for measured points in other continents or the deep southern map.
+This is another valuable regional constraint. A 2022 preliminary study reports an EDM EUR1–EUR2 result of 5,177.1758 m ± 0.0073 m (k=1), but the point coordinates in that study are explicitly described as approximate. Those approximate coordinates are not inserted as fitting anchors. The final reference values and precise monument coordinate records still need to be obtained. It is not a substitute for measured points in other continents or the deep southern map.
 
 ## Why the observations file is still empty
 
