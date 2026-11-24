@@ -123,6 +123,35 @@
         "retain certification epoch and site condition",
         "keep each complete baseline site in one train or holdout split"
       ]
+    },
+    {
+      "id": "geoscience-australia-antarctic-total-station-networks",
+      "provider": "Geoscience Australia / Australian Antarctic Data Centre",
+      "reference": "https://www.ga.gov.au/bigobj/GA5033.pdf",
+      "additionalReferences": [
+        "https://data.aad.gov.au/aadc/portal/drill_down.cfm?id=69",
+        "https://data.aad.gov.au/metadata/records/survey_2006-2007_geodesy",
+        "https://data.aad.gov.au/metadata/records/survey_2004-2005_geodesy"
+      ],
+      "reportedCoverage": "Antarctic local tie surveys at Mawson (-67.6°S) and Davis (-68.6°S), plus AAGN marks in the Prince Charles Mountains around 69.7–70.5°S and the wider East Antarctic traverse.",
+      "publishedMeasurements": "GA Technical Report 5 describes Leica TC2003 total-station observations of horizontal/vertical angles and slope distances using precision prisms. Reduced distances were corrected for temperature, humidity and pressure, then adjusted by least squares in GEOLAB. The report publishes adjusted mark coordinates and coordinate standard deviations for the Mawson and Davis local networks.",
+      "publishedCoordinateExamples": "Mawson AUS064 local reference marks RM1–RM3 and Davis AUS099 local reference marks RM1–RM3 are tabulated with latitude/longitude/height and standard deviations. AAGN Table 5.2 lists coordinates for AUS042, AUS305, NMS 136E, NMS 143, NMS 142E2 and NMS 138.",
+      "missingObservationData": "The public report does not reproduce the adjusted horizontal pairwise distances or complete total-station observation file for these local mark networks. It cites AUSLIG Geodesy field books #35/#38 for Mawson and #37 for Davis. The field books or GEOLAB adjustment files must be obtained before any distance can be entered.",
+      "caveats": [
+        "The published slope-distance observations are not themselves adjusted horizontal lengths; the distance basis must be obtained from the original adjustment.",
+        "AAGN NMS 143 coordinates were observed with an antenna atop a cairn assumed concentric with a hidden station mark; do not use as an exact point without resolving that eccentricity.",
+        "For the 2006/07 report, deep-field control-feature GPS observations were not completed because of time and aircraft payload constraints; do not infer deep interior coverage from that report.",
+        "The coordinate reference frame and epoch differ from modern RSRGD2000/LINZ marks; provenance and epoch must be preserved rather than mixing unlabelled coordinates."
+      ],
+      "status": "promising high-southern survey network; precise adjusted endpoint coordinates are published for selected marks, but the underlying adjusted horizontal lengths/fieldbook observations are not in the accessible report and must be obtained before import",
+      "importConditions": [
+        "obtain AUSLIG Geodesy field books #35/#38 (Mawson) and #37 (Davis), or the corresponding GEOLAB adjustment records",
+        "extract adjusted horizontal distance values for exact mark pairs; do not derive them from reported latitude/longitude",
+        "link each length to the exact RM or monument ID and its published adjusted coordinate",
+        "retain the reported coordinate and distance uncertainty, reference frame, epoch, instrument and atmospheric corrections",
+        "keep each complete local station network/site in one train or holdout split",
+        "exclude the NMS 143 eccentric/cairn coordinate until the exact station-mark position is resolved"
+      ]
     }
   ]
 }
