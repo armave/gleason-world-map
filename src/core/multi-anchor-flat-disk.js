@@ -407,7 +407,8 @@ function buildWarp(seed, fitted, anchorIds, options = {}) {
   const alphaX = solveLinearSystem(matrix, controls.map(item => item.dx));
   const alphaY = solveLinearSystem(matrix, controls.map(item => item.dy));
   return {
-    kind: 'gaussian-rbf-flat-disk',
+    kind: 'gaussian-rbf-global-flat-disk',
+    schemaVersion: 2,
     diskRadiusKm: DISK_RADIUS_KM,
     sigmaKm,
     regularization,
