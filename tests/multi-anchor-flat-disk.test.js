@@ -8,7 +8,7 @@ import {
   inspectMultiAnchorRoundTrips,
   summarizeMultiAnchorCoverage
 } from '../src/core/multi-anchor-flat-disk.js';
-import { DISK_RADIUS_KM, project } from '../src/core/legacy-flat-disk.js';
+import { DISK_RADIUS_KM, project } from '../src/core/flat-disk.js';
 
 const sampleSource = {
   provider: 'test fixture only',

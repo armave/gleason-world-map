@@ -1,17 +1,35 @@
-import { planarRoute } from './dual-disk.js';
+import { flatDiskDistanceMeters } from './flat-disk.js';
 
-/** Canonical distance and drawable route geometry for every measurement surface. */
-export function measureDirectDistance(first, second) {
-  const route = planarRoute(first, second);
-  return {
-    distanceMeters: route.distanceMeters,
-    metric: route.metric,
-    segments: route.segments,
-    crossings: route.crossings,
-    crossingLongitudeDegrees: route.crossingLongitudeDegrees
-  };
+function validPoint(point) {
+  return !!point &&
+    Number.isFinite(point.lat) &&
+    point.lat >= -90 &&
+    point.lat <= 90 &&
+    Number.isFinite(point.lon);
 }
+
+/** One direct planar distance function shared by all measurement surfaces. */
 export function measureDistanceMeters(first, second) {
   return measureDirectDistance(first, second).distanceMeters;
 }
-export { planarRoute } from './dual-disk.js';
+
+/**
+ * Measure the Euclidean chord between two geographic points after placing
+ * them on the pure Gleason disk. The result is a drawing-plane length, not
+ * an independently validated ground route distance.
+ */
+export function measureDirectDistance(first, second) {
+  if (!validPoint(first) || !validPoint(second)) {
+    return {
+      distanceMeters: null,
+      metric: 'unavailable'
+    };
+  }
+
+  const distanceMeters = flatDiskDistanceMeters(first, second);
+  return {
+    distanceMeters: Number.isFinite(distanceMeters) && distanceMeters >= 0
+      ? distanceMeters : null,
+    metric: 'euclidean-flat-disk-chord'
+  };
+}
