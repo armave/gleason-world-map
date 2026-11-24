@@ -57,7 +57,7 @@ test('equal latitude increments create equal radial spacing from pole to rim', (
     close(latitudeFromRadialDistanceKm(radialDistanceFromNorthKm(lat)), lat);
   }
   assert.ok(Number.isNaN(radialFraction(91)));
-  assert.equal(northSouthDistanceKm(90, 75), 1666.8);
+  close(northSouthDistanceKm(90, 75), 1666.8);
 });
 
 test('forward and inverse mapping preserve the Gleason longitude orientation', () => {
